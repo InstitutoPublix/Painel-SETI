@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Painel de Desempenho da Gestão Universitária</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,300&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="assets/painel.css" />
+
+    <!-- SheetJS — bundled localmente para funcionar sem internet -->
+    <script src="assets/xlsx.full.min.js"></script>
+
+    <!-- Camada de dados: SETI_DATASETS, loaders XLSX/JSON, SETIDataHub -->
+    <script src="assets/data-hub.js"></script>
+
+  </head>
+
+  <body class="dashboard-body">
+    <header class="institutional-header">
+      <div class="header-topline"></div>
+      <div class="header-content">
+        <div class="header-brand">
+          <img class="brand-mark brand-logo" src="assets/logo OpR.jpeg" alt="Orçamento para Resultados – Estado do Paraná" />
+          <div>
+            <p class="eyebrow">SETI Paraná | Orçamento para Resultados</p>
+            <h1>Painel de Desempenho da Gestão Universitária</h1>
+            <p class="header-subtitle">Monitoramento executivo das universidades estaduais do Paraná</p>
+          </div>
+        </div>
+        <div class="header-status" aria-label="Informações do painel">
+          <span class="status-chip" id="dataStatusChip" aria-live="polite">Carregando…</span>
+          <span class="status-chip" title="Bases carregadas nesta sessão">
+            <span id="loadedBasesCount">0</span> bases
+          </span>
+          <span class="status-chip">2018–2024</span>
+        </div>
+      </div>
+    </header>
+
+    <main class="app-shell">
+      <div class="data-source-banner" id="dataSourceBanner" role="alert" aria-live="polite">
+        <span class="dsb-icon" aria-hidden="true">⚠</span>
+        <div class="dsb-body">
+          <strong></strong>
+          <span></span>
+        </div>
+      </div>
+      <nav class="tabs" aria-label="Abas principais do painel">
+        <button class="tab-button is-active" type="button" data-tab="overview">1. Panorama Executivo</button>
+        <button class="tab-button" type="button" data-tab="comparison">2. Comparação entre IEES</button>
+        <button class="tab-button" type="button" data-tab="access">3. Acesso e Oferta</button>
+        <button class="tab-button" type="button" data-tab="retention">4. Permanência e Formação</button>
+        <button class="tab-button" type="button" data-tab="quality">5. Qualidade, Pesquisa e Pós-Graduação</button>
+        <button class="tab-button" type="button" data-tab="faculty">6. Corpo Docente e Capacidade Operacional</button>
+        <button class="tab-button" type="button" data-tab="employment">7. Inserção Profissional</button>
+        <button class="tab-button" type="button" data-tab="efficiency">8. Orçamento, Desempenho e Eficiência Relativa</button>
+        <div class="tab-active-indicator" aria-hidden="true"></div>
+      </nav>
+
+      <section class="kpi-grid" id="kpiGrid" aria-label="Cards de indicadores principais"></section>
+
+      <section class="filter-bar-compact" aria-label="Filtros globais">
+        <div class="filter-bar-row">
+          <div class="filter-bar-left">
+            <span class="filter-bar-label">Recorte</span>
+            <label class="filter-inline-group" for="yearFilter">
+              <span class="filter-inline-label">Ano</span>
+              <select class="filter-inline-select" id="yearFilter">
+                <option value="2024" selected>2024</option>
+                <option value="2023">2023</option>
+                <option value="2022">2022</option>
+                <option value="2021">2021</option>
+                <option value="2020">2020</option>
+              </select>
+            </label>
+
+            <div class="filter-inline-group iees-multi-wrap" id="universityFilterWrap">
+              <span class="filter-inline-label">IEES</span>
+              <button type="button" class="iees-multi-btn" id="universityFilter" aria-haspopup="listbox" aria-expanded="false">
+                <span id="universityFilterLabel">Todas as IEES</span>
+                <span class="iees-multi-arrow" aria-hidden="true">▾</span>
+              </button>
+              <div class="iees-multi-dropdown" id="universityFilterDropdown" hidden>
+                <label class="iees-multi-item iees-meta-item">
+                  <input type="checkbox" id="uniCheckAll" checked> Todas as IEES
+                </label>
+                <label class="iees-multi-item iees-meta-item">
+                  <input type="checkbox" id="uniCheckNone"> Nenhuma IEES selecionada
+                </label>
+                <hr class="iees-multi-sep" aria-hidden="true">
+                <div id="universityCheckboxList"></div>
+              </div>
+            </div>
+
+            <label class="filter-inline-group filter-mini-card" for="groupBy" hidden>
+              <span class="filter-inline-label">Agrupar por</span>
+              <select class="filter-inline-select" id="groupBy">
+                <option value="none">Não agrupar</option>
+                <option value="v1" selected>Porte institucional</option>
+                <option value="v2">Oferta de cursos</option>
+                <option value="v3">Oferta territorial</option>
+                <option value="v4">Qualificação docente</option>
+                <option value="v5">Estrutura acadêmica composta</option>
+                <option value="v6" title="Disponível apenas para escopo Paraná">Dinâmica orçamentária (PR)</option>
+                <option value="v7">Renda do território (PR)</option>
+                <option value="v8">IDHM (PR)</option>
+              </select>
+            </label>
+
+            <div class="group-variable-buttons" id="groupVariableButtons" aria-label="Selecionar variável de agrupamento"></div>
+
+            <div class="quartil-chips" id="quartilChips" aria-label="Grupos da variável de agrupamento"></div>
+          </div>
+
+          <div class="filter-bar-right">
+            <div class="filter-active-status" aria-live="polite">
+              <strong id="scopeLabel">Sistema estadual</strong>
+              <span id="activeClusterLabel" class="cluster-active-label">Cluster: V1 - Todos os grupos</span>
+            </div>
+            <button class="filter-reset-btn" id="resetFilters" type="button">Limpar</button>
+            <div class="tab-scope-toggle" id="tabScopeToggle" hidden>
+              <button class="tab-scope-btn" id="tabScopeBtnPR" type="button" onclick="setScope('PR')" aria-pressed="true">Paraná</button>
+              <button class="tab-scope-btn" id="tabScopeBtnBR" type="button" onclick="setScope('BR')" aria-pressed="false">Brasil</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="filter-bar-scrolled" aria-hidden="true">
+          <span class="fbs-tab-name" id="fbsTabName"></span>
+          <span class="fbs-scope" id="fbsScope">Paraná</span>
+          <span class="fbs-iees-count" id="fbsIeesCount"></span>
+        </div>
+
+        <div class="filter-expanded-panel" id="advancedFilters" hidden>
+          <div class="filter-expanded-grid">
+            <div class="filter-expanded-group">
+              <span class="filter-expanded-section-label">Grupo de referência</span>
+              <div class="filter-expanded-row">
+                <div class="filter-mini-card">
+                  <label for="groupLevelFilter">Nível de grupo</label>
+                  <select id="groupLevelFilter">
+                    <option value="all">Todos os grupos</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="dashboard-layout">
+        <article class="content-panel">
+          <div class="section-heading">
+            <div>
+              <p class="eyebrow" id="activeTabKicker">Visão integrada</p>
+              <h2 id="activeTabTitle">Panorama Executivo</h2>
+              <p id="activeTabDescription">Síntese do desempenho acadêmico, operacional e orçamentário da rede estadual.</p>
+            </div>
+            <div class="section-heading-actions">
+              <div class="period-pill" id="periodPill">Ano base 2024</div>
+              <button class="export-btn" type="button" onclick="exportTabData()">↓ Exportar</button>
+            </div>
+          </div>
+
+          <div id="tabContent" class="tab-content">
+            <noscript>
+              <p>Este painel requer JavaScript habilitado para exibir o conteúdo.</p>
+            </noscript>
+          </div>
+        </article>
+
+        <aside class="side-panel" aria-label="Painel lateral com critérios do agrupamento">
+          <div class="side-group-filter" id="sideGroupFilter" aria-label="Filtrar por grupo"></div>
+          <div class="side-card accent-card">
+            <p class="eyebrow">Agrupamento dinâmico</p>
+            <h2 id="groupTitle">V1 - Porte institucional</h2>
+            <div id="criteriaList" class="criteria-list"></div>
+          </div>
+
+          <div class="side-card">
+            <p class="eyebrow">Grupos do agrupamento ativo</p>
+            <div id="groupBreakdown" class="group-breakdown-list"></div>
+          </div>
+
+          <div class="side-card">
+            <p class="eyebrow">Leitura institucional</p>
+            <p class="side-note" id="analyticalNote">A matriz combina resultado relativo e esforço orçamentário relativo para orientar comparação entre pares.</p>
+          </div>
+
+          <div class="side-card">
+            <p class="eyebrow">Alertas do sistema</p>
+            <div id="systemAlerts" class="system-alerts-list"></div>
+          </div>
+        </aside>
+      </section>
+    </main>
+
+    <footer class="page-footer" role="contentinfo">
+      <div class="footer-status">
+        <span class="status-dot" id="footerStatusDot" aria-hidden="true"></span>
+        <span id="footerDataStatus">Painel carregando…</span>
+      </div>
+      <span class="footer-sep" aria-hidden="true">·</span>
+      <span class="footer-bases-detail" id="footerBasesDetail"></span>
+      <span class="footer-sep" aria-hidden="true">·</span>
+      <span>Recorte: <strong id="footerClusterLabel">Todos os grupos</strong></span>
+      <span>Escopo: <strong id="footerScopeLabel">Paraná</strong></span>
+    </footer>
+
+    <!-- UI principal: cache, populate, bind, render -->
+    <script src="assets/painel.js"></script>
+  <div hidden aria-hidden="true">
+    <button id="scopeBtnPR" type="button" onclick="setScope('PR')" aria-pressed="true">📍 Paraná</button>
+    <button id="scopeBtnBR" type="button" onclick="setScope('BR')" aria-pressed="false">🌐 Brasil</button>
+  </div>
+  </body>
+</html>
