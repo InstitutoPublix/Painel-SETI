@@ -1,3 +1,1735 @@
+// Catálogo gerado de '5. Relação de Indicadores das Universidades.xlsx' — 96 indicadores
+const INDICATOR_CATALOG = {
+  "ind1": {
+    "codigo": 1,
+    "nome": "Proporção de ocupação de vagas no Ensino Superior Público Estadual",
+    "categoria": "Acesso e Inclusão",
+    "formula": "Total de alunos matriculados / total de vagas ofertadas x 100",
+    "unidade": "Percentual",
+    "periodicidade": "Anual",
+    "polaridade": "Quanto maior, melhor",
+    "desagregacoes": "Universidade; Município; Tipo de curso; Turno",
+    "dimensao": "Brasil",
+    "fonte": "INEP",
+    "serie": "2020-2024",
+    "atualizacao": "2026-04-01",
+    "ocde": "Participação no ensino terciário",
+    "uso": "Permite avaliar o grau de ocupação da oferta existente, comparando o volume de matrículas (QT_MAT) com o total de vagas oferecidas (QT_VG_TOTAL) e identificando possíveis situações de ociosidade relativa da oferta.",
+    "link": "https://www.gov.br/inep/pt-br/acesso-a-informacao/dados-abertos/microdados/censo-da-educacao-superior",
+    "observacoes": ""
+  },
+  "ind2": {
+    "codigo": 2,
+    "nome": "Número de Matrículas de Graduação da Rede Pública",
+    "categoria": "Acesso e Inclusão",
+    "formula": "Somatório do número de matrículas nos cursos de graduação na modalidade presencial da rede pública",
+    "unidade": "Número",
+    "periodicidade": "Anual",
+    "polaridade": "Quanto maior, melhor",
+    "desagregacoes": "Universidade; Tipo de curso; Área do curso",
+    "dimensao": "Brasil",
+    "fonte": "INEP",
+    "serie": "2020-2024",
+    "atualizacao": "2026-04-01",
+    "ocde": "Matrículas no ensino terciário",
+    "uso": "Permite dimensionar o porte da universidade em termos de matrículas de graduação presencial da rede pública, servindo como variável de contexto para relativizar comparações entre instituições de tamanhos diferentes.",
+    "link": "https://www.gov.br/inep/pt-br/acesso-a-informacao/dados-abertos/microdados/censo-da-educacao-superior",
+    "observacoes": ""
+  },
+  "ind3": {
+    "codigo": 3,
+    "nome": "Taxa de ocupação de vagas iniciais",
+    "categoria": "Acesso e Inclusão",
+    "formula": "Número de ingressantes / número de vagas iniciais ofertadas x 100",
+    "unidade": "Percentual",
+    "periodicidade": "Anual",
+    "polaridade": "Quanto maior, melhor",
+    "desagregacoes": "Universidade; Tipo de curso",
+    "dimensao": "Brasil",
+    "fonte": "INEP",
+    "serie": "2020-2024",
+    "atualizacao": "2026-04-01",
+    "ocde": "Ingresso no ensino terciário",
+    "uso": "Permite analisar a capacidade de preenchimento das vagas novas de entrada, comparando ingressantes (QT_ING) com vagas iniciais ofertadas (QT_VG_NOVA) e identificando menor ou maior atratividade da oferta.",
+    "link": "https://www.gov.br/inep/pt-br/acesso-a-informacao/dados-abertos/microdados/censo-da-educacao-superior",
+    "observacoes": ""
+  },
+  "ind4": {
+    "codigo": 4,
+    "nome": "Proporção de ingressantes oriundos da escola pública",
+    "categoria": "Acesso e Inclusão",
+    "formula": "Número de ingressantes oriundos da escola pública / total de ingressantes x 100",
+    "unidade": "Percentual",
+    "periodicidade": "Anual",
+    "polaridade": "Quanto maior, melhor",
+    "desagregacoes": "Universidade; Município; Tipo de curso",
+    "dimensao": "Brasil",
+    "fonte": "INEP",
+    "serie": "2020-2024",
+    "atualizacao": "2026-04-01",
+    "ocde": "Perfil e equidade dos estudantes no ensino terciário",
+    "uso": "Permite avaliar o perfil de inclusão social dos ingressantes, a partir da participação de estudantes oriundos de escolas públicas (QT_ING_PROCESCPUBLICA) no total de ingressantes (QT_ING).",
+    "link": "https://www.gov.br/inep/pt-br/acesso-a-informacao/dados-abertos/microdados/censo-da-educacao-superior",
+    "observacoes": ""
+  },
+  "ind5": {
+    "codigo": 5,
+    "nome": "Taxa anual de desvinculação discente",
+    "categoria": "Permanência e Conclusão",
+    "formula": "Número de estudantes desvinculados do curso / total de estudantes matriculados no ano x 100",
+    "unidade": "Percentual",
+    "periodicidade": "Anual",
+    "polaridade": "Quanto menor, melhor",
+    "desagregacoes": "Universidade; Tipo de curso; Área do curso",
+    "dimensao": "Brasil",
+    "fonte": "INEP",
+    "serie": "2020-2024",
+    "atualizacao": "2026-04-01",
+    "ocde": "Não conclusão do ensino terciário",
+    "uso": "Permite monitorar a perda anual de vínculo discente, usando a quantidade de alunos desvinculados do curso (QT_SIT_DESVINCULADO) em relação ao total de matrículas (QT_MAT), e levantar hipóteses sobre dificuldades de permanência.",
+    "link": "https://www.gov.br/inep/pt-br/acesso-a-informacao/dados-abertos/microdados/censo-da-educacao-superior",
+    "observacoes": ""
+  },
+  "ind6": {
+    "codigo": 6,
+    "nome": "Proporção de docentes com doutorado",
+    "categoria": "Qualidade Acadêmica",
+    "formula": "Número de docentes com doutorado / total de docentes x 100",
+    "unidade": "Percentual",
+    "periodicidade": "Anual",
+    "polaridade": "Quanto maior, melhor",
+    "desagregacoes": "Universidade; Área do conhecimento",
+    "dimensao": "Brasil",
+    "fonte": "INEP",
+    "serie": "2020-2024",
+    "atualizacao": "2026-04-01",
+    "ocde": "Qualificação do corpo docente",
+    "uso": "Permite analisar a qualificação acadêmica do corpo docente, comparando docentes com doutorado (QT_DOC_EX_DOUT) com o total de docentes em exercício (QT_DOC_EXE). institucional.",
+    "link": "https://www.gov.br/inep/pt-br/acesso-a-informacao/dados-abertos/microdados/censo-da-educacao-superior",
+    "observacoes": ""
+  },
+  "ind7": {
+    "codigo": 7,
+    "nome": "Proporção de alunos em mobilidade acadêmica no ano",
+    "categoria": "Qualidade Acadêmica",
+    "formula": "Quantidade de alunos em mobilidade acadêmica no ano / Total de alunos matriculados no ano × 100",
+    "unidade": "Percentual",
+    "periodicidade": "Anual",
+    "polaridade": "Quanto maior, melhor",
+    "desagregacoes": "Universidade; Área do curso",
+    "dimensao": "Brasil",
+    "fonte": "INEP",
+    "serie": "2020-2024",
+    "atualizacao": "2026-04-01",
+    "ocde": "Mobilidade estudantil",
+    "uso": "Permite avaliar a intensidade da mobilidade acadêmica discente, a partir da quantidade de alunos que se vincularam temporariamente a outra instituição (QT_MOB_ACADEMICA) em relação ao total de matrículas (QT_MAT), como sinal de circulação acadêmica e inserção em redes.",
+    "link": "https://www.gov.br/inep/pt-br/acesso-a-informacao/dados-abertos/microdados/censo-da-educacao-superior",
+    "observacoes": ""
+  },
+  "ind8": {
+    "codigo": 8,
+    "nome": "Proporção de docentes estrangeiros",
+    "categoria": "Qualidade Acadêmica",
+    "formula": "Quantidade de docentes estrangeiros / Quantidade de docentes em exercício x 100",
+    "unidade": "Percentual",
+    "periodicidade": "Anual",
+    "polaridade": "Quanto maior, melhor",
+    "desagregacoes": "Universidade; Programa",
+    "dimensao": "Brasil",
+    "fonte": "INEP",
+    "serie": "2020-2024",
+    "atualizacao": "2026-04-01",
+    "ocde": "Internacionalização do corpo acadêmico",
+    "uso": "Permite analisar o grau de internacionalização do corpo docente, comparando docentes estrangeiros em exercício (QT_DOC_EX_EST) com o total de docentes em exercício (QT_DOC_EXE).",
+    "link": "https://www.gov.br/inep/pt-br/acesso-a-informacao/dados-abertos/microdados/censo-da-educacao-superior",
+    "observacoes": ""
+  },
+  "ind9": {
+    "codigo": 9,
+    "nome": "Acesso ao Portal CAPES pela biblioteca da universidade",
+    "categoria": "Qualidade Acadêmica",
+    "formula": "Acesso ao Portal CAPES x 100",
+    "unidade": "Percentual",
+    "periodicidade": "Anual",
+    "polaridade": "Quanto maior, melhor",
+    "desagregacoes": "Universidade",
+    "dimensao": "Brasil",
+    "fonte": "INEP",
+    "serie": "2020-2024",
+    "atualizacao": "2026-04-01",
+    "ocde": "Recursos institucionais e de aprendizagem",
+    "uso": "Permite verificar a presença ou ausência de acesso institucional ao Portal CAPES pela biblioteca da universidade, funcionando como indicador binário de infraestrutura informacional de apoio ao ensino e à pesquisa.",
+    "link": "https://www.gov.br/inep/pt-br/acesso-a-informacao/dados-abertos/microdados/censo-da-educacao-superior",
+    "observacoes": ""
+  },
+  "ind10": {
+    "codigo": 10,
+    "nome": "Total de cursos",
+    "categoria": "Oferta e Territorialização",
+    "formula": "Contagem de cursos",
+    "unidade": "Número",
+    "periodicidade": "Anual",
+    "polaridade": "Quanto maior, melhor",
+    "desagregacoes": "Universidade; Tipo de curso; Área do curso",
+    "dimensao": "Brasil",
+    "fonte": "INEP",
+    "serie": "2020-2024",
+    "atualizacao": "2026-04-01",
+    "ocde": "Sem correspondência direta",
+    "uso": "Mede o porte e a diversidade da oferta da instituição, permitindo comparações entre universidades e leitura da dispersão da oferta.",
+    "link": "https://www.gov.br/inep/pt-br/acesso-a-informacao/dados-abertos/microdados/censo-da-educacao-superior",
+    "observacoes": ""
+  },
+  "ind11": {
+    "codigo": 11,
+    "nome": "Total de vagas",
+    "categoria": "Oferta e Territorialização",
+    "formula": "Somatório do número de vagas ofertadas",
+    "unidade": "Número",
+    "periodicidade": "Anual",
+    "polaridade": "Quanto maior, melhor",
+    "desagregacoes": "Universidade; Município",
+    "dimensao": "Brasil",
+    "fonte": "INEP",
+    "serie": "2020-2024",
+    "atualizacao": "2026-04-01",
+    "ocde": "Ingresso no ensino terciário",
+    "uso": "Mede o volume potencial de atendimento da instituição e permite avaliar a escala da oferta.",
+    "link": "https://www.gov.br/inep/pt-br/acesso-a-informacao/dados-abertos/microdados/censo-da-educacao-superior",
+    "observacoes": ""
+  },
+  "ind12": {
+    "codigo": 12,
+    "nome": "Total de estudantes",
+    "categoria": "Acesso e Inclusão",
+    "formula": "Somatório do número de alunos matriculados",
+    "unidade": "Número",
+    "periodicidade": "Anual",
+    "polaridade": "Quanto maior, melhor",
+    "desagregacoes": "Universidade; Tipo de curso",
+    "dimensao": "Brasil",
+    "fonte": "INEP",
+    "serie": "2020-2024",
+    "atualizacao": "2026-04-01",
+    "ocde": "Matrículas no ensino terciário",
+    "uso": "Mede o volume discente observado e serve como variável de contexto para relativizar comparações entre instituições.",
+    "link": "https://www.gov.br/inep/pt-br/acesso-a-informacao/dados-abertos/microdados/censo-da-educacao-superior",
+    "observacoes": ""
+  },
+  "ind13": {
+    "codigo": 13,
+    "nome": "Total de estudantes ingressantes",
+    "categoria": "Acesso e Inclusão",
+    "formula": "Somatório do número de estudantes ingressantes",
+    "unidade": "Número",
+    "periodicidade": "Anual",
+    "polaridade": "Quanto maior, melhor",
+    "desagregacoes": "Universidade; Tipo de curso",
+    "dimensao": "Brasil",
+    "fonte": "INEP",
+    "serie": "2020-2024",
+    "atualizacao": "2026-04-01",
+    "ocde": "Ingresso no ensino terciário",
+    "uso": "Mede o fluxo anual de entrada de novos estudantes e ajuda a analisar a atratividade da instituição.",
+    "link": "https://www.gov.br/inep/pt-br/acesso-a-informacao/dados-abertos/microdados/censo-da-educacao-superior",
+    "observacoes": ""
+  },
+  "ind14": {
+    "codigo": 14,
+    "nome": "Total de estudantes concluintes",
+    "categoria": "Permanência e Conclusão",
+    "formula": "Somatório do número de estudantes concluintes",
+    "unidade": "Número",
+    "periodicidade": "Anual",
+    "polaridade": "Quanto maior, melhor",
+    "desagregacoes": "Universidade; Tipo de curso",
+    "dimensao": "Brasil",
+    "fonte": "INEP",
+    "serie": "2020-2024",
+    "atualizacao": "2026-04-01",
+    "ocde": "Conclusão no ensino terciário",
+    "uso": "Mede o volume de estudantes que concluíram a formação e ajuda a analisar a capacidade de formação final da instituição.",
+    "link": "https://www.gov.br/inep/pt-br/acesso-a-informacao/dados-abertos/microdados/censo-da-educacao-superior",
+    "observacoes": ""
+  },
+  "ind15": {
+    "codigo": 15,
+    "nome": "Média de vagas por curso",
+    "categoria": "Oferta e Territorialização",
+    "formula": "Total de vagas / total de cursos",
+    "unidade": "Número",
+    "periodicidade": "Anual",
+    "polaridade": "Quanto maior, melhor",
+    "desagregacoes": "Universidade; Tipo de curso; Área do curso",
+    "dimensao": "Brasil",
+    "fonte": "INEP",
+    "serie": "2020-2024",
+    "atualizacao": "2026-04-01",
+    "ocde": "Sem correspondência direta",
+    "uso": "Mede o tamanho médio da oferta por curso e ajuda a identificar diferenças de escala entre instituições.",
+    "link": "https://www.gov.br/inep/pt-br/acesso-a-informacao/dados-abertos/microdados/censo-da-educacao-superior",
+    "observacoes": ""
+  },
+  "ind16": {
+    "codigo": 16,
+    "nome": "Participação da IEES no total de vagas",
+    "categoria": "Oferta e Territorialização",
+    "formula": "Vagas da IEES / vagas totais x 100",
+    "unidade": "Percentual",
+    "periodicidade": "Anual",
+    "polaridade": "Quanto maior, melhor",
+    "desagregacoes": "Universidade",
+    "dimensao": "Brasil",
+    "fonte": "INEP",
+    "serie": "2020-2024",
+    "atualizacao": "2026-04-01",
+    "ocde": "Sem correspondência direta",
+    "uso": "Mostra o peso relativo de cada universidade no conjunto analisado.",
+    "link": "https://www.gov.br/inep/pt-br/acesso-a-informacao/dados-abertos/microdados/censo-da-educacao-superior",
+    "observacoes": ""
+  },
+  "ind17": {
+    "codigo": 17,
+    "nome": "Participação do município no total de vagas",
+    "categoria": "Oferta e Territorialização",
+    "formula": "Vagas do município / vagas totais x 100",
+    "unidade": "Percentual",
+    "periodicidade": "Anual",
+    "polaridade": "Quanto maior, melhor",
+    "desagregacoes": "Município; Universidade",
+    "dimensao": "Brasil",
+    "fonte": "INEP",
+    "serie": "2020-2024",
+    "atualizacao": "2026-04-01",
+    "ocde": "Sem correspondência direta",
+    "uso": "Mostra a concentração territorial da oferta e ajuda a identificar polos de atendimento.",
+    "link": "https://www.gov.br/inep/pt-br/acesso-a-informacao/dados-abertos/microdados/censo-da-educacao-superior",
+    "observacoes": ""
+  },
+  "ind18": {
+    "codigo": 18,
+    "nome": "Participação do curso no total de vagas",
+    "categoria": "Oferta e Territorialização",
+    "formula": "Vagas do curso / vagas totais x 100",
+    "unidade": "Percentual",
+    "periodicidade": "Anual",
+    "polaridade": "Quanto maior, melhor",
+    "desagregacoes": "Curso; Universidade",
+    "dimensao": "Brasil",
+    "fonte": "INEP",
+    "serie": "2020-2024",
+    "atualizacao": "2026-04-01",
+    "ocde": "Sem correspondência direta",
+    "uso": "Mostra a composição da oferta por curso e ajuda a identificar concentração em determinadas áreas.",
+    "link": "https://www.gov.br/inep/pt-br/acesso-a-informacao/dados-abertos/microdados/censo-da-educacao-superior",
+    "observacoes": ""
+  },
+  "ind19": {
+    "codigo": 19,
+    "nome": "Participação da IEES no total de cursos",
+    "categoria": "Oferta e Territorialização",
+    "formula": "Cursos da IEES / cursos totais x 100",
+    "unidade": "Percentual",
+    "periodicidade": "Anual",
+    "polaridade": "Quanto maior, melhor",
+    "desagregacoes": "Universidade",
+    "dimensao": "Brasil",
+    "fonte": "INEP",
+    "serie": "2020-2024",
+    "atualizacao": "2026-04-01",
+    "ocde": "Sem correspondência direta",
+    "uso": "Mede a diversidade institucional relativa da oferta de cursos.",
+    "link": "https://www.gov.br/inep/pt-br/acesso-a-informacao/dados-abertos/microdados/censo-da-educacao-superior",
+    "observacoes": ""
+  },
+  "ind20": {
+    "codigo": 20,
+    "nome": "Participação do município no total de cursos",
+    "categoria": "Oferta e Territorialização",
+    "formula": "Cursos do município / cursos totais x 100",
+    "unidade": "Percentual",
+    "periodicidade": "Anual",
+    "polaridade": "Quanto maior, melhor",
+    "desagregacoes": "Município; Universidade",
+    "dimensao": "Brasil",
+    "fonte": "INEP",
+    "serie": "2020-2024",
+    "atualizacao": "2026-04-01",
+    "ocde": "Sem correspondência direta",
+    "uso": "Mede a dispersão territorial dos cursos e ajuda a identificar concentração geográfica da oferta.",
+    "link": "https://www.gov.br/inep/pt-br/acesso-a-informacao/dados-abertos/microdados/censo-da-educacao-superior",
+    "observacoes": ""
+  },
+  "ind21": {
+    "codigo": 21,
+    "nome": "Média de estudantes por curso",
+    "categoria": "Acesso e Inclusão",
+    "formula": "Estudantes / cursos",
+    "unidade": "Número",
+    "periodicidade": "Anual",
+    "polaridade": "Quanto maior, melhor",
+    "desagregacoes": "Universidade; Tipo de curso",
+    "dimensao": "Brasil",
+    "fonte": "INEP",
+    "serie": "2020-2024",
+    "atualizacao": "2026-04-01",
+    "ocde": "Sem correspondência direta",
+    "uso": "Mede o volume discente médio por curso e ajuda a comparar densidade de ocupação entre instituições.",
+    "link": "https://www.gov.br/inep/pt-br/acesso-a-informacao/dados-abertos/microdados/censo-da-educacao-superior",
+    "observacoes": ""
+  },
+  "ind22": {
+    "codigo": 22,
+    "nome": "Participação da IEES no total de estudantes",
+    "categoria": "Acesso e Inclusão",
+    "formula": "Estudantes da IEES / estudantes totais x 100",
+    "unidade": "Percentual",
+    "periodicidade": "Anual",
+    "polaridade": "Quanto maior, melhor",
+    "desagregacoes": "Universidade",
+    "dimensao": "Brasil",
+    "fonte": "INEP",
+    "serie": "2020-2024",
+    "atualizacao": "2026-04-01",
+    "ocde": "Matrículas no ensino terciário",
+    "uso": "Mostra o peso discente relativo de cada universidade no conjunto analisado.",
+    "link": "https://www.gov.br/inep/pt-br/acesso-a-informacao/dados-abertos/microdados/censo-da-educacao-superior",
+    "observacoes": ""
+  },
+  "ind23": {
+    "codigo": 23,
+    "nome": "Relação estudantes por vaga",
+    "categoria": "Acesso e Inclusão",
+    "formula": "Estudantes / vagas",
+    "unidade": "Razão",
+    "periodicidade": "Anual",
+    "polaridade": "Quanto maior, melhor",
+    "desagregacoes": "Universidade; Tipo de curso",
+    "dimensao": "Brasil",
+    "fonte": "INEP",
+    "serie": "2020-2024",
+    "atualizacao": "2026-04-01",
+    "ocde": "Sem correspondência direta",
+    "uso": "Aproxima o nível de ocupação relativa da oferta total disponível.",
+    "link": "https://www.gov.br/inep/pt-br/acesso-a-informacao/dados-abertos/microdados/censo-da-educacao-superior",
+    "observacoes": ""
+  },
+  "ind24": {
+    "codigo": 24,
+    "nome": "Taxa de ocupação das vagas de ingresso",
+    "categoria": "Acesso e Inclusão",
+    "formula": "Alunos ingressantes / vagas de ingresso x 100",
+    "unidade": "Percentual",
+    "periodicidade": "Anual",
+    "polaridade": "Quanto maior, melhor",
+    "desagregacoes": "Universidade; Tipo de curso",
+    "dimensao": "Brasil",
+    "fonte": "INEP",
+    "serie": "2020-2024",
+    "atualizacao": "2026-04-01",
+    "ocde": "Ingresso no ensino terciário",
+    "uso": "Mede o aproveitamento da oferta inicial do processo seletivo.",
+    "link": "https://www.gov.br/inep/pt-br/acesso-a-informacao/dados-abertos/microdados/censo-da-educacao-superior",
+    "observacoes": ""
+  },
+  "ind25": {
+    "codigo": 25,
+    "nome": "Vagas de ingresso não ocupadas",
+    "categoria": "Acesso e Inclusão",
+    "formula": "Vagas de ingresso - alunos ingressantes",
+    "unidade": "Número",
+    "periodicidade": "Anual",
+    "polaridade": "Quanto menor, melhor",
+    "desagregacoes": "Universidade; Tipo de curso",
+    "dimensao": "Brasil",
+    "fonte": "INEP",
+    "serie": "2020-2024",
+    "atualizacao": "2026-04-01",
+    "ocde": "Sem correspondência direta",
+    "uso": "Mede o volume de ociosidade inicial da oferta.",
+    "link": "https://www.gov.br/inep/pt-br/acesso-a-informacao/dados-abertos/microdados/censo-da-educacao-superior",
+    "observacoes": ""
+  },
+  "ind26": {
+    "codigo": 26,
+    "nome": "Taxa de ocupação das vagas",
+    "categoria": "Acesso e Inclusão",
+    "formula": "Alunos matriculados / vagas totais x 100",
+    "unidade": "Percentual",
+    "periodicidade": "Anual",
+    "polaridade": "Quanto maior, melhor",
+    "desagregacoes": "Universidade; Tipo de curso",
+    "dimensao": "Brasil",
+    "fonte": "INEP",
+    "serie": "2020-2024",
+    "atualizacao": "2026-04-01",
+    "ocde": "Participação no ensino terciário",
+    "uso": "Mede a proporção efetivamente preenchida da oferta disponível.",
+    "link": "https://www.gov.br/inep/pt-br/acesso-a-informacao/dados-abertos/microdados/censo-da-educacao-superior",
+    "observacoes": ""
+  },
+  "ind27": {
+    "codigo": 27,
+    "nome": "Taxa de concluintes",
+    "categoria": "Permanência e Conclusão",
+    "formula": "Alunos concluintes / vagas de ingresso x 100",
+    "unidade": "Percentual",
+    "periodicidade": "Anual",
+    "polaridade": "Quanto maior, melhor",
+    "desagregacoes": "Universidade; Tipo de curso",
+    "dimensao": "Brasil",
+    "fonte": "INEP",
+    "serie": "2020-2024",
+    "atualizacao": "2026-04-01",
+    "ocde": "Conclusão no ensino terciário",
+    "uso": "Mede a proporção de concluintes em relação à oferta inicial de vagas.",
+    "link": "https://www.gov.br/inep/pt-br/acesso-a-informacao/dados-abertos/microdados/censo-da-educacao-superior",
+    "observacoes": ""
+  },
+  "ind28": {
+    "codigo": 28,
+    "nome": "Vagas não ocupadas",
+    "categoria": "Acesso e Inclusão",
+    "formula": "Vagas totais - alunos matriculados",
+    "unidade": "Número",
+    "periodicidade": "Anual",
+    "polaridade": "Quanto menor, melhor",
+    "desagregacoes": "Universidade; Tipo de curso",
+    "dimensao": "Brasil",
+    "fonte": "INEP",
+    "serie": "2020-2024",
+    "atualizacao": "2026-04-01",
+    "ocde": "Sem correspondência direta",
+    "uso": "Mede o estoque de ociosidade global da oferta.",
+    "link": "https://www.gov.br/inep/pt-br/acesso-a-informacao/dados-abertos/microdados/censo-da-educacao-superior",
+    "observacoes": ""
+  },
+  "ind29": {
+    "codigo": 29,
+    "nome": "Taxa de ocupação por grau",
+    "categoria": "Acesso e Inclusão",
+    "formula": "Alunos do grau / vagas do grau x 100",
+    "unidade": "Percentual",
+    "periodicidade": "Anual",
+    "polaridade": "Quanto maior, melhor",
+    "desagregacoes": "Tipo de curso; Universidade",
+    "dimensao": "Brasil",
+    "fonte": "INEP",
+    "serie": "2020-2024",
+    "atualizacao": "2026-04-01",
+    "ocde": "Sem correspondência direta",
+    "uso": "Permite detectar diferenças de preenchimento entre bacharelado, licenciatura e tecnólogo.",
+    "link": "https://www.gov.br/inep/pt-br/acesso-a-informacao/dados-abertos/microdados/censo-da-educacao-superior",
+    "observacoes": ""
+  },
+  "ind30": {
+    "codigo": 30,
+    "nome": "Taxa de ocupação - Diurno",
+    "categoria": "Acesso e Inclusão",
+    "formula": "Alunos do turno / vagas do turno x 100",
+    "unidade": "Percentual",
+    "periodicidade": "Anual",
+    "polaridade": "Quanto maior, melhor",
+    "desagregacoes": "Universidade; Turno",
+    "dimensao": "Brasil",
+    "fonte": "INEP",
+    "serie": "2020-2024",
+    "atualizacao": "2026-04-01",
+    "ocde": "Sem correspondência direta",
+    "uso": "Permite detectar turnos com maior ou menor preenchimento.",
+    "link": "https://www.gov.br/inep/pt-br/acesso-a-informacao/dados-abertos/microdados/censo-da-educacao-superior",
+    "observacoes": ""
+  },
+  "ind31": {
+    "codigo": 31,
+    "nome": "Taxa de ocupação - Noturno",
+    "categoria": "Acesso e Inclusão",
+    "formula": "Alunos do turno / vagas do turno x 101",
+    "unidade": "Percentual",
+    "periodicidade": "Anual",
+    "polaridade": "Quanto maior, melhor",
+    "desagregacoes": "Universidade; Turno",
+    "dimensao": "Brasil",
+    "fonte": "INEP",
+    "serie": "2020-2024",
+    "atualizacao": "2026-04-01",
+    "ocde": "Sem correspondência direta",
+    "uso": "Permite detectar turnos com maior ou menor preenchimento.",
+    "link": "https://www.gov.br/inep/pt-br/acesso-a-informacao/dados-abertos/microdados/censo-da-educacao-superior",
+    "observacoes": ""
+  },
+  "ind32": {
+    "codigo": 32,
+    "nome": "Taxa de ocupação por município",
+    "categoria": "Oferta e Territorialização",
+    "formula": "Alunos do município / vagas do município x 100",
+    "unidade": "Percentual",
+    "periodicidade": "Anual",
+    "polaridade": "Quanto maior, melhor",
+    "desagregacoes": "Município; Universidade; Tipo de curso",
+    "dimensao": "Brasil",
+    "fonte": "INEP",
+    "serie": "2020-2024",
+    "atualizacao": "2026-04-01",
+    "ocde": "Sem correspondência direta",
+    "uso": "Permite detectar concentração territorial da ocupação da oferta.",
+    "link": "https://www.gov.br/inep/pt-br/acesso-a-informacao/dados-abertos/microdados/censo-da-educacao-superior",
+    "observacoes": ""
+  },
+  "ind33": {
+    "codigo": 33,
+    "nome": "Egressos IEES",
+    "categoria": "Inserção Profissional",
+    "formula": "Somatório do número de egressos",
+    "unidade": "Número",
+    "periodicidade": "Anual",
+    "polaridade": "Quanto maior, melhor",
+    "desagregacoes": "Universidade",
+    "dimensao": "Paraná",
+    "fonte": "SETI / RAIS",
+    "serie": "RAIS 2023-2025",
+    "atualizacao": "2026-04-01",
+    "ocde": "Sem correspondência direta",
+    "uso": "Mede a quantidade total de formados da IES e da coorte.",
+    "link": "Dados internos da SETI / https://www.gov.br/trabalho-e-emprego/pt-br/assuntos/estatisticas-trabalho/microdados-rais-e-caged",
+    "observacoes": ""
+  },
+  "ind34": {
+    "codigo": 34,
+    "nome": "Egressos inseridos no mercado de trabalho formal (Região Sul)",
+    "categoria": "Inserção Profissional",
+    "formula": "Somatório do número de egressos encontrados nas RAIS (Sul)",
+    "unidade": "Número",
+    "periodicidade": "Anual",
+    "polaridade": "Quanto maior, melhor",
+    "desagregacoes": "Universidade; Região",
+    "dimensao": "Paraná",
+    "fonte": "SETI / RAIS",
+    "serie": "RAIS 2023-2025",
+    "atualizacao": "2026-04-01",
+    "ocde": "Sem correspondência direta",
+    "uso": "Mede a quantidade de egressos localizados na RAIS no recorte geográfico amplo.",
+    "link": "Dados internos da SETI / https://www.gov.br/trabalho-e-emprego/pt-br/assuntos/estatisticas-trabalho/microdados-rais-e-caged",
+    "observacoes": ""
+  },
+  "ind35": {
+    "codigo": 35,
+    "nome": "Taxa de inserção de egressos (Região Sul)",
+    "categoria": "Inserção Profissional",
+    "formula": "Egressos encontrados na região Sul  / Egressos x 100",
+    "unidade": "Percentual",
+    "periodicidade": "Anual",
+    "polaridade": "Quanto maior, melhor",
+    "desagregacoes": "Universidade; Região; Tipo de curso",
+    "dimensao": "Paraná",
+    "fonte": "SETI / RAIS",
+    "serie": "RAIS 2023-2025",
+    "atualizacao": "2026-04-01",
+    "ocde": "Taxa de emprego de graduados do ensino terciário",
+    "uso": "Mede a proporção de egressos encontrados no recorte geográfico amplo. Permite avaliar o nível de empregabilidade dos egressos, podendo ser desagregado por tipo de curso (bacharelado, licenciatura e tecnólogo), território ou instituição.",
+    "link": "Dados internos da SETI / https://www.gov.br/trabalho-e-emprego/pt-br/assuntos/estatisticas-trabalho/microdados-rais-e-caged",
+    "observacoes": ""
+  },
+  "ind36": {
+    "codigo": 36,
+    "nome": "Egressos inseridos no mercado de trabalho formal (Paraná)",
+    "categoria": "Inserção Profissional",
+    "formula": "Egressos encontrados no Paraná",
+    "unidade": "Número",
+    "periodicidade": "Anual",
+    "polaridade": "Quanto maior, melhor",
+    "desagregacoes": "Universidade",
+    "dimensao": "Paraná",
+    "fonte": "SETI / RAIS",
+    "serie": "RAIS 2023-2025",
+    "atualizacao": "2026-04-01",
+    "ocde": "Sem correspondência direta",
+    "uso": "Mede a quantidade de egressos localizados formalmente no Paraná.",
+    "link": "Dados internos da SETI / https://www.gov.br/trabalho-e-emprego/pt-br/assuntos/estatisticas-trabalho/microdados-rais-e-caged",
+    "observacoes": ""
+  },
+  "ind37": {
+    "codigo": 37,
+    "nome": "Taxa de inserção de egressos no mercado de trabalho no Paraná",
+    "categoria": "Inserção Profissional",
+    "formula": "Egressos encontrados no Paraná / Somatório do número de egressos x 100",
+    "unidade": "Percentual",
+    "periodicidade": "Anual",
+    "polaridade": "Quanto maior, melhor",
+    "desagregacoes": "Universidade; Tipo de curso; Região",
+    "dimensao": "Paraná",
+    "fonte": "SETI / RAIS",
+    "serie": "RAIS 2023-2025",
+    "atualizacao": "2026-04-01",
+    "ocde": "Taxa regional de emprego de graduados do ensino terciário",
+    "uso": "Mede a proporção de egressos com vínculo formal no Paraná. Permite avaliar o nível de empregabilidade dos egressos, podendo ser desagregado por tipo de curso (bacharelado, licenciatura e tecnólogo), território ou instituição.",
+    "link": "Dados internos da SETI / https://www.gov.br/trabalho-e-emprego/pt-br/assuntos/estatisticas-trabalho/microdados-rais-e-caged",
+    "observacoes": ""
+  },
+  "ind38": {
+    "codigo": 38,
+    "nome": "Egressos aderentes ao filtro CBO2 inseridos no mercado de trabalho (Paraná)",
+    "categoria": "Inserção Profissional",
+    "formula": "Egressos encontrados no Paraná + CBO2",
+    "unidade": "Número",
+    "periodicidade": "Anual",
+    "polaridade": "Quanto maior, melhor",
+    "desagregacoes": "Universidade; Área do curso; Tipo de curso",
+    "dimensao": "Paraná",
+    "fonte": "SETI / RAIS",
+    "serie": "RAIS 2023-2025",
+    "atualizacao": "2026-04-01",
+    "ocde": "Sem correspondência direta",
+    "uso": "Mede a quantidade de egressos com vínculo formal no Paraná que atendem ao filtro CBO2.",
+    "link": "Dados internos da SETI / https://www.gov.br/trabalho-e-emprego/pt-br/assuntos/estatisticas-trabalho/microdados-rais-e-caged",
+    "observacoes": ""
+  },
+  "ind39": {
+    "codigo": 39,
+    "nome": "Percentual de egressos empregados no Paraná em ocupações aderentes ao CBO2",
+    "categoria": "Inserção Profissional",
+    "formula": "Egressos encontrados no Paraná + CBO2 / Egressos encontrados no Paraná x 100",
+    "unidade": "Percentual",
+    "periodicidade": "Anual",
+    "polaridade": "Quanto maior, melhor",
+    "desagregacoes": "Universidade; Área do curso; Tipo de curso",
+    "dimensao": "Paraná",
+    "fonte": "SETI / RAIS",
+    "serie": "RAIS 2023-2025",
+    "atualizacao": "2026-04-01",
+    "ocde": "Aderência entre área de formação e ocupação",
+    "uso": "Mede o percentual dos egressos empregados no Paraná que estão em ocupações aderentes ao filtro CBO2.",
+    "link": "Dados internos da SETI / https://www.gov.br/trabalho-e-emprego/pt-br/assuntos/estatisticas-trabalho/microdados-rais-e-caged",
+    "observacoes": ""
+  },
+  "ind40": {
+    "codigo": 40,
+    "nome": "Média salarial dos egressos inseridos no mercado de trabalho do Paraná aderentes ao CBO2",
+    "categoria": "Inserção Profissional",
+    "formula": "Média salarial do grupo Paraná + CBO2",
+    "unidade": "Número",
+    "periodicidade": "Anual",
+    "polaridade": "Quanto maior, melhor",
+    "desagregacoes": "Universidade; Área do curso; Tipo de curso",
+    "dimensao": "Paraná",
+    "fonte": "SETI / RAIS",
+    "serie": "RAIS 2023-2025",
+    "atualizacao": "2026-04-01",
+    "ocde": "Rendimentos de graduados do ensino terciário empregados",
+    "uso": "Permite analisar a remuneração média dos egressos do grupo aderente.",
+    "link": "Dados internos da SETI / https://www.gov.br/trabalho-e-emprego/pt-br/assuntos/estatisticas-trabalho/microdados-rais-e-caged",
+    "observacoes": ""
+  },
+  "ind41": {
+    "codigo": 41,
+    "nome": "Egressos inseridos no mercado formal na cidade-sede da IES",
+    "categoria": "Inserção Profissional",
+    "formula": "Egressos encontrados na cidade-sede da IES",
+    "unidade": "Número",
+    "periodicidade": "Anual",
+    "polaridade": "Quanto maior, melhor",
+    "desagregacoes": "Universidade; Município",
+    "dimensao": "Paraná",
+    "fonte": "SETI / RAIS",
+    "serie": "RAIS 2023-2025",
+    "atualizacao": "2026-04-01",
+    "ocde": "Sem correspondência direta",
+    "uso": "Permite detectar a quantidade de egressos empregados formalmente na cidade-sede da IES.",
+    "link": "Dados internos da SETI / https://www.gov.br/trabalho-e-emprego/pt-br/assuntos/estatisticas-trabalho/microdados-rais-e-caged",
+    "observacoes": ""
+  },
+  "ind42": {
+    "codigo": 42,
+    "nome": "Taxa de egressos empregados formalmente na cidade-sede da IES",
+    "categoria": "Inserção Profissional",
+    "formula": "Egressos encontrados na cidade-sede da IES / Somatório do número de egressos x 100",
+    "unidade": "Percentual",
+    "periodicidade": "Anual",
+    "polaridade": "Quanto maior, melhor",
+    "desagregacoes": "Universidade; Município",
+    "dimensao": "Paraná",
+    "fonte": "SETI / RAIS",
+    "serie": "RAIS 2023-2025",
+    "atualizacao": "2026-04-01",
+    "ocde": "Sem correspondência direta",
+    "uso": "Mede a proporção de egressos empregados formalmente na cidade-sede da IES.",
+    "link": "Dados internos da SETI / https://www.gov.br/trabalho-e-emprego/pt-br/assuntos/estatisticas-trabalho/microdados-rais-e-caged",
+    "observacoes": ""
+  },
+  "ind43": {
+    "codigo": 43,
+    "nome": "Total de códigos de vagas docentes",
+    "categoria": "Qualidade Acadêmica",
+    "formula": "Somatório de Total códigos de vagas (LGU)",
+    "unidade": "Número",
+    "periodicidade": "Mensal",
+    "polaridade": "Quanto maior, melhor",
+    "desagregacoes": "Universidade",
+    "dimensao": "Paraná",
+    "fonte": "SETI / LGU",
+    "serie": "2022-2026",
+    "atualizacao": "2026-04-01",
+    "ocde": "Sem correspondência direta",
+    "uso": "Mede a capacidade formal instalada de vagas docentes da universidade.",
+    "link": "Dados internos da SETI",
+    "observacoes": ""
+  },
+  "ind44": {
+    "codigo": 44,
+    "nome": "Vagas docentes disponíveis para ocupação",
+    "categoria": "Qualidade Acadêmica",
+    "formula": "Somatório de Vagas disponíveis para ocupação por docentes efetivos",
+    "unidade": "Número",
+    "periodicidade": "Mensal",
+    "polaridade": "Quanto maior, melhor",
+    "desagregacoes": "Universidade",
+    "dimensao": "Paraná",
+    "fonte": "SETI / LGU",
+    "serie": "2022-2026",
+    "atualizacao": "2026-04-01",
+    "ocde": "Sem correspondência direta",
+    "uso": "Mede o estoque de vagas efetivamente disponíveis para provimento docente no recorte analisado.",
+    "link": "Dados internos da SETI",
+    "observacoes": ""
+  },
+  "ind45": {
+    "codigo": 45,
+    "nome": "Vagas docentes efetivas ocupadas",
+    "categoria": "Corpo Docente",
+    "formula": "Somatório de Vagas ocupadas por Docentes efetivos",
+    "unidade": "Número",
+    "periodicidade": "Mensal",
+    "polaridade": "Quanto maior, melhor",
+    "desagregacoes": "Universidade",
+    "dimensao": "Paraná",
+    "fonte": "SETI / Sistema de códigos de vagas",
+    "serie": "2022-2026",
+    "atualizacao": "2026-04-01",
+    "ocde": "Sem correspondência direta",
+    "uso": "Mede o volume de posições docentes efetivamente preenchidas.",
+    "link": "Dados internos da SETI",
+    "observacoes": ""
+  },
+  "ind46": {
+    "codigo": 46,
+    "nome": "Taxa de ocupação do quadro docente",
+    "categoria": "Corpo Docente",
+    "formula": "Vagas ocupadas por Docentes efetivos / Total códigos de vagas (LGU) x 100",
+    "unidade": "Percentual",
+    "periodicidade": "Mensal",
+    "polaridade": "Quanto maior, melhor",
+    "desagregacoes": "Universidade",
+    "dimensao": "Paraná",
+    "fonte": "SETI / Sistema de códigos de vagas",
+    "serie": "2022-2026",
+    "atualizacao": "2026-04-01",
+    "ocde": "Sem correspondência direta",
+    "uso": "Mostra o quanto do quadro legal total está efetivamente ocupado.",
+    "link": "Dados internos da SETI",
+    "observacoes": ""
+  },
+  "ind47": {
+    "codigo": 47,
+    "nome": "Taxa de utilização das vagas docentes disponíveis",
+    "categoria": "Corpo Docente",
+    "formula": "Vagas ocupadas por Docentes efetivos / Vagas disponíveis para ocupação por docentes efetivos x 100",
+    "unidade": "Percentual",
+    "periodicidade": "Mensal",
+    "polaridade": "Quanto maior, melhor",
+    "desagregacoes": "Universidade",
+    "dimensao": "Paraná",
+    "fonte": "SETI / Sistema de códigos de vagas",
+    "serie": "2022-2026",
+    "atualizacao": "2026-04-01",
+    "ocde": "Sem correspondência direta",
+    "uso": "Mostra o grau de utilização do estoque liberado para ocupação. Em alguns casos pode ultrapassar 100% por efeito de transição/regra administrativa, então exige leitura contextual.",
+    "link": "Dados internos da SETI",
+    "observacoes": ""
+  },
+  "ind48": {
+    "codigo": 48,
+    "nome": "Vagas docentes condicionadas à autorização governamental",
+    "categoria": "Corpo Docente",
+    "formula": "Somatório de Vagas condicionadas autorização governamental (Art. 15)",
+    "unidade": "Número",
+    "periodicidade": "Mensal",
+    "polaridade": "Quanto menor, melhor",
+    "desagregacoes": "Universidade",
+    "dimensao": "Paraná",
+    "fonte": "SETI / LGU",
+    "serie": "2022-2026",
+    "atualizacao": "2026-04-01",
+    "ocde": "Sem correspondência direta",
+    "uso": "Mede o volume de vagas cuja ocupação ainda depende de autorização governamental.",
+    "link": "Dados internos da SETI",
+    "observacoes": ""
+  },
+  "ind49": {
+    "codigo": 49,
+    "nome": "Percentual de vagas condicionadas à autorização governamental",
+    "categoria": "Corpo Docente",
+    "formula": "Vagas condicionadas autorização governamental / Total códigos de vagas (LGU) x 100",
+    "unidade": "Percentual",
+    "periodicidade": "Mensal",
+    "polaridade": "Quanto menor, melhor",
+    "desagregacoes": "Universidade",
+    "dimensao": "Paraná",
+    "fonte": "SETI / LGU",
+    "serie": "2022-2026",
+    "atualizacao": "2026-04-01",
+    "ocde": "Sem correspondência direta",
+    "uso": "Mostra o peso relativo das restrições de autorização sobre o quadro docente.",
+    "link": "Dados internos da SETI",
+    "observacoes": ""
+  },
+  "ind50": {
+    "codigo": 50,
+    "nome": "Quantidade de TIDE atribuído ao corpo docente",
+    "categoria": "Corpo Docente",
+    "formula": "Somatório de Quantidade de TIDE atribuído ao corpo docente",
+    "unidade": "Número",
+    "periodicidade": "Mensal",
+    "polaridade": "Quanto maior, melhor",
+    "desagregacoes": "Universidade",
+    "dimensao": "Paraná",
+    "fonte": "SETI / Sistema de códigos de vagas",
+    "serie": "2022-2026",
+    "atualizacao": "2026-04-01",
+    "ocde": "Sem correspondência direta",
+    "uso": "Mede o volume de vagas disponíveis que estão com TIDE atribuído.",
+    "link": "Dados internos da SETI",
+    "observacoes": ""
+  },
+  "ind51": {
+    "codigo": 51,
+    "nome": "Participação do TIDE no quadro docente disponível",
+    "categoria": "Corpo Docente",
+    "formula": "Quantidade de TIDE atribuído ao corpo docente / Vagas disponíveis para ocupação por docentes efetivos x 100",
+    "unidade": "Percentual",
+    "periodicidade": "Mensal",
+    "polaridade": "Quanto maior, melhor",
+    "desagregacoes": "Universidade",
+    "dimensao": "Paraná",
+    "fonte": "SETI / Sistema de códigos de vagas",
+    "serie": "2022-2026",
+    "atualizacao": "2026-04-01",
+    "ocde": "Sem correspondência direta",
+    "uso": "Mede a participação do regime TIDE dentro do conjunto de vagas disponíveis para docentes efetivos.",
+    "link": "Dados internos da SETI",
+    "observacoes": ""
+  },
+  "ind52": {
+    "codigo": 52,
+    "nome": "Percentual de TIDE não atribuído",
+    "categoria": "Corpo Docente",
+    "formula": "Quantidade de TIDE NÃO atribuído ao corpo docente / Vagas disponíveis para ocupação por docentes efetivos x 100",
+    "unidade": "Percentual",
+    "periodicidade": "Mensal",
+    "polaridade": "Quanto maior, melhor",
+    "desagregacoes": "Universidade",
+    "dimensao": "Paraná",
+    "fonte": "SETI / Sistema de códigos de vagas",
+    "serie": "2022-2026",
+    "atualizacao": "2026-04-01",
+    "ocde": "Sem correspondência direta",
+    "uso": "Mostra a parcela do quadro disponível que não está sob regime TIDE.",
+    "link": "Dados internos da SETI",
+    "observacoes": ""
+  },
+  "ind53": {
+    "codigo": 53,
+    "nome": "Carga horária média de docentes efetivos",
+    "categoria": "Corpo Docente",
+    "formula": "Carga horaria docentes efetivos / Vagas ocupadas por Docentes efetivos",
+    "unidade": "Horas",
+    "periodicidade": "Mensal",
+    "polaridade": "Quanto maior, melhor",
+    "desagregacoes": "Universidade",
+    "dimensao": "Paraná",
+    "fonte": "SETI / Sistema de códigos de vagas",
+    "serie": "2022-2026",
+    "atualizacao": "2026-04-01",
+    "ocde": "Sem correspondência direta",
+    "uso": "Aproxima a intensidade média de carga horária por posição docente efetivamente ocupada.",
+    "link": "Dados internos da SETI",
+    "observacoes": ""
+  },
+  "ind54": {
+    "codigo": 54,
+    "nome": "Carga horária CRES autorizada",
+    "categoria": "Corpo Docente",
+    "formula": "Somatório de Carga Horaria CRES Autorizada Resolução Seti",
+    "unidade": "Horas",
+    "periodicidade": "Mensal",
+    "polaridade": "Quanto maior, melhor",
+    "desagregacoes": "Universidade",
+    "dimensao": "Paraná",
+    "fonte": "SETI",
+    "serie": "2022-2026",
+    "atualizacao": "2026-04-01",
+    "ocde": "Sem correspondência direta",
+    "uso": "Mede a capacidade autorizada de contratação/cobertura por CRES no período.",
+    "link": "Dados internos da SETI",
+    "observacoes": ""
+  },
+  "ind55": {
+    "codigo": 55,
+    "nome": "Carga horária CRES utilizada",
+    "categoria": "Corpo Docente",
+    "formula": "Somatório de Carga Horaria CRES Utilizada",
+    "unidade": "Horas",
+    "periodicidade": "Mensal",
+    "polaridade": "Quanto maior, melhor",
+    "desagregacoes": "Universidade",
+    "dimensao": "Paraná",
+    "fonte": "SETI",
+    "serie": "2022-2026",
+    "atualizacao": "2026-04-01",
+    "ocde": "Sem correspondência direta",
+    "uso": "Mede o volume efetivamente usado de carga horária CRES.",
+    "link": "Dados internos da SETI",
+    "observacoes": ""
+  },
+  "ind56": {
+    "codigo": 56,
+    "nome": "Taxa de utilização da CRES",
+    "categoria": "Corpo Docente",
+    "formula": "Carga Horaria CRES Utilizada / Carga Horaria CRES (Autorizado + Licença) x 100",
+    "unidade": "Percentual",
+    "periodicidade": "Mensal",
+    "polaridade": "Quanto maior, melhor",
+    "desagregacoes": "Universidade",
+    "dimensao": "Paraná",
+    "fonte": "SETI",
+    "serie": "2022-2026",
+    "atualizacao": "2026-04-01",
+    "ocde": "Sem correspondência direta",
+    "uso": "Mostra o aproveitamento da carga horária CRES efetivamente disponível no período.",
+    "link": "Dados internos da SETI",
+    "observacoes": ""
+  },
+  "ind57": {
+    "codigo": 57,
+    "nome": "Saldo de carga horária CRES não utilizada",
+    "categoria": "Corpo Docente",
+    "formula": "Somatório de Carga Horaria Não Utilizada",
+    "unidade": "Horas",
+    "periodicidade": "Mensal",
+    "polaridade": "Quanto menor, melhor",
+    "desagregacoes": "Universidade",
+    "dimensao": "Paraná",
+    "fonte": "SETI",
+    "serie": "2022-2026",
+    "atualizacao": "2026-04-01",
+    "ocde": "Sem correspondência direta",
+    "uso": "Mede o estoque de capacidade temporária não executada.",
+    "link": "Dados internos da SETI",
+    "observacoes": ""
+  },
+  "ind58": {
+    "codigo": 58,
+    "nome": "Taxa de ociosidade da CRES",
+    "categoria": "Corpo Docente",
+    "formula": "Carga Horaria Não Utilizada / Carga Horaria CRES (Autorizado + Licença) x 100",
+    "unidade": "Percentual",
+    "periodicidade": "Mensal",
+    "polaridade": "Quanto menor, melhor",
+    "desagregacoes": "Universidade",
+    "dimensao": "Paraná",
+    "fonte": "SETI",
+    "serie": "2022-2026",
+    "atualizacao": "2026-04-01",
+    "ocde": "Sem correspondência direta",
+    "uso": "Mostra a parcela da capacidade CRES disponível que não foi utilizada.",
+    "link": "Dados internos da SETI",
+    "observacoes": ""
+  },
+  "ind59": {
+    "codigo": 59,
+    "nome": "Participação da CRES no esforço docente total",
+    "categoria": "Corpo Docente",
+    "formula": "Carga Horaria CRES Utilizada / (Carga horaria docentes efetivos + Carga Horaria CRES Utilizada) x 100",
+    "unidade": "Percentual",
+    "periodicidade": "Mensal",
+    "polaridade": "Quanto maior, melhor",
+    "desagregacoes": "Universidade",
+    "dimensao": "Paraná",
+    "fonte": "SETI",
+    "serie": "2022-2026",
+    "atualizacao": "2026-04-01",
+    "ocde": "Sem correspondência direta",
+    "uso": "Ajuda a entender o quanto a universidade depende de carga horária temporária em relação ao esforço docente total observado.",
+    "link": "Dados internos da SETI",
+    "observacoes": ""
+  },
+  "ind60": {
+    "codigo": 60,
+    "nome": "Captação de recursos do CNPq",
+    "categoria": "Pesquisa e Inovação",
+    "formula": "Soma dos valores captados em bolsas, auxílios e projetos de pesquisa no período",
+    "unidade": "Reais (R$)",
+    "periodicidade": "Anual",
+    "polaridade": "Quanto maior, melhor",
+    "desagregacoes": "Universidade",
+    "dimensao": "Brasil",
+    "fonte": "CNPq",
+    "serie": "2020-2025",
+    "atualizacao": "2026-04-01",
+    "ocde": "Sem correspondência direta",
+    "uso": "Mostra o volume de recursos de fomento captados via CNPq pela universidade no período.",
+    "link": "https://www.gov.br/cnpq/pt-br/acesso-a-informacao/dados-abertos/paineis-de-dados",
+    "observacoes": ""
+  },
+  "ind61": {
+    "codigo": 61,
+    "nome": "Número de vínculos de fomento do CNPq",
+    "categoria": "Pesquisa e Inovação",
+    "formula": "Somatório dos Benef. Modal / Ano por universidade e período",
+    "unidade": "Número",
+    "periodicidade": "Anual",
+    "polaridade": "Quanto maior, melhor",
+    "desagregacoes": "Universidade; Área do conhecimento",
+    "dimensao": "Brasil",
+    "fonte": "CNPq",
+    "serie": "2020-2026",
+    "atualizacao": "2026-04-01",
+    "ocde": "Sem correspondência direta",
+    "uso": "Mostra o volume de vínculos de fomento do CNPq registrados para a universidade no período. Não representa o número de pesquisadores únicos, pois a base não possui identificador único do pesquisador e um mesmo indivíduo pode aparecer em mais de um vínculo, modalidade ou ano.",
+    "link": "https://www.gov.br/cnpq/pt-br/acesso-a-informacao/dados-abertos/paineis-de-dados",
+    "observacoes": ""
+  },
+  "ind62": {
+    "codigo": 62,
+    "nome": "Conceito dos programas de pós-graduação no ano de referência",
+    "categoria": "Qualidade Acadêmica",
+    "formula": "Somatória dos conceitos dos programas de pós-graduação / total de programas de pós-graduação com conceito informado",
+    "unidade": "Número",
+    "periodicidade": "Anual",
+    "polaridade": "Quanto maior, melhor",
+    "desagregacoes": "Universidade; Área do conhecimento",
+    "dimensao": "Brasil",
+    "fonte": "CAPES – Base Pós-Graduação",
+    "serie": "2020-2024",
+    "atualizacao": "2026-04-01",
+    "ocde": "Sem correspondência direta",
+    "uso": "Permite segmentar docentes por nível de Qualidade Acadêmica e cruzar posteriormente com perfil docente, bolsa e internacionalização.",
+    "link": "https://www.gov.br/capes/pt-br/acesso-a-informacao/acoes-e-programas/outras-acoes/censo-da-pos-graduacao-stricto-sensu",
+    "observacoes": ""
+  },
+  "ind63": {
+    "codigo": 63,
+    "nome": "Proporção de docentes permanentes da pós-graduação",
+    "categoria": "Corpo Docente",
+    "formula": "Número de docentes permanentes da pós-graduação / total de docentes da pós-graduação x 100",
+    "unidade": "Percentual",
+    "periodicidade": "Anual",
+    "polaridade": "Quanto maior, melhor",
+    "desagregacoes": "Universidade; Programa",
+    "dimensao": "Brasil",
+    "fonte": "CAPES – Base Pós-Graduação",
+    "serie": "2020-2024",
+    "atualizacao": "2026-04-01",
+    "ocde": "Sem correspondência direta",
+    "uso": "Permite medir estabilidade/composição do quadro docente e calcular, no Power BI, a proporção de permanentes por IES, programa, UF ou ano.",
+    "link": "https://www.gov.br/capes/pt-br/acesso-a-informacao/acoes-e-programas/outras-acoes/censo-da-pos-graduacao-stricto-sensu",
+    "observacoes": ""
+  },
+  "ind64": {
+    "codigo": 64,
+    "nome": "Proporção de docentes estrangeiros da pós-graduação",
+    "categoria": "Internacionalização",
+    "formula": "Número de docentes da pós-graduação com nacionalidade diferente de brasileira / total de docentes da pós-graduação x 100",
+    "unidade": "Percentual",
+    "periodicidade": "Anual",
+    "polaridade": "Quanto maior, melhor",
+    "desagregacoes": "Universidade; Programa",
+    "dimensao": "Brasil",
+    "fonte": "CAPES – Base Pós-Graduação",
+    "serie": "2020-2024",
+    "atualizacao": "2026-04-01",
+    "ocde": "Sem correspondência direta",
+    "uso": "Ajuda a analisar grau de internacionalização do corpo docente e comparar programas/IES com maior inserção internacional.",
+    "link": "https://www.gov.br/capes/pt-br/acesso-a-informacao/acoes-e-programas/outras-acoes/censo-da-pos-graduacao-stricto-sensu",
+    "observacoes": ""
+  },
+  "ind65": {
+    "codigo": 65,
+    "nome": "Proporção de docentes da pós-graduação com bolsa de produtividade",
+    "categoria": "Qualidade Acadêmica",
+    "formula": "Número de docentes da pós-graduação com bolsa de produtividade / total de docentes da pós-graduação x 100",
+    "unidade": "Percentual",
+    "periodicidade": "Anual",
+    "polaridade": "Quanto maior, melhor",
+    "desagregacoes": "Universidade; Programa",
+    "dimensao": "Brasil",
+    "fonte": "CAPES – Base Pós-Graduação",
+    "serie": "2020-2024",
+    "atualizacao": "2026-04-01",
+    "ocde": "Sem correspondência direta",
+    "uso": "Permite identificar concentração de docentes com reconhecimento acadêmico e cruzar com conceito do programa, permanência e internacionalização.",
+    "link": "https://www.gov.br/capes/pt-br/acesso-a-informacao/acoes-e-programas/outras-acoes/censo-da-pos-graduacao-stricto-sensu",
+    "observacoes": ""
+  },
+  "ind66": {
+    "codigo": 66,
+    "nome": "Proporção de programas de pós-graduação com conceito CAPES 5, 6 e 7 no ano de referência",
+    "categoria": "Qualidade Acadêmica",
+    "formula": "Número de programas de pós-graduação com conceito CAPES 5, 6 ou 7 / total de programas de pós-graduação com conceito informado x 100",
+    "unidade": "Percentual",
+    "periodicidade": "Anual",
+    "polaridade": "Quanto maior, melhor",
+    "desagregacoes": "Universidade; Área do conhecimento",
+    "dimensao": "Brasil",
+    "fonte": "CAPES – Base Pós-Graduação",
+    "serie": "2020-2024",
+    "atualizacao": "2026-04-01",
+    "ocde": "Sem correspondência direta",
+    "uso": "Facilita análises comparativas e criação de cortes rápidos no Power BI entre programas de maior e menor desempenho.",
+    "link": "https://www.gov.br/capes/pt-br/acesso-a-informacao/acoes-e-programas/outras-acoes/censo-da-pos-graduacao-stricto-sensu",
+    "observacoes": ""
+  },
+  "ind67": {
+    "codigo": 67,
+    "nome": "Taxa de Ocupação de Vagas por Tipo de Curso",
+    "categoria": "Acesso e Inclusão",
+    "formula": "Número de matrículas no tipo de curso / número de vagas ofertadas no tipo de curso × 100",
+    "unidade": "Percentual",
+    "periodicidade": "Anual",
+    "polaridade": "Quanto maior, melhor",
+    "desagregacoes": "Tipo de curso; Universidade; Área do curso",
+    "dimensao": "Brasil",
+    "fonte": "INEP",
+    "serie": "2020-2024",
+    "atualizacao": "2026-04-01",
+    "ocde": "Participação por área de formação",
+    "uso": "Permite avaliar o grau de ocupação da oferta por tipo de formação, identificando diferenças de atratividade entre bacharelado, licenciatura e tecnólogo, podendo ser desagregado por universidade e área do curso.",
+    "link": "https://www.gov.br/inep/pt-br/acesso-a-informacao/dados-abertos/microdados/censo-da-educacao-superior",
+    "observacoes": ""
+  },
+  "ind68": {
+    "codigo": 68,
+    "nome": "Índice de Especialização da Oferta Acadêmica",
+    "categoria": "Oferta e Territorialização",
+    "formula": "Maior valor entre (% de cursos de bacharelado, % de cursos de licenciatura, % de cursos de tecnólogo)",
+    "unidade": "Índice (0 a 1)",
+    "periodicidade": "Anual",
+    "polaridade": "Quanto maior, melhor",
+    "desagregacoes": "Universidade; Tipo de curso",
+    "dimensao": "Brasil",
+    "fonte": "INEP",
+    "serie": "2020-2024",
+    "atualizacao": "2026-04-01",
+    "ocde": "Distribuição por áreas de formação",
+    "uso": "Permite identificar o grau de concentração da oferta acadêmica em um tipo de formação, diferenciando instituições mais especializadas daquelas com oferta mais diversificada, podendo ser analisado por universidade. O resultado será um índice entre 0 e 1.\nInterpretação:\n0,33        Oferta bem diversificada entre os tipos\n0,60        Alguma concentração em um tipo\n0,90        Oferta fortemente especializada em um tipo",
+    "link": "https://www.gov.br/inep/pt-br/acesso-a-informacao/dados-abertos/microdados/censo-da-educacao-superior",
+    "observacoes": ""
+  },
+  "ind69": {
+    "codigo": 69,
+    "nome": "Proporção de Cursos de Licenciatura na Oferta",
+    "categoria": "Oferta e Territorialização",
+    "formula": "Número de cursos de licenciatura / total de cursos × 100",
+    "unidade": "Percentual",
+    "periodicidade": "Anual",
+    "polaridade": "Quanto maior, melhor",
+    "desagregacoes": "Universidade; Tipo de curso",
+    "dimensao": "Brasil",
+    "fonte": "INEP",
+    "serie": "2020-2024",
+    "atualizacao": "2026-04-01",
+    "ocde": "Formação de professores",
+    "uso": "Permite avaliar o peso da formação de professores na estrutura da oferta acadêmica da instituição, relevante para análise de políticas educacionais e formação docente, podendo ser desagregado por universidade.",
+    "link": "https://www.gov.br/inep/pt-br/acesso-a-informacao/dados-abertos/microdados/censo-da-educacao-superior",
+    "observacoes": ""
+  },
+  "ind71": {
+    "codigo": 71,
+    "nome": "Egressos inseridos no mercado formal por município de vínculo",
+    "categoria": "Inserção Profissional",
+    "formula": "Contagem de registros da base RAIS por município de vínculo",
+    "unidade": "Número",
+    "periodicidade": "Anual",
+    "polaridade": "Quanto maior, melhor",
+    "desagregacoes": "Município; Universidade; Curso; Tipo de curso; Coorte",
+    "dimensao": "Paraná",
+    "fonte": "SETI / RAIS",
+    "serie": "RAIS 2023-2025",
+    "atualizacao": "2026-04-01",
+    "ocde": "Distribuição regional do emprego de graduados",
+    "uso": "Permite identificar os municípios que mais absorvem egressos das IEES no mercado formal, revelando polos territoriais de inserção profissional.",
+    "link": "Dados internos da SETI / https://www.gov.br/trabalho-e-emprego/pt-br/assuntos/estatisticas-trabalho/microdados-rais-e-caged",
+    "observacoes": ""
+  },
+  "ind72": {
+    "codigo": 72,
+    "nome": "Participação do município na inserção formal dos egressos",
+    "categoria": "Inserção Profissional",
+    "formula": "Egressos encontrados no município / total de egressos encontrados na RAIS × 100",
+    "unidade": "Percentual",
+    "periodicidade": "Anual",
+    "polaridade": "Quanto maior, melhor",
+    "desagregacoes": "Município; Universidade; Curso; Tipo de curso; Coorte",
+    "dimensao": "Paraná",
+    "fonte": "SETI / RAIS",
+    "serie": "RAIS 2023-2025",
+    "atualizacao": "2026-04-01",
+    "ocde": "Distribuição regional do emprego de graduados",
+    "uso": "Mostra a concentração territorial dos vínculos formais dos egressos, permitindo avaliar o peso relativo de cada município na absorção dos egressos.",
+    "link": "Dados internos da SETI / https://www.gov.br/trabalho-e-emprego/pt-br/assuntos/estatisticas-trabalho/microdados-rais-e-caged",
+    "observacoes": ""
+  },
+  "ind73": {
+    "codigo": 73,
+    "nome": "Egressos inseridos no mercado formal por curso padronizado",
+    "categoria": "Inserção Profissional",
+    "formula": "Contagem de registros da base RAIS por curso padronizado",
+    "unidade": "Número",
+    "periodicidade": "Anual",
+    "polaridade": "Quanto maior, melhor",
+    "desagregacoes": "Curso; Universidade; Tipo de curso; Município; Coorte",
+    "dimensao": "Paraná",
+    "fonte": "SETI / RAIS",
+    "serie": "RAIS 2023-2025",
+    "atualizacao": "2026-04-01",
+    "ocde": "Taxa de emprego de graduados do ensino terciário",
+    "uso": "Permite identificar quais cursos concentram maior número de egressos localizados no mercado formal.",
+    "link": "Dados internos da SETI / https://www.gov.br/trabalho-e-emprego/pt-br/assuntos/estatisticas-trabalho/microdados-rais-e-caged",
+    "observacoes": ""
+  },
+  "ind74": {
+    "codigo": 74,
+    "nome": "Participação do curso na inserção formal dos egressos",
+    "categoria": "Inserção Profissional",
+    "formula": "Egressos encontrados no curso / total de egressos encontrados na RAIS × 100",
+    "unidade": "Percentual",
+    "periodicidade": "Anual",
+    "polaridade": "Quanto maior, melhor",
+    "desagregacoes": "Curso; Universidade; Tipo de curso; Município; Coorte",
+    "dimensao": "Paraná",
+    "fonte": "SETI / RAIS",
+    "serie": "RAIS 2023-2025",
+    "atualizacao": "2026-04-01",
+    "ocde": "Taxa de emprego de graduados do ensino terciário",
+    "uso": "Mostra o peso relativo de cada curso no total de egressos encontrados na RAIS, permitindo comparar a composição da inserção profissional por formação.",
+    "link": "Dados internos da SETI / https://www.gov.br/trabalho-e-emprego/pt-br/assuntos/estatisticas-trabalho/microdados-rais-e-caged",
+    "observacoes": ""
+  },
+  "ind75": {
+    "codigo": 75,
+    "nome": "Egressos inseridos no mercado formal por tipo de curso",
+    "categoria": "Inserção Profissional",
+    "formula": "Contagem de registros da base RAIS por tipo de curso — excluindo registros com classificação \"Não identificado\"",
+    "unidade": "Número",
+    "periodicidade": "Anual",
+    "polaridade": "Quanto maior, melhor",
+    "desagregacoes": "Tipo de curso; Universidade; Curso; Município; Coorte",
+    "dimensao": "Paraná",
+    "fonte": "SETI / RAIS",
+    "serie": "RAIS 2023-2025",
+    "atualizacao": "2026-04-01",
+    "ocde": "Taxa de emprego de graduados do ensino terciário",
+    "uso": "Permite comparar o volume de egressos inseridos no mercado formal entre bacharelado, licenciatura e tecnólogo. Requer tratamento prévio da categoria \"Não identificado\" para evitar distorção nas participações relativas.",
+    "link": "Dados internos da SETI / https://www.gov.br/trabalho-e-emprego/pt-br/assuntos/estatisticas-trabalho/microdados-rais-e-caged",
+    "observacoes": ""
+  },
+  "ind76": {
+    "codigo": 76,
+    "nome": "Diversidade ocupacional dos egressos por curso",
+    "categoria": "Inserção Profissional",
+    "formula": "Contagem distinta de ocupações CBO por curso padronizado",
+    "unidade": "Número",
+    "periodicidade": "Anual",
+    "polaridade": "Quanto maior, melhor",
+    "desagregacoes": "Curso; Universidade; Tipo de curso; Município; Coorte",
+    "dimensao": "Paraná",
+    "fonte": "SETI / RAIS",
+    "serie": "RAIS 2023-2025",
+    "atualizacao": "2026-04-01",
+    "ocde": "Correspondência entre formação e ocupação",
+    "uso": "Mede a variedade de ocupações formais exercidas pelos egressos de cada curso, indicando se a formação leva a trajetórias ocupacionais mais concentradas ou mais diversificadas.",
+    "link": "Dados internos da SETI / https://www.gov.br/trabalho-e-emprego/pt-br/assuntos/estatisticas-trabalho/microdados-rais-e-caged",
+    "observacoes": ""
+  },
+  "ind77": {
+    "codigo": 77,
+    "nome": "Distribuição dos egressos por grande grupo ocupacional CBO2",
+    "categoria": "Inserção Profissional",
+    "formula": "Contagem de registros da base RAIS por grande grupo CBO2",
+    "unidade": "Número",
+    "periodicidade": "Anual",
+    "polaridade": "Quanto maior, melhor",
+    "desagregacoes": "CBO2; Universidade; Curso; Tipo de curso; Município; Coorte",
+    "dimensao": "Paraná",
+    "fonte": "SETI / RAIS",
+    "serie": "RAIS 2023-2025",
+    "atualizacao": "2026-04-01",
+    "ocde": "Correspondência entre formação e ocupação",
+    "uso": "Permite analisar em quais grandes grupos ocupacionais os egressos estão empregados, apoiando leituras sobre o perfil ocupacional da inserção.",
+    "link": "Dados internos da SETI / https://www.gov.br/trabalho-e-emprego/pt-br/assuntos/estatisticas-trabalho/microdados-rais-e-caged",
+    "observacoes": ""
+  },
+  "ind78": {
+    "codigo": 78,
+    "nome": "Participação dos grandes grupos ocupacionais CBO2 na inserção dos egressos",
+    "categoria": "Inserção Profissional",
+    "formula": "Egressos no grupo CBO2 / total de egressos encontrados na RAIS × 100",
+    "unidade": "Percentual",
+    "periodicidade": "Anual",
+    "polaridade": "Quanto maior, melhor",
+    "desagregacoes": "CBO2; Universidade; Curso; Tipo de curso; Município; Coorte",
+    "dimensao": "Paraná",
+    "fonte": "SETI / RAIS",
+    "serie": "RAIS 2023-2025",
+    "atualizacao": "2026-04-01",
+    "ocde": "Correspondência entre formação e ocupação",
+    "uso": "Mostra a distribuição relativa dos egressos por grandes grupos ocupacionais, permitindo identificar concentração em determinados perfis de ocupação.",
+    "link": "Dados internos da SETI / https://www.gov.br/trabalho-e-emprego/pt-br/assuntos/estatisticas-trabalho/microdados-rais-e-caged",
+    "observacoes": ""
+  },
+  "ind79": {
+    "codigo": 79,
+    "nome": "Municípios de destino profissional dos egressos por curso",
+    "categoria": "Inserção Profissional",
+    "formula": "Contagem distinta de municípios com egressos encontrados na RAIS por curso padronizado",
+    "unidade": "Número",
+    "periodicidade": "Anual",
+    "polaridade": "Quanto maior, melhor",
+    "desagregacoes": "Curso; Universidade; Tipo de curso; Coorte",
+    "dimensao": "Paraná",
+    "fonte": "SETI / RAIS",
+    "serie": "RAIS 2023-2025",
+    "atualizacao": "2026-04-01",
+    "ocde": "Distribuição regional do emprego de graduados",
+    "uso": "Mede o alcance territorial da inserção profissional dos egressos de cada curso. A base cobre 514 municípios distintos na região Sul.",
+    "link": "Dados internos da SETI / https://www.gov.br/trabalho-e-emprego/pt-br/assuntos/estatisticas-trabalho/microdados-rais-e-caged",
+    "observacoes": ""
+  },
+  "ind80": {
+    "codigo": 80,
+    "nome": "Índice de dispersão territorial dos egressos por curso",
+    "categoria": "Inserção Profissional",
+    "formula": "Número de municípios distintos com egressos do curso / total de egressos encontrados no curso",
+    "unidade": "Razão",
+    "periodicidade": "Anual",
+    "polaridade": "Quanto maior, melhor",
+    "desagregacoes": "Curso; Universidade; Tipo de curso; Coorte",
+    "dimensao": "Paraná",
+    "fonte": "SETI / RAIS",
+    "serie": "RAIS 2023-2025",
+    "atualizacao": "2026-04-01",
+    "ocde": "Distribuição regional do emprego de graduados",
+    "uso": "Permite comparar cursos quanto à dispersão territorial da inserção profissional. Recomenda-se estabelecer um número mínimo de egressos por curso antes de publicar o índice, pois cursos com poucos formados tendem a apresentar valores artificialmente elevados.",
+    "link": "Dados internos da SETI / https://www.gov.br/trabalho-e-emprego/pt-br/assuntos/estatisticas-trabalho/microdados-rais-e-caged",
+    "observacoes": ""
+  },
+  "ind81": {
+    "codigo": 81,
+    "nome": "Taxa de Execução Orçamentária (Empenho)",
+    "categoria": "Eficiência Orçamentária",
+    "formula": "Empenhado / Orçamento Atualizado × 100",
+    "unidade": "Percentual",
+    "periodicidade": "Anual / Trimestral",
+    "polaridade": "Quanto maior, melhor",
+    "desagregacoes": "Por IES (UO-Sigla); por GND; por Fonte de Recursos; por Ação/Programa",
+    "dimensao": "Paraná",
+    "fonte": "SELO Paraná",
+    "serie": "2018– Abril 2026",
+    "atualizacao": "2026-04-01",
+    "ocde": "Sem correspondência direta",
+    "uso": "Avalia se o aumento de dotação orçamentária se converte em execução real. Permite identificar IES com baixa absorção de recursos e correlacionar com indicadores acadêmicos.",
+    "link": "Dados internos da SETI /  SEFA / https://www.transparencia.pr.gov.br",
+    "observacoes": "Valores abaixo de 85% indicam dificuldades de execução. Valores acima de 100% sinalizam suplementações não previstas."
+  },
+  "ind82": {
+    "codigo": 82,
+    "nome": "Taxa de Liquidação",
+    "categoria": "Eficiência Orçamentária",
+    "formula": "Liquidado / Empenhado × 100",
+    "unidade": "Percentual",
+    "periodicidade": "Anual / Trimestral",
+    "polaridade": "Quanto maior, melhor",
+    "desagregacoes": "Por IES; por GND; por Fonte de Recursos",
+    "dimensao": "Paraná",
+    "fonte": "SELO Paraná",
+    "serie": "2018– Abril 2026",
+    "atualizacao": "2026-04-02",
+    "ocde": "Sem correspondência direta",
+    "uso": "Mede a conversão de empenhos em entrega efetiva de bens/serviços.",
+    "link": "Dados internos da SETI /  SEFA / https://www.transparencia.pr.gov.br",
+    "observacoes": "Taxa de liquidação muito abaixo da taxa de empenho pode indicar restos a pagar elevados."
+  },
+  "ind83": {
+    "codigo": 83,
+    "nome": "Taxa de Pagamento sobre Liquidado",
+    "categoria": "Eficiência Orçamentária",
+    "formula": "Pago / Liquidado × 100",
+    "unidade": "Percentual",
+    "periodicidade": "Anual / Trimestral",
+    "polaridade": "Quanto maior, melhor",
+    "desagregacoes": "Por IES; por GND",
+    "dimensao": "Paraná",
+    "fonte": "SELO Paraná",
+    "serie": "2018– Abril 2026",
+    "atualizacao": "2026-04-03",
+    "ocde": "Sem correspondência direta",
+    "uso": "Sinaliza a capacidade de caixa da IES para honrar obrigações liquidadas. Taxas baixas indicam acúmulo de restos a pagar processados.",
+    "link": "Dados internos da SETI /  SEFA / https://www.transparencia.pr.gov.br",
+    "observacoes": ""
+  },
+  "ind84": {
+    "codigo": 84,
+    "nome": "Grau de Contingenciamento Orçamentário",
+    "categoria": "Eficiência Orçamentária",
+    "formula": "Contingenciado / Orçamento Atualizado × 100",
+    "unidade": "Percentual",
+    "periodicidade": "Anual / Trimestral",
+    "polaridade": "Quanto menor, melhor",
+    "desagregacoes": "Por IES; por GND; por Fonte de Recursos",
+    "dimensao": "Paraná",
+    "fonte": "SELO Paraná",
+    "serie": "2018– Abril 2026",
+    "atualizacao": "2026-04-04",
+    "ocde": "Sem correspondência direta",
+    "uso": "Mede a parcela do orçamento bloqueada por contingenciamento. Permite avaliar o quanto da dotação disponível está efetivamente liberado para execução.",
+    "link": "Dados internos da SETI /  SEFA / https://www.transparencia.pr.gov.br",
+    "observacoes": "O Indicador pode ter cobertura parcial para anos anteriores a 2021."
+  },
+  "ind85": {
+    "codigo": 85,
+    "nome": "Variação da Dotação Orçamentária (Dotação Inicial vs. Atualizada)",
+    "categoria": "Eficiência Orçamentária",
+    "formula": "(Orçamento Atualizado – Dotação Inicial) / Dotação Inicial × 100",
+    "unidade": "Percentual",
+    "periodicidade": "Anual",
+    "polaridade": "Neutra (valores muito positivos ou muito negativos indicam baixa qualidade do planejamento)",
+    "desagregacoes": "Por IES; por GND; por Fonte de Recursos",
+    "dimensao": "Paraná",
+    "fonte": "SELO Paraná",
+    "serie": "2018– Abril 2026",
+    "atualizacao": "2026-04-05",
+    "ocde": "Sem correspondência direta",
+    "uso": "Avalia a qualidade do planejamento orçamentário. Variações elevadas (para mais ou menos) indicam imprevisibilidade no processo de alocação de recursos.",
+    "link": "Dados internos da SETI /  SEFA / https://www.transparencia.pr.gov.br",
+    "observacoes": "Créditos adicionais e suplementações legislativas podem causar variações positivas legítimas, não necessariamente por falha de planejamento."
+  },
+  "ind86": {
+    "codigo": 86,
+    "nome": "Participação de Pessoal e Encargos no Total da Despesa",
+    "categoria": "Estrutura de Gastos",
+    "formula": "Soma do Orçamento Atualizado (GND = 'Pessoal e Encargos Sociais') / Soma do Orçamento Atualizado Total × 100",
+    "unidade": "Percentual",
+    "periodicidade": "Anual",
+    "polaridade": "Neutra (referência setorial: ~75–80% para IES públicas estaduais brasileiras)",
+    "desagregacoes": "Por IES; por Sub-elemento (vencimentos, obrigações patronais, contratos temporários)",
+    "dimensao": "Paraná",
+    "fonte": "SELO Paraná",
+    "serie": "2018– Abril 2026",
+    "atualizacao": "2026-04-06",
+    "ocde": "Sem correspondência direta",
+    "uso": "Indicador de rigidez orçamentária. Permite correlacionar com indicadores de produtividade acadêmica (publicações, titulações por docente).",
+    "link": "Dados internos da SETI /  SEFA / https://www.transparencia.pr.gov.br",
+    "observacoes": "Percentuais acima de 85% indicam rigidez severa. Valores nominais devem ser deflacionados para análises longitudinais. MEC/ANDIFES: média nacional ~75%."
+  },
+  "ind87": {
+    "codigo": 87,
+    "nome": "Participação de Outras Despesas Correntes no Total",
+    "categoria": "Estrutura de Gastos",
+    "formula": "Soma do Orçamento Atualizado (GND = 'Outras Despesas Correntes') / Soma do Orçamento Atualizado Total × 100",
+    "unidade": "Percentual",
+    "periodicidade": "Anual",
+    "polaridade": "Neutra",
+    "desagregacoes": "Por IES; por Elemento de Despesa; por Fonte de Recursos",
+    "dimensao": "Paraná",
+    "fonte": "SELO Paraná",
+    "serie": "2018– Abril 2026",
+    "atualizacao": "2026-04-07",
+    "ocde": "Sem correspondência direta",
+    "uso": "Representa a capacidade de custeio operacional (manutenção, serviços, materiais). Percentuais muito baixos indicam comprometimento da operação cotidiana.",
+    "link": "Dados internos da SETI /  SEFA / https://www.transparencia.pr.gov.br",
+    "observacoes": ""
+  },
+  "ind88": {
+    "codigo": 88,
+    "nome": "Proporção Despesas Correntes vs. Despesas de Capital",
+    "categoria": "Estrutura de Gastos",
+    "formula": "Soma do Orçamento Atualizado (Categoria = 'Despesas Correntes') / Soma do Orçamento Atualizado (Categoria = 'Despesas de Capital')",
+    "unidade": "Razão",
+    "periodicidade": "Anual",
+    "polaridade": "Neutra (razões muito altas indicam baixa capacidade de investimento)",
+    "desagregacoes": "Por IES; por Exercício",
+    "dimensao": "Paraná",
+    "fonte": "SELO Paraná",
+    "serie": "2018– Abril 2026",
+    "atualizacao": "2026-04-08",
+    "ocde": "Sem correspondência direta",
+    "uso": "Indica o equilíbrio entre manutenção das atividades correntes e expansão da capacidade instalada. Razões acima de 20:1 são sinais de alerta para infraestrutura.",
+    "link": "Dados internos da SETI /  SEFA / https://www.transparencia.pr.gov.br",
+    "observacoes": "Exercícios com obras ou aquisições pontuais podem apresentar razões artificialmente baixas. Analisar em série histórica."
+  },
+  "ind89": {
+    "codigo": 89,
+    "nome": "Participação de Recursos Livres (Tesouro Estadual) no Orçamento Total",
+    "categoria": "Autonomia e Diversificação de Recursos",
+    "formula": "Soma do Orçamento Atualizado (Tipo Fonte = 'Recursos Livres') / Soma do Orçamento Atualizado Total × 100",
+    "unidade": "Percentual",
+    "periodicidade": "Anual",
+    "polaridade": "Neutra (alta dependência pode indicar vulnerabilidade a cortes estaduais)",
+    "desagregacoes": "Por IES; por GND",
+    "dimensao": "Paraná",
+    "fonte": "SELO Paraná",
+    "serie": "2018– Abril 2026",
+    "atualizacao": "2026-04-09",
+    "ocde": "Sem correspondência direta",
+    "uso": "Permite avaliar a vulnerabilidade da IES a políticas de austeridade fiscal estadual.",
+    "link": "Dados internos da SETI /  SEFA / https://www.transparencia.pr.gov.br",
+    "observacoes": ""
+  },
+  "ind90": {
+    "codigo": 90,
+    "nome": "Participação de Recursos Próprios no Orçamento Total",
+    "categoria": "Autonomia e Diversificação de Recursos",
+    "formula": "Soma do Orçamento Atualizado (Tipo Fonte = 'Recursos Próprios') / Soma do Orçamento Atualizado Total × 100",
+    "unidade": "Percentual",
+    "periodicidade": "Anual",
+    "polaridade": "Quanto maior, melhor",
+    "desagregacoes": "Por IES; por GND; por Elemento",
+    "dimensao": "Paraná",
+    "fonte": "SELO Paraná",
+    "serie": "2018– Abril 2026",
+    "atualizacao": "2026-04-10",
+    "ocde": "Sem correspondência direta",
+    "uso": "Recursos próprios (taxas, prestação de serviços, convênios) ampliam a autonomia gestora. Correlacionar com indicadores de extensão e transferência de tecnologia do piloto.",
+    "link": "Dados internos da SETI /  SEFA / https://www.transparencia.pr.gov.br",
+    "observacoes": "Recursos arrecadados por fundações de apoio vinculadas às IES não são capturados por esta base. O indicador subestima a autonomia real em IES com forte apoio fundacional."
+  },
+  "ind91": {
+    "codigo": 91,
+    "nome": "Participação de Recursos de Transferências (Federal/Convênios)",
+    "categoria": "Autonomia e Diversificação de Recursos",
+    "formula": "Soma do Orçamento Atualizado (Tipo Fonte = 'Decorrentes de Transferências') / Soma do Orçamento Atualizado Total × 100",
+    "unidade": "Percentual",
+    "periodicidade": "Anual",
+    "polaridade": "Quanto maior, melhor",
+    "desagregacoes": "Por IES; por GND",
+    "dimensao": "Paraná",
+    "fonte": "SELO Paraná",
+    "serie": "2018– Abril 2026",
+    "atualizacao": "2026-04-11",
+    "ocde": "Sem correspondência direta",
+    "uso": "Indica a capacidade da IES de captar recursos federais e de organismos externos. Correlacionar com número de convênios e indicadores de pesquisa do piloto.",
+    "link": "Dados internos da SETI /  SEFA / https://www.transparencia.pr.gov.br",
+    "observacoes": ""
+  },
+  "ind92": {
+    "codigo": 92,
+    "nome": "Participação de Investimentos em Obras e Instalações no Orçamento Total",
+    "categoria": "Capacidade de Investimento",
+    "formula": "Soma do Liquidado (Elemento 449051) / Soma do Orçamento Atualizado Total × 100",
+    "unidade": "Percentual",
+    "periodicidade": "Anual",
+    "polaridade": "Quanto maior, melhor",
+    "desagregacoes": "Por IES; por Exercício",
+    "dimensao": "Paraná",
+    "fonte": "SELO Paraná",
+    "serie": "2018– Abril 2026",
+    "atualizacao": "2026-04-12",
+    "ocde": "Sem correspondência direta",
+    "uso": "Mede o esforço de manutenção e ampliação da infraestrutura física.",
+    "link": "Dados internos da SETI /  SEFA / https://www.transparencia.pr.gov.br",
+    "observacoes": ""
+  },
+  "ind93": {
+    "codigo": 93,
+    "nome": "Participação de Investimentos em Equipamentos e Material Permanente no Orçamento Total",
+    "categoria": "Capacidade de Investimento",
+    "formula": "Soma do Liquidado (Elemento 449052) / Soma do Orçamento Atualizado Total × 100",
+    "unidade": "Percentual",
+    "periodicidade": "Anual",
+    "polaridade": "Quanto maior, melhor",
+    "desagregacoes": "Por IES; por Exercício",
+    "dimensao": "Paraná",
+    "fonte": "SELO Paraná",
+    "serie": "2018– Abril 2026",
+    "atualizacao": "2026-04-13",
+    "ocde": "Sem correspondência direta",
+    "uso": "Indica o ritmo de modernização tecnológica.",
+    "link": "Dados internos da SETI /  SEFA / https://www.transparencia.pr.gov.br",
+    "observacoes": ""
+  },
+  "ind94": {
+    "codigo": 94,
+    "nome": "Percentual de variação da dotação orçamentária em relação à LOA inicial",
+    "categoria": "Eficiência Orçamentária",
+    "formula": "(Orçamento Atualizado – Dotação Inicial) / Dotação Inicial × 100",
+    "unidade": "Percentual",
+    "periodicidade": "Anual",
+    "polaridade": "Neutra (variações muito positivas ou negativas indicam baixa qualidade do planejamento)",
+    "desagregacoes": "Por IES (UO-Sigla); por GND; por Fonte de Recursos",
+    "dimensao": "Paraná",
+    "fonte": "SELO Paraná",
+    "serie": "2018– Abril 2026",
+    "atualizacao": "2026-04-01",
+    "ocde": "Sem correspondência direta",
+    "uso": "Avalia a qualidade do planejamento orçamentário: variações elevadas (positivas ou negativas) indicam imprevisibilidade no processo de alocação de recursos.",
+    "link": "Dados internos da SETI / SEFA / https://www.transparencia.pr.gov.br",
+    "observacoes": "Créditos adicionais e suplementações legislativas podem causar variações positivas legítimas, não necessariamente por falha de planejamento."
+  },
+  "ind95": {
+    "codigo": 95,
+    "nome": "Percentual de execução de liquidação do Orçamento Inicial",
+    "categoria": "Eficiência Orçamentária",
+    "formula": "Liquidado / Dotação Inicial × 100",
+    "unidade": "Percentual",
+    "periodicidade": "Anual / Trimestral",
+    "polaridade": "Quanto maior, melhor (referência: acima de 85% indica boa absorção do orçamento originalmente aprovado)",
+    "desagregacoes": "Por IES (UO-Sigla); por GND; por Fonte de Recursos",
+    "dimensao": "Paraná",
+    "fonte": "SELO Paraná",
+    "serie": "2018– Abril 2026",
+    "atualizacao": "2026-04-01",
+    "ocde": "Sem correspondência direta",
+    "uso": "Permite avaliar se os recursos previstos originalmente na LOA foram efetivamente executados até a etapa de liquidação. Mede o grau de conversão da dotação aprovada em entrega real de bens e serviços, sinalizando a capacidade de execução frente ao planejamento inicial.",
+    "link": "Dados internos da SETI / SEFA / https://www.transparencia.pr.gov.br",
+    "observacoes": "Valores acima de 100% indicam que houve suplementações ao longo do exercício."
+  },
+  "ind96": {
+    "codigo": 96,
+    "nome": "Percentual de execução de liquidação do Orçamento Disponível",
+    "categoria": "Eficiência Orçamentária",
+    "formula": "Liquidado / (Orçamento Atualizado – Contingenciado) × 100",
+    "unidade": "Percentual",
+    "periodicidade": "Anual / Trimestral",
+    "polaridade": "Quanto maior, melhor",
+    "desagregacoes": "Por IES (UO-Sigla); por GND; por Fonte de Recursos",
+    "dimensao": "Paraná",
+    "fonte": "SELO Paraná",
+    "serie": "2018– Abril 2026",
+    "atualizacao": "2026-04-01",
+    "ocde": "Sem correspondência direta",
+    "uso": "Mede a capacidade de execução sobre o orçamento efetivamente liberado para uso, descontando os valores contingenciados.",
+    "link": "Dados internos da SETI / SEFA / https://www.transparencia.pr.gov.br",
+    "observacoes": "O denominador (Orçamento Atualizado – Contingenciado) pode ter cobertura parcial para exercícios anteriores a 2021, nos quais a coluna de contingenciamento pode estar incompleta."
+  },
+  "ind97": {
+    "codigo": 97,
+    "nome": "Percentual de execução de liquidação do Orçamento Atualizado",
+    "categoria": "Eficiência Orçamentária",
+    "formula": "Liquidado / Orçamento Atualizado × 100",
+    "unidade": "Percentual",
+    "periodicidade": "Anual / Trimestral",
+    "polaridade": "Quanto maior, melhor (referência: acima de 85% indica boa absorção do orçamento disponível)",
+    "desagregacoes": "Por IES (UO-Sigla); por GND; por Fonte de Recursos; por Ação/Programa",
+    "dimensao": "Paraná",
+    "fonte": "SELO Paraná",
+    "serie": "2018– Abril 2026",
+    "atualizacao": "2026-04-01",
+    "ocde": "Sem correspondência direta",
+    "uso": "Avalia o quanto do orçamento total atualizado (dotação inicial + créditos adicionais) foi convertido em liquidação efetiva.",
+    "link": "Dados internos da SETI / SEFA / https://www.transparencia.pr.gov.br",
+    "observacoes": "Este indicador mede diretamente a relação entre o orçamento disponível e a entrega, sem depender da etapa de empenho como intermediária."
+  }
+};
+
 // Fonte dos dados reais:
 // students/entrants/graduates/courses/vacancies/dropout/completion → Base Cursos - Brasil.xlsx (INEP 2024)
 // doctors → Base IES - Brasil.xlsx (INEP 2024)
@@ -344,7 +2076,12 @@ function updateQuartilChips(data=null) {
 function setGlobalGroupLevel(val) {
   if (!el.groupLevelFilter) return;
   const current = el.groupLevelFilter.value;
-  el.groupLevelFilter.value = (current === val) ? "all" : val;
+  const next = (current === val) ? "all" : val;
+  el.groupLevelFilter.value = next;
+  if (state.activeTab === "overview") {
+    state.localFilters["overviewClusterBars"] = next;
+    state.synthTableGroup = "all";
+  }
   updateQuartilChips();
   render();
 }
@@ -660,7 +2397,7 @@ function filters(){
   const rawGroupBy = el.groupBy?.value || "v1";
   const groupBy = rawGroupBy === "none" ? "v1" : rawGroupBy;
   const noGroup  = rawGroupBy === "none";
-  return {year:el.yearFilter.value,university:_selectedUniversities,scope:state.scope,dimension:"all",groupBy,noGroup,groupLevel: noGroup ? "all" : (el.groupLevelFilter?.value || "all"),region:"all",result:"composite",effort:"budgetPerStudent",profile:"all",courseType:el.courseTypeFilter?.value||"all",municipality:el.municipalityFilter?.value||"all",course:el.courseFilter?.value||"all",courseArea:el.courseAreaFilter?.value||"all",knowledgeArea:el.knowledgeAreaFilter?.value||"all",turn:el.turnFilter?.value||"all",pgProgram:el.pgProgramFilter?.value||"all",cohort:el.cohortFilter?.value||"all",cbo2:el.cbo2Filter?.value||"all",source:el.sourceFilter?.value||"all",periodicity:el.periodicityFilter?.value||"anual",creditType:el.creditTypeFilter?.value||"all",resourceOrigin:el.resourceOriginFilter?.value||"all",expenseGroup:el.expenseGroupFilter?.value||"all",minDoctors:0,attention:false};
+  return {year:el.yearFilter.value,university:_selectedUniversities,scope:state.scope,dimension:state.comparisonDimension||"all",groupBy,noGroup,groupLevel: noGroup ? "all" : (el.groupLevelFilter?.value || "all"),region:"all",result:"composite",effort:"budgetPerStudent",profile:"all",courseType:el.courseTypeFilter?.value||"all",municipality:el.municipalityFilter?.value||"all",course:el.courseFilter?.value||"all",courseArea:el.courseAreaFilter?.value||"all",knowledgeArea:el.knowledgeAreaFilter?.value||"all",turn:el.turnFilter?.value||"all",pgProgram:el.pgProgramFilter?.value||"all",cohort:el.cohortFilter?.value||"all",cbo2:el.cbo2Filter?.value||"all",source:el.sourceFilter?.value||"all",periodicity:el.periodicityFilter?.value||"anual",creditType:el.creditTypeFilter?.value||"all",resourceOrigin:el.resourceOriginFilter?.value||"all",expenseGroup:el.expenseGroupFilter?.value||"all",minDoctors:0,attention:false};
 }
 function isUniSelected(f,id){return Array.isArray(f.university)&&f.university.includes(id);}
 function uniLabel(){
@@ -1149,6 +2886,11 @@ const IND_FIELD_MAP = {
   ind97: u=>budgetMetrics(u).execUpdated,
 };
 
+IND_FIELD_MAP["students"]  = IND_FIELD_MAP["ind2"];
+IND_FIELD_MAP["courses"]   = IND_FIELD_MAP["ind10"];
+IND_FIELD_MAP["vacancies"] = IND_FIELD_MAP["ind11"];
+IND_FIELD_MAP["graduates"] = IND_FIELD_MAP["ind14"];
+
 window.exportTabData = function exportTabData(tabId) {
   tabId = tabId || state.activeTab;
   const f = filters();
@@ -1465,8 +3207,11 @@ function renderBlockContent(tabId, title, c) {
   if (tabId === "employment") return title.includes("salário") ? `<article class="visual-card">${prOnly ? barsWithBrRef(d, u => u.salary, formatCurrency, brVal("salary"), false) : barsWithBrRef(d, u => u.salary, formatCurrency, null, true)}</article>${prOnly ? nationalUnavailableNote("distribuição regional de egressos") : ""}` : title.includes("Inserção") ? `<article class="visual-card">${brRefBars(d, u => u.employment, formatPercent, "employment")}</article>` : metricTable(d, [["IEES", u => u.sigla], ["Município", u => u.municipality], ["Inserção PR", u => formatPercent(u.employment)], ["Dispersão", u => `${u.territory} pts`]], title);
   if (tabId === "efficiency" && title.includes("Matriz")) return efficiency(c);
   if (tabId === "efficiency" && title.includes("Composição")) return `${metricTable(d, [["IEES", u => u.sigla], ["Orçamento", u => formatCurrencyMillions(u.budget)], ["Pessoal", u => formatPercent(u.personnel)], ["Suplementação", u => formatPercent(u.supplementation)]], title)}${prOnly ? nationalUnavailableNote("execução orçamentária (SELO)") : ""}`;
-  if (tabId === "efficiency") return `<div class="chart-grid"><article class="visual-card">${bars(d, u => u.execution, formatPercent)}</article><article class="visual-card">${bars(d, u => u.liquidation, formatPercent)}</article></div>`;
-  return `<article class="visual-card"><p class="card-subtitle">${title}</p>${bars(d, res.get, res.format)}</article>`;
+  if (tabId === "efficiency") return `<div class="chart-grid">
+    <article class="visual-card"><h3>IND-81 · Taxa de execução orçamentária</h3><p class="card-subtitle">Empenho / Orçamento Atualizado × 100. Fonte: SELO Paraná.</p>${bars(d, u => u.execution, formatPercent)}</article>
+    <article class="visual-card"><h3>IND-82 · Taxa de liquidação</h3><p class="card-subtitle">Liquidado / Empenhado × 100. Fonte: SELO Paraná.</p>${bars(d, u => u.liquidation, formatPercent)}</article>
+  </div>`;
+  return `<article class="visual-card"><h3>${res.label}</h3><p class="card-subtitle">${title} · ${res.label}</p>${bars(d, res.get, res.format)}</article>`;
 }
 
 function bindModeSelector() {
@@ -1710,8 +3455,7 @@ function hasClusterFilter(c) {
 }
 
 function overviewActiveGroup(c) {
-  const localGroup = state.activeTab === "overview" ? getLocalFilter("overviewClusterBars") : "all";
-  if (localGroup !== "all") return localGroup;
+  if (state.activeTab === "overview") return getLocalFilter("overviewClusterBars");
   return hasClusterFilter(c) ? c.f.groupLevel : "all";
 }
 
@@ -2128,73 +3872,130 @@ function renderSystemAlerts(c) {
 /* Abas 2 e 3 - comparação por dimensão e acesso/oferta orientados a cluster */
 state.comparisonShowOnlyCluster = state.comparisonShowOnlyCluster ?? true;
 state.radarReference = state.radarReference || "cluster";
+state.comparisonDimension = state.comparisonDimension || "all";
+state.retentionCourseType = state.retentionCourseType || "Bacharelado";
 
 var comparisonIndicatorSets = {
-  acesso: {
-    label: "Acesso e Oferta",
+  acessoInclusao: {
+    label: "Acesso e Inclusão",
     indicators: [
-      { code: "IND-26", name: "Ocupação vagas", polarity: "↑", get: u => u.occupancy, fmt: formatPercent },
-      { code: "IND-3",  name: "Ocupação vagas iniciais", polarity: "↑", get: u => u.ingressOccupancy!=null?u.ingressOccupancy:round(u.entrants/Math.max(u.vacanciesNova!=null?u.vacanciesNova:u.vacancies*.82,1)*100,1), fmt: formatPercent },
-      { code: "IND-24", name: "Ocupação ingresso", polarity: "↑", get: u => u.occupancy, fmt: formatPercent },
-      { code: "IND-4",  name: "Ingressantes escola pública", polarity: "↑", get: u => publicSchoolShare(u), fmt: formatPercent },
-      { code: "IND-21", name: "Estudantes por curso", polarity: "~", get: u => u.students / Math.max(u.courses, 1), fmt: v => formatNumber(v) }
+      { code:"IND-26", name:"Taxa de ocupação das vagas",    polarity:"↑", get:u=>u.occupancy, fmt:formatPercent },
+      { code:"IND-3",  name:"Ocupação vagas iniciais",       polarity:"↑", get:u=>u.ingressOccupancy!=null?u.ingressOccupancy:round(u.entrants/Math.max(u.vacanciesNova!=null?u.vacanciesNova:u.vacancies*.82,1)*100,1), fmt:formatPercent },
+      { code:"IND-4",  name:"Ingressantes escola pública",   polarity:"↑", get:u=>publicSchoolShare(u), fmt:formatPercent },
+      { code:"IND-28", name:"Vagas não ocupadas",            polarity:"↓", get:u=>u.vacanciesUnfilled!=null?u.vacanciesUnfilled:Math.max(0,Math.round(u.vacancies*(1-u.occupancy/100))), fmt:formatNumber }
     ]
   },
-  permanencia: {
-    label: "Permanência e Formação",
+  permanenciaConc: {
+    label: "Permanência e Conclusão",
     indicators: [
-      { code: "IND-5", name: "Desvinculação", polarity: "↓", get: u => u.dropout, fmt: formatPercent },
-      { code: "IND-27", name: "Taxa de concluintes", polarity: "↑", get: u => u.completion, fmt: formatPercent },
-      { code: "IND-14", name: "Concluintes", polarity: "↑", get: u => u.graduates, fmt: formatNumber }
+      { code:"IND-5",  name:"Taxa de desvinculação",         polarity:"↓", get:u=>u.dropout, fmt:formatPercent },
+      { code:"IND-27", name:"Taxa de concluintes",           polarity:"↑", get:u=>u.completion, fmt:formatPercent },
+      { code:"IND-14", name:"Concluintes",                   polarity:"↑", get:u=>u.graduates, fmt:formatNumber },
+      { code:"IND-7",  name:"Mobilidade acadêmica",          polarity:"↑", get:u=>u.mobility??0, fmt:formatPercent }
     ]
   },
-  qualidade: {
-    label: "Qualidade e Pós-Graduação",
+  qualidadeAcad: {
+    label: "Qualidade Acadêmica",
     indicators: [
-      { code: "IND-6", name: "Docentes doutores", polarity: "↑", get: u => u.doctors, fmt: formatPercent },
-      { code: "IND-62", name: "Conceito CAPES", polarity: "↑", get: u => u.capes, fmt: v => v.toFixed(1) },
-      { code: "IND-66", name: "CAPES 5, 6 e 7", polarity: "↑", get: u => u.pg ? u.pgTop / u.pg * 100 : 0, fmt: formatPercent },
-      { code: "IND-65", name: "Docentes PG com bolsa", polarity: "↑", get: u => clamp(u.cnpq * 1.35 + u.pgTop * 1.1, 3, 68), fmt: formatPercent },
-      { code: "IND-60", name: "Captação CNPq", polarity: "↑", get: u => u.cnpq, fmt: formatCurrencyMillions }
+      { code:"IND-6",  name:"Docentes com doutorado",        polarity:"↑", get:u=>u.doctors, fmt:formatPercent },
+      { code:"IND-62", name:"Conceito CAPES",                polarity:"↑", get:u=>u.capes, fmt:v=>v.toFixed(1) },
+      { code:"IND-66", name:"Programas CAPES 5, 6 e 7",      polarity:"↑", get:u=>u.pg?u.pgTop/u.pg*100:0, fmt:formatPercent },
+      { code:"IND-9",  name:"Acesso Portal CAPES",           polarity:"↑", get:u=>u.capesPortal??0, fmt:formatPercent }
     ]
   },
-  docente: {
-    label: "Corpo Docente",
+  ofertaTerrit: {
+    label: "Oferta e Territorialização",
     indicators: [
-      { code: "IND-46", name: "Ocupação quadro docente", polarity: "↑", get: u => u.facultyOcc, fmt: formatPercent },
-      { code: "IND-51", name: "Participação TIDE", polarity: "↑", get: u => clamp((u.facultyOcc + u.doctors) / 2, 45, 98), fmt: formatPercent },
-      { code: "IND-56", name: "Utilização CRES", polarity: "~", get: u => u.cres, fmt: formatPercent },
-      { code: "IND-59", name: "CRES no esforço docente", polarity: "~", get: u => clamp(u.cres * 0.72 + (100 - u.facultyOcc) * 0.18, 35, 92), fmt: formatPercent }
+      { code:"IND-10", name:"Total de cursos",               polarity:"↑", get:u=>u.courses, fmt:formatNumber },
+      { code:"IND-11", name:"Total de vagas",                polarity:"↑", get:u=>u.vacancies, fmt:formatNumber },
+      { code:"IND-21", name:"Estudantes por curso",          polarity:"~", get:u=>u.students/Math.max(u.courses,1), fmt:v=>+v.toFixed(1) },
+      { code:"IND-15", name:"Vagas por curso",               polarity:"~", get:u=>u.courses?+(u.vacancies/u.courses).toFixed(1):0, fmt:v=>+v.toFixed(1) }
     ]
   },
-  insercao: {
+  insercaoProf: {
     label: "Inserção Profissional",
     indicators: [
-      { code: "IND-37", name: "Inserção Paraná", polarity: "↑", get: u => u.employment, fmt: formatPercent },
-      { code: "IND-35", name: "Inserção Região Sul", polarity: "↑", get: u => clamp(u.employment + 5, 0, 100), fmt: formatPercent },
-      { code: "IND-39", name: "Aderência CBO2", polarity: "↑", get: u => clamp(u.employment - 5, 0, 100), fmt: formatPercent },
-      { code: "IND-40", name: "Salário aderente", polarity: "↑", get: u => u.salary, fmt: formatCurrency }
+      { code:"IND-37", name:"Inserção no Paraná",            polarity:"↑", get:u=>u.employment, fmt:formatPercent },
+      { code:"IND-35", name:"Inserção Região Sul",           polarity:"↑", get:u=>clamp(u.employment+5,0,100), fmt:formatPercent },
+      { code:"IND-39", name:"Aderência CBO2",                polarity:"↑", get:u=>clamp(u.employment-5,0,100), fmt:formatPercent },
+      { code:"IND-40", name:"Salário médio egressos",        polarity:"↑", get:u=>u.salary, fmt:formatCurrency }
     ]
   },
-  orcamento: {
-    label: "Orçamento e Desempenho",
+  corpoDocente: {
+    label: "Corpo Docente",
     indicators: [
-      { code: "IND-81", name: "Execução orçamentária", polarity: "↑", get: u => u.execution, fmt: formatPercent },
-      { code: "IND-85", name: "Variação dotação", polarity: "~", get: u => u.supplementation, fmt: formatPercent },
-      { code: "IND-86", name: "Pessoal e encargos", polarity: "~", get: u => u.personnel, fmt: formatPercent },
-      { code: "IND-89", name: "Recursos livres", polarity: "↑", get: u => clamp(100 - u.supplementation - (u.cnpq * 0.45), 62, 96), fmt: formatPercent },
-      { code: "IND-90", name: "Recursos próprios", polarity: "~", get: u => clamp(4 + u.cnpq * 0.55 + u.pgTop * 0.12, 4, 24), fmt: formatPercent }
+      { code:"IND-46", name:"Ocupação quadro docente",       polarity:"↑", get:u=>u.facultyOcc, fmt:formatPercent },
+      { code:"IND-56", name:"Utilização da CRES",            polarity:"~", get:u=>u.cres, fmt:formatPercent },
+      { code:"IND-53", name:"Carga horária média docente",   polarity:"~", get:u=>u.docChMedia||0, fmt:v=>v?+v.toFixed(0):0 },
+      { code:"IND-47", name:"Utilização vagas disponíveis",  polarity:"↑", get:u=>u.docTaxaUtil||u.facultyOcc, fmt:formatPercent }
+    ]
+  },
+  pesquisaInov: {
+    label: "Pesquisa e Inovação",
+    indicators: [
+      { code:"IND-60", name:"Captação CNPq",                 polarity:"↑", get:u=>u.cnpq, fmt:formatCurrencyMillions },
+      { code:"IND-61", name:"Vínculos CNPq",                 polarity:"↑", get:u=>u.vinculos??0, fmt:formatNumber },
+      { code:"IND-65", name:"Docentes com bolsa PQ",         polarity:"↑", get:u=>u.capesDocBolsa??clamp(u.cnpq*1.35+u.pgTop*1.1,3,68), fmt:formatPercent },
+      { code:"IND-66", name:"Programas CAPES 5, 6 e 7",      polarity:"↑", get:u=>u.pg?u.pgTop/u.pg*100:0, fmt:formatPercent }
+    ]
+  },
+  internacionalizacao: {
+    label: "Internacionalização",
+    indicators: [
+      { code:"IND-7",  name:"Mobilidade acadêmica",          polarity:"↑", get:u=>u.mobility??0, fmt:formatPercent },
+      { code:"IND-8",  name:"Docentes estrangeiros",         polarity:"↑", get:u=>u.docForeign??0, fmt:formatPercent },
+      { code:"IND-64", name:"Docentes estrangeiros PG",      polarity:"↑", get:u=>u.capesDocEstrangeiros??0, fmt:formatPercent }
+    ]
+  },
+  eficienciaOrc: {
+    label: "Eficiência Orçamentária",
+    indicators: [
+      { code:"IND-81", name:"Execução orçamentária",         polarity:"↑", get:u=>u.execution, fmt:formatPercent },
+      { code:"IND-82", name:"Taxa de liquidação",            polarity:"↑", get:u=>u.liquidation, fmt:formatPercent },
+      { code:"IND-84", name:"Contingenciamento",             polarity:"↓", get:u=>u.seloContingenc??0, fmt:formatPercent },
+      { code:"IND-95", name:"Liq. sobre orç. inicial",       polarity:"↑", get:u=>u.seloLiqOrcIni??0, fmt:formatPercent }
+    ]
+  },
+  estruturaGastos: {
+    label: "Estrutura de Gastos",
+    indicators: [
+      { code:"IND-86", name:"Pessoal e encargos",            polarity:"~", get:u=>u.personnel, fmt:formatPercent },
+      { code:"IND-87", name:"Outras despesas correntes",     polarity:"~", get:u=>u.seloPartODC??0, fmt:formatPercent },
+      { code:"IND-88", name:"Correntes vs. capital",         polarity:"~", get:u=>u.seloRatioCC??0, fmt:formatPercent },
+      { code:"IND-85", name:"Variação da dotação",           polarity:"~", get:u=>u.supplementation, fmt:formatPercent }
+    ]
+  },
+  autonomiaDivers: {
+    label: "Autonomia e Diversificação de Recursos",
+    indicators: [
+      { code:"IND-89", name:"Recursos livres (Tesouro)",     polarity:"↑", get:u=>u.seloPartTesouro??clamp(100-u.supplementation-(u.cnpq*.45),62,96), fmt:formatPercent },
+      { code:"IND-90", name:"Recursos próprios",             polarity:"~", get:u=>u.seloPartProprio??clamp(4+u.cnpq*.55+u.pgTop*.12,4,24), fmt:formatPercent },
+      { code:"IND-91", name:"Transferências federais",       polarity:"~", get:u=>u.seloPartTransfer??0, fmt:formatPercent }
+    ]
+  },
+  capacidadeInvest: {
+    label: "Capacidade de Investimento",
+    indicators: [
+      { code:"IND-92", name:"Obras e instalações",           polarity:"↑", get:u=>u.seloPartObras??0, fmt:formatPercent },
+      { code:"IND-93", name:"Equipamentos permanentes",      polarity:"~", get:u=>u.seloPartEquip??0, fmt:formatPercent },
+      { code:"IND-94", name:"Variação vs. LOA inicial",      polarity:"~", get:u=>u.seloLiqOrcAtu??0, fmt:formatPercent }
     ]
   }
 };
 
+// Eixo Acesso:               u.occupancy        → IND-26 → Base Cursos INEP       (real)   → BR: brazil.result.occupancy  = 84.1 (benchmark estimado)
+// Eixo Permanência (retenção):100-u.dropout      → IND-5↑ → Base Cursos INEP       (real)   → BR: brazil.result.permanence = 88.1 (benchmark estimado)
+// Eixo Qualidade:             u.doctors          → IND-6  → Base IES INEP          (real)   → BR: brazil.result.doctorate  = 82.6 (benchmark estimado)
+// Eixo Pesquisa:              u.cnpq*1e6/students→ IND-60 → Base CNPq              (real)   → BR: brazil.result.cnpq       = 1700 R$/est. (benchmark estimado)
+// Eixo Inserção:              u.employment       → IND-37 → Base RAIS Egressos     (real)   → BR: brazil.result.employment = 68.4 (benchmark estimado)
+// Eixo Orçamento:             u.execution        → IND-81 → Base SELO PR           (real)   → BR: INDISPONÍVEL — sem campo em brazil.result; não comparável com IEES nacionais
 var radarAxes = [
-  { label: "Acesso", code: "IND-26", get: u => u.occupancy, br: () => brazil.result.occupancy },
-  { label: "Permanência", code: "IND-27", get: u => u.completion, br: () => brazil.result.completion },
-  { label: "Qualidade", code: "IND-6", get: u => u.doctors, br: () => brazil.result.doctorate },
-  { label: "Pesquisa", code: "IND-60", get: u => resultIndicators.cnpq.get(u), br: () => brazil.result.cnpq },
-  { label: "Inserção", code: "IND-37", get: u => u.employment, br: () => brazil.result.employment },
-  { label: "Orçamento", code: "IND-81", get: u => u.execution, br: () => 90 }
+  { label: "Acesso",                 code: "IND-26", get: u => u.occupancy,                 br: () => brazil.result.occupancy  },
+  { label: "Permanência (retenção)", code: "IND-5",  get: u => 100 - u.dropout,             br: () => brazil.result.permanence },
+  { label: "Qualidade",              code: "IND-6",  get: u => u.doctors,                   br: () => brazil.result.doctorate  },
+  { label: "Pesquisa",               code: "IND-60", get: u => resultIndicators.cnpq.get(u),br: () => brazil.result.cnpq       },
+  { label: "Inserção",               code: "IND-37", get: u => u.employment,                br: () => brazil.result.employment },
+  { label: "Orçamento",              code: "IND-81", get: u => u.execution,                 br: () => null, brUnavailable: true }
 ];
 
 var baseRenderBlockContentForCluster = renderBlockContent;
@@ -2211,6 +4012,8 @@ renderTab = function(c) {
   if (id === "overview") {
     const selectorBar = indicatorSelectorBar("overview", tabIndicators["overview"]);
     el.tabContent.innerHTML = `<div class="tab-aba-wrapper" data-tab-id="overview">${summary}${selectorBar}${overview(c)}</div>`;
+  } else if (id === "comparison") {
+    el.tabContent.innerHTML = renderComparisonTab(c, summary);
   } else {
     el.tabContent.innerHTML = renderNumberedTab(id, c, summary);
   }
@@ -2231,8 +4034,62 @@ function clusterRowsFor(c) {
 }
 
 function comparisonDimensionKey(c) {
-  return comparisonIndicatorSets[c.f.dimension] ? c.f.dimension : "acesso";
+  return comparisonIndicatorSets[c.f.dimension] ? c.f.dimension : "all";
 }
+
+function comparisonAllDimIndicators() {
+  return [
+    { code:"IND-26", name:"Ocupação vagas",    polarity:"↑", get:u=>u.occupancy,   fmt:formatPercent },
+    { code:"IND-5",  name:"Desvinculação",     polarity:"↓", get:u=>u.dropout,     fmt:formatPercent },
+    { code:"IND-6",  name:"Doutores",          polarity:"↑", get:u=>u.doctors,     fmt:formatPercent },
+    { code:"IND-60", name:"Captação CNPq",     polarity:"↑", get:u=>u.cnpq,        fmt:formatCurrencyMillions },
+    { code:"IND-37", name:"Inserção PR",       polarity:"↑", get:u=>u.employment,  fmt:formatPercent },
+    { code:"IND-81", name:"Execução",          polarity:"↑", get:u=>u.execution,   fmt:formatPercent }
+  ];
+}
+
+function radarAxesForDimension(key) {
+  if (!key || key === "all" || !comparisonIndicatorSets[key]) return radarAxes;
+  const dim = comparisonIndicatorSets[key];
+  const inds = dim.indicators.slice(0, 6);
+  const axes = inds.map(ind => ({ label: ind.name.replace(/\s+.*/,"").slice(0,12), code: ind.code, get: ind.get, br: () => 50 }));
+  while (axes.length < 3) axes.push(radarAxes[axes.length % radarAxes.length]);
+  return axes;
+}
+
+const COMPARISON_DIM_OPTIONS = [
+  ["all",              "Todas as dimensões"],
+  ["acessoInclusao",   "Acesso e Inclusão"],
+  ["permanenciaConc",  "Permanência e Conclusão"],
+  ["qualidadeAcad",    "Qualidade Acadêmica"],
+  ["ofertaTerrit",     "Oferta e Territorialização"],
+  ["insercaoProf",     "Inserção Profissional"],
+  ["corpoDocente",     "Corpo Docente"],
+  ["pesquisaInov",     "Pesquisa e Inovação"],
+  ["internacionalizacao","Internacionalização"],
+  ["eficienciaOrc",    "Eficiência Orçamentária"],
+  ["estruturaGastos",  "Estrutura de Gastos"],
+  ["autonomiaDivers",  "Autonomia e Diversificação de Recursos"],
+  ["capacidadeInvest", "Capacidade de Investimento"]
+];
+
+function renderComparisonDimensionBar() {
+  const dim = state.comparisonDimension || "all";
+  return `<div class="comparison-dim-bar" style="margin-bottom:12px">
+    <label class="metric-selector">
+      <span class="metric-selector-label">Dimensão de análise</span>
+      <select onchange="setComparisonDimension(this.value)">
+        ${COMPARISON_DIM_OPTIONS.map(([k,l]) => `<option value="${k}"${k===dim?" selected":""}>${l}</option>`).join("")}
+      </select>
+    </label>
+  </div>`;
+}
+
+function setComparisonDimension(key) {
+  state.comparisonDimension = key;
+  render();
+}
+window.setComparisonDimension = setComparisonDimension;
 
 function comparisonBlock(title, c) {
   if (title.includes("Tabela")) return comparisonTable(c);
@@ -2240,9 +4097,17 @@ function comparisonBlock(title, c) {
   return comparisonRadar(c);
 }
 
+function renderComparisonTab(c, summary) {
+  const dimBar = renderComparisonDimensionBar();
+  const blocks = tabBlocks["comparison"] || [];
+  return `<div class="tab-aba-wrapper" data-tab-id="comparison">${summary}${dimBar}${blocks.map((title, i) => renderBlock(i + 1, title, comparisonBlock(title, c))).join("")}</div>`;
+}
+
 function comparisonTable(c) {
   const key = comparisonDimensionKey(c);
-  const dimension = comparisonIndicatorSets[key];
+  const dimension = key === "all"
+    ? { label: "Visão geral (principais indicadores)", indicators: comparisonAllDimIndicators() }
+    : comparisonIndicatorSets[key];
   const isBR = isBrasilContext(c);
   const clusterRows = clusterRowsFor(c);
   const showOnly = !explicitClusterActive(c) || state.comparisonShowOnlyCluster;
@@ -2309,7 +4174,11 @@ function comparisonRanking(c) {
   const clusterIds = new Set(clusterRows.map(u => u.id));
   const showAll = explicitClusterActive(c) && !state.comparisonShowOnlyCluster;
   const rows = showAll ? (c.base.length ? c.base : c.all) : clusterRows;
-  const indicator = resultIndicators[c.f.result] || resultIndicators.composite;
+  const dimKey = comparisonDimensionKey(c);
+  const dimSet = dimKey !== "all" ? comparisonIndicatorSets[dimKey] : null;
+  const indicator = dimSet
+    ? { label: dimSet.label, format: v => `${(v * 100).toFixed(0)} pts`, get: u => Math.round(dimensionScore(u, clusterRows, dimSet.indicators) * 100) }
+    : (resultIndicators[c.f.result] || resultIndicators.composite);
   const ranking = [...clusterRows].sort((a, b) => indicator.get(b) - indicator.get(a));
   const rankMap = new Map(ranking.map((u, index) => [u.id, index + 1]));
   const max = Math.max(...rows.map(indicator.get), 1);
@@ -2329,37 +4198,79 @@ function comparisonRanking(c) {
   </article>`;
 }
 
+function radarRefUniverse(c) {
+  return [...universities, ...universitiesBrasil].map(u => byYear(u, c.f.year));
+}
+
 function comparisonRadar(c) {
   const clusterRows = clusterRowsFor(c);
   const universe = explicitClusterActive(c) ? clusterRows : (c.base.length ? c.base : c.all);
   const selected = c.selected && universe.some(u => u.id === c.selected.id) ? c.selected : universe[0];
   if (!selected) return empty();
   const refKey = state.radarReference || "cluster";
-  const selectedValues = radarAxes.map(axis => normalizeForRadar(axis.get(selected), universe.map(axis.get)));
-  const referenceValues = radarAxes.map(axis => normalizeForRadar(radarReferenceValue(axis, refKey, clusterRows, c), universe.map(axis.get)));
+  const axes = radarAxesForDimension(comparisonDimensionKey(c));
+
+  const allUnis = radarRefUniverse(c);
+  const refIees = ["cluster","parana","brasil"].includes(refKey) ? null : allUnis.find(u => u.id === refKey);
+  const isSameIees = refIees && refIees.id === selected.id;
+
+  const isBRref = refKey === "brasil";
+  const unavailableAxes = new Set(isBRref ? axes.map((ax, i) => ax.brUnavailable ? i : -1).filter(i => i >= 0) : []);
+
+  const selectedValues = axes.map(axis => normalizeForRadar(axis.get(selected), universe.map(axis.get)));
+  const referenceValues = isSameIees
+    ? axes.map(() => 0)
+    : axes.map((axis, i) => unavailableAxes.has(i)
+        ? 0
+        : normalizeForRadar(radarReferenceValue(axis, refKey, clusterRows, c, allUnis), universe.map(axis.get)));
+
+  const unavailNote = unavailableAxes.size > 0
+    ? `<p style="font-size:12px;color:var(--gray-500,#888);text-align:center;margin:4px 0 0">⚠ Orçamento: dado de execução orçamentária indisponível para comparação nacional.</p>`
+    : "";
+
+  const refLabel = refIees ? refIees.sigla
+    : refKey === "brasil" ? "Média Brasil"
+    : refKey === "parana" ? "Média do Paraná"
+    : "Média do cluster";
+
+  const prOpts = universities.map(u => byYear(u, c.f.year))
+    .map(u => `<option value="${u.id}"${refKey === u.id ? " selected" : ""}>${u.sigla} – ${u.nome}</option>`).join("");
+  const brOpts = universitiesBrasil.map(u => byYear(u, c.f.year))
+    .map(u => `<option value="${u.id}"${refKey === u.id ? " selected" : ""}>${u.sigla} – ${u.nome}</option>`).join("");
+
+  const warnHtml = isSameIees
+    ? `<p style="text-align:center;color:var(--warn,#c07000);padding:8px 0;font-size:13px">⚠ Selecione uma IEES diferente da analisada (${selected.sigla})</p>`
+    : "";
+
   return `<article class="visual-card radar-card">
     <div class="visual-card-header">
       <div><h3>Radar IEES × referência</h3><p class="card-subtitle">IEES: ${selected.sigla}.</p></div>
       <label class="metric-selector">Comparar com
         <select id="radarReferenceSelect">
-          <option value="cluster" ${refKey === "cluster" ? "selected" : ""}>Média do cluster</option>
-          <option value="parana" ${refKey === "parana" ? "selected" : ""}>Média do Paraná</option>
-          <option value="brasil" ${refKey === "brasil" ? "selected" : ""}>Média Brasil</option>
+          <option value="cluster"${refKey === "cluster" ? " selected" : ""}>Média do cluster</option>
+          <option value="parana"${refKey === "parana" ? " selected" : ""}>Média do Paraná</option>
+          <option value="brasil"${refKey === "brasil" ? " selected" : ""}>Média Brasil</option>
+          <optgroup label="Universidades do Paraná">${prOpts}</optgroup>
+          <optgroup label="Outras estaduais - Brasil">${brOpts}</optgroup>
         </select>
       </label>
     </div>
-    ${radarSvg(selectedValues, referenceValues)}
+    ${warnHtml}${radarSvg(selectedValues, referenceValues, axes, unavailableAxes)}${unavailNote}
     <div class="radar-analysis">
       <strong>Como interpretar este gráfico</strong>
-      <p>Cada eixo representa uma dimensão de desempenho institucional. Quanto maior a área do polígono, melhor o desempenho relativo da IEES. Os valores são normalizados entre 0 e 1 com base nas IEES do grupo de comparação ativo — ou seja, o valor 1 indica a melhor IEES do grupo naquele eixo, e 0 a pior. A linha de referência (pontilhada) representa a média do cluster ou do Paraná, conforme selecionado.</p>
+      <p>Cada eixo representa uma dimensão de desempenho institucional. Quanto maior a área do polígono, melhor o desempenho relativo da IEES. Os valores são normalizados entre 0 e 1 com base nas IEES do grupo de comparação ativo — ou seja, o valor 1 indica a melhor IEES do grupo naquele eixo, e 0 a pior. A linha de referência (pontilhada) representa a referência selecionada.</p>
     </div>
-    <div class="radar-legend"><span class="radar-selected-dot"></span>${selected.sigla}<span class="radar-reference-dot"></span>${refKey === "brasil" ? "Média Brasil" : refKey === "parana" ? "Média do Paraná" : "Média do cluster"}</div>
+    <div class="radar-legend"><span class="radar-selected-dot"></span>${selected.sigla}<span class="radar-reference-dot"></span>${refLabel}</div>
   </article>`;
 }
 
-function radarReferenceValue(axis, refKey, clusterRows, c) {
+function radarReferenceValue(axis, refKey, clusterRows, c, allUnis) {
   if (refKey === "brasil") return axis.br();
   if (refKey === "parana") return mean(c.base.length ? c.base : c.all, axis.get);
+  if (allUnis) {
+    const refIees = allUnis.find(u => u.id === refKey);
+    if (refIees) return axis.get(refIees);
+  }
   return mean(clusterRows, axis.get);
 }
 
@@ -2369,14 +4280,21 @@ function normalizeForRadar(value, values) {
   return clamp((value - min) / (max - min), 0, 1);
 }
 
-function radarSvg(selectedValues, referenceValues) {
-  const cx = 170, cy = 150, radius = 108;
-  const axisPoints = radarAxes.map((axis, i) => radarPoint(cx, cy, radius, i, radarAxes.length));
-  const selectedPoints = selectedValues.map((v, i) => radarPoint(cx, cy, radius * v, i, radarAxes.length)).map(p => `${p.x},${p.y}`).join(" ");
-  const referencePoints = referenceValues.map((v, i) => radarPoint(cx, cy, radius * v, i, radarAxes.length)).map(p => `${p.x},${p.y}`).join(" ");
-  const rings = [0.25, 0.5, 0.75, 1].map(r => `<polygon class="radar-ring" points="${radarAxes.map((_, i) => { const p = radarPoint(cx, cy, radius * r, i, radarAxes.length); return `${p.x},${p.y}`; }).join(" ")}" />`).join("");
-  const axes = axisPoints.map((p, i) => `<line class="radar-axis" x1="${cx}" y1="${cy}" x2="${p.x}" y2="${p.y}" /><text class="radar-label" x="${p.labelX}" y="${p.labelY}">${radarAxes[i].label}</text>`).join("");
-  return `<svg class="radar-svg" viewBox="0 0 340 300" role="img" aria-label="Radar comparativo IEES e referência">${rings}${axes}<polygon class="radar-reference" points="${referencePoints}" /><polygon class="radar-selected" points="${selectedPoints}" /></svg>`;
+function radarSvg(selectedValues, referenceValues, activeAxes, unavailableAxes) {
+  const axDef = activeAxes || radarAxes;
+  const unavail = unavailableAxes || new Set();
+  const cx = 170, cy = 150, radius = 108, n = axDef.length;
+  const axisPoints = axDef.map((axis, i) => radarPoint(cx, cy, radius, i, n));
+  const selectedPoints = selectedValues.map((v, i) => radarPoint(cx, cy, radius * v, i, n)).map(p => `${p.x},${p.y}`).join(" ");
+  const referencePoints = referenceValues.map((v, i) => radarPoint(cx, cy, radius * v, i, n)).map(p => `${p.x},${p.y}`).join(" ");
+  const rings = [0.25, 0.5, 0.75, 1].map(r => `<polygon class="radar-ring" points="${axDef.map((_, i) => { const p = radarPoint(cx, cy, radius * r, i, n); return `${p.x},${p.y}`; }).join(" ")}" />`).join("");
+  const axLines = axisPoints.map((p, i) => {
+    const off = unavail.has(i);
+    const lAttr = off ? ' stroke="#bbb" stroke-dasharray="4,3" opacity="0.45"' : '';
+    const tAttr = off ? ' fill="#bbb" opacity="0.45"' : '';
+    return `<line class="radar-axis" x1="${cx}" y1="${cy}" x2="${p.x}" y2="${p.y}"${lAttr} /><text class="radar-label" x="${p.labelX}" y="${p.labelY}"${tAttr}>${axDef[i].label}</text>`;
+  }).join("");
+  return `<svg class="radar-svg" viewBox="0 0 340 300" role="img" aria-label="Radar comparativo IEES e referência">${rings}${axLines}<polygon class="radar-reference" points="${referencePoints}" /><polygon class="radar-selected" points="${selectedPoints}" /></svg>`;
 }
 
 function radarPoint(cx, cy, r, index, total) {
@@ -2924,17 +4842,58 @@ function retentionScatterBlock(c) {
   const avgDrop = mean(clusterRows, u => u.dropout);
   const avgComp = mean(clusterRows, u => u.completion);
   const maxStudents = Math.max(...rows.map(u => u.students), 1);
-  return `<article class="visual-card"><h3>IND-5 × IND-27 · Dispersão formação</h3><p class="card-subtitle">X = desvinculação; Y = conclusão; tamanho = IND-2 matrículas. Linhas laranja = média do cluster.</p><div class="retention-scatter" style="--avg-x:${clamp(avgDrop,0,100)}%;--avg-y:${clamp(avgComp,0,100)}%">
-    <span class="scatter-ref-v"></span><span class="scatter-ref-h"></span>
-    <div class="scatter-quadrant q-ref">Baixa desvinculação + alta conclusão</div><div class="scatter-quadrant q-flow">Alta desvinculação + alta conclusão</div><div class="scatter-quadrant q-hold">Retenção sem conclusão</div><div class="scatter-quadrant q-risk">Atenção prioritária</div>
-    ${rows.map(u => { const size = 18 + u.students / maxStudents * 26; return `<button class="scatter-point ${clusterIds.has(u.id) ? "in-cluster" : "out-cluster"} ${isUniSelected(c.f, u.id) ? "selected" : ""}" style="left:${clamp(u.dropout,2,96)}%;bottom:${clamp(u.completion,2,96)}%;width:${size}px;height:${size}px" type="button" title="${u.sigla}: desvinculação ${formatPercent(u.dropout)}; conclusão ${formatPercent(u.completion)}">${u.sigla}</button>`; }).join("")}</div></article>`;
+  const dots = rows.map(u => {
+    const size = Math.round(18 + u.students / maxStudents * 26);
+    const x = clamp(u.dropout, 2, 94);
+    const y = clamp(u.completion, 2, 94);
+    const half = Math.round(size / 2);
+    const tooltip = `${u.sigla}: desvinculação ${formatPercent(u.dropout)}; conclusão ${formatPercent(u.completion)}`;
+    // label offset: top-right of the dot, with semi-transparent background to stay readable
+    const lx = half + 4;
+    const ly = half + 2;
+    return `<div class="scatter-item" style="position:absolute;left:${x}%;bottom:${y}%;width:0;height:0">` +
+      `<button class="scatter-point ${clusterIds.has(u.id) ? "in-cluster" : "out-cluster"} ${isUniSelected(c.f, u.id) ? "selected" : ""}" ` +
+      `style="position:absolute;left:-${half}px;bottom:-${half}px;width:${size}px;height:${size}px;display:flex;align-items:center;justify-content:center;font-size:${size >= 28 ? 10 : 0}px;overflow:hidden" ` +
+      `type="button" title="${tooltip}" aria-label="${tooltip}">${size >= 28 ? u.sigla : ""}</button>` +
+      `<span class="scatter-sigla-label" style="position:absolute;left:${lx}px;bottom:${ly}px;font-size:10px;font-weight:600;white-space:nowrap;background:rgba(255,255,255,0.88);padding:0 3px;border-radius:2px;pointer-events:none;line-height:1.4;border:1px solid rgba(0,0,0,0.08)">${u.sigla}</span>` +
+      `</div>`;
+  }).join("");
+  return `<article class="visual-card"><h3>IND-5 × IND-27 · Dispersão formação</h3>
+    <p class="card-subtitle">X = desvinculação (→ pior); Y = taxa de concluintes (↑ melhor); tamanho = matrículas. Linhas laranja = média do cluster.</p>
+    <div class="retention-scatter" style="--avg-x:${clamp(avgDrop,0,100)}%;--avg-y:${clamp(avgComp,0,100)}%">
+      <span class="scatter-ref-v"></span><span class="scatter-ref-h"></span>
+      <div class="scatter-quadrant q-ref">Baixa desvinculação — Alta conclusão</div>
+      <div class="scatter-quadrant q-flow">Alta desvinculação — Alta conclusão</div>
+      <div class="scatter-quadrant q-hold">Baixa desvinculação — Baixa conclusão</div>
+      <div class="scatter-quadrant q-risk">Alta desvinculação — Baixa conclusão</div>
+      ${dots}
+    </div>
+  </article>`;
 }
 
 function retentionCourseRankingBlock(c) {
   const rows = clusterRowsFor(c);
   const types = ["Bacharelado", "Licenciatura", "Tecnólogo"];
-  return `<div class="course-ranking-grid">${types.map(type => `<article class="visual-card"><h3>${type}</h3><p class="card-subtitle">IND-27 conclusão e IND-5 desvinculação, ordenado no cluster.</p>${courseTypeRanking(rows, type)}</article>`).join("")}</div>`;
+  const active = state.retentionCourseType || "Bacharelado";
+  const chips = types.map(type =>
+    `<button class="qchip${type === active ? " qchip-active" : ""}" type="button"
+      onclick="setRetentionCourseType('${type}')">${type}</button>`
+  ).join("");
+  return `<div class="course-ranking-filter">
+    <div class="qchip-strip" style="margin-bottom:12px">${chips}</div>
+    <article class="visual-card">
+      <h3>${active}</h3>
+      <p class="card-subtitle">IND-27 conclusão e IND-5 desvinculação, ordenado no cluster.</p>
+      ${courseTypeRanking(rows, active)}
+    </article>
+  </div>`;
 }
+
+function setRetentionCourseType(type) {
+  state.retentionCourseType = type;
+  render();
+}
+window.setRetentionCourseType = setRetentionCourseType;
 
 function courseTypeMetrics(u, type) {
   const offset = type === "Licenciatura" ? -6 : type === "Tecnólogo" ? 2 : 4;
@@ -3381,7 +5340,7 @@ function qualityDoctorBars(c) {
   const sorted = [...chartRows].sort((a, b) => b.doctors - a.doctors);
   const rankMap = new Map([...rows].sort((a,b)=>b.doctors-a.doctors).map((u,i)=>[u.id,i+1]));
   return `<div class="dual-reference-note"><span>Média cluster: <strong>${formatPercent(clusterMean)}</strong></span><span>Média PR: <strong>${formatPercent(prMean)}</strong></span><span>Referência nacional INEP: <strong>${formatPercent(brazil.result.doctorate)}</strong></span></div>
-  <div class="bars dual-ref-bars quality-doctor-bars" style="--cluster-ref:${clamp(clusterMean,0,100)}%;--pr-ref:${clamp(prMean,0,100)}%">${sorted.map(u => `<div class="bar-row ${clusterIds.has(u.id) ? "in-cluster" : "out-cluster"} ${isUniSelected(c.f, u.id) ? "selected" : ""}"><span class="bar-name" title="${u.nome}">${u.sigla}</span><span class="bar-track"><span class="bar-fill" style="width:${clamp(u.doctors,4,100)}%" title="${formatPercent(u.doctors)} · ${rankMap.get(u.id) || '-'}º no cluster · INEP BR ${formatPercent(brazil.result.doctorate)}"></span><span class="cluster-ref-line" aria-hidden="true"></span><span class="pr-ref-line" aria-hidden="true"></span></span><span class="bar-value">${formatPercent(u.doctors)} · ${rankMap.get(u.id) || "-"}º</span></div>`).join("")}</div>`;
+  <div class="bars dual-ref-bars quality-doctor-bars" style="--cluster-ref:${clamp(clusterMean,0,100)}%;--pr-ref:${clamp(prMean,0,100)}%">${sorted.map(u => { const rank = rankMap.get(u.id) || "-"; return `<div class="bar-row ${clusterIds.has(u.id) ? "in-cluster" : "out-cluster"} ${isUniSelected(c.f, u.id) ? "selected" : ""}"><span class="bar-name" title="${u.nome}">${u.sigla}</span><span class="bar-track"><span class="bar-fill" style="width:${clamp(u.doctors,4,100)}%" title="${formatPercent(u.doctors)} · ${rank}º no cluster · INEP BR ${formatPercent(brazil.result.doctorate)}"></span><span class="cluster-ref-line" aria-hidden="true"></span><span class="pr-ref-line" aria-hidden="true"></span></span><span class="bar-value" title="${formatPercent(u.doctors)} — ${rank}º no cluster">${formatPercent(u.doctors)}</span></div>`; }).join("")}</div>`;
 }
 
 function qualityCapesBlock(c) {
@@ -3438,7 +5397,7 @@ function cnpqBars(c) {
   const chartRows = explicitClusterActive(c) ? allRows : rows;
   const max = Math.max(...chartRows.map(u => u.cnpq), 1);
   const ref = mean(rows, u => u.cnpq);
-  return `<div class="bars-reference-note"><span>Média do cluster: <strong>${formatCurrencyMillions(ref)}</strong></span></div><div class="bars overview-cluster-bars cnpq-bars" style="--ref-pos:${clamp(ref / max * 100,0,100)}%">${[...chartRows].sort((a,b)=>b.cnpq-a.cnpq).map(u => `<div class="bar-row ${clusterIds.has(u.id) ? "in-cluster" : "out-cluster"} ${isUniSelected(c.f, u.id) ? "selected" : ""}"><span class="bar-name" title="${u.nome}">${u.sigla}</span><span class="bar-track"><span class="bar-fill" style="width:${clamp(u.cnpq / max * 100,4,100)}%"></span><span class="bar-reference" aria-hidden="true"></span></span><span class="bar-value">${formatCurrencyMillions(u.cnpq)} · ${formatCurrency(u.cnpq * 1000000 / estimatedFaculty(u))}/doc.</span></div>`).join("")}</div>`;
+  return `<div class="bars-reference-note"><span>Média do cluster: <strong>${formatCurrencyMillions(ref)}</strong></span></div><div class="bars overview-cluster-bars cnpq-bars" style="--ref-pos:${clamp(ref / max * 100,0,100)}%">${[...chartRows].sort((a,b)=>b.cnpq-a.cnpq).map(u => { const perDoc = formatCurrency(u.cnpq * 1000000 / estimatedFaculty(u)); return `<div class="bar-row ${clusterIds.has(u.id) ? "in-cluster" : "out-cluster"} ${isUniSelected(c.f, u.id) ? "selected" : ""}"><span class="bar-name" title="${u.nome}">${u.sigla}</span><span class="bar-track"><span class="bar-fill" style="width:${clamp(u.cnpq / max * 100,4,100)}%"></span><span class="bar-reference" aria-hidden="true"></span></span><span class="bar-value" title="${formatCurrencyMillions(u.cnpq)} · ${perDoc}/doc.">${formatCurrencyMillions(u.cnpq)}</span></div>`; }).join("")}</div>`;
 }
 
 function cnpqScatter(c) {
@@ -5057,7 +7016,7 @@ const indicatorCatalogMeta = {
 
 const tabIndicatorCatalog = {
   overview:[1,2,10,11,12,13,14,26],
-  comparison:[1,2,5,6,26,27,37,81],
+  comparison:[1,3,4,5,6,7,8,9,10,11,14,15,21,26,27,28,35,37,39,40,46,47,53,56,60,61,62,64,65,66,81,82,84,85,86,87,88,89,90,91,92,93,94,95],
   access:[1,3,4,10,11,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,67,68,69],
   retention:[5,12,13,14,27],
   quality:[6,7,8,9,60,61,62,63,64,65,66],
@@ -5084,7 +7043,13 @@ function buildCatalogItems(tabId) {
       polarity: def.polarity === "↑" ? "Quanto maior, melhor (↑)" : def.polarity === "↓" ? "Quanto menor, melhor (↓)" : "—"
     }));
   }
-  const codes = (tabIndicatorCatalog[tabId] || []).map(num => indicatorCode(num));
+  let codes = (tabIndicatorCatalog[tabId] || []).map(num => indicatorCode(num));
+  if (tabId === "comparison") {
+    const dimKey = state.comparisonDimension || "all";
+    if (dimKey !== "all" && comparisonIndicatorSets[dimKey]) {
+      codes = comparisonIndicatorSets[dimKey].indicators.map(ind => ind.code);
+    }
+  }
   return codes.map(code => {
     const def = overviewKpiDefinitions.find(d => d.code === code);
     const meta = indicatorCatalogMeta[code] || {};
@@ -5100,7 +7065,44 @@ function buildCatalogItems(tabId) {
   });
 }
 
+function indCatalogKey(code) {
+  if (!code) return null;
+  // "IND-1" → "ind1",  "IND-27" → "ind27",  "ind1" → "ind1" (passthrough)
+  return String(code).toLowerCase().replace(/^ind-/, "ind");
+}
+
+function renderIndicatorCard(key) {
+  const ind = (typeof INDICATOR_CATALOG !== "undefined") ? INDICATOR_CATALOG[indCatalogKey(key)] : null;
+  if (!ind) return `<p class="ind-empty">Ficha não disponível para este indicador.</p>`;
+  return `<div class="indicator-card">
+  <div class="ind-header">
+    <span class="ind-code">Indicador #${ind.codigo}</span>
+    <h4 class="ind-name">${ind.nome}</h4>
+    <span class="ind-category">${ind.categoria}</span>
+  </div>
+  <div class="ind-fields">
+    ${ind.formula      ? `<div class="ind-field"><label>Fórmula</label><p>${ind.formula}</p></div>` : ""}
+    ${ind.unidade      ? `<div class="ind-field ind-field--sm"><label>Unidade</label><p>${ind.unidade}</p></div>` : ""}
+    ${ind.polaridade   ? `<div class="ind-field ind-field--sm"><label>Polaridade</label><p>${ind.polaridade}</p></div>` : ""}
+    ${ind.fonte        ? `<div class="ind-field ind-field--sm"><label>Fonte</label><p>${ind.fonte}</p></div>` : ""}
+    ${ind.periodicidade? `<div class="ind-field ind-field--sm"><label>Periodicidade</label><p>${ind.periodicidade}</p></div>` : ""}
+    ${ind.serie        ? `<div class="ind-field ind-field--sm"><label>Série Histórica</label><p>${ind.serie}</p></div>` : ""}
+    ${ind.atualizacao  ? `<div class="ind-field ind-field--sm"><label>Última Atualização</label><p>${ind.atualizacao}</p></div>` : ""}
+    ${ind.dimensao     ? `<div class="ind-field ind-field--sm"><label>Abrangência</label><p>${ind.dimensao}</p></div>` : ""}
+    ${ind.desagregacoes? `<div class="ind-field"><label>Desagregações</label><p>${ind.desagregacoes}</p></div>` : ""}
+    ${ind.ocde         ? `<div class="ind-field"><label>Referência OCDE</label><p>${ind.ocde}</p></div>` : ""}
+    ${ind.uso          ? `<div class="ind-field"><label>Uso analítico</label><p>${ind.uso}</p></div>` : ""}
+    ${ind.observacoes  ? `<div class="ind-field"><label>Limitações metodológicas</label><p>${ind.observacoes}</p></div>` : ""}
+    ${ind.link         ? `<div class="ind-field">${ind.link.startsWith("http") ? `<a class="ind-link" href="${ind.link}" target="_blank" rel="noopener">Acessar base de dados ↗</a>` : `<label>Base de dados</label><p>${ind.link}</p>`}</div>` : ""}
+  </div>
+</div>`;
+}
+
 function renderCatalogDetailCard(item) {
+  const key = indCatalogKey(item.code);
+  if (key && typeof INDICATOR_CATALOG !== "undefined" && INDICATOR_CATALOG[key]) {
+    return renderIndicatorCard(key);
+  }
   return `<div class="catalog-card">
     <span class="indicator-code">${item.code}</span>
     <strong>${item.title}</strong>
@@ -5605,6 +7607,8 @@ function resetAllFilters(options = {}) {
   state.activeIndicator = {};
   state.distributionCourseType = "all";
   state.comparisonShowOnlyCluster = false;
+  state.comparisonDimension = "all";
+  state.retentionCourseType = "Bacharelado";
   state.employmentMapOnlyCluster = false;
   state.efficiencyMode = "movimentacao";
   state.efficiencyResult = "completion";
