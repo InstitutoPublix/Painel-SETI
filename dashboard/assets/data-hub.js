@@ -5,11 +5,12 @@ const DATA = {};
 // ── Estado global de carregamento ─────────────────────────────────
 // Exposto globalmente para depuração e para a função de exportação.
 const DATA_STATUS = {
-  loadedBases:    [],   // [{ name, type, timestamp, rows }]
+  loadedBases:    [],   // [{ name, type, timestamp, rows, sourceBases }]
   failedBases:    [],   // [{ name, reason, timestamp }]
   workbooks:      [],   // [{ key, name, file, sheet, rows }]
   lastUpdated:    null,
 };
+
 
 // ── Hub interno de dados reais (v4) ───────────────────────────────
 // Centraliza leitura de planilhas, normalização, tratamento,
@@ -35,19 +36,81 @@ const SETI_DATASETS = {
       salarioMedioCBO2: { index: 9, optional: true, aliases: ["salario medio cbo2", "salario", "media salarial", "ind40"] },
     },
   },
-  // ── XLSX leves (< 5MB) — carregados diretamente pelo browser ──────
+  // ── Catálogo de fontes: enabled=true carrega XLSX direto; enabled=false entra via JSON ──────
   cursos:        { key: "cursos",        name: "Base Cursos - Brasil",         file: "../data/Base Cursos - Brasil.xlsx",                    enabled: false }, // 72MB → JSON
   ies:           { key: "ies",           name: "Base IES - Brasil",            file: "../data/Base IES - Brasil.xlsx",                       enabled: true  },
   cnpq:          { key: "cnpq",          name: "Base CNPq - Brasil",           file: "../data/Base CNPq - Brasil.xlsx",                      enabled: false }, // 47MB → JSON
   capes:         { key: "capes",         name: "Base CAPES- Pós-Graduação",    file: "../data/Base CAPES- Pós-Graduação - Brasil.xlsx",       enabled: false }, // 250MB → JSON
   despesa8050:   { key: "despesa8050",   name: "Relatório da Despesa 8050",     file: "../data/Relatório da Despesa 8050 (2024 - 2026).xlsx", enabled: false }, // substituído por JSON pré-processado
-  clusterizacao: { key: "clusterizacao", name: "Base de dados para clusterização", file: "../data/Base de dados para clusterização.xlsx",    enabled: false }, // 48MB → JSON
+  clusterizacao: { key: "clusterizacao", name: "Base de dados para clusterização", file: "../data/Base de dados para clusterização.xlsx",    enabled: false }, // legado: loader existe, mas o pipeline atual não usa
   docentes:      { key: "docentes",      name: "Base Docentes - Paraná",       file: "../data/Base Docentes - Paraná.xlsx",                  enabled: true  },
   rais:          { key: "rais",          name: "Base RAIS 2023-2024 - Paraná", file: "../data/Base RAIS - 2023 e 2024 - Paraná.xlsx",        enabled: true  },
   cbo2:          { key: "cbo2",          name: "CBO2 _ RAIS 2023-2024",        file: "../data/CBO2 _ RAIS 2023 e 2024 - Paraná.xlsx",        enabled: true  },
   suplementacao: { key: "suplementacao", name: "Suplementação - Paraná",       file: "../data/Dados de Suplementação das Universidades - Paraná.xlsx", enabled: false }, // 23MB → JSON
   fundoParana:   { key: "fundoParana",   name: "Base Fundo Paraná",            file: "../data/Base Fundo Paraná - Paraná.xlsx",              enabled: true  },
 };
+
+const RUNTIME_SOURCE_BASES = {};
+Object.values(SETI_DATASETS).forEach(function(dataset) {
+  RUNTIME_SOURCE_BASES[dataset.name] = (dataset.file || "").replace(/^\.\.\/data\//, "");
+});
+
+function inferPrecomputedSourceBases(data) {
+  const names = new Set();
+  function visit(value) {
+    if (value == null) return;
+    if (typeof value === "string") {
+      const firstPart = value.split(" / ")[0].trim();
+      if (/\.xlsx$/i.test(firstPart)) names.add(firstPart);
+      return;
+    }
+    if (Array.isArray(value)) {
+      value.forEach(visit);
+      return;
+    }
+    if (typeof value === "object") Object.values(value).forEach(visit);
+  }
+  visit(data && data.sources);
+  if (data && (data.clusters || data.quartiRefs)) names.add("Estratificação_IES_Estaduais_BR.xlsx");
+  return Array.from(names).sort(function(a, b) { return a.localeCompare(b, "pt-BR"); });
+}
+
+function getLoadedSourceNames() {
+  return Array.from(new Set(DATA_STATUS.loadedBases.flatMap(function(b) {
+    return b.sourceBases || [b.name];
+  }))).sort(function(a, b) { return a.localeCompare(b, "pt-BR"); });
+}
+
+let DASHBOARD_STATUS_REPORTED = false;
+function reportDashboardStatus() {
+  if (DASHBOARD_STATUS_REPORTED) return;
+  if (!DATA_STATUS.loadedBases.length && !DATA_STATUS.failedBases.length) return;
+  DASHBOARD_STATUS_REPORTED = true;
+  const sources = getLoadedSourceNames();
+  const payload = JSON.stringify({
+    status: DATA_STATUS.failedBases.length ? "Erro de carregamento" : "Dados reais carregados",
+    sourceCount: sources.length,
+    loadCount: DATA_STATUS.loadedBases.length,
+    failedCount: DATA_STATUS.failedBases.length,
+    sources,
+    generated: DATA_STATUS.precomputedGenerated || null,
+    year: DATA_STATUS.precomputedYear || null,
+  });
+  try {
+    if (navigator.sendBeacon) {
+      navigator.sendBeacon("/__dashboard_status", new Blob([payload], { type: "application/json" }));
+      return;
+    }
+  } catch (err) {}
+  try {
+    fetch("/__dashboard_status", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: payload,
+      keepalive: true,
+    }).catch(function() {});
+  } catch (err) {}
+}
 
 const REAL_DATA_CACHE = {};
 
@@ -259,9 +322,10 @@ function friendlyError(err) {
 }
 
 // ── Registrar base carregada (real ou sintética) ───────────────────
-function registerBase(name, type, rowCount) {
+function registerBase(name, type, rowCount, sourceBases) {
   const ts = new Date().toISOString();
-  DATA_STATUS.loadedBases.push({ name, type, timestamp: ts, rows: rowCount });
+  const inferredSources = sourceBases || (RUNTIME_SOURCE_BASES[name] ? [RUNTIME_SOURCE_BASES[name]] : [name]);
+  DATA_STATUS.loadedBases.push({ name, type, timestamp: ts, rows: rowCount, sourceBases: inferredSources });
   DATA_STATUS.lastUpdated = ts;
   updateDataStatusUI();
 }
@@ -275,6 +339,8 @@ function registerFailedBase(name, reason) {
 function updateDataStatusUI() {
   const hasError     = DATA_STATUS.failedBases.length > 0;
   const loadedCount  = DATA_STATUS.loadedBases.length;
+  const sourceNames  = getLoadedSourceNames();
+  const sourceCount  = sourceNames.length;
 
   // Chip de status no cabeçalho
   const chip = document.getElementById("dataStatusChip");
@@ -288,16 +354,12 @@ function updateDataStatusUI() {
           : "Carregando…";
   }
 
-  // Contador de bases
-  const countEl = document.getElementById("loadedBasesCount");
-  if (countEl) countEl.textContent = loadedCount;
-
   // Rodapé — status e detalhe das bases
   const footerStatus = document.getElementById("footerDataStatus");
   if (footerStatus) {
     footerStatus.textContent = hasError
         ? "✕ Erro de carregamento"
-        : "Painel v3 · dados reais xlsx";
+        : "Painel v3 · dados reais XLSX/JSON";
   }
   const footerDot = document.getElementById("footerStatusDot");
   if (footerDot) {
@@ -307,9 +369,7 @@ function updateDataStatusUI() {
   if (footerDetail && DATA_STATUS.loadedBases.length > 0) {
     const ts    = DATA_STATUS.lastUpdated
       ? new Date(DATA_STATUS.lastUpdated).toLocaleString("pt-BR") : "—";
-    const names = DATA_STATUS.loadedBases
-      .map(function(b) { return b.name + " (" + b.type + ")"; }).join(" · ");
-    footerDetail.textContent = names + " · " + ts;
+    footerDetail.textContent = "Última carga · " + ts;
   }
 }
 
@@ -1366,9 +1426,9 @@ async function loadGenericDataset(datasetKey) {
 
 // ── Loader do JSON pré-processado (substitui os XLSX pesados) ──────────
 // Gerado por: python pipeline/assemble_final.py
-// Contém os 22 indicadores agregados por IES, extraídos de:
-//   CAPES (250MB), Cursos (72MB), Clusterização (48MB),
-//   CNPq (47MB), Despesa 8050 (via JSON), Suplementação (23MB)
+// Contém os indicadores agregados por IES, extraídos de:
+//   Cursos, IES, CAPES, CNPq, Despesa 8050, Docentes, Suplementação,
+//   CBO2/RAIS, Egressos, Fundo Paraná, RAIS e Estratificação.
 async function loadPrecomputedJson() {
   const NOME_BASE = "Indicadores Pré-processados (JSON)";
   try {
@@ -1377,6 +1437,8 @@ async function loadPrecomputedJson() {
     const data = await response.json();
     const indicators = data.indicators || {};
     const year = String(data.year || "2024");
+    DATA_STATUS.precomputedGenerated = data.generated || null;
+    DATA_STATUS.precomputedYear = year;
     let count = 0;
     for (const [sigla, vals] of Object.entries(indicators)) {
       if (upsertYearIndicators(sigla, year, vals)) count++;
@@ -1384,7 +1446,7 @@ async function loadPrecomputedJson() {
     if (count === 0) throw new Error("no_valid_rows");
     if (data.clusters)   window.SETI_CLUSTERS   = data.clusters;
     if (data.quartiRefs) window.SETI_QUARTIREFS  = data.quartiRefs;
-    registerBase(NOME_BASE + " (ano=" + year + ")", "real", count);
+    registerBase(NOME_BASE + " (ano=" + year + ")", "real", count, inferPrecomputedSourceBases(data));
   } catch (err) {
     const reason = friendlyError(err);
     console.warn("[" + NOME_BASE + "] " + reason, err && err.message ? err.message : "");
@@ -1395,7 +1457,7 @@ async function loadPrecomputedJson() {
 async function loadAllData() {
   try {
     const loaders = [
-      loadPrecomputedJson(),   // CAPES/Cursos/CNPq/Despesa8050/Clusterização/Suplementação via JSON
+      loadPrecomputedJson(),   // bases pesadas/agregadas via JSON pré-processado
       ...Object.values(SETI_DATASETS)
         .filter(function(dataset) { return dataset.enabled; })
         .map(function(dataset) {
@@ -1413,6 +1475,7 @@ async function loadAllData() {
     console.error("[loadAllData] Erro inesperado.", err);
   } finally {
     refreshPanelFromData();
+    reportDashboardStatus();
   }
 }
 SETIDataHub.loadGenericDataset = loadGenericDataset;

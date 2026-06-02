@@ -43,8 +43,8 @@ O painel é composto por:
 | Docentes com doutorado | Média ponderada de `doctors` (peso: `students`) | INEP/Base IES | % com 1 decimal |
 | Captação CNPq | Soma de `cnpq` | Base CNPq | R$ X,X mi |
 | Inserção no Paraná | Média ponderada de `employment` (peso: `graduates`) | CBO2/RAIS | % com 1 decimal |
-| Orçamento liquidado | Soma de `budget` | Base SELO | R$ X,X mi |
-| Execução orçamentária | Média ponderada de `execution` (peso: `budget`) | Clusterização | % com 1 decimal |
+| Orçamento liquidado | Soma de `budget` | Relatório da Despesa 8050 | R$ X,X mi |
+| Execução orçamentária | Média ponderada de `execution` (peso: `budget`) | Relatório da Despesa 8050 | % com 1 decimal |
 
 Cada card exibe variação vs. ano anterior (▲/▼ em p.p. ou %) quando disponível.
 
@@ -196,7 +196,7 @@ Colunas: IEES | Cursos | Vagas | Ocupação | Vagas não ocupadas | Custo por es
 #### 4.4 Gráfico de barras: Custo por concluinte
 - **O que mostra:** eficiência orçamentária por formado
 - **Cálculo:** `budget × 1.000.000 / graduates`
-- **Fonte orçamento:** Base SELO (liquidado)
+- **Fonte orçamento:** Relatório da Despesa 8050 (liquidado)
 
 ---
 
@@ -255,22 +255,22 @@ Colunas: IEES | Programas PG | CAPES médio | CAPES 5-6-7 | Doutores | CNPq
 
 | Código | Nome | Fonte |
 |--------|------|-------|
-| ind71 | Taxa de ocupação do quadro docente | `facultyOcc` (Clusterização / Estrutura docente PR) |
+| ind71 | Taxa de ocupação do quadro docente | `facultyOcc` (Base Docentes - Paraná / Base_Docentes_PR) |
 | ind72 | TIDE estimado | `(facultyOcc + doctors) / 2` (proxy) |
-| ind73 | Taxa de utilização da CRES | `cres` (Clusterização, ×100) |
-| – | Despesa pessoal | `personnel` (SELO ou Clusterização global) |
+| ind73 | Taxa de utilização da CRES | `cres` (Base Docentes - Paraná, ×100) |
+| – | Despesa pessoal | `personnel` (Relatório da Despesa 8050) |
 
 ### Visualizações
 
 #### 6.1 Gráfico de barras: Taxa de ocupação do quadro docente
 - **Dado:** `facultyOcc`
-- **Fonte:** Base de dados para clusterização.xlsx / sheet `Estrutura docente PR`
+- **Fonte:** Base Docentes - Paraná.xlsx / sheet `Base_Docentes_PR`
 - **Coluna:** "Taxa de ocupação do quadro docente" (decimal → ×100)
 - **Escopo:** apenas 7 IEES-PR. No escopo Brasil, alerta informativo é exibido.
 
 #### 6.2 Gráfico de barras: Utilização da CRES
 - **Dado:** `cres`
-- **Fonte:** Base de dados para clusterização.xlsx / "Taxa de utilização da CRES"
+- **Fonte:** Base Docentes - Paraná.xlsx / "Taxa de utilização da CRES"
 - **Transformação:** `round(float(valor) × 100, 2)` — pode ultrapassar 100% (ex: UNIOESTE = 121.98%)
 - **Interpretação:** acima de 100% indica utilização além da capacidade autorizada
 
@@ -278,9 +278,9 @@ Colunas: IEES | Programas PG | CAPES médio | CAPES 5-6-7 | Doutores | CNPq
 
 Colunas: IEES | Ocupação docente | TIDE estimado | CRES | Despesa pessoal | Estudantes/docente
 
-**Nota sobre TIDE:** O TIDE (Taxa de Incremento de Dedicação Exclusiva) é estimado como proxy `(facultyOcc + doctors) / 2`. O dado real requer a Base Docentes PR que ainda não está integrada ao cálculo desta tabela.
+**Nota sobre TIDE:** O pipeline já extrai `tide` da `Base Docentes - Paraná.xlsx`; alguns componentes visuais ainda podem usar proxy quando exibem métricas compostas legadas.
 
-**Nota sobre `personnel`:** Atualmente o pipeline extrai o valor global 70.34% da Clusterização (Dinâmica orçamentária PR). O valor per-IES (diferenciado por IES) dependeria da coluna "Participação de Pessoal e Encargos no Total da Despesa" da Base SELO com o nome exato correspondente.
+**Nota sobre `personnel`:** Atualmente o pipeline extrai o valor por IES do `Relatório da Despesa 8050 (2024 - 2026).xlsx`, coluna de participação de pessoal e encargos. O fallback global só é usado se essa coluna vier ausente.
 
 ---
 
@@ -337,10 +337,10 @@ Colunas: IEES | Paraná | Região Sul | Cidade-sede | Aderência CBO2 | Dispers�
 
 | Nome | Dado | Fonte |
 |------|------|-------|
-| Orçamento liquidado | `budget` (R$ mi) | Base SELO PR |
-| Execução orçamentária | `execution` (%) | Clusterização / Dinâmica orçamentária PR |
-| Taxa de liquidação | `liquidation` (%) | Clusterização / Dinâmica orçamentária PR |
-| Participação pessoal | `personnel` (%) | Base SELO PR (ou global 70.34%) |
+| Orçamento liquidado | `budget` (R$ mi) | Relatório da Despesa 8050 |
+| Execução orçamentária | `execution` (%) | Relatório da Despesa 8050 / 2024-2026 |
+| Taxa de liquidação | `liquidation` (%) | Relatório da Despesa 8050 / 2024-2026 |
+| Participação pessoal | `personnel` (%) | Relatório da Despesa 8050 (ou global 70.34%) |
 | Suplementação | `supplementation` (%) | Dados de Suplementação das Universidades PR |
 | Custo por estudante | `budget×1M / students` | Calculado |
 | Custo por concluinte | `budget×1M / graduates` | Calculado |
@@ -416,15 +416,15 @@ Alertas automáticos contextuais por aba:
 | CAPES | `capes` | Base CAPES / conceito médio por IES | 22 IES |
 | Programas PG | `pg` | Base CAPES / `NM_PROGRAMA_IES` distintos | 22 IES |
 | Programas top | `pgTop` | Base CAPES / `CD_CONCEITO_CURSO ≥ 5` | 22 IES |
-| Orçamento | `budget` | Base SELO PR / `sum(Liquidado)` (R$ mi) | 7 PR |
-| Execução | `execution` | Clusterização / "Taxa de Execução Orçamentária" | 7 PR |
-| Liquidação | `liquidation` | Clusterização / "Taxa de Liquidação" | 7 PR |
-| Pessoal | `personnel` | Clusterização / "Participação de Pessoal" (global 70.34%) | 7 PR |
+| Orçamento | `budget` | Relatório da Despesa 8050 / `sum(Liquidado)` (R$ mi) | 7 PR |
+| Execução | `execution` | Relatório da Despesa 8050 / Taxa de Execução Orçamentária | 7 PR |
+| Liquidação | `liquidation` | Relatório da Despesa 8050 / Taxa de Liquidação | 7 PR |
+| Pessoal | `personnel` | Relatório da Despesa 8050 / Participação de Pessoal e Encargos | 7 PR |
 | Suplementação | `supplementation` | Dados de Suplementação / `col[3]` × 100 | 7 PR |
 | Inserção | `employment` | CBO2/RAIS / `enc_PR / egressos × 100` | 7 PR |
 | Salário | `salary` | CBO2/RAIS / média salarial egressos | 7 PR |
-| Ocupação docente | `facultyOcc` | Clusterização / "Taxa de ocupação do quadro docente" × 100 | 7 PR |
-| CRES | `cres` | Clusterização / "Taxa de utilização da CRES" × 100 | 7 PR |
+| Ocupação docente | `facultyOcc` | Base Docentes - Paraná / Taxa de ocupação do quadro docente | 7 PR |
+| CRES | `cres` | Base Docentes - Paraná / Taxa de utilização da CRES × 100 | 7 PR |
 | Território | `territory` | Estático no `const raw` (dispersão estimada) | 7 PR |
 
 ---
@@ -440,11 +440,11 @@ Alertas automáticos contextuais por aba:
 | cnpq (UNICENTRO, UNESPAR) | **Null** | Sem correspondência no arquivo |
 | cnpq (15 IES nacionais) | **Null** | Não processado |
 | capes, pg, pgTop (22 IES) | **Real** | Base CAPES Brasil |
-| budget, execution, liquidation (7 PR) | **Real** | Base SELO + Clusterização |
-| personnel (7 PR) | **Parcialmente real** | Valor global 70.34% (Clusterização) — não diferenciado por IES |
+| budget, execution, liquidation (7 PR) | **Real** | Relatório da Despesa 8050 |
+| personnel (7 PR) | **Parcialmente real** | Valor por IES extraído do Relatório da Despesa 8050; fallback global apenas se a coluna estiver ausente |
 | supplementation (7 PR) | **Real** | Dados de Suplementação PR |
 | employment, salary (7 PR) | **Real** | CBO2/RAIS 2024 |
-| facultyOcc, cres (7 PR) | **Real** | Clusterização / Estrutura docente PR |
+| facultyOcc, cres (7 PR) | **Real** | Base Docentes - Paraná / Base_Docentes_PR |
 | budget, execution, employment... (15 BR) | **Estimado** | Benchmarks estáticos em `const rawBrasil` |
 | territory (7 PR) | **Estimado** | Índice estático no `const raw` |
 | Média Brasil nos cards de comparação | **Referência** | Benchmarks INEP/CAPES 2024, objeto `brazil` em painel.js |

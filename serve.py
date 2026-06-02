@@ -57,6 +57,40 @@ class QuietHandler(http.server.SimpleHTTPRequestHandler):
     def log_message(self, *args):
         pass
 
+    def do_POST(self):
+        if self.path != "/__dashboard_status":
+            self.send_error(404)
+            return
+        try:
+            length = int(self.headers.get("Content-Length", "0"))
+        except ValueError:
+            length = 0
+        raw = self.rfile.read(length) if length else b"{}"
+        try:
+            payload = json.loads(raw.decode("utf-8"))
+        except Exception:
+            payload = {}
+
+        status = payload.get("status") or "Status do dashboard"
+        source_count = payload.get("sourceCount", 0)
+        load_count = payload.get("loadCount", 0)
+        failed_count = payload.get("failedCount", 0)
+        generated = payload.get("generated") or "?"
+        year = payload.get("year") or "?"
+        sources = payload.get("sources") or []
+        source_label = "fonte" if source_count == 1 else "fontes"
+        load_label = "carregamento" if load_count == 1 else "carregamentos"
+        print(
+            f"Dashboard: {status} | {source_count} {source_label} | "
+            f"{load_count} {load_label} | ano={year} | JSON={generated}"
+        )
+        if failed_count:
+            print(f"  Falhas reportadas pelo browser: {failed_count}")
+        if sources:
+            print("  Fontes: " + ", ".join(sources))
+        self.send_response(204)
+        self.end_headers()
+
 
 class ThreadedServer(socketserver.ThreadingMixIn, socketserver.TCPServer):
     allow_reuse_address = True

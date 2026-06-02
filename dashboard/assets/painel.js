@@ -1,4 +1,4 @@
-// Catálogo gerado de '5. Relação de Indicadores das Universidades.xlsx' — 96 indicadores
+// Catálogo embutido gerado originalmente de '5. Relação de Indicadores das Universidades.xlsx' — 96 indicadores. A planilha é fonte de referência/catalogação, não é carregada em runtime.
 const INDICATOR_CATALOG = {
   "ind1": {
     "codigo": 1,
@@ -1738,7 +1738,7 @@ const INDICATOR_CATALOG = {
 // budget/execution/liquidation/personnel → Relatório da Despesa 8050 (2024 - 2026).xlsx via seti_precomputed.json
 // supplementation → Dados de Suplementação das Universidades - Paraná.xlsx (% crédito adicional / dotação inicial)
 // employment/salary → CBO2 _ RAIS 2023 e 2024 - Paraná.xlsx (egressos 2021 encontrados RAIS 2024)
-// facultyOcc/cres → Base de dados para clusterização.xlsx / Estrutura docente (fev/2026)
+// facultyOcc/cres/tide → Base Docentes - Paraná.xlsx / Base_Docentes_PR (pipeline atual)
 // occupancy = ingressantes / vagas ofertadas × 100 (ind3 – vagas de ingresso); valores INEP acumulados excederiam 100%
 // territory → índice de dispersão territorial (estimado; RAIS por município ainda não agregado por IES)
 

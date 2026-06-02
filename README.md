@@ -29,15 +29,16 @@ Bases XLSX (data/)  →  pipeline/assemble_final.py  →  data/seti_precomputed.
 │   ├── Base IES - Brasil.xlsx        # INEP — proporção doutores por IES
 │   ├── Base CAPES- Pós-Graduação - Brasil.xlsx  # Programas PG, conceitos
 │   ├── Base CNPq - Brasil.xlsx       # Captação de recursos para pesquisa
-│   ├── Base SELO - Paraná.xlsx       # Orçamento liquidado, taxas (PR)
-│   ├── Base de dados para clusterização.xlsx    # Estrutura docente, CRES (PR)
-│   ├── Base Docentes - Paraná.xlsx   # Regime e qualificação docente (PR)
+│   ├── Relatório da Despesa 8050 (2024 - 2026).xlsx  # Orçamento liquidado, execução, liquidação e pessoal (PR)
+│   ├── Base Docentes - Paraná.xlsx   # Ocupação docente, CRES e TIDE (PR)
 │   ├── Base Egressos - Paraná.xlsx   # Egressos por coorte (PR)
 │   ├── Base RAIS - 2023 e 2024 - Paraná.xlsx   # Empregos formais (PR)
 │   ├── CBO2 _ RAIS 2023 e 2024 - Paraná.xlsx   # Inserção profissional CBO2 (PR)
 │   ├── Dados de Suplementação das Universidades - Paraná.xlsx
 │   ├── Base Fundo Paraná - Paraná.xlsx
-│   └── Estratificação_IES_Estaduais_BR.xlsx
+│   ├── Estratificação_IES_Estaduais_BR.xlsx
+│   ├── 5. Relação de Indicadores das Universidades.xlsx  # Catálogo de referência já embutido em painel.js
+│   └── Base de dados para clusterização.xlsx    # Legado: loader existe, mas o pipeline atual não usa
 ├── pipeline/
 │   └── assemble_final.py             # Extração e pré-processamento dos indicadores
 ├── dashboard/
@@ -108,12 +109,16 @@ IEES = IEES_PR + IEES_BR  # 22 IES total
 |-------|-----------|---------------------|--------|
 | **1. INEP/IES** | `Base IES - Brasil.xlsx` / `Base_ IES_BRASIL` | `doctors` | 22 IES |
 | **2. INEP/Cursos** | `Base Cursos - Brasil.xlsx` / `_IES PÚBLICAS ESTADUAIS_CURSOS` | `students`, `entrants`, `graduates`, `vacancies`, `courses`, `occupancy`, `dropout`, `completion` | 22 IES |
-| **3. Clusterização/Docente** | `Base de dados para clusterização.xlsx` / `Estrutura docente PR` | `facultyOcc`, `cres` | 7 PR |
+| **3. Docentes PR** | `Base Docentes - Paraná.xlsx` / `Base_Docentes_PR` | `facultyOcc`, `cres`, `tide` | 7 PR |
 | **4. CNPq** | `Base CNPq - Brasil.xlsx` / `Base_CNPq_BR` | `cnpq` | 7 PR (match por nome) |
 | **5. CAPES** | `Base CAPES- Pós-Graduação - Brasil.xlsx` / `Base_Cursos` | `capes`, `pg`, `pgTop` | 22 IES |
-| **6. SELO** | `Base SELO - Paraná.xlsx` / `Base` + Clusterização / `Dinâmica orçamentária PR` | `budget`, `execution`, `liquidation`, `personnel` | 7 PR |
+| **6. Despesa 8050** | `Relatório da Despesa 8050 (2024 - 2026).xlsx` / `2024-2026` | `budget`, `execution`, `liquidation`, `personnel` | 7 PR |
 | **7. Suplementação** | `Dados de Suplementação das Universidades - Paraná.xlsx` / `matriz_cluster` | `supplementation` | 7 PR |
 | **8. CBO2/RAIS** | `CBO2 _ RAIS 2023 e 2024 - Paraná.xlsx` / `Análise Quantitativa` | `employment`, `salary` | 7 PR |
+| **9. Egressos** | `Base Egressos - Paraná.xlsx` / `Base_Egressos_PR` | `insertionRatePR` | 7 PR |
+| **10. Fundo Paraná** | `Base Fundo Paraná - Paraná.xlsx` / `Fundo_Parana_IES_Ano` | `fundoParana`, `fundoExec` | 7 PR |
+| **11. RAIS Municípios** | `Base RAIS - 2023 e 2024 - Paraná.xlsx` / `Base_RAIS_2023_2024` | `egressosMunicipios` | 7 PR |
+| **12. Estratificação** | `Estratificação_IES_Estaduais_BR.xlsx` | `clusters`, `quartiRefs` | 22 IES |
 
 ### Lógica de cada Seção
 
@@ -129,10 +134,11 @@ IEES = IEES_PR + IEES_BR  # 22 IES total
 - `dropout = QT_SIT_DESVINCULADO / QT_MAT × 100`
 - `completion = QT_CONC / QT_MAT × 100`
 
-**Seção 3 — Estrutura Docente (Clusterização PR):**
-- Sheet `Estrutura docente PR` — apenas IEES_PR
-- `facultyOcc` — coluna "Taxa de ocupação do quadro docente" × 100
-- `cres` — coluna "Taxa de utilização da CRES" × 100 (valor bruto é decimal; `round(float(v) * 100, 2)` sempre, porque pode ultrapassar 100% como UNIOESTE=121.98%)
+**Seção 3 — Estrutura Docente (Base Docentes PR):**
+- Sheet `Base_Docentes_PR` — apenas IEES_PR
+- `facultyOcc` — coluna 20, taxa de ocupação do quadro docente
+- `tide` — coluna 25, participação do TIDE no quadro disponível
+- `cres` — coluna 30, taxa de utilização da CRES × 100 (pode ultrapassar 100%, como UNIOESTE=121.98%)
 
 **Seção 4 — CNPq:**
 - Match por substring no nome da instituição (`CNPQ_MATCH` dict com lambdas)
@@ -145,10 +151,11 @@ IEES = IEES_PR + IEES_BR  # 22 IES total
 - `pgTop` = programas com `CD_CONCEITO_CURSO >= 5`
 - `capes` = média de `CD_CONCEITO_CURSO` (ou coluna pré-calculada "Conceito médio dos programas de pós-graduação")
 
-**Seção 6 — SELO/Orçamento (PR):**
+**Seção 6 — Despesa 8050/Orçamento (PR):**
 - `budget`: soma `Liquidado` por IES/ano (R$ milhões), preferência para 2024
-- `execution` / `liquidation`: da Clusterização / `Dinâmica orçamentária PR`
-- `personnel`: primeiro tenta da SELO (coluna "Participação de Pessoal e Encargos no Total da Despesa"); fallback para Clusterização (valor global 70.34%)
+- `execution`: taxa de execução orçamentária (empenho) do mesmo arquivo
+- `liquidation`: taxa de liquidação do mesmo arquivo
+- `personnel`: participação de pessoal e encargos por IES; fallback global só se a coluna vier ausente
 
 **Seção 7 — Suplementação (PR):**
 - Coluna `col[3]` da sheet `matriz_cluster`
@@ -166,7 +173,7 @@ IEES = IEES_PR + IEES_BR  # 22 IES total
 | `safe_pct(v)` | Decimal → percentual. Se `v <= 1.0`: `v × 100`. Se `v > 1.0`: retorna `v` (já é %). **Não usar para CRES** (pode > 1.0 representando > 100%) |
 | `safe_float(v, d=2)` | `float(v)` com arredondamento `d` casas |
 | `safe_int(v)` | `int(float(v))` tolerante a None e string |
-| `_blank()` | Retorna dict com todos os 22 indicadores = `None` |
+| `_blank()` | Retorna dict com todos os indicadores declarados em `INDICATORS` = `None` |
 
 ### Saída: `data/seti_precomputed.json`
 
@@ -184,7 +191,7 @@ IEES = IEES_PR + IEES_BR  # 22 IES total
 }
 ```
 
-**Indicadores disponíveis (22):** `students`, `entrants`, `graduates`, `courses`, `vacancies`, `occupancy`, `dropout`, `completion`, `doctors`, `cnpq`, `capes`, `pg`, `pgTop`, `budget`, `execution`, `liquidation`, `personnel`, `supplementation`, `employment`, `salary`, `facultyOcc`, `cres`
+**Indicadores disponíveis:** `students`, `entrants`, `graduates`, `courses`, `vacancies`, `occupancy`, `dropout`, `completion`, `doctors`, `cnpq`, `capes`, `pg`, `pgTop`, `budget`, `execution`, `liquidation`, `personnel`, `supplementation`, `employment`, `salary`, `insertionRatePR`, `facultyOcc`, `cres`, `tide`, `fundoParana`, `fundoExec`, `egressosMunicipios`
 
 ---
 
@@ -204,7 +211,6 @@ Shell HTML (219 linhas). Define a estrutura visual estática e a ordem de carreg
 
 Elementos estáticos presentes:
 - `#dataStatusChip` — chip de status de carregamento
-- `#loadedBasesCount` — contador de bases carregadas
 - `.tab-button[data-tab]` — 8 botões de aba
 - `#kpiGrid` — grid de KPI cards (preenchido por JS)
 - `#yearFilter` — seletor de ano (2020–2024)
@@ -224,7 +230,7 @@ Camada de dados do painel. Carregado no `<head>` para estar disponível quando `
 ```javascript
 const DATA = {};           // { sigla: { byYear: { "2024": { ind: val } } } }
 const DATA_STATUS = {
-  loadedBases: [],         // bases carregadas com sucesso
+  loadedBases: [],         // carregamentos concluídos com sucesso e bases-fonte associadas
   failedBases: [],         // bases que falharam
   workbooks: [],           // metadados dos XLSX lidos
   lastUpdated: null,
@@ -246,8 +252,9 @@ Catálogo de todas as bases disponíveis. Cada entrada define:
 - `cbo2` — CBO2/RAIS PR
 - `fundoParana` — Base Fundo Paraná PR
 
-**Bases desabilitadas (enabled: false) — substituídas pelo JSON:**
-- `cursos` (72MB), `cnpq` (47MB), `capes` (250MB), `selo` (36MB), `clusterizacao` (48MB), `suplementacao` (23MB)
+**Bases desabilitadas (enabled: false):**
+- `cursos`, `cnpq`, `capes`, `despesa8050` e `suplementacao` entram pelo `seti_precomputed.json`
+- `clusterizacao` é legado: o loader existe no JS, mas o pipeline atual não usa `Base de dados para clusterização.xlsx`
 
 ### Funções Principais
 
@@ -255,8 +262,8 @@ Catálogo de todas as bases disponíveis. Cada entrada define:
 |--------|-----------|
 | `loadPrecomputedJson()` | Faz `fetch("../data/seti_precomputed.json")` e chama `upsertYearIndicators()` para cada IES |
 | `upsertYearIndicators(sigla, year, indicators)` | Armazena dados no `DATA[sigla].byYear[year]` |
-| `loadAllData()` | Executa `Promise.all([loadPrecomputedJson(), ...bases_ativas])` e no bloco `finally` chama `refreshPanelFromData()` |
-| `registerBase(name, type, rows)` | Registra base carregada em `DATA_STATUS.loadedBases` |
+| `loadAllData()` | Executa `Promise.all([loadPrecomputedJson(), ...bases_ativas])` e no bloco `finally` chama `refreshPanelFromData()` e reporta o resumo ao terminal via `POST /__dashboard_status` |
+| `registerBase(name, type, rows)` | Registra carregamento em `DATA_STATUS.loadedBases`, incluindo as bases-fonte inferidas quando vêm do JSON |
 | `registerFailedBase(name, reason)` | Registra falha em `DATA_STATUS.failedBases` |
 | `friendlyError(err)` | Converte erros HTTP/rede em mensagens legíveis |
 | `normalizeColumnName(value)` | Remove acentos, lowercase, substitui não-alfanuméricos por `_` |
@@ -275,7 +282,7 @@ DOMContentLoaded
     → render() — primeira renderização
     ↕  (async, paralelo)
 loadAllData()
-    → loadPrecomputedJson()      — 24KB JSON com 22 IES
+    → loadPrecomputedJson()      — JSON com 22 IES e 12 bases-fonte representadas
     → loadEgressosBase()         — XLSX leve
     → loadIesBase()              — XLSX leve
     → loadDocentesBase()         — XLSX leve
@@ -283,6 +290,7 @@ loadAllData()
     → loadCbo2Base()             — XLSX leve
     → loadFundoParanaBase()      — XLSX leve
     → (finally) refreshPanelFromData() — atualiza painel com dados reais
+    → reportDashboardStatus() — terminal exibe status, fontes inferidas e carregamentos
 ```
 
 ---
@@ -397,9 +405,9 @@ V6, V7 e V8 disponíveis apenas no escopo Paraná.
 
 5. Paralelo (async):
    └── loadAllData()
-       ├── loadPrecomputedJson() → fetch data/seti_precomputed.json (22 IES, ~24KB)
+       ├── loadPrecomputedJson() → fetch data/seti_precomputed.json (22 IES; 12 bases-fonte representadas)
        ├── loadEgressosBase(), loadIesBase(), loadDocentesBase()...
-       └── (finally) refreshPanelFromData() → re-renderiza com dados reais
+       └── (finally) refreshPanelFromData() + reportDashboardStatus() → re-renderiza e registra status no terminal
 
 6. Usuário interage:
    ├── Clica aba → state.activeTab muda → render()
@@ -438,4 +446,5 @@ openpyxl>=3.1          # Leitura de .xlsx
 - **Adicionar nova IES:** adicione sigla em `IEES_PR` ou `IEES_BR`, mapeie o CO_IES em `CO_IES_MAP` e adicione a entrada em `const raw` ou `const rawBrasil` no `painel.js`.
 - **Adicionar novo indicador:** declare em `INDICATORS` no pipeline, exporte no JSON e consuma em `byYear()` / `refreshPanelFromData()` no `data-hub.js`.
 - **CRES > 100%:** usar sempre `round(float(v) * 100, 2)` diretamente, nunca `safe_pct()` — UNIOESTE tem CRES=121.98%.
-- **Personnel:** atualmente usando valor global 70.34% (Clusterização). Para valor per-IES, verificar o nome exato da coluna na sheet SELO/Base.
+- **Personnel:** atualmente extraído por IES do `Relatório da Despesa 8050 (2024 - 2026).xlsx`; o fallback global só é usado se a coluna correspondente vier ausente.
+- **Catálogo de indicadores:** `5. Relação de Indicadores das Universidades.xlsx` não é carregado em runtime. O conteúdo relevante está embutido em `dashboard/assets/painel.js` como `INDICATOR_CATALOG`; mantenha a planilha como fonte editorial ou crie uma etapa de geração se quiser que alterações nela sejam refletidas automaticamente.
