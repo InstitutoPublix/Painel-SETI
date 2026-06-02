@@ -15,6 +15,9 @@ import datetime
 import openpyxl
 from pathlib import Path
 
+# Garante UTF-8 no stdout (Windows usa cp1252 por padrão)
+sys.stdout.reconfigure(encoding="utf-8")
+
 DATA_DIR = Path(__file__).parent.parent / "data"
 
 # IES paranaenses — têm dados de SELO, Suplementação, Clusterização, CBO2/RAIS
@@ -60,7 +63,10 @@ INDICATORS = [
     "occupancy", "dropout", "completion", "doctors",
     "cnpq", "capes", "pg", "pgTop",
     "budget", "execution", "liquidation", "personnel", "supplementation",
-    "employment", "salary", "facultyOcc", "cres",
+    "employment", "salary", "insertionRatePR",
+    "facultyOcc", "cres", "tide",
+    "fundoParana", "fundoExec",
+    "egressosMunicipios",
 ]
 
 
@@ -234,53 +240,52 @@ for iees in IEES:
     )
 
 
-# ── 3. Clusterização — facultyOcc, cres ──────────────────────────────────────
-# Fonte: Base de dados para clusterização.xlsx / Estrutura docente PR
-# Colunas: "Taxa de ocupação do quadro docente", "Taxa de utilização da CRES"
-# Ano: mais recente por IES (coluna ANO)
+# ── 3. Docentes — facultyOcc, cres, tide ─────────────────────────────────────
+# Fonte: Base Docentes - Paraná.xlsx / Base_Docentes_PR
+# Colunas (0-based):
+#   [0]  ANO        [2]  IEES
+#   [20] Taxa de ocupação do quadro docente         → facultyOcc
+#   [25] Participação do TIDE no quadro disponível  → tide  (novo)
+#   [30] Taxa de utilização da CRES                 → cres
+# Ano: mais recente por IES; dentro do ano, último registro do arquivo
 
-wb = openpyxl.load_workbook(DATA_DIR / "Base de dados para clusterização.xlsx", read_only=True, data_only=True)
-ws = wb["Estrutura docente PR"]
-headers = list(next(ws.iter_rows(min_row=1, max_row=1, values_only=True)))
-col_idx = {h: i for i, h in enumerate(headers) if h is not None}
+wb = openpyxl.load_workbook(DATA_DIR / "Base Docentes - Paraná.xlsx", read_only=True, data_only=True)
+ws = wb["Base_Docentes_PR"]
+next(ws.iter_rows(min_row=1, max_row=1))  # skip header
 
-yr_col   = col_idx.get("ANO")
-iees_col = col_idx.get("IEES")
-occ_col  = next((i for h, i in col_idx.items() if h and "taxa de ocupa" in str(h).lower() and "quadro" in str(h).lower()), None)
-cres_col = next((i for h, i in col_idx.items() if h and "taxa de utiliza" in str(h).lower() and "cres" in str(h).lower()), None)
-
-doc_data = {}
+doc_latest = {}  # iees → {"_year": int, "_row": tuple}
 for row in ws.iter_rows(min_row=2, values_only=True):
-    iees = row[iees_col] if iees_col is not None else None
-    if iees not in IEES_PR:  # base Paraná
+    iees = row[2] if len(row) > 2 else None
+    if iees not in IEES_PR:
         continue
-    y = row[yr_col]
     try:
-        y = int(y)
-    except Exception:
-        y = 0
-    if iees not in doc_data or y >= doc_data[iees]["_year"]:
-        doc_data[iees] = {"_year": y, "_row": row}
+        y = int(row[0])
+    except (TypeError, ValueError):
+        continue
+    if iees not in doc_latest or y >= doc_latest[iees]["_year"]:
+        doc_latest[iees] = {"_year": y, "_row": row}
 wb.close()
 
 for iees in IEES_PR:
     key = iees.lower()
-    if iees not in doc_data:
+    if iees not in doc_latest:
         continue
-    row = doc_data[iees]["_row"]
-    y   = doc_data[iees]["_year"]
-    occ  = row[occ_col]  if occ_col  is not None else None
-    cres = row[cres_col] if cres_col is not None else None
+    row = doc_latest[iees]["_row"]
+    y   = doc_latest[iees]["_year"]
+    occ  = row[20] if len(row) > 20 else None
+    tide = row[25] if len(row) > 25 else None
+    cres = row[30] if len(row) > 30 else None
     results[key]["facultyOcc"] = safe_pct(occ)
-    # cres: valor bruto é fração decimal (pode passar de 1.0 quando > 100%)
-    # safe_pct quebra para valores > 1.0, então forçamos ×100 sempre
+    # cres: fração decimal — pode ultrapassar 1.0 (>100%), forçamos ×100
     try:
         results[key]["cres"] = round(float(cres) * 100, 2) if cres is not None else None
     except Exception:
         results[key]["cres"] = None
-    src = f"Base de dados para clusterização.xlsx / Estrutura docente PR / ano={y}"
-    sources[key]["facultyOcc"] = src + " / Taxa de ocupação do quadro docente"
-    sources[key]["cres"]       = src + " / Taxa de utilização da CRES (×100)"
+    results[key]["tide"] = safe_pct(tide)
+    src = f"Base Docentes - Paraná.xlsx / Base_Docentes_PR / ano={y}"
+    sources[key]["facultyOcc"] = src + " / Taxa de ocupação do quadro docente (col 20)"
+    sources[key]["cres"]       = src + " / Taxa de utilização da CRES ×100 (col 30)"
+    sources[key]["tide"]       = src + " / Participação do TIDE no quadro disponível (col 25)"
 
 
 # ── 4. CNPq — captação de recursos para pesquisa ─────────────────────────────
@@ -302,9 +307,13 @@ CNPQ_MATCH = {
     "UEM":      lambda s: "MARINGÁ" in s or "MARINGA" in s,
     "UEPG":     lambda s: "PONTA GROSSA" in s,
     "UNIOESTE": lambda s: "OESTE DO PARANÁ" in s or "OESTE DO PARANA" in s or "UNIOESTE" in s,
-    "UNICENTRO":lambda s: "CENTRO OESTE" in s,
+    # UNICENTRO não tem registros na base CNPq — null esperado
+    "UNICENTRO":lambda s: ("CENTRO-OESTE" in s or "CENTRO OESTE" in s) and "PARAN" in s,
     "UENP":     lambda s: "NORTE DO PARANÁ" in s or "NORTE DO PARANA" in s,
-    "UNESPAR":  lambda s: "ESTADUAL DO PARANÁ" in s and "NORTE" not in s,
+    # Arquivo CNPq usa "Universidade Estadual do Parana" (sem acento)
+    "UNESPAR":  lambda s: (
+        "ESTADUAL DO PARANÁ" in s or "ESTADUAL DO PARANA" in s
+    ) and "NORTE" not in s and "OESTE" not in s,
 }
 
 cnpq_data = {}
@@ -435,112 +444,141 @@ for iees in IEES:
     )
 
 
-# ── 6. SELO — orçamento, execução, liquidação, pessoal ───────────────────────
-# Fonte budget: Base SELO - Paraná.xlsx / Base
-#   Coluna: Liquidado / UO-Sigla / Exercício
-#   Transformação: soma Liquidado por IES/ano (R$ milhões)
+# ── 6. Orçamento — budget, execution, liquidation, personnel ─────────────────
+# Fonte: Relatório da Despesa 8050 (2024 - 2026).xlsx / 2024-2026
 #
-# Fonte taxas: Base de dados para clusterização.xlsx / Dinâmica orçamentária PR
-#   Colunas: "Taxa de Execução Orçamentária (Empenho)", "Taxa de Liquidação",
-#            "Participação de Pessoal e Encargos no Total da Despesa"
-#   Nota: personnel = valor global (70.34%) idêntico para todas as IES nesta sheet;
-#         o loader JS do dashboard calcula per-IES via GND1/Total diretamente da SELO.
+# Colunas usadas (índices verificados em 2025-06):
+#   [0]  Exercício       → ano
+#   [47] Liquidado       → valor liquidado por linha de despesa (R$)
+#   [49] Co_IES          → código inteiro da IES (mapeado via CO_IES_MAP)
+#   [50] Taxa de Execução Orçamentária (Empenho)  → decimal (ex: 0.947)
+#   [51] Taxa de Liquidação                        → decimal
+#   [55] Participação de Pessoal e Encargos no Total da Despesa → decimal
+#
+# Regras:
+#   budget      = soma(Liquidado) por IES/ano ÷ 1_000_000   (R$ milhões)
+#   execution   = primeiro valor não-nulo da taxa por (IES, ano) selecionado
+#   liquidation = idem
+#   personnel   = idem; fallback 0.7034 (70,34%) se ausente
+#   Ano preferido: 2024. Se não houver, usa o mais recente disponível.
 
-wb = openpyxl.load_workbook(DATA_DIR / "Base SELO - Paraná.xlsx", read_only=True, data_only=True)
-ws = wb["Base"]
-headers = list(next(ws.iter_rows(min_row=1, max_row=1, values_only=True)))
-col_idx  = {h: i for i, h in enumerate(headers) if h is not None}
-uo_col   = col_idx.get("UO - Sigla")
-yr_col   = col_idx.get("Exercício")
-liq_col  = col_idx.get("Liquidado")
-pes_col  = col_idx.get("Participação de Pessoal e Encargos no Total da Despesa")
+_DESPESA_FILE = "Relatório da Despesa 8050 (2024 - 2026).xlsx"
+_DESPESA_SHEET = "2024-2026"
+_PERSONNEL_FALLBACK = 0.7034  # 70,34% — usado quando a IES não tem dado na coluna
 
-selo_liq = {}
-selo_pes = {}  # {(uo, year): valor decimal (ex: 0.7034 = 70.34%)}
+wb = openpyxl.load_workbook(DATA_DIR / _DESPESA_FILE, read_only=True, data_only=True)
+ws = wb[_DESPESA_SHEET]
+_hdr = list(next(ws.iter_rows(min_row=1, max_row=1, values_only=True)))
+_col = {h: i for i, h in enumerate(_hdr) if h is not None}
+
+# Localiza cada coluna: índice fixo (verificado) com fallback por substring do nome,
+# para sobreviver a eventuais realinhamentos do arquivo.
+def _fcol(mapping, *keywords, default=None):
+    """Retorna o índice da primeira coluna cujo nome contém todos os keywords."""
+    for h, i in mapping.items():
+        if h and all(k.lower() in str(h).lower() for k in keywords):
+            return i
+    return default
+
+_co_col   = _fcol(_col, "Co_IES",    default=49)
+_yr_col   = _fcol(_col, "Exerc",     default=0)
+_liq_col  = _fcol(_col, "Liquidado", default=47)  # "Liquidado" ≠ "Liquidação"
+_exec_col = _fcol(_col, "Execu", "Or",    default=50)
+_liqr_col = _fcol(_col, "Taxa de Liquid", default=51)
+_pes_col  = _fcol(_col, "Pessoal", "Particip", default=55)
+
+# despesa_liq[(sigla, ano)]   = soma acumulada de Liquidado (R$)
+# despesa_rates[(sigla, ano)] = {"exec", "liq", "pes"} — primeiro não-nulo encontrado
+despesa_liq   = {}
+despesa_rates = {}
+
 for row in ws.iter_rows(min_row=2, values_only=True):
-    uo = row[uo_col] if uo_col is not None else None
-    if uo not in IEES_PR:
-        continue
-    y = row[yr_col]
+    # Identifica a IES pelo código inteiro em Co_IES
     try:
-        y = int(y)
-    except Exception:
+        co_int = int(row[_co_col])
+    except (TypeError, ValueError):
         continue
-    liq = row[liq_col] if liq_col is not None else 0
+    sigla = CO_IES_MAP.get(co_int)
+    if sigla not in IEES_PR:
+        continue  # processa apenas as 7 IES paranaenses
+
     try:
-        liq = float(liq) if liq else 0
-    except Exception:
-        liq = 0
-    selo_liq[(uo, y)] = selo_liq.get((uo, y), 0) + liq
-    # personnel: coluna pré-calculada; mesmo valor repete para todas as linhas do IES/ano
-    if pes_col is not None and (uo, y) not in selo_pes:
-        pes = row[pes_col]
-        if pes is not None:
-            try:
-                selo_pes[(uo, y)] = float(pes)
-            except Exception:
-                pass
+        ano = int(row[_yr_col])
+    except (TypeError, ValueError):
+        continue
+
+    k = (sigla, ano)
+
+    # Acumula Liquidado (pode haver múltiplas linhas de despesa por IES/ano)
+    try:
+        despesa_liq[k] = despesa_liq.get(k, 0.0) + float(row[_liq_col])
+    except (TypeError, ValueError):
+        pass
+
+    # Para as taxas, guarda o primeiro valor não-nulo por (IES, ano)
+    if k not in despesa_rates:
+        despesa_rates[k] = {"exec": None, "liq": None, "pes": None}
+    r = despesa_rates[k]
+    if r["exec"] is None:
+        try:
+            r["exec"] = float(row[_exec_col])
+        except (TypeError, ValueError):
+            pass
+    if r["liq"] is None:
+        try:
+            r["liq"] = float(row[_liqr_col])
+        except (TypeError, ValueError):
+            pass
+    if r["pes"] is None:
+        try:
+            r["pes"] = float(row[_pes_col])
+        except (TypeError, ValueError):
+            pass
+
 wb.close()
 
-wb = openpyxl.load_workbook(DATA_DIR / "Base de dados para clusterização.xlsx", read_only=True, data_only=True)
-ws = wb["Dinâmica orçamentária PR"]
-headers = list(next(ws.iter_rows(min_row=1, max_row=1, values_only=True)))
-col_idx_d = {h: i for i, h in enumerate(headers) if h is not None}
-uo_col_d  = col_idx_d.get("UO - Sigla")
-yr_col_d  = col_idx_d.get("Exercício")
-exec_col  = next((i for h, i in col_idx_d.items() if h and "execu" in str(h).lower() and ("empenho" in str(h).lower() or "taxa" in str(h).lower())), None)
-liq_rate  = next((i for h, i in col_idx_d.items() if h and "liquida" in str(h).lower() and "taxa" in str(h).lower()), None)
-pes_col   = next((i for h, i in col_idx_d.items() if h and "pessoal" in str(h).lower() and "participa" in str(h).lower()), None)
-
-din_data = {}
-for row in ws.iter_rows(min_row=2, values_only=True):
-    uo = row[uo_col_d] if uo_col_d is not None else None
-    if uo not in IEES:
-        continue
-    y = row[yr_col_d]
-    try:
-        y = int(y)
-    except Exception:
-        continue
-    key2 = (uo, y)
-    din_data[key2] = {
-        "exec": row[exec_col] if exec_col is not None else None,
-        "liq":  row[liq_rate] if liq_rate is not None else None,
-        "pes":  row[pes_col]  if pes_col  is not None else None,
-    }
-wb.close()
+_DESPESA_SRC = f"{_DESPESA_FILE} / {_DESPESA_SHEET}"
 
 for iees in IEES_PR:
     key = iees.lower()
     budget = exec_r = liq_r = pes_r = year_used = None
-    for y_pref in [2024, 2023, 2025]:
-        liq_total = selo_liq.get((iees, y_pref), 0)
+
+    # Ordena os anos disponíveis: 2024 tem prioridade, depois decrescente
+    anos_ies = sorted({ano for (s, ano) in despesa_liq if s == iees}, reverse=True)
+    if 2024 in anos_ies:
+        anos_ies = [2024] + [a for a in anos_ies if a != 2024]
+
+    for ano in anos_ies:
+        liq_total = despesa_liq.get((iees, ano), 0.0)
         if liq_total > 0:
-            budget    = round(liq_total / 1e6, 2)
-            d_rates   = din_data.get((iees, y_pref), {})
-            exec_r    = d_rates.get("exec")
-            liq_r     = d_rates.get("liq")
-            # personnel: primeiro tenta da SELO (per-IES); fallback na Clusterização (global)
-            pes_r_selo = selo_pes.get((iees, y_pref))
-            pes_r = pes_r_selo if pes_r_selo is not None else d_rates.get("pes")
-            year_used = y_pref
-            break
+            budget    = round(liq_total / 1_000_000, 2)
+            d         = despesa_rates.get((iees, ano), {})
+            exec_r    = d.get("exec")
+            liq_r     = d.get("liq")
+            pes_r     = d.get("pes")
+            year_used = ano
+            break  # ano preferido encontrado
+
+    # personnel: usa valor da coluna (per-IES) ou fallback global 70,34%
+    pes_final = pes_r if pes_r is not None else _PERSONNEL_FALLBACK
+
     results[key].update(
         budget=budget,
         execution=safe_pct(exec_r),
         liquidation=safe_pct(liq_r),
-        personnel=round(pes_r * 100, 2) if pes_r is not None else None,
+        personnel=round(pes_final * 100, 2),
     )
-    pes_src = (
-        f"Base SELO - Paraná.xlsx / Base / Participação de Pessoal e Encargos / ano={year_used or 'N/D'} (per-IES)"
-        if selo_pes.get((iees, year_used or 0))
-        else f"Base de dados para clusterização.xlsx / Dinâmica orçamentária PR / Participação Pessoal / ano={year_used or 'N/D'} (fallback global)"
+
+    _pes_src = (
+        f"{_DESPESA_SRC} / Participação de Pessoal e Encargos / ano={year_used or 'N/D'} (per-IES)"
+        if pes_r is not None
+        else f"{_DESPESA_SRC} / fallback global {_PERSONNEL_FALLBACK * 100:.2f}%"
     )
     sources[key].update(
-        budget=f"Base SELO - Paraná.xlsx / Base / sum(Liquidado) / UO-Sigla / ano={year_used or 'N/D'} (R$ milhões)",
-        execution=f"Base de dados para clusterização.xlsx / Dinâmica orçamentária PR / Taxa de Execução / ano={year_used or 'N/D'}",
-        liquidation=f"Base de dados para clusterização.xlsx / Dinâmica orçamentária PR / Taxa de Liquidação / ano={year_used or 'N/D'}",
-        personnel=pes_src,
+        budget=f"{_DESPESA_SRC} / sum(Liquidado) / Co_IES={iees} / ano={year_used or 'N/D'} (R$ milhões)",
+        execution=f"{_DESPESA_SRC} / Taxa de Execução Orçamentária (Empenho) / ano={year_used or 'N/D'}",
+        liquidation=f"{_DESPESA_SRC} / Taxa de Liquidação / ano={year_used or 'N/D'}",
+        personnel=_pes_src,
     )
 
 
@@ -623,19 +661,240 @@ for row in ws.iter_rows(min_row=2, max_row=15, values_only=True):
 wb.close()
 
 
+# ── 9. Egressos — insertionRatePR ─────────────────────────────────────────────
+# Fonte: Base Egressos - Paraná.xlsx / Base_Egressos_PR
+# Colunas (0-based): 0=CO_IES, 1=IES, 2=Coorte, 3=Ano_RAIS,
+#   [13] Taxa de inserção de egressos (Sul/BR, inclui SC+RS)  → insertionRatePR
+# Difere de `employment` (col[15] PR-only + filtro CBO2); insertionRatePR é a
+# taxa de reinserção formal mais ampla — egressos encontrados em qualquer estado do Sul.
+# Prefere coorte 2021/RAIS 2024; fallback coorte 2020/RAIS 2023.
+# Exclui coorte 2022 (RAIS 2025 ainda com erros #VALUE! no arquivo).
+
+wb = openpyxl.load_workbook(DATA_DIR / "Base Egressos - Paraná.xlsx", read_only=True, data_only=True)
+ws = wb["Base_Egressos_PR"]
+next(ws.iter_rows(min_row=1, max_row=1))  # skip header
+
+egr_data = {}  # {iees: {(coorte, ano_rais): taxa_pr}}
+for row in ws.iter_rows(min_row=2, values_only=True):
+    co = row[0]
+    try:
+        co_int = int(co)
+    except (TypeError, ValueError):
+        continue
+    iees = CO_IES_MAP.get(co_int)
+    if iees not in IEES_PR:
+        continue
+    try:
+        coorte   = int(row[2])
+        ano_rais = int(row[3])
+    except (TypeError, ValueError):
+        continue
+    if coorte == 2022:  # dados incompletos no arquivo
+        continue
+    taxa_sul = row[13]
+    if not isinstance(taxa_sul, (int, float)):
+        continue
+    if iees not in egr_data:
+        egr_data[iees] = {}
+    egr_data[iees][(coorte, ano_rais)] = float(taxa_sul)
+wb.close()
+
+for iees in IEES_PR:
+    key = iees.lower()
+    if iees not in egr_data:
+        continue
+    pares = sorted(egr_data[iees].keys(), reverse=True)
+    if not pares:
+        continue
+    best = pares[0]
+    taxa = egr_data[iees][best]
+    results[key]["insertionRatePR"] = round(taxa * 100, 2)
+    sources[key]["insertionRatePR"] = (
+        f"Base Egressos - Paraná.xlsx / Base_Egressos_PR"
+        f" / Taxa de inserção de egressos (Sul — SC+PR+RS)"
+        f" / coorte={best[0]} RAIS={best[1]}"
+    )
+
+
+# ── 10. Fundo Paraná — fundoParana, fundoExec ─────────────────────────────────
+# Fonte: Base Fundo Paraná - Paraná.xlsx / Fundo_Parana_IES_Ano
+# Colunas: [1] CO_IES, [0] NU_ANO_REF, [5] PCT_EXECUCAO_CONTRATOS,
+#          [8] VL_TOTAL_REPASSADO
+# fundoParana = VL_TOTAL_REPASSADO ÷ 1_000_000 (R$ milhões)
+# fundoExec   = PCT_EXECUCAO_CONTRATOS × 100 (%)
+# Ano preferido: mais recente com VL_TOTAL_REPASSADO > 0.
+
+wb = openpyxl.load_workbook(DATA_DIR / "Base Fundo Paraná - Paraná.xlsx", read_only=True, data_only=True)
+ws = wb["Fundo_Parana_IES_Ano"]
+next(ws.iter_rows(min_row=1, max_row=1))  # skip header
+
+fundo_data = {}  # {(iees, ano): {"repassado": float, "exec": float}}
+for row in ws.iter_rows(min_row=2, values_only=True):
+    co = row[1]
+    try:
+        co_int = int(co)
+    except (TypeError, ValueError):
+        continue
+    iees = CO_IES_MAP.get(co_int)
+    if iees not in IEES_PR:
+        continue
+    try:
+        ano = int(row[0])
+    except (TypeError, ValueError):
+        continue
+    try:
+        repassado = float(row[8]) if row[8] not in (None, "") else 0.0
+    except (TypeError, ValueError):
+        repassado = 0.0
+    try:
+        exec_pct = float(row[5]) if row[5] not in (None, "") else None
+    except (TypeError, ValueError):
+        exec_pct = None
+    fundo_data[(iees, ano)] = {"repassado": repassado, "exec": exec_pct}
+wb.close()
+
+for iees in IEES_PR:
+    key = iees.lower()
+    anos = sorted({a for (i, a) in fundo_data if i == iees}, reverse=True)
+    for ano in anos:
+        d = fundo_data.get((iees, ano), {})
+        if d.get("repassado", 0) > 0:
+            results[key]["fundoParana"] = round(d["repassado"] / 1_000_000, 3)
+            results[key]["fundoExec"]   = (
+                round(d["exec"] * 100, 2) if d["exec"] is not None else None
+            )
+            src = f"Base Fundo Paraná - Paraná.xlsx / Fundo_Parana_IES_Ano / ano={ano}"
+            sources[key]["fundoParana"] = src + " / VL_TOTAL_REPASSADO (R$ milhões)"
+            sources[key]["fundoExec"]   = src + " / PCT_EXECUCAO_CONTRATOS ×100"
+            break
+
+
+# ── 11. Base RAIS — egressosMunicipios ────────────────────────────────────────
+# Fonte: Base RAIS - 2023 e 2024 - Paraná.xlsx / Base_RAIS_2023_2024
+# Colunas: [1] ANO_EGRESSO, [2] ANO_RAIS, [3] IEES, [12] MUNICIPIO_NOME
+# egressosMunicipios = nº de municípios distintos onde egressos estão empregados
+# Prefere o par (coorte, ano_rais) mais recente disponível.
+
+wb = openpyxl.load_workbook(DATA_DIR / "Base RAIS - 2023 e 2024 - Paraná.xlsx", read_only=True, data_only=True)
+ws = wb["Base_RAIS_2023_2024"]
+next(ws.iter_rows(min_row=1, max_row=1))  # skip header
+
+rais_mun = {}  # {iees: {(coorte, ano_rais): set(municipios)}}
+for row in ws.iter_rows(min_row=2, values_only=True):
+    iees = str(row[3]).strip().upper() if row[3] else None
+    if iees not in IEES_PR:
+        continue
+    try:
+        ano_eg   = int(row[1])
+        ano_rais = int(row[2])
+    except (TypeError, ValueError):
+        continue
+    municipio = row[12]
+    if not municipio or str(municipio).strip() == "":
+        continue
+    if iees not in rais_mun:
+        rais_mun[iees] = {}
+    pair = (ano_eg, ano_rais)
+    if pair not in rais_mun[iees]:
+        rais_mun[iees][pair] = set()
+    rais_mun[iees][pair].add(str(municipio).strip())
+wb.close()
+
+for iees in IEES_PR:
+    key = iees.lower()
+    if iees not in rais_mun:
+        continue
+    pares = sorted(rais_mun[iees].keys(), reverse=True)
+    if not pares:
+        continue
+    best = pares[0]
+    results[key]["egressosMunicipios"] = len(rais_mun[iees][best])
+    sources[key]["egressosMunicipios"] = (
+        f"Base RAIS - 2023 e 2024 - Paraná.xlsx / Base_RAIS_2023_2024"
+        f" / MUNICIPIO_NOME distintos / coorte={best[0]} RAIS={best[1]}"
+    )
+
+
+# ── 12. Estratificação — clusters V1-V8 e referência de quartis ───────────────
+# Fonte: Estratificação_IES_Estaduais_BR.xlsx
+# Sheet 1_Matriz de Estratificação: V1-V8 labels por IES (linha de dados a partir da linha 6)
+# Sheet 0_Referência de Quartis: limiares e rótulos dos 4 quartis por variável
+#
+# Layout 0-indexed (linha de dados, sheet 1):
+#   [2]=Sigla  [8]=V1  [11]=V2  [14]=V3  [17]=V4  [20]=V5  [22]=V6  [24]=V7  [26]=V8
+#
+# "Não disponível" → None  (V6-V8 só existem para IES-PR)
+
+def _strat_label(v):
+    if v is None:
+        return None
+    s = str(v).strip()
+    if s.lower() in ("não disponível", "nao disponivel", "n/a", ""):
+        return None
+    return s
+
+wb = openpyxl.load_workbook(
+    DATA_DIR / "Estratificação_IES_Estaduais_BR.xlsx", read_only=True, data_only=True
+)
+
+# 12a. Grupos por IES
+ws_mat = wb["1_Matriz de Estratificação"]
+clusters_raw = {}
+for row in ws_mat.iter_rows(min_row=6, values_only=True):
+    sigla = row[2] if len(row) > 2 else None
+    if sigla not in IEES:
+        continue
+    clusters_raw[sigla] = {
+        "v1": _strat_label(row[8]  if len(row) > 8  else None),
+        "v2": _strat_label(row[11] if len(row) > 11 else None),
+        "v3": _strat_label(row[14] if len(row) > 14 else None),
+        "v4": _strat_label(row[17] if len(row) > 17 else None),
+        "v5": _strat_label(row[20] if len(row) > 20 else None),
+        "v6": _strat_label(row[22] if len(row) > 22 else None),
+        "v7": _strat_label(row[24] if len(row) > 24 else None),
+        "v8": _strat_label(row[26] if len(row) > 26 else None),
+    }
+
+# 12b. Referência de quartis (linha 6 em diante, até linha sem dados)
+ws_ref = wb["0_Referência de Quartis"]
+quartis_ref = []
+for row in ws_ref.iter_rows(min_row=6, values_only=True):
+    if not row[0]:
+        continue
+    # Ignora linhas de notas metodológicas (não são variáveis de quartil)
+    if str(row[0]).startswith("NOTA") or row[5] is None:
+        continue
+    quartis_ref.append({
+        "variable":   str(row[0]).strip(),
+        "indicator":  str(row[1]).strip() if row[1] else None,
+        "q1_limiar":  str(row[2]).strip() if row[2] else None,
+        "q2_limiar":  str(row[3]).strip() if row[3] else None,
+        "q3_limiar":  str(row[4]).strip() if row[4] else None,
+        "label_q1":   str(row[5]).strip() if row[5] else None,
+        "label_q2":   str(row[6]).strip() if row[6] else None,
+        "label_q3":   str(row[7]).strip() if row[7] else None,
+        "label_q4":   str(row[8]).strip() if row[8] else None,
+    })
+
+wb.close()
+
+
 # ── Saída stdout (retrocompatível) ────────────────────────────────────────────
 
 print(json.dumps({"results": results, "sources": sources}, indent=2, ensure_ascii=False))
 
 # ── Salva seti_precomputed.json para o dashboard ──────────────────────────────
-# Formato: {year, indicators: {SIGLA: {indicador: valor, ...}}, sources, generated}
-# O dashboard carrega este JSON em vez dos XLSX pesados (CAPES 250MB, Cursos 72MB, etc.)
+# Formato: {year, indicators, sources, clusters, quartiRefs, generated}
+# clusters: {SIGLA: {v1..v8: label_str}} — lido da Estratificação, nunca estático
+# quartiRefs: lista com limiares e rótulos de cada variável de agrupamento
 
 precomputed = {
     "generated": datetime.datetime.now().isoformat(timespec="seconds"),
     "year": "2024",
     "indicators": {iees: results[iees.lower()] for iees in IEES},
     "sources":    {iees: sources[iees.lower()] for iees in IEES},
+    "clusters":   {iees: clusters_raw.get(iees, {}) for iees in IEES},
+    "quartiRefs": quartis_ref,
 }
 json_path = DATA_DIR / "seti_precomputed.json"
 with open(json_path, "w", encoding="utf-8") as _f:

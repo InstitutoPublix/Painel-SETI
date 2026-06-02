@@ -40,7 +40,7 @@ const SETI_DATASETS = {
   ies:           { key: "ies",           name: "Base IES - Brasil",            file: "../data/Base IES - Brasil.xlsx",                       enabled: true  },
   cnpq:          { key: "cnpq",          name: "Base CNPq - Brasil",           file: "../data/Base CNPq - Brasil.xlsx",                      enabled: false }, // 47MB → JSON
   capes:         { key: "capes",         name: "Base CAPES- Pós-Graduação",    file: "../data/Base CAPES- Pós-Graduação - Brasil.xlsx",       enabled: false }, // 250MB → JSON
-  selo:          { key: "selo",          name: "Base SELO - Paraná",           file: "../data/Base SELO - Paraná.xlsx",                      enabled: false }, // 36MB → JSON
+  despesa8050:   { key: "despesa8050",   name: "Relatório da Despesa 8050",     file: "../data/Relatório da Despesa 8050 (2024 - 2026).xlsx", enabled: false }, // substituído por JSON pré-processado
   clusterizacao: { key: "clusterizacao", name: "Base de dados para clusterização", file: "../data/Base de dados para clusterização.xlsx",    enabled: false }, // 48MB → JSON
   docentes:      { key: "docentes",      name: "Base Docentes - Paraná",       file: "../data/Base Docentes - Paraná.xlsx",                  enabled: true  },
   rais:          { key: "rais",          name: "Base RAIS 2023-2024 - Paraná", file: "../data/Base RAIS - 2023 e 2024 - Paraná.xlsx",        enabled: true  },
@@ -944,136 +944,7 @@ async function loadRaisBase() {
   }
 }
 
-// ── Loader — Base SELO – Paraná ─────────────────────────────────────
-async function loadSeloBase() {
-  const NOME_BASE = SETI_DATASETS.selo.name;
-  try {
-    if (!window.XLSX) throw new Error("xlsx_missing");
-    const dataset = SETI_DATASETS.selo;
-    const response = await fetch(encodeURI(dataset.file));
-    if (!response.ok) throw new Error("HTTP " + response.status);
-    const buffer = await response.arrayBuffer();
-    console.log("[" + NOME_BASE + "] Arquivo recebido. Processando (pode levar alguns segundos)...");
-    const workbook = XLSX.read(buffer, { type: "array" });
-    const sheetName = workbook.SheetNames.find(function(n){ return /^base$/i.test(n.trim()); }) || workbook.SheetNames[0];
-    const ws = workbook.Sheets[sheetName];
-    const rows = XLSX.utils.sheet_to_json(ws, { header: 1, defval: 0, raw: true });
-    if (rows.length < 2) throw new Error("no_valid_rows");
 
-    // Índices das colunas confirmados no arquivo "Base SELO - Paraná.xlsx" (0-based)
-    const C = {
-      exercicio:  0,   // col 1  "Exercício"
-      gnd:        31,  // col 32 "GND" (int: 1=Pessoal, 3=ODC, 4=Investimentos)
-      elemento:   35,  // col 36 "Elemento" (string: "44"=Obras, "52"=Equipamentos)
-      grupoFonte: 48,  // col 49 "Grupo Fonte LOA"
-      fonte:      50,  // col 51 "Fonte" (código numérico)
-      dotIni:     56,  // col 57 "Dotação Inicial"
-      disponib:   57,  // col 58 "Disponibilidade"
-      contingenc: 58,  // col 59 "Contingenciado"
-      orcAtu:     60,  // col 61 "Orçamento Atualizado"
-      empenhado:  68,  // col 69 "Empenhado"
-      liquidado:  70,  // col 71 "Liquidado"
-      pago:       71,  // col 72 "Pago"
-      coIes:      72,  // col 73 "Co_IES"
-    };
-
-    const VALID_YEARS = { 2020:1, 2021:1, 2022:1, 2023:1, 2024:1 };
-    const agg = new Map();
-
-    for (var i = 1; i < rows.length; i++) {
-      var row = rows[i];
-      if (!row || !row.length) continue;
-      var year = Number(row[C.exercicio]);
-      if (!VALID_YEARS[year]) continue;
-      var coIes = Number(row[C.coIes]);
-      if (!coIes) continue;
-      var sigla = CURSOS_IES_MAP[coIes];
-      if (!sigla) continue;
-
-      var key = sigla + "|" + year;
-      if (!agg.has(key)) {
-        agg.set(key, { sigla: sigla, year: year,
-          dotIni:0, disponib:0, contingenc:0, orcAtu:0, empenhado:0, liquidado:0, pago:0,
-          liqGnd1:0, liqGnd3:0, liqGnd4:0,
-          liqElem44:0, liqElem52:0,
-          dotTesouro:0, dotProprio:0, dotTransfer:0,
-        });
-      }
-      var a = agg.get(key);
-      var num = function(v){ return (typeof v === "number") ? v : (parseLocaleNumber(v, 0) || 0); };
-
-      a.dotIni     += num(row[C.dotIni]);
-      a.disponib   += num(row[C.disponib]);
-      a.contingenc += num(row[C.contingenc]);
-      a.orcAtu     += num(row[C.orcAtu]);
-      a.empenhado  += num(row[C.empenhado]);
-      var liq = num(row[C.liquidado]);
-      a.liquidado  += liq;
-      a.pago       += num(row[C.pago]);
-
-      var gnd = Number(row[C.gnd]);
-      if (gnd === 1) a.liqGnd1 += liq;
-      else if (gnd === 3) a.liqGnd3 += liq;
-      else if (gnd === 4) a.liqGnd4 += liq;
-
-      var elem = String(row[C.elemento] == null ? "" : row[C.elemento]).trim();
-      if (elem === "44") a.liqElem44 += liq;
-      else if (elem === "52") a.liqElem52 += liq;
-
-      // Fonte: centena inicial define tipo de recurso (padrão Paraná)
-      // 100-199 → Tesouro Estadual | 200-299 → Recursos Próprios | 300+ → Transferências
-      var fonteStr = String(row[C.fonte] == null ? "" : row[C.fonte]).trim();
-      var fonteNum = parseInt(fonteStr, 10);
-      if (!isNaN(fonteNum) && fonteNum > 0) {
-        var dotI = num(row[C.dotIni]);
-        var hundreds = Math.floor(fonteNum / 100);
-        if (hundreds === 1) a.dotTesouro  += dotI;
-        else if (hundreds === 2) a.dotProprio  += dotI;
-        else if (hundreds >= 3) a.dotTransfer += dotI;
-      }
-    }
-
-    // Calcula indicadores por IES/ano a partir dos totais acumulados
-    var sd = function(n, d){ return d > 0 ? Math.round(n / d * 10000) / 100 : null; }; // → percentual
-    var stored = 0;
-
-    for (var entry of agg) {
-      var ae = entry[1];
-      var liqT = ae.liquidado, empT = ae.empenhado;
-      var orcAtu = ae.orcAtu, dotIni = ae.dotIni, disponib = ae.disponib;
-      var varDot = dotIni > 0 ? Math.round((orcAtu - dotIni) / dotIni * 10000) / 100 : null;
-
-      upsertYearIndicators(ae.sigla, String(ae.year), {
-        // Propriedades base usadas em byYear() para substituir valores sintéticos
-        seloBudgetLiq:   liqT > 0 ? Math.round(liqT / 1e6 * 100) / 100 : null, // R$ milhões (budget)
-        seloExecucao:    sd(empT, orcAtu),          // ind81: Empenhado / OrcAtu
-        seloLiquidacao:  sd(liqT, empT),            // ind82: Liquidado / Empenhado
-        seloPagamento:   sd(ae.pago, liqT),         // ind83: Pago / Liquidado
-        seloContingenc:  sd(ae.contingenc, dotIni), // ind84: Contingenciado / DotIni
-        seloDotVariacao: varDot,                    // ind85/93: (OrcAtu-DotIni)/DotIni
-        seloPartPessoal: sd(ae.liqGnd1, liqT),     // ind86: GND1 / Liquidado total
-        seloPartODC:     sd(ae.liqGnd3, liqT),     // (composição despesa): GND3 / Liquidado
-        // ind87: Despesas Correntes (GND1+3) / Despesas de Capital (GND4)
-        seloRatioCC:     ae.liqGnd4 > 0 ? Math.round((ae.liqGnd1+ae.liqGnd3)/ae.liqGnd4*100)/100 : null,
-        seloPartTesouro: sd(ae.dotTesouro, dotIni), // ind88/ind89 (Tesouro/DotIni = recursos livres)
-        seloPartProprio: sd(ae.dotProprio, dotIni), // ind90: Próprios / DotIni
-        seloPartTransfer:sd(ae.dotTransfer, dotIni),// (transferências): Transferências / DotIni
-        seloPartObras:   sd(ae.liqElem44, liqT),   // ind91: Elemento 44 / Liquidado
-        seloPartEquip:   sd(ae.liqElem52, liqT),   // ind92: Elemento 52 / Liquidado
-        seloLiqOrcIni:   sd(liqT, dotIni),         // ind94/ind95: Liquidado / DotIni
-        seloLiqOrcDisp:  sd(liqT, disponib),       // ind96: Liquidado / Disponibilidade
-        seloLiqOrcAtu:   sd(liqT, orcAtu),         // ind97: Liquidado / OrcAtu
-      });
-      stored++;
-    }
-
-    registerBase(NOME_BASE, "real", stored);
-  } catch(err) {
-    var reason = friendlyError(err);
-    console.warn("[" + NOME_BASE + "] " + reason, err && err.message ? err.message : "");
-    registerFailedBase(NOME_BASE, reason);
-  }
-}
 
 // ── Loader — Base CNPq – Brasil (stub — aguardando arquivo) ────────────
 //
@@ -1497,7 +1368,7 @@ async function loadGenericDataset(datasetKey) {
 // Gerado por: python pipeline/assemble_final.py
 // Contém os 22 indicadores agregados por IES, extraídos de:
 //   CAPES (250MB), Cursos (72MB), Clusterização (48MB),
-//   CNPq (47MB), SELO (36MB), Suplementação (23MB)
+//   CNPq (47MB), Despesa 8050 (via JSON), Suplementação (23MB)
 async function loadPrecomputedJson() {
   const NOME_BASE = "Indicadores Pré-processados (JSON)";
   try {
@@ -1511,6 +1382,8 @@ async function loadPrecomputedJson() {
       if (upsertYearIndicators(sigla, year, vals)) count++;
     }
     if (count === 0) throw new Error("no_valid_rows");
+    if (data.clusters)   window.SETI_CLUSTERS   = data.clusters;
+    if (data.quartiRefs) window.SETI_QUARTIREFS  = data.quartiRefs;
     registerBase(NOME_BASE + " (ano=" + year + ")", "real", count);
   } catch (err) {
     const reason = friendlyError(err);
@@ -1522,7 +1395,7 @@ async function loadPrecomputedJson() {
 async function loadAllData() {
   try {
     const loaders = [
-      loadPrecomputedJson(),   // CAPES/Cursos/CNPq/SELO/Clusterização/Suplementação via JSON
+      loadPrecomputedJson(),   // CAPES/Cursos/CNPq/Despesa8050/Clusterização/Suplementação via JSON
       ...Object.values(SETI_DATASETS)
         .filter(function(dataset) { return dataset.enabled; })
         .map(function(dataset) {

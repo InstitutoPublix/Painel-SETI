@@ -1432,7 +1432,7 @@ const INDICATOR_CATALOG = {
     "polaridade": "Quanto maior, melhor",
     "desagregacoes": "Por IES (UO-Sigla); por GND; por Fonte de Recursos; por Ação/Programa",
     "dimensao": "Paraná",
-    "fonte": "SELO Paraná",
+    "fonte": "Relatório da Despesa 8050",
     "serie": "2018– Abril 2026",
     "atualizacao": "2026-04-01",
     "ocde": "Sem correspondência direta",
@@ -1450,7 +1450,7 @@ const INDICATOR_CATALOG = {
     "polaridade": "Quanto maior, melhor",
     "desagregacoes": "Por IES; por GND; por Fonte de Recursos",
     "dimensao": "Paraná",
-    "fonte": "SELO Paraná",
+    "fonte": "Relatório da Despesa 8050",
     "serie": "2018– Abril 2026",
     "atualizacao": "2026-04-02",
     "ocde": "Sem correspondência direta",
@@ -1468,7 +1468,7 @@ const INDICATOR_CATALOG = {
     "polaridade": "Quanto maior, melhor",
     "desagregacoes": "Por IES; por GND",
     "dimensao": "Paraná",
-    "fonte": "SELO Paraná",
+    "fonte": "Relatório da Despesa 8050",
     "serie": "2018– Abril 2026",
     "atualizacao": "2026-04-03",
     "ocde": "Sem correspondência direta",
@@ -1486,7 +1486,7 @@ const INDICATOR_CATALOG = {
     "polaridade": "Quanto menor, melhor",
     "desagregacoes": "Por IES; por GND; por Fonte de Recursos",
     "dimensao": "Paraná",
-    "fonte": "SELO Paraná",
+    "fonte": "Relatório da Despesa 8050",
     "serie": "2018– Abril 2026",
     "atualizacao": "2026-04-04",
     "ocde": "Sem correspondência direta",
@@ -1504,7 +1504,7 @@ const INDICATOR_CATALOG = {
     "polaridade": "Neutra (valores muito positivos ou muito negativos indicam baixa qualidade do planejamento)",
     "desagregacoes": "Por IES; por GND; por Fonte de Recursos",
     "dimensao": "Paraná",
-    "fonte": "SELO Paraná",
+    "fonte": "Relatório da Despesa 8050",
     "serie": "2018– Abril 2026",
     "atualizacao": "2026-04-05",
     "ocde": "Sem correspondência direta",
@@ -1522,7 +1522,7 @@ const INDICATOR_CATALOG = {
     "polaridade": "Neutra (referência setorial: ~75–80% para IES públicas estaduais brasileiras)",
     "desagregacoes": "Por IES; por Sub-elemento (vencimentos, obrigações patronais, contratos temporários)",
     "dimensao": "Paraná",
-    "fonte": "SELO Paraná",
+    "fonte": "Relatório da Despesa 8050",
     "serie": "2018– Abril 2026",
     "atualizacao": "2026-04-06",
     "ocde": "Sem correspondência direta",
@@ -1540,7 +1540,7 @@ const INDICATOR_CATALOG = {
     "polaridade": "Neutra",
     "desagregacoes": "Por IES; por Elemento de Despesa; por Fonte de Recursos",
     "dimensao": "Paraná",
-    "fonte": "SELO Paraná",
+    "fonte": "Relatório da Despesa 8050",
     "serie": "2018– Abril 2026",
     "atualizacao": "2026-04-07",
     "ocde": "Sem correspondência direta",
@@ -1558,7 +1558,7 @@ const INDICATOR_CATALOG = {
     "polaridade": "Neutra (razões muito altas indicam baixa capacidade de investimento)",
     "desagregacoes": "Por IES; por Exercício",
     "dimensao": "Paraná",
-    "fonte": "SELO Paraná",
+    "fonte": "Relatório da Despesa 8050",
     "serie": "2018– Abril 2026",
     "atualizacao": "2026-04-08",
     "ocde": "Sem correspondência direta",
@@ -1576,7 +1576,7 @@ const INDICATOR_CATALOG = {
     "polaridade": "Neutra (alta dependência pode indicar vulnerabilidade a cortes estaduais)",
     "desagregacoes": "Por IES; por GND",
     "dimensao": "Paraná",
-    "fonte": "SELO Paraná",
+    "fonte": "Relatório da Despesa 8050",
     "serie": "2018– Abril 2026",
     "atualizacao": "2026-04-09",
     "ocde": "Sem correspondência direta",
@@ -1594,7 +1594,7 @@ const INDICATOR_CATALOG = {
     "polaridade": "Quanto maior, melhor",
     "desagregacoes": "Por IES; por GND; por Elemento",
     "dimensao": "Paraná",
-    "fonte": "SELO Paraná",
+    "fonte": "Relatório da Despesa 8050",
     "serie": "2018– Abril 2026",
     "atualizacao": "2026-04-10",
     "ocde": "Sem correspondência direta",
@@ -1612,7 +1612,7 @@ const INDICATOR_CATALOG = {
     "polaridade": "Quanto maior, melhor",
     "desagregacoes": "Por IES; por GND",
     "dimensao": "Paraná",
-    "fonte": "SELO Paraná",
+    "fonte": "Relatório da Despesa 8050",
     "serie": "2018– Abril 2026",
     "atualizacao": "2026-04-11",
     "ocde": "Sem correspondência direta",
@@ -1630,7 +1630,7 @@ const INDICATOR_CATALOG = {
     "polaridade": "Quanto maior, melhor",
     "desagregacoes": "Por IES; por Exercício",
     "dimensao": "Paraná",
-    "fonte": "SELO Paraná",
+    "fonte": "Relatório da Despesa 8050",
     "serie": "2018– Abril 2026",
     "atualizacao": "2026-04-12",
     "ocde": "Sem correspondência direta",
@@ -1648,7 +1648,7 @@ const INDICATOR_CATALOG = {
     "polaridade": "Quanto maior, melhor",
     "desagregacoes": "Por IES; por Exercício",
     "dimensao": "Paraná",
-    "fonte": "SELO Paraná",
+    "fonte": "Relatório da Despesa 8050",
     "serie": "2018– Abril 2026",
     "atualizacao": "2026-04-13",
     "ocde": "Sem correspondência direta",
@@ -1666,7 +1666,7 @@ const INDICATOR_CATALOG = {
     "polaridade": "Neutra (variações muito positivas ou negativas indicam baixa qualidade do planejamento)",
     "desagregacoes": "Por IES (UO-Sigla); por GND; por Fonte de Recursos",
     "dimensao": "Paraná",
-    "fonte": "SELO Paraná",
+    "fonte": "Relatório da Despesa 8050",
     "serie": "2018– Abril 2026",
     "atualizacao": "2026-04-01",
     "ocde": "Sem correspondência direta",
@@ -1684,7 +1684,7 @@ const INDICATOR_CATALOG = {
     "polaridade": "Quanto maior, melhor (referência: acima de 85% indica boa absorção do orçamento originalmente aprovado)",
     "desagregacoes": "Por IES (UO-Sigla); por GND; por Fonte de Recursos",
     "dimensao": "Paraná",
-    "fonte": "SELO Paraná",
+    "fonte": "Relatório da Despesa 8050",
     "serie": "2018– Abril 2026",
     "atualizacao": "2026-04-01",
     "ocde": "Sem correspondência direta",
@@ -1702,7 +1702,7 @@ const INDICATOR_CATALOG = {
     "polaridade": "Quanto maior, melhor",
     "desagregacoes": "Por IES (UO-Sigla); por GND; por Fonte de Recursos",
     "dimensao": "Paraná",
-    "fonte": "SELO Paraná",
+    "fonte": "Relatório da Despesa 8050",
     "serie": "2018– Abril 2026",
     "atualizacao": "2026-04-01",
     "ocde": "Sem correspondência direta",
@@ -1720,7 +1720,7 @@ const INDICATOR_CATALOG = {
     "polaridade": "Quanto maior, melhor (referência: acima de 85% indica boa absorção do orçamento disponível)",
     "desagregacoes": "Por IES (UO-Sigla); por GND; por Fonte de Recursos; por Ação/Programa",
     "dimensao": "Paraná",
-    "fonte": "SELO Paraná",
+    "fonte": "Relatório da Despesa 8050",
     "serie": "2018– Abril 2026",
     "atualizacao": "2026-04-01",
     "ocde": "Sem correspondência direta",
@@ -1735,8 +1735,7 @@ const INDICATOR_CATALOG = {
 // doctors → Base IES - Brasil.xlsx (INEP 2024)
 // cnpq → Base CNPq - Brasil.xlsx (ano mais recente por IES; UNICENTRO/UNESPAR estimados por similaridade)
 // capes/pg/pgTop → Base CAPES- Pós-Graduação - Brasil.xlsx (2024)
-// budget/execution/liquidation → Base SELO - Paraná.xlsx + Base de dados para clusterização.xlsx (2024)
-// personnel → não disponível por IES na base SELO; mantidos valores de referência
+// budget/execution/liquidation/personnel → Relatório da Despesa 8050 (2024 - 2026).xlsx via seti_precomputed.json
 // supplementation → Dados de Suplementação das Universidades - Paraná.xlsx (% crédito adicional / dotação inicial)
 // employment/salary → CBO2 _ RAIS 2023 e 2024 - Paraná.xlsx (egressos 2021 encontrados RAIS 2024)
 // facultyOcc/cres → Base de dados para clusterização.xlsx / Estrutura docente (fev/2026)
@@ -2445,7 +2444,7 @@ function context(){
   if(f.attention){const ids=matrixRows(ref,f).filter(r=>r.resultRel<100&&r.effortRel>100).map(r=>r.id);ref=ref.filter(u=>ids.includes(u.id));display=display.filter(u=>ids.includes(u.id));}
   return {f,all,base,ref,display,selected,group};
 }
-function byYear(u,year){const [vol,bud,delta]=yearAdj[year]||yearAdj[2024];const c={...u,groups:{...u.groups},coursesFocus:[...u.coursesFocus]};["students","entrants","graduates","vacancies"].forEach(k=>c[k]=Math.round(c[k]*vol));c.budget=round(c.budget*bud,1);const cnpqReal=CNPQ_DATA[u.id]?.[Number(year)];if(cnpqReal){c.cnpq=round(cnpqReal.captacao,2);c.vinculos=cnpqReal.vinculos;}else{c.cnpq=round(c.cnpq*(.9+bud*.1),1);c.vinculos=null;}c.supplementation=round(c.supplementation+(1-bud)*3,1);["occupancy","completion","doctors","employment","facultyOcc","cres","execution","liquidation"].forEach(k=>c[k]=clamp(round(c[k]+delta,1),0,100));c.dropout=clamp(round(c.dropout-delta*.25,1),0,100);c.salary=Math.round(c.salary*(.88+bud*.12));const _rc=getRealIndicators(u.sigla,year);if(_rc&&_rc.cursosStudents!=null){if(_rc.cursosStudents!=null)c.students=_rc.cursosStudents;if(_rc.cursosEntrants!=null)c.entrants=_rc.cursosEntrants;if(_rc.cursosGraduates!=null)c.graduates=_rc.cursosGraduates;if(_rc.cursosCourses!=null)c.courses=_rc.cursosCourses;if(_rc.cursosVacancies!=null)c.vacancies=_rc.cursosVacancies;if(_rc.cursosOccupancy!=null)c.occupancy=_rc.cursosOccupancy;if(_rc.cursosDropout!=null)c.dropout=_rc.cursosDropout;if(_rc.cursosCompletion!=null)c.completion=_rc.cursosCompletion;c.vacanciesNova=_rc.cursosVacanciesNova??null;c.vacanciesDay=_rc.cursosVacanciesDay??null;c.vacanciesNight=_rc.cursosVacanciesNight??null;c.matDay=_rc.cursosMatDay??null;c.matNight=_rc.cursosMatNight??null;c.ingressOccupancy=_rc.cursosIngressOccupancy??null;c.vacanciesUnfilled=_rc.cursosVacanciesUnfilled??null;c.vacanciesNovaUnfilled=_rc.cursosVacanciesNovaUnfilled??null;c.mobility=_rc.cursosMobility??null;c.publicSchool=_rc.cursosPublicSchool??null;c.occDay=_rc.cursosOccupancyDay??null;c.occNight=_rc.cursosOccupancyNight??null;}if(_rc){if(_rc.iesDocDout!=null)c.doctors=_rc.iesDocDout;c.docForeign=_rc.iesDocForeign??null;c.capesPortal=_rc.iesCapesPortal??null;if(_rc.docTaxaOcup!=null)c.facultyOcc=_rc.docTaxaOcup;if(_rc.docCresTaxa!=null)c.cres=_rc.docCresTaxa;c.docVagasTotais=_rc.docVagasTotais??null;c.docVagasDisp=_rc.docVagasDisp??null;c.docVagasOcupadas=_rc.docVagasOcupadas??null;c.docTaxaUtil=_rc.docTaxaUtil??null;c.docVagasCond=_rc.docVagasCond??null;c.docPctCond=_rc.docPctCond??null;c.docTideAtrib=_rc.docTideAtrib??null;c.docTidePartic=_rc.docTidePartic??null;c.docTidePctNaoAtrib=_rc.docTidePctNaoAtrib??null;c.docChMedia=_rc.docChMedia??null;c.docCresAut=_rc.docCresAut??null;c.docCresUtil=_rc.docCresUtil??null;c.docCresSaldo=_rc.docCresSaldo??null;c.docCresOciosidade=_rc.docCresOciosidade??null;c.docCresPartic=_rc.docCresPartic??null;if(_rc.capesConceito!=null)c.capes=_rc.capesConceito;c.capesPct567=_rc.capesPct567??null;c.capesDocPermanentes=_rc.capesDocPermanentes??null;c.capesDocEstrangeiros=_rc.capesDocEstrangeiros??null;c.capesDocBolsa=_rc.capesDocBolsa??null;}if(_rc){if(_rc.seloBudgetLiq!=null)c.budget=_rc.seloBudgetLiq;if(_rc.seloExecucao!=null)c.execution=_rc.seloExecucao;if(_rc.seloLiquidacao!=null)c.liquidation=_rc.seloLiquidacao;if(_rc.seloPartPessoal!=null)c.personnel=_rc.seloPartPessoal;if(_rc.seloDotVariacao!=null)c.supplementation=_rc.seloDotVariacao;c.seloExecucao=_rc.seloExecucao??null;c.seloLiquidacao=_rc.seloLiquidacao??null;c.seloPagamento=_rc.seloPagamento??null;c.seloContingenc=_rc.seloContingenc??null;c.seloDotVariacao=_rc.seloDotVariacao??null;c.seloPartPessoal=_rc.seloPartPessoal??null;c.seloPartODC=_rc.seloPartODC??null;c.seloRatioCC=_rc.seloRatioCC??null;c.seloPartTesouro=_rc.seloPartTesouro??null;c.seloPartProprio=_rc.seloPartProprio??null;c.seloPartTransfer=_rc.seloPartTransfer??null;c.seloPartObras=_rc.seloPartObras??null;c.seloPartEquip=_rc.seloPartEquip??null;c.seloLiqOrcIni=_rc.seloLiqOrcIni??null;c.seloLiqOrcDisp=_rc.seloLiqOrcDisp??null;c.seloLiqOrcAtu=_rc.seloLiqOrcAtu??null;if(_rc.cnpqCaptacao!=null){c.cnpq=_rc.cnpqCaptacao;}if(_rc.cnpqVinculos!=null){c.vinculos=_rc.cnpqVinculos;}}return c;}
+function byYear(u,year){const [vol,bud,delta]=yearAdj[year]||yearAdj[2024];const c={...u,groups:{...u.groups},coursesFocus:[...u.coursesFocus]};["students","entrants","graduates","vacancies"].forEach(k=>c[k]=Math.round(c[k]*vol));c.budget=round(c.budget*bud,1);const cnpqReal=CNPQ_DATA[u.id]?.[Number(year)];if(cnpqReal){c.cnpq=round(cnpqReal.captacao,2);c.vinculos=cnpqReal.vinculos;}else{c.cnpq=round(c.cnpq*(.9+bud*.1),1);c.vinculos=null;}c.supplementation=round(c.supplementation+(1-bud)*3,1);["occupancy","completion","doctors","employment","facultyOcc","cres","execution","liquidation"].forEach(k=>c[k]=clamp(round(c[k]+delta,1),0,100));c.dropout=clamp(round(c.dropout-delta*.25,1),0,100);c.salary=Math.round(c.salary*(.88+bud*.12));const _rc=getRealIndicators(u.sigla,year);if(_rc&&_rc.cursosStudents!=null){if(_rc.cursosStudents!=null)c.students=_rc.cursosStudents;if(_rc.cursosEntrants!=null)c.entrants=_rc.cursosEntrants;if(_rc.cursosGraduates!=null)c.graduates=_rc.cursosGraduates;if(_rc.cursosCourses!=null)c.courses=_rc.cursosCourses;if(_rc.cursosVacancies!=null)c.vacancies=_rc.cursosVacancies;if(_rc.cursosOccupancy!=null)c.occupancy=_rc.cursosOccupancy;if(_rc.cursosDropout!=null)c.dropout=_rc.cursosDropout;if(_rc.cursosCompletion!=null)c.completion=_rc.cursosCompletion;c.vacanciesNova=_rc.cursosVacanciesNova??null;c.vacanciesDay=_rc.cursosVacanciesDay??null;c.vacanciesNight=_rc.cursosVacanciesNight??null;c.matDay=_rc.cursosMatDay??null;c.matNight=_rc.cursosMatNight??null;c.ingressOccupancy=_rc.cursosIngressOccupancy??null;c.vacanciesUnfilled=_rc.cursosVacanciesUnfilled??null;c.vacanciesNovaUnfilled=_rc.cursosVacanciesNovaUnfilled??null;c.mobility=_rc.cursosMobility??null;c.publicSchool=_rc.cursosPublicSchool??null;c.occDay=_rc.cursosOccupancyDay??null;c.occNight=_rc.cursosOccupancyNight??null;}if(_rc){if(_rc.iesDocDout!=null)c.doctors=_rc.iesDocDout;c.docForeign=_rc.iesDocForeign??null;c.capesPortal=_rc.iesCapesPortal??null;if(_rc.docTaxaOcup!=null)c.facultyOcc=_rc.docTaxaOcup;if(_rc.docCresTaxa!=null)c.cres=_rc.docCresTaxa;c.docVagasTotais=_rc.docVagasTotais??null;c.docVagasDisp=_rc.docVagasDisp??null;c.docVagasOcupadas=_rc.docVagasOcupadas??null;c.docTaxaUtil=_rc.docTaxaUtil??null;c.docVagasCond=_rc.docVagasCond??null;c.docPctCond=_rc.docPctCond??null;c.docTideAtrib=_rc.docTideAtrib??null;c.docTidePartic=_rc.docTidePartic??null;c.docTidePctNaoAtrib=_rc.docTidePctNaoAtrib??null;c.docChMedia=_rc.docChMedia??null;c.docCresAut=_rc.docCresAut??null;c.docCresUtil=_rc.docCresUtil??null;c.docCresSaldo=_rc.docCresSaldo??null;c.docCresOciosidade=_rc.docCresOciosidade??null;c.docCresPartic=_rc.docCresPartic??null;if(_rc.capesConceito!=null)c.capes=_rc.capesConceito;c.capesPct567=_rc.capesPct567??null;c.capesDocPermanentes=_rc.capesDocPermanentes??null;c.capesDocEstrangeiros=_rc.capesDocEstrangeiros??null;c.capesDocBolsa=_rc.capesDocBolsa??null;}if(_rc){c.budget=_rc.budget??c.budget;c.execution=_rc.execution??c.execution;c.liquidation=_rc.liquidation??c.liquidation;c.personnel=_rc.personnel??c.personnel;c.supplementation=_rc.supplementation??c.supplementation;if(_rc.cnpqCaptacao!=null){c.cnpq=_rc.cnpqCaptacao;}if(_rc.cnpqVinculos!=null){c.vinculos=_rc.cnpqVinculos;}}if(_rc){c.insertionRatePR=_rc.insertionRatePR??null;c.fundoParana=_rc.fundoParana??_rc.fundoVlRepassado??null;c.fundoExec=_rc.fundoExec??_rc.fundoPctExecucao??null;c.egressosMunicipios=_rc.egressosMunicipios??_rc.raisMunCount??null;}if(window.SETI_CLUSTERS&&window.SETI_CLUSTERS[u.sigla]){const cl=window.SETI_CLUSTERS[u.sigla];Object.keys(cl).forEach(k=>{if(cl[k]!=null)c.groups[k]=cl[k];});}return c;}
 function render(){const c=context();currentFilteredCount=c.ref.length;syncScopeToggle(c.f.scope);updateScopeAvailability(c.f.scope);updateActiveTabFilters();renderTop(c);renderKpis(c);renderSide(c);renderTab(c);}
 function renderTop(c){const t=tabInfo[state.activeTab];el.activeTabKicker.textContent=t[0];el.activeTabTitle.textContent=t[1];el.activeTabDescription.textContent=t[2];el.periodPill.textContent=`Ano base ${c.f.year} · Escopo ${c.f.scope}`;el.scopeLabel.textContent=c.selected?`${c.selected.sigla} | ${c.group}`:c.group==="all"?"Sistema estadual":`Grupo ${c.group}`;updateActiveClusterLabel(c);}
 function renderKpis(c){
@@ -2681,7 +2680,7 @@ const tabBlocks = {
   quality: ["Qualificação docente", "Pós-grad e CAPES", "Pesquisa e CNPq", "Internacionalização"],
   faculty: ["Quadro legal", "Vagas disponíveis e condicionadas", "TIDE", "CRES e esforço", "Alertas"],
   employment: ["Inserção geral", "Inserção PR e Sul", "CBO2 e salário", "Destino territorial", "Por curso", "Perfil ocupacional"],
-  efficiency: ["Resposta ao Piloto", "Perfil da movimentação", "Composição crédito e despesa", "Cruzamento desempenho acadêmico", "Cruzamento corpo docente", "Matriz de oportunidades e alertas"]
+  efficiency: ["Resposta ao Piloto", "Perfil da movimentação", "Fundo Paraná", "Composição crédito e despesa", "Cruzamento desempenho acadêmico", "Cruzamento corpo docente", "Matriz de oportunidades e alertas"]
 };
 
 const tabIndicators = {
@@ -2856,7 +2855,7 @@ const IND_FIELD_MAP = {
   ind67: u=>clamp(u.occupancy+(u.type==="Licenciatura"?-3.5:1.8),0,100),
   ind68: u=>offerSpecialization(u),
   ind69: u=>courseMix(u).lic*100,
-  ind70: u=>panelEgressosField(u,"raisMunCount",null),
+  ind70: u=>u.egressosMunicipios??panelEgressosField(u,"raisMunCount",null),
   ind71: u=>panelEgressosField(u,"raisPartMunMax",null),
   ind72: u=>panelEgressosField(u,"raisCursoCount",null),
   ind73: u=>panelEgressosField(u,"raisPartCursoMax",null),
@@ -3104,13 +3103,13 @@ function renderSystemAlerts(c) {
 
 // Bases necessárias por aba (para nota de dados sintéticos)
 const TAB_BASE_DEPS = {
-  comparison: ["cursos","ies","egressos","selo"],
+  comparison: ["cursos","ies","egressos"],
   access:     ["cursos"],
   retention:  ["cursos"],
   quality:    ["ies","capes","cnpq"],
   faculty:    ["docentes"],
   employment: ["egressos","rais"],
-  efficiency: ["selo"]
+  efficiency: ["orcamento"]
 };
 
 function miniKpi(label, value) {
@@ -3206,10 +3205,10 @@ function renderBlockContent(tabId, title, c) {
   if (tabId === "faculty") return title.includes("CRES") ? `<article class="visual-card">${bars(d, u => u.cres, formatPercent)}</article>${prOnly ? nationalUnavailableNote("Capacidade Residual de Expansão (CRES)") : ""}` : title.includes("Alertas") ? `<div class="system-alerts-list">${document.getElementById("systemAlerts")?.innerHTML || ""}</div>` : metricTable(d, [["IEES", u => u.sigla], ["Ocupação docente", u => formatPercent(u.facultyOcc)], ["TIDE estimado", u => formatPercent((u.facultyOcc + u.doctors) / 2)], ["Pessoal", u => formatPercent(u.personnel)]], title);
   if (tabId === "employment") return title.includes("salário") ? `<article class="visual-card">${prOnly ? barsWithBrRef(d, u => u.salary, formatCurrency, brVal("salary"), false) : barsWithBrRef(d, u => u.salary, formatCurrency, null, true)}</article>${prOnly ? nationalUnavailableNote("distribuição regional de egressos") : ""}` : title.includes("Inserção") ? `<article class="visual-card">${brRefBars(d, u => u.employment, formatPercent, "employment")}</article>` : metricTable(d, [["IEES", u => u.sigla], ["Município", u => u.municipality], ["Inserção PR", u => formatPercent(u.employment)], ["Dispersão", u => `${u.territory} pts`]], title);
   if (tabId === "efficiency" && title.includes("Matriz")) return efficiency(c);
-  if (tabId === "efficiency" && title.includes("Composição")) return `${metricTable(d, [["IEES", u => u.sigla], ["Orçamento", u => formatCurrencyMillions(u.budget)], ["Pessoal", u => formatPercent(u.personnel)], ["Suplementação", u => formatPercent(u.supplementation)]], title)}${prOnly ? nationalUnavailableNote("execução orçamentária (SELO)") : ""}`;
+  if (tabId === "efficiency" && title.includes("Composição")) return `${metricTable(d, [["IEES", u => u.sigla], ["Orçamento", u => formatCurrencyMillions(u.budget)], ["Pessoal", u => formatPercent(u.personnel)], ["Suplementação", u => formatPercent(u.supplementation)]], title)}${prOnly ? nationalUnavailableNote("execução orçamentária") : ""}`;
   if (tabId === "efficiency") return `<div class="chart-grid">
-    <article class="visual-card"><h3>IND-81 · Taxa de execução orçamentária</h3><p class="card-subtitle">Empenho / Orçamento Atualizado × 100. Fonte: SELO Paraná.</p>${bars(d, u => u.execution, formatPercent)}</article>
-    <article class="visual-card"><h3>IND-82 · Taxa de liquidação</h3><p class="card-subtitle">Liquidado / Empenhado × 100. Fonte: SELO Paraná.</p>${bars(d, u => u.liquidation, formatPercent)}</article>
+    <article class="visual-card"><h3>IND-81 · Taxa de execução orçamentária</h3><p class="card-subtitle">Empenho / Orçamento Atualizado × 100. Fonte: Relatório da Despesa 8050.</p>${bars(d, u => u.execution, formatPercent)}</article>
+    <article class="visual-card"><h3>IND-82 · Taxa de liquidação</h3><p class="card-subtitle">Liquidado / Empenhado × 100. Fonte: Relatório da Despesa 8050.</p>${bars(d, u => u.liquidation, formatPercent)}</article>
   </div>`;
   return `<article class="visual-card"><h3>${res.label}</h3><p class="card-subtitle">${title} · ${res.label}</p>${bars(d, res.get, res.format)}</article>`;
 }
@@ -3447,7 +3446,7 @@ var overviewKpiDefinitions = [
   { code: "IND-37", title: "Inserção de egressos no Paraná", source: "SETI / RAIS", formula: "Egressos PR / Total egressos × 100", polarity: "↑", mode: "pp", benchmark: () => formatPercent(brazil.result.employment), get: a => a.employment, fmt: formatPercent },
   { code: "IND-40", title: "Média salarial dos egressos", source: "SETI / RAIS", formula: "Média salarial PR + CBO2", polarity: "↑", mode: "pct", benchmark: () => formatCurrency(brazil.result.salary), get: a => a.salary, fmt: formatCurrency },
   { code: "IND-60", title: "Captação de recursos do CNPq", source: "CNPq", formula: "Bolsas, auxílios e projetos", polarity: "↑", mode: "pct", get: a => a.cnpq, fmt: formatCurrencyMillions },
-  { code: "IND-81", title: "Taxa de execução orçamentária", source: "SELO", formula: "Empenhado / Orçamento atualizado × 100", polarity: "↑", mode: "pp", get: a => a.execution, fmt: formatPercent }
+  { code: "IND-81", title: "Taxa de execução orçamentária", source: "Relatório 8050", formula: "Empenhado / Orçamento atualizado × 100", polarity: "↑", mode: "pp", get: a => a.execution, fmt: formatPercent }
 ];
 
 function hasClusterFilter(c) {
@@ -3952,33 +3951,33 @@ var comparisonIndicatorSets = {
     indicators: [
       { code:"IND-81", name:"Execução orçamentária",         polarity:"↑", get:u=>u.execution, fmt:formatPercent },
       { code:"IND-82", name:"Taxa de liquidação",            polarity:"↑", get:u=>u.liquidation, fmt:formatPercent },
-      { code:"IND-84", name:"Contingenciamento",             polarity:"↓", get:u=>u.seloContingenc??0, fmt:formatPercent },
-      { code:"IND-95", name:"Liq. sobre orç. inicial",       polarity:"↑", get:u=>u.seloLiqOrcIni??0, fmt:formatPercent }
+      { code:"IND-84", name:"Contingenciamento",             polarity:"↓", get:u=>0, fmt:formatPercent },
+      { code:"IND-95", name:"Liq. sobre orç. inicial",       polarity:"↑", get:u=>0, fmt:formatPercent }
     ]
   },
   estruturaGastos: {
     label: "Estrutura de Gastos",
     indicators: [
       { code:"IND-86", name:"Pessoal e encargos",            polarity:"~", get:u=>u.personnel, fmt:formatPercent },
-      { code:"IND-87", name:"Outras despesas correntes",     polarity:"~", get:u=>u.seloPartODC??0, fmt:formatPercent },
-      { code:"IND-88", name:"Correntes vs. capital",         polarity:"~", get:u=>u.seloRatioCC??0, fmt:formatPercent },
+      { code:"IND-87", name:"Outras despesas correntes",     polarity:"~", get:u=>0, fmt:formatPercent },
+      { code:"IND-88", name:"Correntes vs. capital",         polarity:"~", get:u=>0, fmt:formatPercent },
       { code:"IND-85", name:"Variação da dotação",           polarity:"~", get:u=>u.supplementation, fmt:formatPercent }
     ]
   },
   autonomiaDivers: {
     label: "Autonomia e Diversificação de Recursos",
     indicators: [
-      { code:"IND-89", name:"Recursos livres (Tesouro)",     polarity:"↑", get:u=>u.seloPartTesouro??clamp(100-u.supplementation-(u.cnpq*.45),62,96), fmt:formatPercent },
-      { code:"IND-90", name:"Recursos próprios",             polarity:"~", get:u=>u.seloPartProprio??clamp(4+u.cnpq*.55+u.pgTop*.12,4,24), fmt:formatPercent },
-      { code:"IND-91", name:"Transferências federais",       polarity:"~", get:u=>u.seloPartTransfer??0, fmt:formatPercent }
+      { code:"IND-89", name:"Recursos livres (Tesouro)",     polarity:"↑", get:u=>clamp(100-u.supplementation-(u.cnpq*.45),62,96), fmt:formatPercent },
+      { code:"IND-90", name:"Recursos próprios",             polarity:"~", get:u=>clamp(4+u.cnpq*.55+u.pgTop*.12,4,24), fmt:formatPercent },
+      { code:"IND-91", name:"Transferências federais",       polarity:"~", get:u=>0, fmt:formatPercent }
     ]
   },
   capacidadeInvest: {
     label: "Capacidade de Investimento",
     indicators: [
-      { code:"IND-92", name:"Obras e instalações",           polarity:"↑", get:u=>u.seloPartObras??0, fmt:formatPercent },
-      { code:"IND-93", name:"Equipamentos permanentes",      polarity:"~", get:u=>u.seloPartEquip??0, fmt:formatPercent },
-      { code:"IND-94", name:"Variação vs. LOA inicial",      polarity:"~", get:u=>u.seloLiqOrcAtu??0, fmt:formatPercent }
+      { code:"IND-92", name:"Obras e instalações",           polarity:"↑", get:u=>0, fmt:formatPercent },
+      { code:"IND-93", name:"Equipamentos permanentes",      polarity:"~", get:u=>0, fmt:formatPercent },
+      { code:"IND-94", name:"Variação vs. LOA inicial",      polarity:"~", get:u=>0, fmt:formatPercent }
     ]
   }
 };
@@ -3988,7 +3987,7 @@ var comparisonIndicatorSets = {
 // Eixo Qualidade:             u.doctors          → IND-6  → Base IES INEP          (real)   → BR: brazil.result.doctorate  = 82.6 (benchmark estimado)
 // Eixo Pesquisa:              u.cnpq*1e6/students→ IND-60 → Base CNPq              (real)   → BR: brazil.result.cnpq       = 1700 R$/est. (benchmark estimado)
 // Eixo Inserção:              u.employment       → IND-37 → Base RAIS Egressos     (real)   → BR: brazil.result.employment = 68.4 (benchmark estimado)
-// Eixo Orçamento:             u.execution        → IND-81 → Base SELO PR           (real)   → BR: INDISPONÍVEL — sem campo em brazil.result; não comparável com IEES nacionais
+// Eixo Orçamento:             u.execution        → IND-81 → Relatório Despesa 8050 (real)   → BR: INDISPONÍVEL — sem campo em brazil.result; não comparável com IEES nacionais
 var radarAxes = [
   { label: "Acesso",                 code: "IND-26", get: u => u.occupancy,                 br: () => brazil.result.occupancy  },
   { label: "Permanência (retenção)", code: "IND-5",  get: u => 100 - u.dropout,             br: () => brazil.result.permanence },
@@ -5823,7 +5822,7 @@ function employmentMetrics(u) {
   const hasRealEgress = real && Number(real.ind33) > 0;
   const totalEgress = hasRealEgress ? Math.max(1, Math.round(Number(real.ind33))) : Math.max(80, Math.round(u.graduates * 1.18 + u.entrants * 0.18));
   const prRate = hasRealEgress && real.ind37 != null ? clamp(Number(real.ind37) * 100, 0, 100) : clamp(u.employment, 24, 95);
-  const southRate = hasRealEgress && real.ind35 != null ? clamp(Number(real.ind35) * 100, 0, 100) : clamp(prRate + 5 + (u.territory > 75 ? 1.8 : 0), 30, 98);
+  const southRate = hasRealEgress && real.ind35 != null ? clamp(Number(real.ind35) * 100, 0, 100) : (u.insertionRatePR!=null?u.insertionRatePR:clamp(prRate + 5 + (u.territory > 75 ? 1.8 : 0), 30, 98));
   const cbo2Rate = hasRealEgress && real.ind39 != null ? clamp(Number(real.ind39) * 100, 0, 100) : clamp(prRate - 5 + (u.doctors - 80) * 0.08, 34, 90);
   const prInserted = hasRealEgress && real.ind36 != null ? Math.round(Number(real.ind36)) : Math.round(totalEgress * prRate / 100);
   const southInserted = hasRealEgress && real.ind34 != null ? Math.round(Number(real.ind34)) : Math.round(totalEgress * southRate / 100);
@@ -5831,7 +5830,7 @@ function employmentMetrics(u) {
   const sedeBoost = String(u.groups.v3 || "").includes("Sede") ? 7 : 0;
   const localRate = hasRealEgress && real.ind42 != null ? clamp(Number(real.ind42) * 100, 0, 100) : clamp(prRate - 18 - u.territory * 0.055 + sedeBoost, 18, 64);
   const localInserted = hasRealEgress && real.ind41 != null ? Math.round(Number(real.ind41)) : Math.round(totalEgress * localRate / 100);
-  const destinationMunicipalities = Math.max(5, Math.round(5 + u.territory / 4 + u.courses / 34));
+  const destinationMunicipalities = u.egressosMunicipios!=null?u.egressosMunicipios:Math.max(5, Math.round(5 + u.territory / 4 + u.courses / 34));
   const territorialDispersion = clamp(16 + u.territory * 0.58, 16, 88);
   const courseDestinationMunicipalities = Math.max(3, Math.round(destinationMunicipalities / Math.max(u.courses / 95, 1.6)));
   const occupationalDiversity = Math.max(8, Math.round(8 + u.courses / 24 + u.doctors / 13));
@@ -6102,7 +6101,7 @@ function employmentCourseTable(c, rows) {
   }).join("")}</tbody></table></div>`;
 }
 
-/* Aba 8 - Orçamento, Desempenho e Eficiência Relativa (SELO Paraná) */
+/* Aba 8 - Orçamento, Desempenho e Eficiência Relativa (Relatório Despesa 8050) */
 state.efficiencyMode = state.efficiencyMode || "movimentacao";
 state.efficiencyResult = state.efficiencyResult || "completion";
 state.efficiencyDefaultApplied = state.efficiencyDefaultApplied || false;
@@ -6122,7 +6121,7 @@ updateScopeAvailability = function(scope) {
   const v6Option = el.groupBy ? el.groupBy.querySelector('option[value="v6"]') : null;
   if (state.activeTab === "efficiency" && v6Option) {
     v6Option.disabled = false;
-    v6Option.title = "Variável padrão da aba Orçamento e Desempenho (SELO Paraná)";
+    v6Option.title = "Variável padrão da aba Orçamento e Desempenho (Despesa 8050)";
     return;
   }
   previousUpdateScopeAvailabilityEfficiency(scope);
@@ -6175,7 +6174,7 @@ renderKpis = function(c) {
     [indicatorName(81), formatPercent(a.executionRate), "média do cluster", budgetBadge(a.executionRate, 90, 80)],
     [indicatorName(85), formatPercent(a.variationRate), "média do cluster", "ref."],
     [indicatorName(84), formatPercent(a.contingencyRate), "quanto menor, melhor", a.contingencyRate <= 8 ? "adequado" : "atenção"],
-    ["Perfil orçamentário", profile, "rótulo derivado de V6", "SELO Paraná"]
+    ["Perfil orçamentário", profile, "rótulo derivado de V6", "Despesa 8050"]
   ];
   el.kpiGrid.innerHTML = cards.map(([label, value, meta, trend]) => `<article class="kpi-card kpi-budget"><div class="kpi-head"><div class="kpi-label">${label}</div><div class="kpi-icon" aria-hidden="true">${kpiIcon(label)}</div></div><div class="kpi-value">${value}</div></article>`).join("");
 };
@@ -6188,7 +6187,7 @@ updateFooter = function(c) {
   const ctx = c || context();
   const groupName = ctx.group === "all" ? "Todos os grupos" : ctx.group;
   if (footerCluster) footerCluster.textContent = `${ctx.f.groupBy.toUpperCase()} – ${groupName}`;
-  if (footerScope) footerScope.textContent = state.activeTab === "faculty" ? "Paraná (SETI/LGU)" : state.activeTab === "efficiency" ? "Paraná (SELO)" : ctx.f.scope;
+  if (footerScope) footerScope.textContent = state.activeTab === "faculty" ? "Paraná (SETI/LGU)" : state.activeTab === "efficiency" ? "Paraná (Despesa 8050)" : ctx.f.scope;
 };
 
 var previousUpdateContextBarEfficiency = updateContextBar;
@@ -6216,7 +6215,7 @@ renderTop = function(c) {
   el.activeTabKicker.textContent = t[0];
   el.activeTabTitle.textContent = t[1];
   el.activeTabDescription.textContent = t[2];
-  const scopeText = state.activeTab === "faculty" ? "Paraná · SETI/LGU" : state.activeTab === "efficiency" ? "Paraná · SELO" : c.f.scope;
+  const scopeText = state.activeTab === "faculty" ? "Paraná · SETI/LGU" : state.activeTab === "efficiency" ? "Paraná · Despesa 8050" : c.f.scope;
   el.periodPill.textContent = `Ano base ${c.f.year} · Escopo ${scopeText}`;
   el.scopeLabel.textContent = c.selected ? `${c.selected.sigla} | ${c.group}` : c.group === "all" ? "Sistema estadual" : `Grupo ${c.group}`;
   updateActiveClusterLabel(c);
@@ -6556,11 +6555,37 @@ function efficiencyBlock(title, c) {
       ${renderPilotConclusion(rows)}
     `;
   }
+  if (title.includes("Fundo Paraná")) return budgetFundoBlock(c);
   if (title.includes("Perfil da movimentação")) return budgetMovementBlock(c);
   if (title.includes("Composição")) return budgetCompositionBlock(c);
   if (title.includes("desempenho acadêmico")) return budgetAcademicBlock(c);
   if (title.includes("corpo docente")) return budgetFacultyBlock(c);
   return budgetOpportunityBlock(c);
+}
+
+function budgetFundoBlock(c) {
+  const rows = efficiencyRows(c);
+  const hasFundo = rows.some(u => u.fundoParana != null);
+  if (!hasFundo) return `<div class="empty-state">Dados do Fundo Paraná não disponíveis para o recorte selecionado. Verifique se o JSON pré-processado foi gerado com a base Fundo Paraná.</div>`;
+  const fundoRows = rows.filter(u => u.fundoParana != null);
+  return `
+    <div class="chart-grid">
+      <article class="visual-card">
+        <h3>Total repassado pelo Fundo Paraná (R$ milhões)</h3>
+        <p class="card-subtitle">Valores acumulados repassados pelo Fundo Paraná a cada IEES. Fonte: Base Fundo Paraná – Paraná.</p>
+        ${bars(fundoRows, u => u.fundoParana ?? 0, formatCurrencyMillions)}
+      </article>
+      <article class="visual-card">
+        <h3>Taxa de execução dos contratos Fundo Paraná</h3>
+        <p class="card-subtitle">Percentual de execução dos contratos vinculados ao Fundo Paraná. Verde ≥ 90%; amarelo entre 75% e 90%; vermelho abaixo de 75%.</p>
+        ${bars(fundoRows, u => u.fundoExec ?? 0, formatPercent)}
+      </article>
+    </div>
+    ${metricTable(fundoRows, [
+      ["IEES",             u => `<strong>${u.sigla}</strong>`],
+      ["Repasse (R$ M)",   u => u.fundoParana != null ? formatCurrencyMillions(u.fundoParana) : "—"],
+      ["Execução (%)",     u => u.fundoExec   != null ? formatPercent(u.fundoExec) : "—"]
+    ], "Fundo Paraná por IEES")}`;
 }
 
 function efficiencyRows(c) {
@@ -6578,31 +6603,30 @@ function estimatedFaculty(u) {
 
 function budgetMetrics(u) {
   const liquidated = u.budget;
-  // Usa dados reais SELO quando disponíveis; cálculo derivado como fallback
-  const liquidationRate = u.seloLiquidacao ?? clamp(u.liquidation, 70, 99.5);
+  const liquidationRate = clamp(u.liquidation, 70, 99.5);
   const committed = liquidated / Math.max(liquidationRate / 100, 0.01);
-  const executionRate = u.seloExecucao ?? clamp(u.execution, 65, 99.5);
+  const executionRate = clamp(u.execution, 65, 99.5);
   const updatedBudget = committed / Math.max(executionRate / 100, 0.01);
-  const variationRate = u.seloDotVariacao ?? clamp(u.supplementation, -8, 28);
+  const variationRate = clamp(u.supplementation, -8, 28);
   const initialBudget = updatedBudget / Math.max(1 + variationRate / 100, 0.72);
-  const paymentRate = u.seloPagamento ?? clamp(88 + (u.execution - 88) * 0.35 + (u.liquidation - 88) * 0.18, 78, 99.2);
+  const paymentRate = clamp(88 + (u.execution - 88) * 0.35 + (u.liquidation - 88) * 0.18, 78, 99.2);
   const paid = liquidated * paymentRate / 100;
-  const contingencyRate = u.seloContingenc ?? clamp(3.2 + (94 - u.execution) * 0.42 + u.supplementation * 0.12, 1.5, 18);
+  const contingencyRate = clamp(3.2 + (94 - u.execution) * 0.42 + u.supplementation * 0.12, 1.5, 18);
   const contingency = updatedBudget * contingencyRate / 100;
   const availableBudget = Math.max(updatedBudget - contingency, 1);
   const notExecuted = Math.max(availableBudget - liquidated, 0);
-  const execInitial   = u.seloLiqOrcIni  ?? (liquidated / Math.max(initialBudget,   1) * 100);
-  const execAvailable = u.seloLiqOrcDisp ?? (liquidated / Math.max(availableBudget, 1) * 100);
-  const execUpdated   = u.seloLiqOrcAtu  ?? (liquidated / Math.max(updatedBudget,   1) * 100);
-  const personnel = u.seloPartPessoal ?? clamp(u.personnel, 58, 92);
-  const odc       = u.seloPartODC     ?? clamp(13 + (100 - personnel) * 0.42 + u.supplementation * 0.08, 8, 30);
+  const execInitial   = liquidated / Math.max(initialBudget,   1) * 100;
+  const execAvailable = liquidated / Math.max(availableBudget, 1) * 100;
+  const execUpdated   = liquidated / Math.max(updatedBudget,   1) * 100;
+  const personnel = clamp(u.personnel, 58, 92);
+  const odc       = clamp(13 + (100 - personnel) * 0.42 + u.supplementation * 0.08, 8, 30);
   const investment = clamp(100 - personnel - odc, 2, 25);
-  const freeResources = u.seloPartTesouro  ?? clamp(100 - u.supplementation - u.cnpq * 0.45, 60, 96);
-  const ownResources  = u.seloPartProprio  ?? clamp(4 + u.cnpq * 0.55 + u.pgTop * 0.12, 4, 24);
-  const transfers     = u.seloPartTransfer ?? clamp(100 - freeResources - ownResources, 1, 30);
-  const currentCapitalRatio = u.seloRatioCC ?? (personnel + odc) / Math.max(investment, 1);
-  const works     = u.seloPartObras ?? clamp(investment * 0.45 + u.territory * 0.02, 0.8, 12);
-  const equipment = u.seloPartEquip ?? clamp(investment * 0.55 + u.doctors * 0.01, 0.8, 12);
+  const freeResources = clamp(100 - u.supplementation - u.cnpq * 0.45, 60, 96);
+  const ownResources  = clamp(4 + u.cnpq * 0.55 + u.pgTop * 0.12, 4, 24);
+  const transfers     = clamp(100 - freeResources - ownResources, 1, 30);
+  const currentCapitalRatio = (personnel + odc) / Math.max(investment, 1);
+  const works     = clamp(investment * 0.45 + u.territory * 0.02, 0.8, 12);
+  const equipment = clamp(investment * 0.55 + u.doctors * 0.01, 0.8, 12);
   const equivalentStudents = Math.max(u.students * 0.82 + u.graduates * 1.7 + u.entrants * 0.42, 1);
   const costEquivalentStudent = liquidated * 1000000 / equivalentStudents;
   return { liquidated, committed, updatedBudget, initialBudget, paymentRate, paid, liquidationRate, executionRate, variationRate, contingencyRate, contingency, availableBudget, notExecuted, execInitial, execAvailable, execUpdated, personnel, odc, investment, freeResources, ownResources, transfers, currentCapitalRatio, works, equipment, costEquivalentStudent };
