@@ -6516,20 +6516,250 @@ function renderEfficiencyRankingTable(rows) {
   </table></div>`;
 }
 
-function renderOutperformanceMatrix(rows) {
-  const pairs = lowerBudgetOutperformance(rows);
-  if (!pairs.length) return `<p class="card-subtitle">Nenhum par com IEES de menor custo superando IEES de maior custo em mais da metade dos indicadores.</p>`;
-  const rows_html = pairs.map(p => `<tr>
-    <td><strong>${p.low.sigla}</strong> <span style="font-size:11px;color:var(--gray-500)">(menor custo)</span></td>
-    <td>${p.high.sigla}</td>
-    <td>${p.wins} de ${p.total}</td>
-    <td>${formatPercent(p.pct * 100)}</td>
-  </tr>`).join("");
-  return `<div class="table-wrap"><table class="pilot-outperf-table">
-    <thead><tr><th>IEES (menor orçamento)</th><th>IEES comparada (maior)</th><th>Indicadores superados</th><th>% superação</th></tr></thead>
-    <tbody>${rows_html}</tbody>
-  </table></div>`;
+// ── Comparador Direto entre Duas IES ─────────────────────────────────────────
+if (!state.comparadorDiretoA) state.comparadorDiretoA = "UEL";
+if (!state.comparadorDiretoB) state.comparadorDiretoB = "UEM";
+var _cdRows = null;
+var _CD_IES  = ["UEL","UEM","UEPG","UNIOESTE","UNICENTRO","UENP","UNESPAR"];
+var _CD_INDS = [
+  { key:"occupancy",  label:"Taxa de ocupação de vagas",
+    get:function(u){return u.occupancy;},  fmt:_fmtP, higher:true },
+  { key:"completion", label:"Taxa de conclusão",
+    get:function(u){return u.completion;}, fmt:_fmtP, higher:true },
+  { key:"employment", label:"Inserção profissional",
+    get:function(u){return u.employment;}, fmt:_fmtP, higher:true },
+  { key:"capes",      label:"Conceito CAPES médio",
+    get:function(u){return u.capes;},
+    fmt:function(v){return v!=null&&isFinite(v)?v.toFixed(2).replace(".",","):"—";},
+    higher:true },
+  { key:"doctors",    label:"% Docentes doutores",
+    get:function(u){return u.doctors;},    fmt:_fmtP, higher:true },
+  { key:"costGrad",   label:"Custo por graduado (R$)",
+    get:function(u){return (u.liquidado>0&&u.graduates>0)?u.liquidado*1e6/u.graduates:null;},
+    fmt:function(v){return v!=null&&isFinite(v)?formatCurrency(v):"—";},
+    higher:false }
+];
+
+window.setComparadorDireto = function(side, sigla) {
+  if (side === "A") state.comparadorDiretoA = sigla;
+  else              state.comparadorDiretoB = sigla;
+};
+
+window.runComparadorDireto = function() {
+  var inner = document.getElementById("comparadorDiretoInner");
+  if (!inner || !_cdRows) return;
+  var sA = state.comparadorDiretoA, sB = state.comparadorDiretoB;
+  if (sA === sB) {
+    inner.innerHTML = '<p class="card-subtitle" style="color:var(--orange-600);padding:12px 0">Selecione IES diferentes para comparar.</p>';
+    return;
+  }
+  inner.innerHTML = _buildCDInner(_cdRows, sA, sB);
+  if (typeof window._injectAnnotations === "function") window._injectAnnotations();
+};
+
+function _buildCDInner(rows, sA, sB) {
+  var uA = rows.find(function(u){return u.sigla===sA;});
+  var uB = rows.find(function(u){return u.sigla===sB;});
+  if (!uA || !uB) return '<div class="empty-state">Uma das IES não está disponível no recorte atual.</div>';
+
+  // ── Contexto orçamentário ─────────────────────────────────────────────────
+  var cpA = (uA.liquidado>0&&uA.students>0) ? uA.liquidado*1e6/uA.students : null;
+  var cpB = (uB.liquidado>0&&uB.students>0) ? uB.liquidado*1e6/uB.students : null;
+
+  function ctxDiff(vA, vB, lowerBetter) {
+    if (vA==null||vB==null||vB===0) return "";
+    var pct = (vA-vB)/Math.abs(vB)*100;
+    var abs = Math.abs(pct).toFixed(1).replace(".",",");
+    if (Math.abs(pct)<2) return '<span style="color:var(--gray-500)">≈ equivalentes</span>';
+    if (lowerBetter) {
+      return pct<0
+        ? '<span style="color:#16875d">▼ '+abs+'% mais barata</span>'
+        : '<span style="color:#c43f3a">▲ '+abs+'% mais cara</span>';
+    }
+    return pct>0
+      ? '<span style="color:#16875d">▲ '+abs+'% acima</span>'
+      : '<span style="color:#c43f3a">▼ '+abs+'% abaixo</span>';
+  }
+
+  var ctxRows = [
+    { label:"Custo por aluno",
+      fmtA:cpA!=null?formatCurrency(cpA):"—", fmtB:cpB!=null?formatCurrency(cpB):"—",
+      vA:cpA, vB:cpB, lower:true },
+    { label:"Liquidado (R$ M)",
+      fmtA:uA.liquidado!=null?_fmtM(uA.liquidado):"—", fmtB:uB.liquidado!=null?_fmtM(uB.liquidado):"—",
+      vA:uA.liquidado, vB:uB.liquidado, lower:false },
+    { label:"% Pessoal e Encargos",
+      fmtA:uA.part_pessoal!=null?_fmtP(uA.part_pessoal):"—", fmtB:uB.part_pessoal!=null?_fmtP(uB.part_pessoal):"—",
+      vA:uA.part_pessoal, vB:uB.part_pessoal, lower:false }
+  ];
+
+  var ctxHtml =
+    '<h4 style="font-size:12px;font-weight:700;color:var(--gray-600);text-transform:uppercase;margin:0 0 8px">Contexto orçamentário</h4>'+
+    '<div style="overflow-x:auto;margin-bottom:16px"><table class="data-table">'+
+    '<thead><tr>'+
+    '<th style="text-align:left">Indicador</th>'+
+    '<th style="text-align:right">'+sA+'</th>'+
+    '<th style="text-align:right">'+sB+'</th>'+
+    '<th style="text-align:left">Diferença</th>'+
+    '</tr></thead><tbody>'+
+    ctxRows.map(function(r){
+      return '<tr><td>'+r.label+'</td>'+
+        '<td style="text-align:right">'+r.fmtA+'</td>'+
+        '<td style="text-align:right">'+r.fmtB+'</td>'+
+        '<td style="font-size:12px">'+ctxDiff(r.vA,r.vB,r.lower)+'</td>'+
+        '</tr>';
+    }).join("")+
+    '</tbody></table></div>';
+
+  // ── Tabela de indicadores de desempenho ───────────────────────────────────
+  var nA = 0, nB = 0;
+  var winNamesA = [], winNamesB = [];
+
+  var indRows = _CD_INDS.map(function(ind) {
+    var vA = ind.get(uA);
+    var vB = ind.get(uB);
+    var allVals = rows.map(function(u){return ind.get(u);});
+    var valid   = allVals.filter(function(v){return v!=null&&isFinite(v);});
+    var best    = valid.length ? (ind.higher?Math.max.apply(null,valid):Math.min.apply(null,valid)) : null;
+    var worst   = valid.length ? (ind.higher?Math.min.apply(null,valid):Math.max.apply(null,valid)) : null;
+
+    function barPct(v) {
+      if (v==null||best==null||worst==null||best===worst) return 0;
+      return ind.higher
+        ? clamp((v-worst)/(best-worst)*100,0,100)
+        : clamp((worst-v)/(worst-best)*100,0,100);
+    }
+    function avgOf7() {
+      return valid.length ? valid.reduce(function(s,v){return s+v;},0)/valid.length : null;
+    }
+    function miniBar(v) {
+      var pct = barPct(v);
+      var avg = avgOf7();
+      var isGood = v!=null&&avg!=null&&(ind.higher?v>=avg:v<=avg);
+      var col = v!=null ? (isGood?"#16875d":"#c43f3a") : "#d9e1ec";
+      return '<div style="height:5px;background:#edf1f7;border-radius:3px;margin-top:4px">'+
+        '<div style="height:100%;width:'+pct.toFixed(1)+'%;background:'+col+';border-radius:3px"></div>'+
+        '</div>';
+    }
+
+    var winHtml = "—";
+    if (vA!=null&&vB!=null) {
+      var maxV = Math.max(Math.abs(vA),Math.abs(vB));
+      if (maxV>0 && Math.abs(vA-vB)/maxV*100<2) {
+        winHtml = '<span style="background:#f3f4f6;color:var(--gray-600);padding:2px 7px;border-radius:4px;font-size:12px">= Empate</span>';
+      } else {
+        var aWins = ind.higher ? vA>vB : vA<vB;
+        if (aWins) {
+          nA++; winNamesA.push(ind.label);
+          winHtml = '<span style="background:#d1fae5;color:#065f46;padding:2px 7px;border-radius:4px;font-size:12px">← '+sA+' ✓</span>';
+        } else {
+          nB++; winNamesB.push(ind.label);
+          winHtml = '<span style="background:#d1fae5;color:#065f46;padding:2px 7px;border-radius:4px;font-size:12px">'+sB+' ✓ →</span>';
+        }
+      }
+    }
+
+    return '<tr><td>'+ind.label+'</td>'+
+      '<td style="text-align:right">'+(vA!=null?ind.fmt(vA):"—")+miniBar(vA)+'</td>'+
+      '<td style="text-align:right">'+(vB!=null?ind.fmt(vB):"—")+miniBar(vB)+'</td>'+
+      '<td>'+winHtml+'</td></tr>';
+  }).join("");
+
+  var total6 = _CD_INDS.length;
+  var scoreCellA = nA>nB ? '<strong style="color:#16875d">'+nA+'</strong>' : String(nA);
+  var scoreCellB = nB>nA ? '<strong style="color:#16875d">'+nB+'</strong>' : String(nB);
+  var scoreWinTxt = nA>nB
+    ? '<strong style="color:#16875d">'+sA+' vence</strong>'
+    : nB>nA
+    ? '<strong style="color:#16875d">'+sB+' vence</strong>'
+    : '<span style="color:var(--gray-500)">Empate ('+nA+'×'+nB+')</span>';
+
+  var placarRow =
+    '<tr style="background:#f9fafb;border-top:2px solid var(--gray-200)">'+
+    '<td><strong>PLACAR FINAL</strong></td>'+
+    '<td style="text-align:right;font-size:15px">'+scoreCellA+' de '+total6+'</td>'+
+    '<td style="text-align:right;font-size:15px">'+scoreCellB+' de '+total6+'</td>'+
+    '<td>'+scoreWinTxt+'</td></tr>';
+
+  var perfHtml =
+    '<h4 style="font-size:12px;font-weight:700;color:var(--gray-600);text-transform:uppercase;margin:0 0 8px">Indicadores de desempenho</h4>'+
+    '<div style="overflow-x:auto;margin-bottom:16px"><table class="data-table">'+
+    '<thead><tr>'+
+    '<th style="text-align:left;min-width:180px">Indicador</th>'+
+    '<th style="text-align:right">'+sA+'</th>'+
+    '<th style="text-align:right">'+sB+'</th>'+
+    '<th style="text-align:left;min-width:120px">Vencedor</th>'+
+    '</tr></thead>'+
+    '<tbody>'+indRows+placarRow+'</tbody>'+
+    '</table></div>';
+
+  // ── Resumo automático ─────────────────────────────────────────────────────
+  var cpDiffTxt = "";
+  if (cpA!=null&&cpB!=null&&cpB>0) {
+    var cpDiff = (cpA-cpB)/Math.abs(cpB)*100;
+    var cpAbs  = Math.abs(cpDiff).toFixed(1).replace(".",",");
+    if (Math.abs(cpDiff)<2) cpDiffTxt = "tem custo por aluno <strong>similar</strong> ao de "+sB;
+    else if (cpDiff<0)      cpDiffTxt = "tem custo por aluno <strong>"+cpAbs+"% menor</strong> que "+sB;
+    else                    cpDiffTxt = "tem custo por aluno <strong>"+cpAbs+"% maior</strong> que "+sB;
+  } else {
+    cpDiffTxt = "não tem dados de custo por aluno disponíveis para comparação com "+sB;
+  }
+
+  var summaryTxt;
+  if (nA===3&&nB===3) {
+    summaryTxt = "As duas IES apresentam <strong>desempenho equivalente no placar geral (3 × 3)</strong>. "+
+      "<strong>"+sA+"</strong> "+cpDiffTxt+". Os indicadores divergem individualmente, sem vantagem clara para nenhuma das partes.";
+  } else {
+    var conj = (cpA!=null&&cpB!=null&&cpA<cpB) ? "Apesar disso, " : "Além disso, ";
+    var vantagem;
+    if      (nA===total6) vantagem = "supera "+sB+" em <strong>todos os "+total6+" indicadores</strong> avaliados";
+    else if (nA===0)      vantagem = "não supera "+sB+" em <strong>nenhum dos "+total6+" indicadores</strong> avaliados";
+    else                  vantagem = conj+"supera "+sB+" em <strong>"+nA+" de "+total6+" indicadores</strong>: "+winNamesA.join(", ");
+    var desvantagem = winNamesB.length
+      ? " "+sB+" leva vantagem em: "+winNamesB.join(", ")+"."
+      : "";
+    summaryTxt = "<strong>"+sA+"</strong> "+cpDiffTxt+". "+vantagem+"."+desvantagem;
+  }
+
+  var summary =
+    '<div style="padding:12px 14px;border:1px solid var(--gray-200);border-radius:10px;background:#f8fafd">'+
+    '<p style="font-size:13px;line-height:1.6;margin:0">'+summaryTxt+'</p></div>';
+
+  return ctxHtml+perfHtml+summary;
 }
+
+function renderComparadorDireto(c) {
+  var rows = efficiencyRows(c);
+  _cdRows = rows;
+  var sA = state.comparadorDiretoA, sB = state.comparadorDiretoB;
+  if (!rows.find(function(u){return u.sigla===sA;})) { sA="UEL"; state.comparadorDiretoA=sA; }
+  if (!rows.find(function(u){return u.sigla===sB;})) { sB="UEM"; state.comparadorDiretoB=sB; }
+
+  function makeOpts(selected) {
+    return rows.map(function(u){
+      return '<option value="'+u.sigla+'"'+(u.sigla===selected?' selected':'')+'>'+u.sigla+' — '+u.nome+'</option>';
+    }).join("");
+  }
+
+  var inner = (sA!==sB)
+    ? _buildCDInner(rows,sA,sB)
+    : '<p class="card-subtitle" style="color:var(--orange-600);padding:12px 0">Selecione IES diferentes para comparar.</p>';
+
+  return '<article class="visual-card">'+
+    '<div class="visual-card-header"><div>'+
+    '<h3>Comparador Direto entre Duas IES</h3>'+
+    '<p class="card-subtitle">Selecione as IES para comparar lado a lado em cada indicador.</p>'+
+    '</div></div>'+
+    '<div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin:12px 0 16px">'+
+    '<select class="filter-select" onchange="setComparadorDireto(\'A\',this.value)">'+makeOpts(sA)+'</select>'+
+    '<span style="font-weight:700;color:var(--gray-400)">vs</span>'+
+    '<select class="filter-select" onchange="setComparadorDireto(\'B\',this.value)">'+makeOpts(sB)+'</select>'+
+    '<button class="filter-btn active" type="button" onclick="runComparadorDireto()">Comparar</button>'+
+    '</div>'+
+    '<div id="comparadorDiretoInner">'+inner+'</div>'+
+    '</article>';
+}
+// ── fim Comparador Direto ─────────────────────────────────────────────────────
 
 function renderPilotConclusion(rows) {
   if (!rows.length) return "";
@@ -6585,11 +6815,7 @@ function efficiencyBlock(title, c) {
         <p class="card-subtitle">Ordenado pelo índice de eficiência = desempenho relativo / custo relativo.</p>
         ${renderEfficiencyRankingTable(rows)}
       </div>
-      <div class="table-wrap mt-14">
-        <h3>Menor orçamento, maior desempenho</h3>
-        <p class="card-subtitle">Pares em que a IEES com menor custo por aluno supera a mais cara em pelo menos 50% dos indicadores de performance.</p>
-        ${renderOutperformanceMatrix(rows)}
-      </div>
+      ${renderComparadorDireto(c)}
       ${renderPilotConclusion(rows)}
     `;
   }

@@ -6803,11 +6803,19 @@ details.ind-detail-accordion .catalog-card { border: none; border-radius: 0; mar
 .header-logos {
   display: flex;
   align-items: center;
-  gap: 24px;
+  gap: 20px;
 }
 
-.header-logo {
-  height: 38px;
+/* Logo do Governo do Paraná */
+.header-logo:first-child {
+  height: 44px;
+  width: auto;
+  object-fit: contain;
+}
+
+/* Logo SETI */
+.header-logo:last-child {
+  height: 36px;
   width: auto;
   object-fit: contain;
 }
