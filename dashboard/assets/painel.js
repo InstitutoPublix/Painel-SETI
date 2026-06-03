@@ -8700,7 +8700,8 @@ tabBlocks.efficiency = tabBlocks.efficiency.filter(function(t) { return !_OLD_BL
 tabBlocks.efficiency.push(
   "Custo por Resultado (8050)",
   "Execução Orçamentária 8050",
-  "Evolução 2024–2026"
+  "Evolução 2024–2026",
+  "Comparador de Eficiência"
 );
 
 // ── Estado para a Seção 3 ────────────────────────────────────────────────────
@@ -9072,6 +9073,7 @@ efficiencyBlock = function orcamentariaBlock(title, c) {
   if (title === "Custo por Resultado (8050)")  return renderOrcCustoPorResultado(efficiencyRows(c));
   if (title === "Execução Orçamentária 8050")  return renderOrcExecucao(efficiencyRows(c));
   if (title === "Evolução 2024–2026")          return renderOrcEvolucao(c);
+  if (title === "Comparador de Eficiência")    return renderEficienciaComparador(c);
   return _prevEfficiencyBlockOrc2(title, c);
 };
 window.efficiencyBlock = efficiencyBlock;
@@ -9249,95 +9251,240 @@ function renderTab8Scatter(rows, c) {
 </article>`;
 }
 
-// ── Seção 3 — Placar de Eficiência ──────────────────────────────────────────
-function renderTab8Scoreboard(rows) {
-  if (!rows.length) return `<div class="empty-state">Sem dados para o recorte selecionado.</div>`;
+// ── Comparador de Eficiência por IES ────────────────────────────────────────
+var _COMP_IES_PR = ["UEL","UEM","UEPG","UNIOESTE","UNICENTRO","UENP","UNESPAR"];
+var _compRows = null; // cache para update direto do DOM
 
-  // IES ordenadas por orçamento (maior → menor)
-  const byBudget = [...rows].sort((a, b) => b.budget - a.budget);
+if (!state.comparadorIES) state.comparadorIES = "UEL";
 
-  const PERF_INDS = [
-    { key: "occupancy",  label: "Ocupação de vagas (%)",    get: u => u.occupancy,   fmt: formatPercent,                                         higher: true },
-    { key: "completion", label: "Taxa de conclusão (%)",    get: u => u.completion,  fmt: formatPercent,                                         higher: true },
-    { key: "employment", label: "Inserção profissional (%)", get: u => u.employment, fmt: formatPercent,                                         higher: true },
-    { key: "capes",      label: "Conceito CAPES médio",     get: u => u.capes,       fmt: v => Number(v || 0).toFixed(1).replace(".", ","),      higher: true },
-    { key: "doctors",    label: "Docentes c/ doutorado (%)", get: u => u.doctors,    fmt: formatPercent,                                         higher: true },
-  ];
+var _COMP_INDS = [
+  { key: "occupancy",  label: "Taxa de ocupação de vagas",
+    get: function(u) { return u.occupancy;  }, fmt: _fmtP, higher: true },
+  { key: "completion", label: "Taxa de conclusão",
+    get: function(u) { return u.completion; }, fmt: _fmtP, higher: true },
+  { key: "employment", label: "Inserção profissional",
+    get: function(u) { return u.employment; }, fmt: _fmtP, higher: true },
+  { key: "capes",      label: "Conceito CAPES médio",
+    get: function(u) { return u.capes; },
+    fmt: function(v) { return (v != null && isFinite(v)) ? v.toFixed(2).replace(".",",") : "—"; },
+    higher: true },
+  { key: "doctors",    label: "% Docentes doutores",
+    get: function(u) { return u.doctors; }, fmt: _fmtP, higher: true },
+  { key: "costGrad",   label: "Custo por graduado (R$)",
+    get: function(u) {
+      return (u.liquidado > 0 && u.graduates > 0) ? u.liquidado * 1e6 / u.graduates : null;
+    },
+    fmt: function(v) { return (v != null && isFinite(v)) ? formatCurrency(v) : "—"; },
+    higher: false },
+];
 
-  // Média por indicador (para cor condicional)
-  const avgs = Object.fromEntries(PERF_INDS.map(ind => {
-    const vals = byBudget.map(u => ind.get(u)).filter(v => isValidNumber(v));
-    return [ind.key, vals.length ? vals.reduce((s, v) => s + v, 0) / vals.length : null];
-  }));
+window.setComparadorIES = function(sigla) {
+  if (!_COMP_IES_PR.includes(sigla)) return;
+  state.comparadorIES = sigla;
+  var inner = document.getElementById("eficienciaComparadorInner");
+  if (inner && _compRows) {
+    inner.innerHTML = _buildComparadorInner(_compRows, sigla);
+    if (typeof window._injectAnnotations === "function") window._injectAnnotations();
+  } else {
+    render();
+  }
+};
 
-  // Ranking por indicador (1 = melhor)
-  function rankCol(arr, higher) {
-    const indexed = arr.map((v, i) => ({ v, i })).filter(x => isValidNumber(x.v));
-    indexed.sort((a, b) => higher ? b.v - a.v : a.v - b.v);
-    const out = arr.map(() => null);
-    indexed.forEach((x, rank) => { out[x.i] = rank + 1; });
+function _compAvg(arr) {
+  var valid = arr.filter(function(v) { return v != null && isFinite(v); });
+  return valid.length ? valid.reduce(function(s, v) { return s + v; }, 0) / valid.length : null;
+}
+
+function _buildComparadorInner(rows, sigla) {
+  var ref    = rows.find(function(u) { return u.sigla === sigla; });
+  var others = rows.filter(function(u) { return u.sigla !== sigla; });
+  if (!ref) return '<div class="empty-state">IES não encontrada no recorte.</div>';
+
+  // ── Componente 2 — contexto orçamentário ─────────────────────────────────
+  function cpsOf(u) {
+    return (u.liquidado > 0 && u.students > 0) ? u.liquidado * 1e6 / u.students : null;
+  }
+  function diffRow(refVal, avgVal, lowerIsBetter) {
+    if (refVal == null || avgVal == null || avgVal === 0) return "";
+    var pct = (refVal - avgVal) / Math.abs(avgVal) * 100;
+    var abs = Math.abs(pct).toFixed(1).replace(".",",");
+    if (Math.abs(pct) < 2) return '<div style="font-size:11px;color:var(--gray-500)">≈ na média</div>';
+    var better = lowerIsBetter ? pct < 0 : pct > 0;
+    var arrow  = pct > 0 ? "▲" : "▼";
+    var txt;
+    if (lowerIsBetter) txt = pct < 0 ? arrow+" "+abs+"% mais barata" : arrow+" "+abs+"% mais cara";
+    else               txt = pct > 0 ? arrow+" "+abs+"% acima" : arrow+" "+abs+"% abaixo";
+    var color = better ? "#16875d" : "#c43f3a";
+    return '<div style="font-size:11px;font-weight:600;color:'+color+'">'+txt+'</div>';
+  }
+  function ctxBox(title, refFmt, avgFmt, diffHtml) {
+    return '<div style="padding:12px;border:1px solid var(--gray-200);border-radius:10px;background:#fbfdff">'+
+      '<div style="font-size:11px;font-weight:700;color:var(--gray-600);text-transform:uppercase;margin-bottom:6px">'+title+'</div>'+
+      '<div style="font-size:16px;font-weight:800;color:var(--gray-950)">'+refFmt+'</div>'+
+      diffHtml+
+      '<div style="font-size:11px;color:var(--gray-500);margin-top:4px">Média das outras 6: '+avgFmt+'</div>'+
+      '</div>';
+  }
+  var cpsRef = cpsOf(ref);
+  var cpsAvg = _compAvg(others.map(cpsOf));
+  var liqAvg = _compAvg(others.map(function(u) { return u.liquidado; }));
+  var pesAvg = _compAvg(others.map(function(u) { return u.part_pessoal; }));
+
+  var ctxGrid = '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:16px">'+
+    ctxBox("Custo por aluno",
+      cpsRef != null ? formatCurrency(cpsRef) : "—",
+      cpsAvg != null ? formatCurrency(cpsAvg) : "—",
+      diffRow(cpsRef, cpsAvg, true))+
+    ctxBox("Liquidado (R$ M)",
+      ref.liquidado != null ? _fmtM(ref.liquidado) : "—",
+      liqAvg != null ? _fmtM(liqAvg) : "—",
+      diffRow(ref.liquidado, liqAvg, false))+
+    ctxBox("% Pessoal",
+      ref.part_pessoal != null ? _fmtP(ref.part_pessoal) : "—",
+      pesAvg != null ? _fmtP(pesAvg) : "—",
+      diffRow(ref.part_pessoal, pesAvg, false))+
+    '</div>';
+
+  // ── Componente 3 — tabela de indicadores ─────────────────────────────────
+  function rankAll(vals, higher) {
+    var idx = vals.map(function(v,i){return{v:v,i:i};})
+                  .filter(function(x){return x.v!=null&&isFinite(x.v);});
+    idx.sort(function(a,b){return higher ? b.v-a.v : a.v-b.v;});
+    var out = vals.map(function(){return null;});
+    idx.forEach(function(x,r){out[x.i]=r+1;});
     return out;
   }
-  const rankMap = Object.fromEntries(PERF_INDS.map(ind => [ind.key, rankCol(byBudget.map(ind.get), ind.higher)]));
 
-  // Ranking de eficiência composto (média das posições)
-  const composite = byBudget.map((u, i) => {
-    const rs = PERF_INDS.map(ind => rankMap[ind.key][i]).filter(v => v != null);
-    return rs.length ? rs.reduce((s, v) => s + v, 0) / rs.length : null;
+  var thead = '<thead><tr>'+
+    '<th style="text-align:left;min-width:170px">Indicador</th>'+
+    '<th style="text-align:right">'+sigla+'</th>'+
+    '<th style="text-align:right">Melhor das 7</th>'+
+    '<th style="text-align:right">Média das 7</th>'+
+    '<th style="text-align:right">Pior das 7</th>'+
+    '<th style="text-align:right">Posição</th>'+
+    '<th style="text-align:left;min-width:130px">Status</th>'+
+    '</tr></thead>';
+
+  var refIdx = rows.indexOf(ref);
+  var tbody = '<tbody>'+_COMP_INDS.map(function(ind) {
+    var allVals = rows.map(function(u){return ind.get(u);});
+    var refVal  = ind.get(ref);
+    var valid   = allVals.filter(function(v){return v!=null&&isFinite(v);});
+    var best    = valid.length ? (ind.higher ? Math.max.apply(null,valid) : Math.min.apply(null,valid)) : null;
+    var worst   = valid.length ? (ind.higher ? Math.min.apply(null,valid) : Math.max.apply(null,valid)) : null;
+    var avg7    = _compAvg(valid);
+    var ranks   = rankAll(allVals, ind.higher);
+    var refRank = ranks[refIdx];
+
+    // Mini barra range [pior → melhor]
+    var barPct = 0;
+    if (refVal!=null && best!=null && worst!=null && best!==worst) {
+      barPct = ind.higher
+        ? clamp((refVal-worst)/(best-worst)*100, 0, 100)
+        : clamp((worst-refVal)/(worst-best)*100, 0, 100);
+    }
+    var isGood = refVal!=null && avg7!=null && (ind.higher ? refVal>=avg7 : refVal<=avg7);
+    var barColor = refVal!=null && avg7!=null ? (isGood ? "#16875d" : "#c43f3a") : "#d9e1ec";
+    var miniBar = '<div style="height:5px;background:#edf1f7;border-radius:3px;margin-top:4px">'+
+      '<div style="height:100%;width:'+barPct.toFixed(1)+'%;background:'+barColor+';border-radius:3px"></div>'+
+      '</div>';
+
+    // Status
+    var statusHtml = "—";
+    if (refVal!=null && avg7!=null) {
+      var relDiff = (refVal-avg7)/Math.abs(avg7||1)*100;
+      var better  = ind.higher ? relDiff>0 : relDiff<0;
+      var onAvg   = Math.abs(relDiff)<5;
+      statusHtml = onAvg
+        ? '<span style="color:#c07000">⚠️ Na média</span>'
+        : better
+          ? '<span style="color:#16875d">✅ Acima da média</span>'
+          : '<span style="color:#c43f3a">❌ Abaixo da média</span>';
+    }
+
+    // Posição (1º verde, 7º vermelho)
+    var posHtml = refRank!=null
+      ? '<span style="font-weight:700;color:'+(refRank===1?"#16875d":refRank===rows.length?"#c43f3a":"inherit")+'">'+refRank+'º de '+rows.length+'</span>'
+      : "—";
+
+    return '<tr>'+
+      '<td><strong>'+ind.label+'</strong></td>'+
+      '<td style="text-align:right">'+(refVal!=null?ind.fmt(refVal):"—")+miniBar+'</td>'+
+      '<td style="text-align:right">'+(best!=null?ind.fmt(best):"—")+'</td>'+
+      '<td style="text-align:right">'+(avg7!=null?ind.fmt(avg7):"—")+'</td>'+
+      '<td style="text-align:right">'+(worst!=null?ind.fmt(worst):"—")+'</td>'+
+      '<td style="text-align:right">'+posHtml+'</td>'+
+      '<td>'+statusHtml+'</td>'+
+      '</tr>';
+  }).join('')+'</tbody>';
+
+  var table = '<div style="overflow-x:auto"><table class="data-table">'+thead+tbody+'</table></div>';
+
+  // ── Componente 4 — resumo textual ─────────────────────────────────────────
+  var aboveNames = [], belowNames = [];
+  _COMP_INDS.forEach(function(ind) {
+    var rv  = ind.get(ref);
+    var v7  = _compAvg(rows.map(function(u){return ind.get(u);}).filter(function(v){return v!=null&&isFinite(v);}));
+    if (rv==null || v7==null) return;
+    var rd = (rv-v7)/Math.abs(v7||1)*100;
+    var better = ind.higher ? rd>0 : rd<0;
+    if (Math.abs(rd)<5) return; // na média: não lista
+    if (better) aboveNames.push(ind.label);
+    else        belowNames.push(ind.label);
   });
+  var n = aboveNames.length, total = _COMP_INDS.length;
 
-  function cellStyle(v, avg, higher) {
-    if (!isValidNumber(v) || !isValidNumber(avg)) return "";
-    return (higher ? v >= avg : v <= avg)
-      ? "background:#e0f5ec;color:#16875d;font-weight:600"
-      : "background:#fdecea;color:#c43f3a;font-weight:600";
+  var cpsDiffTxt = "";
+  if (cpsRef!=null && cpsAvg!=null && cpsAvg>0) {
+    var cpsPct = (cpsRef-cpsAvg)/Math.abs(cpsAvg)*100;
+    var cpsAbs = Math.abs(cpsPct).toFixed(1).replace(".",",");
+    if (Math.abs(cpsPct)<2) cpsDiffTxt = "tem custo por aluno <strong>similar à média</strong> das demais IES-PR";
+    else if (cpsPct<0)      cpsDiffTxt = "tem custo por aluno <strong>"+cpsAbs+"% mais baixo</strong> que a média das demais IES-PR";
+    else                    cpsDiffTxt = "tem custo por aluno <strong>"+cpsAbs+"% mais alto</strong> que a média das demais IES-PR";
+  } else {
+    cpsDiffTxt = "não tem dados suficientes de custo por aluno para comparação";
   }
 
-  const thead = `<thead><tr><th style="text-align:left;min-width:180px">Indicador</th>${byBudget.map(u => `<th>${u.sigla}<br><span style="font-size:10px;font-weight:400;color:var(--gray-500)">${formatCurrencyMillions(u.budget)}</span></th>`).join("")}</tr></thead>`;
+  var acimaPart = n===total
+    ? "em <strong>todos os "+total+" indicadores</strong> avaliados"
+    : n===0
+    ? "em <strong>nenhum dos "+total+" indicadores</strong> avaliados"
+    : "acima da média em <strong>"+n+" de "+total+" indicadores</strong>: "+aboveNames.join(", ");
 
-  const indRows = PERF_INDS.map(ind => {
-    const cells = byBudget.map((u, i) => {
-      const v = ind.get(u);
-      const style = cellStyle(v, avgs[ind.key], ind.higher);
-      const rk = rankMap[ind.key][i];
-      return `<td style="${style}">${isValidNumber(v) ? ind.fmt(v) : "—"}${rk ? `<br><small style="font-size:9px;opacity:.65">#${rk}</small>` : ""}</td>`;
-    }).join("");
-    return `<tr><td><strong>${ind.label}</strong></td>${cells}</tr>`;
-  }).join("");
+  var abaixoPart = belowNames.length ? " Está abaixo da média em: "+belowNames.join(", ")+"." : "";
 
-  const validComposite = composite.filter(v => v != null);
-  const minComp = validComposite.length ? Math.min(...validComposite) : null;
-  const maxComp = validComposite.length ? Math.max(...validComposite) : null;
-  const compRow = `<tr style="border-top:2px solid var(--gray-200)"><td><strong>Ranking eficiência composto</strong><br><small style="color:var(--gray-500)">média das posições — menor = mais eficiente</small></td>${composite.map(r => {
-    const style = r != null && r === minComp ? "background:#e0f5ec;color:#16875d;font-weight:700" : r != null && r === maxComp ? "background:#fdecea;color:#c43f3a;font-weight:600" : "";
-    return `<td style="${style}">${r != null ? r.toFixed(1).replace(".", ",") : "—"}</td>`;
-  }).join("")}</tr>`;
+  var summary = '<div style="margin-top:14px;padding:12px 14px;border:1px solid var(--gray-200);border-radius:10px;background:#f8fafd">'+
+    '<p style="font-size:13px;line-height:1.6;margin:0"><strong>'+sigla+'</strong> '+cpsDiffTxt+
+    '. Está '+acimaPart+'.'+abaixoPart+'</p></div>';
 
-  const cpsList = byBudget.map(costPerStudent);
-  const avgCps = cpsList.filter(isValidNumber).reduce((s, v) => s + v, 0) / (cpsList.filter(isValidNumber).length || 1);
-  const cpsRow = `<tr style="border-top:2px solid var(--gray-200)"><td><strong>Custo por aluno (R$)</strong></td>${byBudget.map(u => {
-    const v = costPerStudent(u);
-    const style = isValidNumber(v) ? cellStyle(v, avgCps, false) : "";
-    return `<td style="${style}">${isValidNumber(v) ? formatCurrency(v) : "—"}</td>`;
-  }).join("")}</tr>`;
+  return ctxGrid + table + summary;
+}
 
-  // Resposta à pergunta central
-  const lowest = byBudget[byBudget.length - 1];
-  const highest = byBudget[0];
-  const lowWins = lowest && highest && lowest.id !== highest.id ? PERF_INDS.filter(ind => {
-    const lo = ind.get(lowest), hi = ind.get(highest);
-    return isValidNumber(lo) && isValidNumber(hi) && (ind.higher ? lo > hi : lo < hi);
-  }) : [];
-  const insightHtml = lowest && highest && lowest.id !== highest.id
-    ? `<p>A IEES com <strong>menor orçamento</strong> (<strong>${lowest.sigla}</strong>, ${formatCurrencyMillions(lowest.budget)}) supera a de <strong>maior orçamento</strong> (<strong>${highest.sigla}</strong>, ${formatCurrencyMillions(highest.budget)}) em <strong>${lowWins.length} de ${PERF_INDS.length} indicadores</strong>${lowWins.length ? ": " + lowWins.map(i => i.label).join(", ") + "." : "."}</p>`
-    : "<p>Selecione ao menos 2 IEES para comparar.</p>";
+function renderEficienciaComparador(c) {
+  var rows = efficiencyRows(c);
+  _compRows = rows;
 
-  return `<div class="pilot-answer-card">${insightHtml}</div>
-<div class="table-wrap mt-14">
-  <h3>Placar de desempenho — IEES ordenadas do maior para o menor orçamento</h3>
-  <p class="card-subtitle">Verde = acima da média do recorte · Vermelho = abaixo · #N = posição no ranking do indicador</p>
-  <div style="overflow-x:auto"><table class="data-table">${thead}<tbody>${indRows}${compRow}${cpsRow}</tbody></table></div>
-</div>`;
+  // Garantir que a IES selecionada existe no recorte
+  var sigla = state.comparadorIES;
+  if (!rows.find(function(u) { return u.sigla === sigla; })) {
+    sigla = rows.length ? rows[0].sigla : "UEL";
+    state.comparadorIES = sigla;
+  }
+
+  var selHtml = '<select id="eficienciaComparadorSelect" onchange="setComparadorIES(this.value)">'+
+    rows.map(function(u) {
+      return '<option value="'+u.sigla+'"'+(u.sigla===sigla?' selected':'')+'>'+u.sigla+' — '+u.nome+'</option>';
+    }).join("")+'</select>';
+
+  return '<article class="visual-card">'+
+    '<div class="visual-card-header">'+
+    '<div><h3>Comparador de Eficiência por IES</h3>'+
+    '<p class="card-subtitle">Escolha uma IES e veja em quais indicadores ela performa acima ou abaixo das demais, considerando seu nível de gasto.</p></div>'+
+    '<div style="display:flex;align-items:center;gap:8px">'+
+    '<span style="font-size:12px;color:var(--gray-500)">IES:</span>'+selHtml+
+    '</div></div>'+
+    '<div id="eficienciaComparadorInner">'+_buildComparadorInner(rows, sigla)+'</div>'+
+    '</article>';
 }
 
 // ── Seção 4 — Execução Orçamentária ─────────────────────────────────────────
@@ -9625,4 +9772,218 @@ efficiencyBlock = function(title, c) {
   return _prevEffBlockSct(title, c);
 };
 window.efficiencyBlock = efficiencyBlock;
+
+// ─────────────────────────────────────────────────────────────────────────────
+// FONTES E DEFINIÇÕES DOS INDICADORES — camada de apresentação (sem impacto no cálculo)
+// Injeta ".data-source-label" e ícone "ⓘ" em cada card/gráfico/tabela após render().
+// ─────────────────────────────────────────────────────────────────────────────
+(function () {
+  "use strict";
+
+  // ── Regras: [regex-para-título, fonte, definição]. A primeira que casar vence.
+  var _SRC_RULES = [
+
+    // ── Aba 8 — D8050 ─────────────────────────────────────────────────────────
+    [/scatter|orçamento\s*[×x]\s*desempenho/i,
+      "SETI/PR 2024 (Despesa 8050) × INEP 2024",
+      "Custo por estudante (R$/aluno, eixo X) cruzado com indicador de desempenho selecionável (eixo Y). Cada ponto representa uma IES; tamanho proporcional ao número de alunos matriculados. Linha tracejada = regressão linear por mínimos quadrados."],
+
+    [/evolução.*orçament|orçament.*2024.*2026|2024.*2026/i,
+      "SETI/PR 2024–2026 (Relatório da Despesa 8050)",
+      "Evolução do orçamento atualizado e da liquidação (R$M, eixo esquerdo) e da taxa de liquidação (%, eixo direito) ao longo dos exercícios 2024, 2025 e 2026 (parcial)."],
+
+    [/execução.*8050|8050.*execução|despesa.*8050|orçamentária.*2024/i,
+      "SETI/PR 2024 (Relatório da Despesa 8050)",
+      "Dados financeiros detalhados da Unidade Orçamentária 8050: dotação inicial (LOA), orçamento atualizado, empenho, liquidação, pagamento e composição por natureza de despesa e fonte de recurso."],
+
+    [/custo.*egresso.*empregado|egresso.*empregado.*custo/i,
+      "SETI/PR 2024 (Despesa 8050) × INEP 2024 × MTE/RAIS 2023–2024",
+      "Orçamento liquidado dividido pelo número de graduados com inserção formal no mercado de trabalho (RAIS). Cruza dados financeiros com Censo da Educação Superior e RAIS."],
+
+    [/custo.*programa.*pg.*nota|pgTop.*custo/i,
+      "SETI/PR 2024 (Despesa 8050) × CAPES 2024",
+      "Orçamento liquidado (R$) dividido pelo número de programas de pós-graduação com conceito CAPES 5, 6 ou 7 — indicativo de excelência em pesquisa."],
+
+    [/custo.*programa.*pg|pg.*custo/i,
+      "SETI/PR 2024 (Despesa 8050) × CAPES 2024",
+      "Orçamento liquidado (R$) dividido pelo total de programas de pós-graduação stricto sensu ativos. Mede o custo médio por programa de mestrado ou doutorado."],
+
+    [/custo.*vaga.*ocup|vaga.*ocup.*custo/i,
+      "SETI/PR 2024 (Despesa 8050) × INEP 2024",
+      "Orçamento liquidado dividido pelo número efetivo de vagas ocupadas (vagas × taxa de ocupação). Mede o custo por aluno ingressante que efetivamente preencheu uma vaga."],
+
+    [/custo.*graduado|custo.*concluinte/i,
+      "SETI/PR 2024 (Despesa 8050) × INEP 2024",
+      "Orçamento liquidado (R$) dividido pelo número de concluintes do ano de referência. Indica o custo médio para formar um diplomado na IES."],
+
+    [/custo.*aluno|custo.*matriculado/i,
+      "SETI/PR 2024 (Despesa 8050) × INEP 2024",
+      "Orçamento liquidado (R$) dividido pelo total de matrículas ativas. Mede o custo médio anual por estudante matriculado na IES."],
+
+    // ── Orçamento geral ────────────────────────────────────────────────────────
+    [/suplementa/i,
+      "SETI/PR 2024 (Dados de Suplementação das Universidades — Paraná)",
+      "Percentual do orçamento proveniente de suplementações (créditos adicionais aprovados ao longo do exercício) para cobrir despesas não previstas na dotação inicial da LOA."],
+
+    [/IND-81|taxa.*exec.*orç|execu.*orçament/i,
+      "SETI/PR 2024 (Relatório da Despesa 8050)",
+      "Taxa de execução orçamentária: valor empenhado ÷ orçamento atualizado × 100. Mede a capacidade da IES de comprometer formalmente os recursos autorizados para o exercício."],
+
+    [/IND-82|taxa.*liquid/i,
+      "SETI/PR 2024 (Relatório da Despesa 8050)",
+      "Taxa de liquidação: valor liquidado ÷ valor empenhado × 100. Indica a proporção do empenho efetivamente reconhecida como despesa incorrida."],
+
+    [/orçamento.*liquid|liquidado|orçamento.*result|orçamento.*grupo/i,
+      "SETI/PR 2024 (Relatório da Despesa 8050)",
+      "Orçamento total liquidado pela IES no exercício (R$ milhões). Liquidação é o estágio em que a despesa é reconhecida formalmente após verificação do serviço ou bem entregue."],
+
+    [/pessoal.*encargo|despesa.*pessoal|part.*pessoal/i,
+      "SETI/PR 2024 (Relatório da Despesa 8050)",
+      "Participação das despesas com pessoal (ativos, inativos e pensionistas) no total do orçamento liquidado. Indica a rigidez orçamentária da IES."],
+
+    // ── Mercado de trabalho ────────────────────────────────────────────────────
+    [/aderência.*cbo|cbo.*aderência/i,
+      "MTE/RAIS 2023–2024 (Paraná)",
+      "Percentual de egressos cujo vínculo formal de trabalho se enquadra no grupo CBO2 correspondente à área de formação. Mede a pertinência ocupacional da formação oferecida."],
+
+    [/salário|média.*sal|remuner/i,
+      "MTE/RAIS 2023–2024 (Paraná)",
+      "Média salarial dos egressos com vínculo formal de emprego aderente ao CBO2 da área de formação, dois anos após a conclusão do curso."],
+
+    [/inserção.*profis|profis.*inser|inserção.*paran|egressos.*empregados|inserção no paran/i,
+      "MTE/RAIS 2023–2024 (Paraná)",
+      "Percentual de egressos com vínculo formal de emprego no estado do Paraná, calculado dois anos após a conclusão do curso (base RAIS, filtro CBO2 por área de formação)."],
+
+    // ── Quadro docente ─────────────────────────────────────────────────────────
+    [/CRES|carga.*resid|resid.*expan|utilização.*cres/i,
+      "SETI/PR 2024 (Base de dados para clusterização — LGU)",
+      "Percentual da Carga Horária Residual de Expansão (CRES) utilizada sobre a capacidade total autorizada pela SETI. Indica a margem disponível para expansão do quadro docente efetivo."],
+
+    [/ocupa.*quadro|quadro.*docent|taxa.*ocupa.*docent/i,
+      "SETI/PR 2024 (Base de dados para clusterização — LGU)",
+      "Taxa de ocupação das vagas docentes efetivas em relação ao total de vagas disponíveis. Valores próximos de 100% indicam quadro pleno; acima disso, pressão sobre o efetivo."],
+
+    // ── Qualidade acadêmica ────────────────────────────────────────────────────
+    [/pós.*graduação.*capes|capes.*pós|conceito.*capes|pós-graduação/i,
+      "CAPES 2024 (Avaliação dos Programas de Pós-Graduação)",
+      "Conceito médio dos programas de pós-graduação stricto sensu avaliados pela CAPES (escala 1 a 7). Programas com conceito ≥ 5 têm reconhecimento de excelência internacional."],
+
+    [/cnpq|capta.*pesq|pesquisa.*cnpq/i,
+      "CNPq 2024 (Grupos de pesquisa e fomento)",
+      "Valor total de fomento à pesquisa captado junto ao CNPq no ano de referência, incluindo bolsas individuais e projetos institucionais. Indica capacidade de captação de recursos externos para C&T."],
+
+    [/doutora|qualifica.*doc|docent.*doutor/i,
+      "INEP 2024 (Censo da Educação Superior — IES)",
+      "Percentual de docentes em exercício com titulação de doutorado. Indica o nível de qualificação do corpo docente e é critério nos processos regulatórios do MEC."],
+
+    // ── Acesso e oferta ────────────────────────────────────────────────────────
+    [/eficiência.*oferta|custo.*por.*vaga\b/i,
+      "INEP 2024 × SETI/PR 2024 (Relatório da Despesa 8050)",
+      "Relação entre o orçamento liquidado e o número de vagas ofertadas. Mede o custo médio para disponibilizar uma vaga de graduação, independentemente do preenchimento."],
+
+    [/IND-26|ocupa.*vagas|vagas.*ocupa|taxa.*ocup/i,
+      "INEP 2024 (Censo da Educação Superior — Cursos)",
+      "Relação entre ingressantes efetivos e vagas ofertadas no período de referência. Mede o aproveitamento da capacidade instalada; valores abaixo de 70% indicam ociosidade relevante."],
+
+    [/escala.*oferta|participa.*oferta|total.*vagas/i,
+      "INEP 2024 (Censo da Educação Superior — Cursos)",
+      "Total de vagas autorizadas para ingresso em cursos de graduação presencial e a distância no ano de referência."],
+
+    [/cursos?|composição.*oferta/i,
+      "INEP 2024 (Censo da Educação Superior — Cursos)",
+      "Número total de cursos de graduação ativos (presencial e EaD). Indica a diversidade e a abrangência da oferta acadêmica da IES."],
+
+    // ── Permanência ────────────────────────────────────────────────────────────
+    [/funil.*format|format.*funil/i,
+      "INEP 2024 (Censo da Educação Superior — Cursos)",
+      "Representação do fluxo estudantil: ingressantes → matrículas ativas → concluintes. Evidencia as perdas em cada etapa do percurso formativo da IES."],
+
+    [/desvincul|evasão|abandon|dropout/i,
+      "INEP 2024 (Censo da Educação Superior — Cursos)",
+      "Percentual de alunos que abandonam o curso sem concluir em relação às matrículas ativas do período. Proxy de evasão, calculado por coorte anual."],
+
+    [/taxa.*conclu|conclu.*taxa/i,
+      "INEP 2024 (Censo da Educação Superior — Cursos)",
+      "Percentual de estudantes matriculados que obtiveram diploma no período, em relação ao total de matrículas ativas. Mede a eficácia formativa da IES."],
+
+    // ── Estudantes / ingresso ──────────────────────────────────────────────────
+    [/total.*estudantes|estudantes.*total/i,
+      "INEP 2024 (Censo da Educação Superior — Cursos)",
+      "Total de estudantes com matrícula ativa em cursos de graduação presencial e a distância no ano de referência."],
+
+    // ── Eficiência relativa ────────────────────────────────────────────────────
+    [/eficiência relativa|matriz.*efic|estrutura.*gastos/i,
+      "INEP 2024 × SETI/PR 2024 (Relatório da Despesa 8050)",
+      "Cruzamento entre esforço orçamentário relativo ao grupo (eixo X) e resultado relativo ao grupo (eixo Y). Quadrante ideal: alto resultado com baixo esforço orçamentário."],
+
+    // ── Genérico resultado ─────────────────────────────────────────────────────
+    [/resultado.*institu|institu.*resultado/i,
+      "INEP 2024 (Censo da Educação Superior)",
+      "Indicador de resultado selecionado para comparação das IES no recorte ativo. A variável exata é escolhida pelo filtro de resultado na barra de filtros."],
+  ];
+
+  function _matchSrc(text) {
+    var t = String(text || "");
+    for (var i = 0; i < _SRC_RULES.length; i++) {
+      if (_SRC_RULES[i][0].test(t)) return _SRC_RULES[i];
+    }
+    return null;
+  }
+
+  function _injectAnnotations() {
+    // ── KPI cards ────────────────────────────────────────────────────────────
+    document.querySelectorAll(".kpi-card:not([data-src-done])").forEach(function (card) {
+      var labelEl = card.querySelector(".kpi-label");
+      if (!labelEl) return;
+      var rule = _matchSrc(labelEl.textContent);
+      if (!rule) return;
+      card.setAttribute("data-src-done", "1");
+
+      var icon = document.createElement("span");
+      icon.className = "ind-info";
+      icon.setAttribute("tabindex", "0");
+      icon.setAttribute("aria-label", rule[2]);
+      icon.innerHTML = "ⓘ<span class='ind-tooltip'>" + rule[2] + "</span>";
+      labelEl.appendChild(icon);
+
+      var lbl = document.createElement("div");
+      lbl.className = "data-source-label";
+      lbl.textContent = "Fonte: " + rule[1];
+      card.appendChild(lbl);
+    });
+
+    // ── Visual / score / table-wrap / matrix cards ───────────────────────────
+    var sel = ".visual-card:not([data-src-done]),.score-card:not([data-src-done]),.table-wrap:not([data-src-done]),.matrix-panel:not([data-src-done])";
+    document.querySelectorAll(sel).forEach(function (card) {
+      var h3 = card.querySelector("h3");
+      if (!h3) return;
+      var rule = _matchSrc(h3.textContent);
+      if (!rule) return;
+      card.setAttribute("data-src-done", "1");
+
+      var icon = document.createElement("span");
+      icon.className = "ind-info";
+      icon.setAttribute("tabindex", "0");
+      icon.setAttribute("aria-label", rule[2]);
+      icon.innerHTML = "ⓘ<span class='ind-tooltip'>" + rule[2] + "</span>";
+      h3.appendChild(icon);
+
+      var lbl = document.createElement("div");
+      lbl.className = "data-source-label";
+      lbl.textContent = "Fonte: " + rule[1];
+      card.appendChild(lbl);
+    });
+  }
+
+  // Patch render() — injeta anotações após cada ciclo de renderização
+  var _prevRenderSrc = render;
+  render = function () {
+    _prevRenderSrc.apply(this, arguments);
+    _injectAnnotations();
+  };
+  window.render = render;
+
+  // Expõe para chamadas externas (e.g., setOrcScatterY não chama render())
+  window._injectAnnotations = _injectAnnotations;
+}());
 
