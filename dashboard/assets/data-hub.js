@@ -722,6 +722,7 @@ async function loadDocentesBase() {
         docTaxaOcup:         asPct(row, "taxa_de_ocupacao_do_quadro_docente"),
         docTaxaUtil:         asPct(row, "taxa_de_utilizacao_das_vagas_docentes_disponiveis"),
         docVagasCond:        Math.round(g(row, "vagas_docentes_condicionadas_a_autorizacao_governamental")) || null,
+        // IND-49: Base Docentes - Parana.xlsx, Excel column X.
         docPctCond:          asPct(row, "percentual_de_vagas_condicionadas_a_autorizacao_governamental"),
         docTideAtrib:        Math.round(g(row, "quantidade_de_tide_atribuido_ao_corpo_docente")) || null,
         docTidePartic:       asPct(row, "participacao_do_tide_no_quadro_docente_disponivel"),
@@ -1444,6 +1445,13 @@ async function loadPrecomputedJson() {
       if (upsertYearIndicators(sigla, year, vals)) count++;
     }
     if (count === 0) throw new Error("no_valid_rows");
+    // Carrega dados multi-ano do Relatório Despesa 8050 (2024/2025/2026)
+    const byYearData = data.byYear || {};
+    for (const [sigla, yearMap] of Object.entries(byYearData)) {
+      for (const [yr, vals] of Object.entries(yearMap || {})) {
+        upsertYearIndicators(sigla, yr, vals);
+      }
+    }
     if (data.clusters)   window.SETI_CLUSTERS   = data.clusters;
     if (data.quartiRefs) window.SETI_QUARTIREFS  = data.quartiRefs;
     registerBase(NOME_BASE + " (ano=" + year + ")", "real", count, inferPrecomputedSourceBases(data));

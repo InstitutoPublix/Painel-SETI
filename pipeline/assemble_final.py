@@ -65,6 +65,10 @@ INDICATORS = [
     "budget", "execution", "liquidation", "personnel", "supplementation",
     "employment", "salary", "insertionRatePR",
     "facultyOcc", "cres", "tide",
+    "docVagasTotais", "docVagasDisp", "docVagasOcupadas", "docTaxaUtil",
+    "docVagasCond", "docPctCond", "docTideAtrib", "docTidePartic",
+    "docTidePctNaoAtrib", "docChMedia", "docCresAut", "docCresUtil",
+    "docCresSaldo", "docCresOciosidade", "docCresPartic",
     "fundoParana", "fundoExec",
     "egressosMunicipios",
 ]
@@ -272,20 +276,61 @@ for iees in IEES_PR:
         continue
     row = doc_latest[iees]["_row"]
     y   = doc_latest[iees]["_year"]
-    occ  = row[20] if len(row) > 20 else None
-    tide = row[25] if len(row) > 25 else None
-    cres = row[30] if len(row) > 30 else None
+    total_codes = row[17] if len(row) > 17 else None
+    vagas_disp  = row[18] if len(row) > 18 else None
+    vagas_ocup  = row[19] if len(row) > 19 else None
+    occ         = row[20] if len(row) > 20 else None
+    taxa_util   = row[21] if len(row) > 21 else None
+    vagas_cond  = row[22] if len(row) > 22 else None
+    pct_cond    = row[23] if len(row) > 23 else None  # Excel column X / IND-49
+    tide_atrib  = row[24] if len(row) > 24 else None
+    tide        = row[25] if len(row) > 25 else None
+    tide_nao    = row[26] if len(row) > 26 else None
+    ch_media    = row[27] if len(row) > 27 else None
+    cres_aut    = row[28] if len(row) > 28 else None
+    cres_util   = row[29] if len(row) > 29 else None
+    cres        = row[30] if len(row) > 30 else None
+    cres_saldo  = row[31] if len(row) > 31 else None
+    cres_ocios  = row[32] if len(row) > 32 else None
+    cres_partic = row[33] if len(row) > 33 else None
+
+    results[key]["docVagasTotais"] = safe_int(total_codes)
+    results[key]["docVagasDisp"] = safe_int(vagas_disp)
+    results[key]["docVagasOcupadas"] = safe_int(vagas_ocup)
     results[key]["facultyOcc"] = safe_pct(occ)
-    # cres: fração decimal — pode ultrapassar 1.0 (>100%), forçamos ×100
-    try:
-        results[key]["cres"] = round(float(cres) * 100, 2) if cres is not None else None
-    except Exception:
-        results[key]["cres"] = None
+    results[key]["docTaxaUtil"] = safe_pct(taxa_util)
+    results[key]["docVagasCond"] = safe_int(vagas_cond)
+    results[key]["docPctCond"] = safe_pct(pct_cond)
+    results[key]["docTideAtrib"] = safe_int(tide_atrib)
     results[key]["tide"] = safe_pct(tide)
+    results[key]["docTidePartic"] = safe_pct(tide)
+    results[key]["docTidePctNaoAtrib"] = safe_pct(tide_nao)
+    results[key]["docChMedia"] = safe_float(ch_media, 2)
+    results[key]["docCresAut"] = safe_int(cres_aut)
+    results[key]["docCresUtil"] = safe_int(cres_util)
+    results[key]["cres"] = safe_pct(cres)
+    results[key]["docCresSaldo"] = safe_int(cres_saldo)
+    results[key]["docCresOciosidade"] = safe_pct(cres_ocios)
+    results[key]["docCresPartic"] = safe_pct(cres_partic)
     src = f"Base Docentes - Paraná.xlsx / Base_Docentes_PR / ano={y}"
     sources[key]["facultyOcc"] = src + " / Taxa de ocupação do quadro docente (col 20)"
-    sources[key]["cres"]       = src + " / Taxa de utilização da CRES ×100 (col 30)"
+    sources[key]["cres"]       = src + " / Taxa de utilização da CRES (col 30)"
     sources[key]["tide"]       = src + " / Participação do TIDE no quadro disponível (col 25)"
+    sources[key]["docVagasTotais"] = src + " / Total de códigos de vagas docentes (col 17)"
+    sources[key]["docVagasDisp"] = src + " / Vagas docentes disponíveis para ocupação (col 18)"
+    sources[key]["docVagasOcupadas"] = src + " / Vagas docentes efetivas ocupadas (col 19)"
+    sources[key]["docTaxaUtil"] = src + " / Taxa de utilização das vagas docentes disponíveis (col 21)"
+    sources[key]["docVagasCond"] = src + " / Vagas docentes condicionadas à autorização governamental (col 22)"
+    sources[key]["docPctCond"] = src + " / Percentual de vagas condicionadas à autorização governamental (col 23 / Excel X)"
+    sources[key]["docTideAtrib"] = src + " / Quantidade de TIDE atribuído ao corpo docente (col 24)"
+    sources[key]["docTidePartic"] = src + " / Participação do TIDE no quadro disponível (col 25)"
+    sources[key]["docTidePctNaoAtrib"] = src + " / Percentual de TIDE não atribuído (col 26)"
+    sources[key]["docChMedia"] = src + " / Carga horária média de docentes efetivos (col 27)"
+    sources[key]["docCresAut"] = src + " / Carga horária CRES autorizada (col 28)"
+    sources[key]["docCresUtil"] = src + " / Carga horária CRES utilizada (col 29)"
+    sources[key]["docCresSaldo"] = src + " / Saldo de carga horária CRES não utilizada (col 31)"
+    sources[key]["docCresOciosidade"] = src + " / Taxa de ociosidade da CRES (col 32)"
+    sources[key]["docCresPartic"] = src + " / Participação da CRES no esforço docente total (col 33)"
 
 
 # ── 4. CNPq — captação de recursos para pesquisa ─────────────────────────────
@@ -879,14 +924,158 @@ for row in ws_ref.iter_rows(min_row=6, values_only=True):
 wb.close()
 
 
+# ── Seção 9 — Relatório Despesa 8050 ─────────────────────────────────────────
+# Extrai campos financeiros (soma por IES/ano) e indicadores pré-calculados
+# (primeira linha de cada IES/ano) da aba "2024-2026".
+#
+# Identificação: col[6] = Unidade Orçamentária (UO) — distinto de col[49]=Co_IES.
+# Cobre anos 2024, 2025 e 2026.
+#
+# Campos financeiros (cols 33,37,45,47,48): somados e convertidos para R$ milhões.
+# Taxas/participações (cols 50-64): captadas da primeira linha de cada (IES, ano)
+#   e convertidas de decimal (0-1) para % (× 100).
+#
+# Saída:
+#   - results[key] ← campos 2024 mesclados (flat, para o dashboard)
+#   - d8050_by_year ← {sigla: {str(ano): {fields}}} para 2024/2025/2026
+
+# UO → sigla (aba De-para do arquivo)
+_UO_IES_MAP = {
+    4530: "UEL",
+    4531: "UEPG",
+    4532: "UEM",
+    4533: "UNICENTRO",
+    4534: "UNIOESTE",
+    4546: "UNESPAR",
+    4548: "UENP",
+}
+
+# Colunas financeiras: acumular soma por (sigla, ano)
+_D8050_FIN_COLS = {
+    "dotacao_inicial":      33,
+    "orcamento_atualizado": 37,
+    "empenhado":            45,
+    "liquidado":            47,
+    "pago":                 48,
+}
+
+# Colunas de taxas/participações: guardar primeira linha por (sigla, ano)
+# Valor original: decimal 0-1 → gravar como % (× 100)
+_D8050_RATE_COLS = {
+    "tx_execucao_empenho":    50,
+    "tx_liquidacao":          51,
+    "tx_pagamento_liq":       52,
+    "grau_contingenciamento": 53,
+    "var_dotacao_loa":        54,
+    "part_pessoal":           55,
+    "part_outras_correntes":  56,
+    "part_capital":           57,
+    "part_recursos_livres":   58,
+    "part_fonte_500":         59,
+    "part_fonte_501":         60,
+    "part_demais_vincul":     61,
+    "part_convenios_uniao":   62,
+    "part_convenios_privados":63,
+    "part_emendas_federais":  64,
+}
+
+_D8050_ANOS = {2024, 2025, 2026}
+
+d8050_fin   = {}   # {(sigla, ano): {field: float_acumulado}}
+d8050_rates = {}   # {(sigla, ano): {field: float|None}}  — primeira linha
+
+wb9 = openpyxl.load_workbook(DATA_DIR / _DESPESA_FILE, read_only=True, data_only=True)
+ws9 = wb9[_DESPESA_SHEET]
+next(ws9.iter_rows(min_row=1, max_row=1))  # pula cabeçalho
+
+for row in ws9.iter_rows(min_row=2, values_only=True):
+    # Identificar IES pela Unidade Orçamentária (col 6)
+    try:
+        uo = int(row[6])
+    except (TypeError, ValueError):
+        continue
+    sigla = _UO_IES_MAP.get(uo)
+    if sigla is None:
+        continue
+
+    try:
+        ano = int(row[0])
+    except (TypeError, ValueError):
+        continue
+    if ano not in _D8050_ANOS:
+        continue
+
+    k = (sigla, ano)
+
+    # Acumula campos financeiros
+    if k not in d8050_fin:
+        d8050_fin[k] = {f: 0.0 for f in _D8050_FIN_COLS}
+    for field, col in _D8050_FIN_COLS.items():
+        try:
+            v = float(row[col]) if row[col] is not None else 0.0
+            d8050_fin[k][field] += v
+        except (TypeError, ValueError):
+            pass
+
+    # Taxas — apenas a primeira linha encontrada por (sigla, ano)
+    if k not in d8050_rates:
+        d8050_rates[k] = {f: None for f in _D8050_RATE_COLS}
+    for field, col in _D8050_RATE_COLS.items():
+        if d8050_rates[k][field] is None:
+            try:
+                v = float(row[col])
+                d8050_rates[k][field] = v
+            except (TypeError, ValueError):
+                pass
+
+wb9.close()
+
+# Montar estrutura multi-year: {sigla: {str(ano): {fields}}}
+d8050_by_year = {}
+_D8050_SRC = f"{_DESPESA_FILE} / {_DESPESA_SHEET} / col[6]=UO"
+
+for sigla in IEES_PR:
+    d8050_by_year[sigla] = {}
+    for ano in sorted(_D8050_ANOS):
+        k = (sigla, ano)
+        if k not in d8050_fin and k not in d8050_rates:
+            continue
+        yr_data = {}
+
+        # Campos financeiros → R$ milhões (2 casas)
+        if k in d8050_fin:
+            for field in _D8050_FIN_COLS:
+                raw = d8050_fin[k].get(field, 0.0)
+                yr_data[field] = round(raw / 1_000_000, 2) if raw else None
+
+        # Taxas → % (2 casas)
+        if k in d8050_rates:
+            for field in _D8050_RATE_COLS:
+                raw = d8050_rates[k].get(field)
+                yr_data[field] = round(raw * 100, 2) if raw is not None else None
+
+        d8050_by_year[sigla][str(ano)] = yr_data
+
+# Mesclar campos de 2024 no results flat (para o dashboard)
+for sigla in IEES_PR:
+    key = sigla.lower()
+    fields_2024 = d8050_by_year.get(sigla, {}).get("2024", {})
+    if fields_2024:
+        results[key].update(fields_2024)
+        src = f"{_D8050_SRC} / ano=2024"
+        for field in fields_2024:
+            sources[key][field] = src
+
+
 # ── Saída stdout (retrocompatível) ────────────────────────────────────────────
 
 print(json.dumps({"results": results, "sources": sources}, indent=2, ensure_ascii=False))
 
 # ── Salva seti_precomputed.json para o dashboard ──────────────────────────────
-# Formato: {year, indicators, sources, clusters, quartiRefs, generated}
-# clusters: {SIGLA: {v1..v8: label_str}} — lido da Estratificação, nunca estático
+# Formato: {year, indicators, sources, clusters, quartiRefs, byYear, generated}
+# clusters:   {SIGLA: {v1..v8: label_str}} — lido da Estratificação, nunca estático
 # quartiRefs: lista com limiares e rótulos de cada variável de agrupamento
+# byYear:     {SIGLA: {str(ano): {despesa8050_fields}}} para 2024/2025/2026
 
 precomputed = {
     "generated": datetime.datetime.now().isoformat(timespec="seconds"),
@@ -895,11 +1084,81 @@ precomputed = {
     "sources":    {iees: sources[iees.lower()] for iees in IEES},
     "clusters":   {iees: clusters_raw.get(iees, {}) for iees in IEES},
     "quartiRefs": quartis_ref,
+    "byYear":     {iees: d8050_by_year.get(iees, {}) for iees in IEES_PR},
 }
 json_path = DATA_DIR / "seti_precomputed.json"
 with open(json_path, "w", encoding="utf-8") as _f:
     json.dump(precomputed, _f, indent=2, ensure_ascii=False)
 print(f"[OK] {json_path}", file=sys.stderr)
+
+# ── Validação Seção 9 — comparação com valores de referência 2024 ─────────────
+
+_REF_2024 = {
+    "UEL":      {"dotacao_inicial": 641.6, "orcamento_atualizado": 753.7, "liquidado": 694.6, "part_pessoal": 82.6, "tx_execucao_empenho": 94.7},
+    "UEM":      {"dotacao_inicial": 708.8, "orcamento_atualizado": 871.6, "liquidado": 762.1, "part_pessoal": 77.6, "tx_execucao_empenho": 91.4},
+    "UEPG":     {"dotacao_inicial": 348.2, "orcamento_atualizado": 423.7, "liquidado": 399.4, "part_pessoal": 83.0, "tx_execucao_empenho": 94.8},
+    "UNIOESTE": {"dotacao_inicial": 468.0, "orcamento_atualizado": 561.3, "liquidado": 520.4, "part_pessoal": 81.5, "tx_execucao_empenho": 94.8},
+    "UNICENTRO":{"dotacao_inicial": 311.7, "orcamento_atualizado": 380.6, "liquidado": 341.0, "part_pessoal": 79.6, "tx_execucao_empenho": 92.5},
+    "UENP":     {"dotacao_inicial": 130.8, "orcamento_atualizado": 164.9, "liquidado": 155.9, "part_pessoal": 80.8, "tx_execucao_empenho": 95.8},
+    "UNESPAR":  {"dotacao_inicial": 258.6, "orcamento_atualizado": 319.8, "liquidado": 302.8, "part_pessoal": 85.0, "tx_execucao_empenho": 97.0},
+}
+
+_VAL_COLS = [
+    ("dotacao_inicial",      "Dot.Ini(R$M)"),
+    ("orcamento_atualizado", "Orç.Atu(R$M)"),
+    ("liquidado",            "Liquid.(R$M)"),
+    ("part_pessoal",         "%Pessoal"),
+    ("tx_execucao_empenho",  "%Execução"),
+]
+
+_W_IES = 10
+_W_COL = 15
+_SEP = "─" * (_W_IES + _W_COL * len(_VAL_COLS))
+
+print("", file=sys.stderr)
+print(_SEP, file=sys.stderr)
+print("Seção 9 — Despesa 8050 | Validação ano 2024 (extraído vs referência)", file=sys.stderr)
+print(_SEP, file=sys.stderr)
+hdr_line = f"{'IES':<{_W_IES}}" + "".join(f"{lbl:>{_W_COL}}" for _, lbl in _VAL_COLS)
+print(hdr_line, file=sys.stderr)
+print(_SEP, file=sys.stderr)
+
+all_ok = True
+for sigla in IEES_PR:
+    yr_data = d8050_by_year.get(sigla, {}).get("2024", {})
+    ref     = _REF_2024.get(sigla, {})
+    row_out = f"{sigla:<{_W_IES}}"
+    for field, _ in _VAL_COLS:
+        got = yr_data.get(field)
+        exp = ref.get(field)
+        if got is None:
+            cell = "N/D"
+        elif exp is None:
+            cell = f"{got:.1f}"
+        else:
+            diff = abs(got - exp)
+            ok_mark = "OK" if diff <= 1.0 else "!!"
+            if ok_mark == "!!":
+                all_ok = False
+            cell = f"{got:.1f}({ok_mark})"
+        row_out += f"{cell:>{_W_COL}}"
+    print(row_out, file=sys.stderr)
+
+print(_SEP, file=sys.stderr)
+ref_hdr = f"{'(ref)':<{_W_IES}}" + "".join(f"{lbl:>{_W_COL}}" for _, lbl in _VAL_COLS)
+print(ref_hdr, file=sys.stderr)
+for sigla in IEES_PR:
+    ref = _REF_2024.get(sigla, {})
+    row_out = f"{sigla:<{_W_IES}}"
+    for field, _ in _VAL_COLS:
+        exp = ref.get(field)
+        row_out += f"{exp:>{_W_COL}.1f}" if exp is not None else f"{'?':>{_W_COL}}"
+    print(row_out, file=sys.stderr)
+
+print(_SEP, file=sys.stderr)
+status = "PASS — todos dentro da tolerância (±1)" if all_ok else "ATENÇÃO — diferenças acima de ±1 detectadas"
+print(f"Status: {status}", file=sys.stderr)
+print(_SEP, file=sys.stderr)
 
 # ── Tabela de resumo (stderr) ─────────────────────────────────────────────────
 
