@@ -25,8 +25,13 @@ IEES_PR = ["UEL", "UEM", "UEPG", "UNIOESTE", "UNICENTRO", "UENP", "UNESPAR"]
 
 # IES nacionais de comparação — têm dados de Cursos, IES, CAPES (bases Brasil)
 IEES_BR = [
+    # 15 originais
     "USP", "UNESP", "UNICAMP", "UERJ", "UDESC", "UERGS",
     "UECE", "UNEB", "UESB", "UEG", "UEMA", "UEPB", "UEPA", "UEA", "UERN",
+    # 17 novas
+    "UESC", "UNCISAL", "UVA", "UNIMONTES", "UPE", "UEFS", "UNEMAT",
+    "UESPI", "UNITINS", "UENF", "UEMS", "UEMG", "UERR", "UNEAL",
+    "UEAP", "UEMASUL", "UnDF",
 ]
 
 IEES = IEES_PR + IEES_BR
@@ -40,9 +45,9 @@ CO_IES_MAP = {
     1126:  "UNICENTRO",
     15015: "UENP",
     18492: "UNESPAR",
-    # Nacionais (mesmos codes usados no dashboard data-hub.js)
-    18165: "USP",
-    55:    "UNESP",
+    # Nacionais — 15 originais (CO confirmados via Base IES - Brasil.xlsx)
+    55:    "USP",      # CO=55 confirmado
+    56:    "UNESP",    # CO=56 confirmado (era 55 incorretamente)
     54:    "UNICAMP",
     547:   "UERJ",
     43:    "UDESC",
@@ -56,6 +61,24 @@ CO_IES_MAP = {
     38:    "UEPA",
     3172:  "UEA",
     71:    "UERN",
+    # Novas 17 IES estaduais
+    24:    "UESC",
+    32:    "UNCISAL",
+    95:    "UVA",
+    367:   "UNIMONTES",
+    409:   "UPE",
+    666:   "UEFS",
+    719:   "UNEMAT",
+    756:   "UESPI",
+    829:   "UNITINS",
+    1027:  "UENF",
+    1028:  "UEMS",
+    1036:  "UEMG",
+    5077:  "UERR",
+    5242:  "UNEAL",
+    5701:  "UEAP",
+    23410: "UEMASUL",
+    27103: "UnDF",
 }
 
 INDICATORS = [
@@ -348,6 +371,7 @@ yr_col   = col_idx.get("Ano")
 val_col  = col_idx.get("Captação de recursos para pesquisa")
 
 CNPQ_MATCH = {
+    # ── IES-PR ──────────────────────────────────────────────────────────────
     "UEL":      lambda s: "LONDRINA" in s or "UEL" in s,
     "UEM":      lambda s: "MARINGÁ" in s or "MARINGA" in s,
     "UEPG":     lambda s: "PONTA GROSSA" in s,
@@ -359,6 +383,42 @@ CNPQ_MATCH = {
     "UNESPAR":  lambda s: (
         "ESTADUAL DO PARANÁ" in s or "ESTADUAL DO PARANA" in s
     ) and "NORTE" not in s and "OESTE" not in s,
+    # ── IES-BR — 15 originais ────────────────────────────────────────────────
+    # ⚠ Validar valores no stderr após rodar — ordem de grandeza esperada:
+    #   USP ~R$100-200M; UNICAMP/UNESP ~R$50-100M; demais ~R$2-30M
+    "USP":      lambda s: ("UNIVERSIDADE DE SÃO PAULO" in s or "UNIVERSIDADE DE SAO PAULO" in s or " USP" in s) and "ESTADUAL" not in s,
+    "UNESP":    lambda s: "PAULISTA" in s and "ESTADUAL" in s,
+    "UNICAMP":  lambda s: "CAMPINAS" in s and "ESTADUAL" in s,
+    "UERJ":     lambda s: "RIO DE JANEIRO" in s and "ESTADO" in s and "FEDERAL" not in s,
+    "UDESC":    lambda s: "SANTA CATARINA" in s and "ESTADO" in s and "FEDERAL" not in s,
+    "UERGS":    lambda s: "RIO GRANDE DO SUL" in s and "ESTADO" in s and "FEDERAL" not in s,
+    "UECE":     lambda s: "CEARÁ" in s and "ESTADO" in s and "FEDERAL" not in s,
+    "UNEB":     lambda s: "BAHIA" in s and "ESTADO" in s and "FEDERAL" not in s and "SUDOESTE" not in s and "FEIRA" not in s,
+    "UESB":     lambda s: "SUDOESTE" in s and "BAHIA" in s,
+    "UEG":      lambda s: "GOIÁS" in s and "ESTADO" in s and "FEDERAL" not in s,
+    "UEMA":     lambda s: "MARANHÃO" in s and "ESTADO" in s and "FEDERAL" not in s and "TOCANT" not in s,
+    "UEPB":     lambda s: "PARAÍBA" in s and "ESTADO" in s and "FEDERAL" not in s,
+    "UEPA":     lambda s: "PARÁ" in s and "ESTADO" in s and "FEDERAL" not in s and "OESTE" not in s,
+    "UEA":      lambda s: "AMAZONAS" in s and "ESTADO" in s and "FEDERAL" not in s,
+    "UERN":     lambda s: "RIO GRANDE DO NORTE" in s and "ESTADO" in s and "FEDERAL" not in s,
+    # ── IES-BR — 17 novas ───────────────────────────────────────────────────
+    "UESC":     lambda s: "SANTA CRUZ" in s and "BAHIA" in s,
+    "UNCISAL":  lambda s: "CIÊNCIAS DA SAÚDE" in s and "ALAGOAS" in s,
+    "UVA":      lambda s: "VALE DO ACARAÚ" in s or ("UVA" in s and "CEARÁ" in s),
+    "UNIMONTES":lambda s: "MONTES CLAROS" in s,
+    "UPE":      lambda s: "PERNAMBUCO" in s and "UNIVERSIDADE DE" in s and "FEDERAL" not in s,
+    "UEFS":     lambda s: "FEIRA DE SANTANA" in s,
+    "UNEMAT":   lambda s: "MATO GROSSO" in s and "ESTADO" in s and "SUL" not in s and "FEDERAL" not in s,
+    "UESPI":    lambda s: ("PIAUÍ" in s or "PIAUI" in s) and "ESTADO" in s,
+    "UNITINS":  lambda s: "TOCANTINS" in s and "ESTADUAL" in s,
+    "UENF":     lambda s: "NORTE FLUMINENSE" in s,
+    "UEMS":     lambda s: "MATO GROSSO DO SUL" in s and "ESTADO" in s and "FEDERAL" not in s,
+    "UEMG":     lambda s: "MINAS GERAIS" in s and "ESTADO" in s and "FEDERAL" not in s and "MONTES" not in s,
+    "UERR":     lambda s: "RORAIMA" in s and "ESTADO" in s,
+    "UNEAL":    lambda s: "ALAGOAS" in s and "ESTADUAL" in s and "SAÚDE" not in s and "SAUDE" not in s,
+    "UEAP":     lambda s: ("AMAPÁ" in s or "AMAPA" in s) and "ESTADO" in s,
+    "UEMASUL":  lambda s: "TOCANTINA" in s or "UEMASUL" in s,
+    "UnDF":     lambda s: "DISTRITO FEDERAL" in s and "ESTADO" in s,
 }
 
 cnpq_data = {}
@@ -1067,6 +1127,59 @@ for sigla in IEES_PR:
             sources[key][field] = src
 
 
+# ── Seção 10 — Estratificação V6 (Dinâmica Orçamentária PR) ──────────────────
+# Lê a aba '9_Dinâmica Orçamentária PR' do arquivo de estratificação e extrai
+# o índice composto e a faixa de perfil orçamentário por IES-PR.
+# Substitui clusters_raw[sigla]["v6"] com o rótulo oficial.
+#
+# Estrutura da aba (cabeçalho na linha 4, dados a partir da 5):
+#   col 2  (idx 1)  = Sigla
+#   col 13 (idx 12) = Índice Composto
+#   col 14 (idx 13) = Faixa de Perfil Orçamentário
+
+_wb_v6 = openpyxl.load_workbook(
+    DATA_DIR / "Estratificação_IES_Estaduais_BR.xlsx", read_only=True, data_only=True
+)
+_ws_v6 = _wb_v6["9_Dinâmica Orçamentária PR"]
+
+for _row in _ws_v6.iter_rows(min_row=6, values_only=True):
+    _sigla = str(_row[2]).strip() if len(_row) > 2 and _row[2] else None
+    if _sigla not in IEES_PR:
+        continue
+    try:
+        _v6_indice = round(float(_row[13]), 4) if len(_row) > 13 and _row[13] is not None else None
+    except (TypeError, ValueError):
+        _v6_indice = None
+    _v6_perfil = str(_row[14]).strip() if len(_row) > 14 and _row[14] else None
+
+    _key = _sigla.lower()
+    if _v6_indice is not None:
+        results[_key]["v6_indice"] = _v6_indice
+        sources[_key]["v6_indice"] = "Estratificação_IES_Estaduais_BR.xlsx / 9_Dinâmica Orçamentária PR"
+    if _v6_perfil:
+        results[_key]["v6_perfil"] = _v6_perfil
+        sources[_key]["v6_perfil"] = "Estratificação_IES_Estaduais_BR.xlsx / 9_Dinâmica Orçamentária PR"
+        if _sigla in clusters_raw:
+            clusters_raw[_sigla]["v6"] = _v6_perfil
+
+_wb_v6.close()
+
+_SEP10 = "─" * 60
+print("", file=sys.stderr)
+print(_SEP10, file=sys.stderr)
+print("Seção 10 — V6 Dinâmica Orçamentária PR | Validação", file=sys.stderr)
+print(_SEP10, file=sys.stderr)
+print(f"{'IES':<12} {'v6_indice':>12}  v6_perfil", file=sys.stderr)
+print(_SEP10, file=sys.stderr)
+for _s in IEES_PR:
+    _k   = _s.lower()
+    _idx  = results[_k].get("v6_indice")
+    _perf = results[_k].get("v6_perfil", "N/D")
+    _idx_str = f"{_idx:.4f}" if _idx is not None else "N/D"
+    print(f"{_s:<12} {_idx_str:>12}  {_perf}", file=sys.stderr)
+print(_SEP10, file=sys.stderr)
+
+
 # ── Saída stdout (retrocompatível) ────────────────────────────────────────────
 
 print(json.dumps({"results": results, "sources": sources}, indent=2, ensure_ascii=False))
@@ -1084,7 +1197,19 @@ precomputed = {
     "sources":    {iees: sources[iees.lower()] for iees in IEES},
     "clusters":   {iees: clusters_raw.get(iees, {}) for iees in IEES},
     "quartiRefs": quartis_ref,
-    "byYear":     {iees: d8050_by_year.get(iees, {}) for iees in IEES_PR},
+    # byYear: 2024 = todos os indicadores para as 22 IES;
+    # 2025/2026 = apenas campos D8050 para as 7 IES-PR
+    "byYear": {
+        iees: {
+            "2024": results[iees.lower()],
+            **{
+                yr: d8050_by_year.get(iees, {}).get(yr, {})
+                for yr in ["2025", "2026"]
+                if d8050_by_year.get(iees, {}).get(yr)
+            },
+        }
+        for iees in IEES
+    },
 }
 json_path = DATA_DIR / "seti_precomputed.json"
 with open(json_path, "w", encoding="utf-8") as _f:

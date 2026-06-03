@@ -247,6 +247,10 @@ function upsertYearIndicators(sigla, year, indicators) {
   if (!cleanSigla || !cleanYear) return false;
   ensureData(cleanSigla);
   DATA[cleanSigla].byYear[cleanYear] = Object.assign({}, DATA[cleanSigla].byYear[cleanYear] || {}, indicators || {});
+  if (indicators && indicators.v6_perfil) {
+    DATA[cleanSigla].groups = DATA[cleanSigla].groups || {};
+    DATA[cleanSigla].groups.v6 = indicators.v6_perfil;
+  }
   return true;
 }
 
@@ -493,12 +497,19 @@ async function loadEgressosBase() {
 
 // ── Mapa CO_IES → sigla (INEP Censo da Educação Superior) ──────────
 const CURSOS_IES_MAP = {
+  // PR
   9:"UEL", 57:"UEM", 609:"UNIOESTE", 730:"UEPG",
   1126:"UNICENTRO", 15015:"UENP", 18492:"UNESPAR",
-  18165:"USP", 55:"UNESP", 54:"UNICAMP", 547:"UERJ",
+  // BR — 15 originais (CO confirmados via diagnóstico)
+  55:"USP", 56:"UNESP", 54:"UNICAMP", 547:"UERJ",
   43:"UDESC", 3336:"UERGS", 29:"UECE", 40:"UNEB",
   688:"UESB", 47:"UEG", 568:"UEMA", 550:"UEPB",
-  38:"UEPA", 3172:"UEA", 71:"UERN"
+  38:"UEPA", 3172:"UEA", 71:"UERN",
+  // BR — 17 novas
+  24:"UESC", 32:"UNCISAL", 95:"UVA", 367:"UNIMONTES",
+  409:"UPE", 666:"UEFS", 719:"UNEMAT", 756:"UESPI",
+  829:"UNITINS", 1027:"UENF", 1028:"UEMS", 1036:"UEMG",
+  5077:"UERR", 5242:"UNEAL", 5701:"UEAP", 23410:"UEMASUL", 27103:"UnDF"
 };
 const CURSOS_SIGLAS_SET = new Set(Object.values(CURSOS_IES_MAP));
 

@@ -1774,7 +1774,7 @@ const raw = [
    9.8,5.0,42,14,
    770,92.6,96.5,78.5,70.6,
    45.2,3933,69.3,80.0,74,
-   ["Alto","Alto","Médio-alto","Alto","Alto","Alto","Alto","Médio-alto"]],
+   ["Alto","Alto","Médio-alto","Alto","Alto","Baixo","Alto","Médio-alto"]],
   ["uem","UEM","Universidade Estadual de Maringá","Noroeste","Maringá","Pesquisa consolidada","Bacharelado",
    12808,4328,1803,91,8365, 51.7,22.4,14.1,88.2,
    13.8,4.0,64,22,
@@ -1786,25 +1786,25 @@ const raw = [
    4.4,5.0,20,5,
    449,88.3,98.0,79.6,68.5,
    46.8,4477,72.1,84.9,67,
-   ["Médio-alto","Médio-alto","Médio-baixo","Médio-alto","Médio-alto","Médio-alto","Médio-alto","Médio-alto"]],
+   ["Médio-alto","Médio-alto","Médio-baixo","Médio-alto","Médio-alto","Baixo","Médio-alto","Médio-alto"]],
   ["unioeste","UNIOESTE","Universidade Estadual do Oeste do Paraná","Oeste","Cascavel","Multicampi","Bacharelado",
    11214,3769,2289,71,5338, 70.6,22.4,20.4,76.5,
    5.0,5.0,31,14,
    563,92.2,96.9,80.9,60.8,
    53.8,4179,83.7,100.0,82,
-   ["Médio-alto","Alto","Alto","Médio-alto","Médio-alto","Médio-alto","Médio-alto","Médio-baixo"]],
+   ["Médio-alto","Alto","Alto","Médio-alto","Médio-alto","Baixo","Médio-alto","Médio-baixo"]],
   ["unicentro","UNICENTRO","Universidade Estadual do Centro-Oeste","Centro-Sul","Guarapuava","Vocação territorial","Licenciatura",
    6674,1554,1160,66,3382, 45.9,9.5,17.4,75.9,
    0.8,4.0,14,1,
    341,92.5,96.9,82.4,66.6,
    52.0,4338,72.7,95.7,76,
-   ["Médio-baixo","Médio-baixo","Médio-alto","Médio-baixo","Médio-baixo","Médio-baixo","Médio-baixo","Médio-baixo"]],
+   ["Médio-baixo","Médio-baixo","Médio-alto","Médio-baixo","Médio-baixo","Médio-alto","Médio-baixo","Médio-baixo"]],
   ["uenp","UENP","Universidade Estadual do Norte do Paraná","Norte Pioneiro","Jacarezinho","Vocação territorial","Licenciatura",
    3746,1288,607,30,5732, 22.5,21.4,16.2,70.1,
    0.8,4.0,5,0,
    156,95.7,98.7,83.7,58.4,
    42.1,3364,65.4,72.0,64,
-   ["Baixo","Baixo","Médio-baixo","Baixo","Baixo","Baixo","Baixo","Baixo"]],
+   ["Baixo","Baixo","Médio-baixo","Baixo","Baixo","Médio-alto","Baixo","Baixo"]],
   ["unespar","UNESPAR","Universidade Estadual do Paraná","Litoral e Noroeste","Paranavaí","Artes e formação docente","Licenciatura",
    8718,3301,1203,82,4625, 71.4,21.0,13.8,59.1,
    0.3,3.0,7,0,
@@ -1913,6 +1913,108 @@ const rawBrasil = [
    390,85.0,89.0,81.8,14.0,
    55.0,3500,61.0,0,69,
    ["Médio-baixo","Médio-alto","Médio-alto","Médio-baixo","Médio-baixo","Médio-baixo","Médio-baixo","Médio-baixo"]],
+  ["uesc","UESC","Universidade Estadual de Santa Cruz","Nordeste","Ilhéus","Pesquisa em desenvolvimento","Bacharelado",
+   33706,null,null,196,null, null,null,null,null,
+   null,null,null,null,
+   null,null,null,null,null,
+   null,null,null,null,0.519,
+   ["Médio-baixo","Médio-baixo","Médio-alto",null,null,null,null,null]],
+  ["uncisal","UNCISAL","Universidade Estadual de Ciências da Saúde de Alagoas","Nordeste","Maceió","Vocação territorial","Bacharelado",
+   7640,null,null,72,null, null,null,null,null,
+   null,null,null,null,
+   null,null,null,null,null,
+   null,null,null,null,0.515,
+   ["Baixo","Baixo","Médio-alto",null,null,null,null,null]],
+  ["uva","UVA","Universidade Estadual Vale do Acaraú","Nordeste","Sobral","Vocação territorial","Licenciatura",
+   34654,null,null,149,null, null,null,null,null,
+   null,null,null,null,
+   null,null,null,null,null,
+   null,null,null,null,0.504,
+   ["Médio-baixo","Baixo","Médio-baixo",null,null,null,null,null]],
+  ["unimontes","UNIMONTES","Universidade Estadual de Montes Claros","Sudeste","Montes Claros","Multicampi","Bacharelado",
+   51465,null,null,323,null, null,null,null,null,
+   null,null,null,null,
+   null,null,null,null,null,
+   null,null,null,null,0.554,
+   ["Médio-baixo","Médio-alto","Alto",null,null,null,null,null]],
+  ["upe","UPE","Universidade de Pernambuco","Nordeste","Recife","Multicampi","Bacharelado",
+   73889,null,null,317,null, null,null,null,null,
+   null,null,null,null,
+   null,null,null,null,null,
+   null,null,null,null,0.527,
+   ["Médio-alto","Médio-baixo","Médio-alto",null,null,null,null,null]],
+  ["uefs","UEFS","Universidade Estadual de Feira de Santana","Nordeste","Feira de Santana","Pesquisa em desenvolvimento","Bacharelado",
+   44392,null,null,175,null, null,null,null,null,
+   null,null,null,null,
+   null,null,null,null,null,
+   null,null,null,null,0.503,
+   ["Médio-baixo","Médio-baixo","Médio-baixo",null,null,null,null,null]],
+  ["unemat","UNEMAT","Universidade do Estado de Mato Grosso","Centro-Oeste","Cáceres","Multicampi","Licenciatura",
+   96747,null,null,606,null, null,null,null,null,
+   null,null,null,null,
+   null,null,null,null,null,
+   null,null,null,null,0.522,
+   ["Alto","Alto","Médio-alto",null,null,null,null,null]],
+  ["uespi","UESPI","Universidade Estadual do Piauí","Nordeste","Teresina","Multicampi","Licenciatura",
+   87300,null,null,697,null, null,null,null,null,
+   null,null,null,null,
+   null,null,null,null,null,
+   null,null,null,null,0.556,
+   ["Alto","Alto","Alto",null,null,null,null,null]],
+  ["unitins","UNITINS","Universidade Estadual do Tocantins","Norte","Palmas","Vocação territorial","Licenciatura",
+   15171,null,null,94,null, null,null,null,null,
+   null,null,null,null,
+   null,null,null,null,null,
+   null,null,null,null,0.527,
+   ["Baixo","Baixo","Médio-alto",null,null,null,null,null]],
+  ["uenf","UENF","Universidade Estadual do Norte Fluminense Darcy Ribeiro","Sudeste","Campos dos Goytacazes","Pesquisa consolidada","Bacharelado",
+   24014,null,null,100,null, null,null,null,null,
+   null,null,null,null,
+   null,null,null,null,null,
+   null,null,null,null,0.515,
+   ["Baixo","Baixo","Médio-alto",null,null,null,null,null]],
+  ["uems","UEMS","Universidade Estadual de Mato Grosso do Sul","Centro-Oeste","Dourados","Multicampi","Licenciatura",
+   33243,null,null,332,null, null,null,null,null,
+   null,null,null,null,
+   null,null,null,null,null,
+   null,null,null,null,0.527,
+   ["Baixo","Médio-alto","Médio-alto",null,null,null,null,null]],
+  ["uemg","UEMG","Universidade do Estado de Minas Gerais","Sudeste","Belo Horizonte","Artes e formação docente","Licenciatura",
+   109139,null,null,646,null, null,null,null,null,
+   null,null,null,null,
+   null,null,null,null,null,
+   null,null,null,null,0.462,
+   ["Alto","Alto","Médio-baixo",null,null,null,null,null]],
+  ["uerr","UERR","Universidade Estadual de Roraima","Norte","Boa Vista","Vocação territorial","Licenciatura",
+   7605,null,null,133,null, null,null,null,null,
+   null,null,null,null,
+   null,null,null,null,null,
+   null,null,null,null,0.508,
+   ["Baixo","Baixo","Médio-baixo",null,null,null,null,null]],
+  ["uneal","UNEAL","Universidade Estadual de Alagoas","Nordeste","Arapiraca","Vocação territorial","Licenciatura",
+   28924,null,null,293,null, null,null,null,null,
+   null,null,null,null,
+   null,null,null,null,null,
+   null,null,null,null,0.407,
+   ["Baixo","Médio-baixo","Médio-baixo",null,null,null,null,null]],
+  ["ueap","UEAP","Universidade do Estado do Amapá","Norte","Macapá","Vocação territorial","Licenciatura",
+   11351,null,null,67,null, null,null,null,null,
+   null,null,null,null,
+   null,null,null,null,null,
+   null,null,null,null,0.014,
+   ["Baixo","Baixo","Baixo",null,null,null,null,null]],
+  ["uemasul","UEMASUL","Universidade Estadual da Região Tocantina do Maranhão","Nordeste","Imperatriz","Vocação territorial","Licenciatura",
+   13972,null,null,157,null, null,null,null,null,
+   null,null,null,null,
+   null,null,null,null,null,
+   null,null,null,null,0.228,
+   ["Baixo","Baixo","Baixo",null,null,null,null,null]],
+  ["undf","UnDF","Universidade do Distrito Federal","Centro-Oeste","Brasília","Vocação territorial","Licenciatura",
+   2520,null,null,29,null, null,null,null,null,
+   null,null,null,null,
+   null,null,null,null,null,
+   null,null,null,null,null,
+   ["Baixo","Baixo","Baixo",null,null,null,null,null]],
 ];
 const universitiesBrasil = rawBrasil.map((r) => ({
   id:r[0], sigla:r[1], nome:r[2], region:r[3], municipality:r[4], profile:r[5], type:r[6],
@@ -2122,7 +2224,7 @@ const groupOptions = {
   v3:["Muito Alta Dispersão","Alta Dispersão","Dispersão Moderada","Sede Única","Baixa Dispersão"],
   v4:["Qualif. Consolidada","Qualif. Avançada","Qualif. Em Desenvolvimento","Qualif. Inicial"],
   v5:["Estrutura Madura","Estrutura Consolidada","Estrutura em Consolidação","Estrutura Incipiente"],
-  v6:["Perfil Expansivo","Autônomo","Perfil Moderado-Expansivo","Perfil Moderado-Restritivo","Perfil Restritivo"],
+  v6:["Perfil Expansivo / Autônomo","Perfil Moderado-Expansivo","Perfil Restritivo"],
   v7:["Alta Renda","Renda Moderada-Alta","Renda Moderada-Baixa","Baixa Renda"],
   v8:["IDHM Alto","IDHM Médio-Alto","IDHM Médio-Baixo","IDHM Baixo"]
 };
@@ -2132,7 +2234,7 @@ const groupOptionNotes = {
   v3:{"Muito Alta Dispersão":"Maior capilaridade territorial","Alta Dispersão":"Rede multicampi","Dispersão Moderada":"Presença territorial intermediária","Sede Única":"Oferta concentrada em sede única","Baixa Dispersão":"Baixa dispersão territorial"},
   v4:{"Qualif. Consolidada":"Maior proporção de docentes doutores","Qualif. Avançada":"Qualificação acima da mediana","Qualif. Em Desenvolvimento":"Qualificação intermediária","Qualif. Inicial":"Qualificação em estágio inicial"},
   v5:{"Estrutura Madura":"Maior maturidade acadêmica composta","Estrutura Consolidada":"Estrutura acadêmica consolidada","Estrutura em Consolidação":"Estrutura em processo de consolidação","Estrutura Incipiente":"Estrutura acadêmica incipiente"},
-  v6:{"Perfil Expansivo":"Maior dinâmica orçamentária","Autônomo":"Maior autonomia relativa de recursos","Perfil Moderado-Expansivo":"Dinâmica moderada com expansão","Perfil Moderado-Restritivo":"Dinâmica moderada com restrição","Perfil Restritivo":"Menor dinâmica orçamentária"},
+  v6:{"Perfil Expansivo / Autônomo":"Maior dinâmica orçamentária e autonomia de recursos","Perfil Moderado-Expansivo":"Dinâmica moderada com tendência expansiva","Perfil Restritivo":"Menor dinâmica orçamentária relativa"},
   v7:{"Alta Renda":"Município-sede em faixa superior de renda per capita (IBGE 2010)","Renda Moderada-Alta":"Renda per capita intermediária alta do município-sede","Renda Moderada-Baixa":"Renda per capita intermediária baixa do município-sede","Baixa Renda":"Município-sede em faixa inferior de renda per capita (IBGE 2010)"},
   v8:{"IDHM Alto":"Município-sede em faixa superior de IDHM (Atlas Brasil 2010)","IDHM Médio-Alto":"IDHM intermediário alto do município-sede","IDHM Médio-Baixo":"IDHM intermediário baixo do município-sede","IDHM Baixo":"Município-sede em faixa inferior de IDHM (Atlas Brasil 2010)"}
 };
@@ -2142,7 +2244,7 @@ const oldGroupMap = {
   v3:{"Alto":"Muito Alta Dispersão","Médio-alto":"Alta Dispersão","Médio-baixo":"Dispersão Moderada","Baixo":"Baixa Dispersão"},
   v4:{"Alto":"Qualif. Consolidada","Médio-alto":"Qualif. Avançada","Médio-baixo":"Qualif. Em Desenvolvimento","Baixo":"Qualif. Inicial"},
   v5:{"Alto":"Estrutura Madura","Médio-alto":"Estrutura Consolidada","Médio-baixo":"Estrutura em Consolidação","Baixo":"Estrutura Incipiente"},
-  v6:{"Alto":"Perfil Expansivo","Médio-alto":"Perfil Moderado-Expansivo","Médio-baixo":"Perfil Moderado-Restritivo","Baixo":"Perfil Restritivo"}
+  v6:{"Alto":"Perfil Expansivo / Autônomo","Médio-alto":"Perfil Moderado-Expansivo","Baixo":"Perfil Restritivo"}
 };
 universities.forEach(u=>groupKeys.forEach(k=>{if(oldGroupMap[k]&&oldGroupMap[k][u.groups[k]]) u.groups[k]=oldGroupMap[k][u.groups[k]];}));
 Object.entries(groupOptions).forEach(([key,labels])=>{if(groupMeta[key]) groupMeta[key].criteria=labels.map(label=>[label,groupOptionNotes[key][label]||""]);});
@@ -2523,7 +2625,7 @@ function renderSide(c){
     el.groupBreakdown.innerHTML=groups.map(grpLabel=>{
       const entry=meta.criteria.find(([l])=>l===grpLabel);
       const txt=entry?entry[1]:"";
-      const members=universities.filter(u=>u.groups[variable]===grpLabel);
+      const members=scopeUniverse(c.f.scope).filter(u=>u.groups[variable]===grpLabel);
       const isActive=activeGroup===grpLabel;
       const membersHTML=members.map(u=>`<div class="group-iees-item"><span class="group-iees-sigla">${u.sigla}</span><span class="group-iees-value">${meta.format(meta.getter(u))}</span></div>`).join("");
       return `<div class="group-breakdown-card${isActive?" is-active":""}"><strong class="group-breakdown-name">${grpLabel}</strong><span class="group-breakdown-criterion">${txt}</span><div class="group-iees-list">${membersHTML}</div></div>`;
@@ -2775,7 +2877,7 @@ function overviewMetricUniverseRows() {
     const source = f.scope === "Brasil" ? [...universities, ...universitiesBrasil] : universities;
     return source.map(u => byYear(u, f.year || "2024"));
   } catch (err) {
-    return universities;
+    return scopeUniverse(state.scope);
   }
 }
 
@@ -3038,7 +3140,7 @@ function renderSide(c) {
     el.groupBreakdown.innerHTML = groups.map(grpLabel => {
       const entry = meta.criteria.find(([l]) => l === grpLabel);
       const txt = entry ? entry[1] : "";
-      const members = universities.filter(u => u.groups[variable] === grpLabel);
+      const members = scopeUniverse(c.f.scope).filter(u => u.groups[variable] === grpLabel);
       const isActive = activeGroup === grpLabel;
       const membersHTML = members.map(u => `<div class="group-iees-item"><span class="group-iees-sigla">${u.sigla}</span><span class="group-iees-value">${meta.format(meta.getter(u))}</span></div>`).join("");
       return `<div class="group-breakdown-card${isActive ? " is-active" : ""}"><strong class="group-breakdown-name">${grpLabel}</strong><span class="group-breakdown-criterion">${txt}</span><div class="group-iees-list">${membersHTML}</div></div>`;
@@ -3874,113 +3976,89 @@ state.radarReference = state.radarReference || "cluster";
 state.comparisonDimension = state.comparisonDimension || "all";
 state.retentionCourseType = state.retentionCourseType || "Bacharelado";
 
-var comparisonIndicatorSets = {
-  acessoInclusao: {
-    label: "Acesso e Inclusão",
-    indicators: [
-      { code:"IND-26", name:"Taxa de ocupação das vagas",    polarity:"↑", get:u=>u.occupancy, fmt:formatPercent },
-      { code:"IND-3",  name:"Ocupação vagas iniciais",       polarity:"↑", get:u=>u.ingressOccupancy!=null?u.ingressOccupancy:round(u.entrants/Math.max(u.vacanciesNova!=null?u.vacanciesNova:u.vacancies*.82,1)*100,1), fmt:formatPercent },
-      { code:"IND-4",  name:"Ingressantes escola pública",   polarity:"↑", get:u=>publicSchoolShare(u), fmt:formatPercent },
-      { code:"IND-28", name:"Vagas não ocupadas",            polarity:"↓", get:u=>u.vacanciesUnfilled!=null?u.vacanciesUnfilled:Math.max(0,Math.round(u.vacancies*(1-u.occupancy/100))), fmt:formatNumber }
-    ]
-  },
-  permanenciaConc: {
-    label: "Permanência e Conclusão",
-    indicators: [
-      { code:"IND-5",  name:"Taxa de desvinculação",         polarity:"↓", get:u=>u.dropout, fmt:formatPercent },
-      { code:"IND-27", name:"Taxa de concluintes",           polarity:"↑", get:u=>u.completion, fmt:formatPercent },
-      { code:"IND-14", name:"Concluintes",                   polarity:"↑", get:u=>u.graduates, fmt:formatNumber },
-      { code:"IND-7",  name:"Mobilidade acadêmica",          polarity:"↑", get:u=>u.mobility??0, fmt:formatPercent }
-    ]
-  },
-  qualidadeAcad: {
-    label: "Qualidade Acadêmica",
-    indicators: [
-      { code:"IND-6",  name:"Docentes com doutorado",        polarity:"↑", get:u=>u.doctors, fmt:formatPercent },
-      { code:"IND-62", name:"Conceito CAPES",                polarity:"↑", get:u=>u.capes, fmt:v=>v.toFixed(1) },
-      { code:"IND-66", name:"Programas CAPES 5, 6 e 7",      polarity:"↑", get:u=>u.pg?u.pgTop/u.pg*100:0, fmt:formatPercent },
-      { code:"IND-9",  name:"Acesso Portal CAPES",           polarity:"↑", get:u=>u.capesPortal??0, fmt:formatPercent }
-    ]
-  },
-  ofertaTerrit: {
-    label: "Oferta e Territorialização",
-    indicators: [
-      { code:"IND-10", name:"Total de cursos",               polarity:"↑", get:u=>u.courses, fmt:formatNumber },
-      { code:"IND-11", name:"Total de vagas",                polarity:"↑", get:u=>u.vacancies, fmt:formatNumber },
-      { code:"IND-21", name:"Estudantes por curso",          polarity:"~", get:u=>u.students/Math.max(u.courses,1), fmt:v=>+v.toFixed(1) },
-      { code:"IND-15", name:"Vagas por curso",               polarity:"~", get:u=>u.courses?+(u.vacancies/u.courses).toFixed(1):0, fmt:v=>+v.toFixed(1) }
-    ]
-  },
-  insercaoProf: {
-    label: "Inserção Profissional",
-    indicators: [
-      { code:"IND-37", name:"Inserção no Paraná",            polarity:"↑", get:u=>u.employment, fmt:formatPercent },
-      { code:"IND-35", name:"Inserção Região Sul",           polarity:"↑", get:u=>clamp(u.employment+5,0,100), fmt:formatPercent },
-      { code:"IND-39", name:"Aderência CBO2",                polarity:"↑", get:u=>clamp(u.employment-5,0,100), fmt:formatPercent },
-      { code:"IND-40", name:"Salário médio egressos",        polarity:"↑", get:u=>u.salary, fmt:formatCurrency }
-    ]
-  },
-  corpoDocente: {
-    label: "Corpo Docente",
-    indicators: [
-      { code:"IND-46", name:"Ocupação quadro docente",       polarity:"↑", get:u=>u.facultyOcc, fmt:formatPercent },
-      { code:"IND-56", name:"Utilização da CRES",            polarity:"~", get:u=>u.cres, fmt:formatPercent },
-      { code:"IND-53", name:"Carga horária média docente",   polarity:"~", get:u=>u.docChMedia||0, fmt:v=>v?+v.toFixed(0):0 },
-      { code:"IND-47", name:"Utilização vagas disponíveis",  polarity:"↑", get:u=>u.docTaxaUtil||u.facultyOcc, fmt:formatPercent }
-    ]
-  },
-  pesquisaInov: {
-    label: "Pesquisa e Inovação",
-    indicators: [
-      { code:"IND-60", name:"Captação CNPq",                 polarity:"↑", get:u=>u.cnpq, fmt:formatCurrencyMillions },
-      { code:"IND-61", name:"Vínculos CNPq",                 polarity:"↑", get:u=>u.vinculos??0, fmt:formatNumber },
-      { code:"IND-65", name:"Docentes com bolsa PQ",         polarity:"↑", get:u=>u.capesDocBolsa??clamp(u.cnpq*1.35+u.pgTop*1.1,3,68), fmt:formatPercent },
-      { code:"IND-66", name:"Programas CAPES 5, 6 e 7",      polarity:"↑", get:u=>u.pg?u.pgTop/u.pg*100:0, fmt:formatPercent }
-    ]
-  },
-  internacionalizacao: {
-    label: "Internacionalização",
-    indicators: [
-      { code:"IND-7",  name:"Mobilidade acadêmica",          polarity:"↑", get:u=>u.mobility??0, fmt:formatPercent },
-      { code:"IND-8",  name:"Docentes estrangeiros",         polarity:"↑", get:u=>u.docForeign??0, fmt:formatPercent },
-      { code:"IND-64", name:"Docentes estrangeiros PG",      polarity:"↑", get:u=>u.capesDocEstrangeiros??0, fmt:formatPercent }
-    ]
-  },
-  eficienciaOrc: {
-    label: "Eficiência Orçamentária",
-    indicators: [
-      { code:"IND-81", name:"Execução orçamentária",         polarity:"↑", get:u=>u.execution, fmt:formatPercent },
-      { code:"IND-82", name:"Taxa de liquidação",            polarity:"↑", get:u=>u.liquidation, fmt:formatPercent },
-      { code:"IND-84", name:"Contingenciamento",             polarity:"↓", get:u=>0, fmt:formatPercent },
-      { code:"IND-95", name:"Liq. sobre orç. inicial",       polarity:"↑", get:u=>0, fmt:formatPercent }
-    ]
-  },
-  estruturaGastos: {
-    label: "Estrutura de Gastos",
-    indicators: [
-      { code:"IND-86", name:"Pessoal e encargos",            polarity:"~", get:u=>u.personnel, fmt:formatPercent },
-      { code:"IND-87", name:"Outras despesas correntes",     polarity:"~", get:u=>0, fmt:formatPercent },
-      { code:"IND-88", name:"Correntes vs. capital",         polarity:"~", get:u=>0, fmt:formatPercent },
-      { code:"IND-85", name:"Variação da dotação",           polarity:"~", get:u=>u.supplementation, fmt:formatPercent }
-    ]
-  },
-  autonomiaDivers: {
-    label: "Autonomia e Diversificação de Recursos",
-    indicators: [
-      { code:"IND-89", name:"Recursos livres (Tesouro)",     polarity:"↑", get:u=>clamp(100-u.supplementation-(u.cnpq*.45),62,96), fmt:formatPercent },
-      { code:"IND-90", name:"Recursos próprios",             polarity:"~", get:u=>clamp(4+u.cnpq*.55+u.pgTop*.12,4,24), fmt:formatPercent },
-      { code:"IND-91", name:"Transferências federais",       polarity:"~", get:u=>0, fmt:formatPercent }
-    ]
-  },
-  capacidadeInvest: {
-    label: "Capacidade de Investimento",
-    indicators: [
-      { code:"IND-92", name:"Obras e instalações",           polarity:"↑", get:u=>0, fmt:formatPercent },
-      { code:"IND-93", name:"Equipamentos permanentes",      polarity:"~", get:u=>0, fmt:formatPercent },
-      { code:"IND-94", name:"Variação vs. LOA inicial",      polarity:"~", get:u=>0, fmt:formatPercent }
-    ]
+var comparisonIndicatorSets = {};
+
+function comparisonDimensionSlug(label) {
+  return String(label || "Geral")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "") || "geral";
+}
+
+function comparisonCatalogKeyForCode(code) {
+  return String(code || "").toLowerCase().replace(/^ind-/, "ind");
+}
+
+function comparisonCodeNumber(code) {
+  const match = String(code || "").match(/\d+/);
+  return match ? Number(match[0]) : Number.MAX_SAFE_INTEGER;
+}
+
+function normalizeComparisonText(value) {
+  return String(value || "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase();
+}
+
+function comparisonPolarityFromCatalog(indicator) {
+  const text = normalizeComparisonText(indicator?.polaridade || "");
+  if (text.includes("menor")) return "\u2193";
+  if (text.includes("maior")) return "\u2191";
+  return "~";
+}
+
+function comparisonDecimal(v, digits = 1) {
+  const n = Number(v);
+  if (!Number.isFinite(n)) return "—";
+  return new Intl.NumberFormat("pt-BR", {
+    minimumFractionDigits: digits,
+    maximumFractionDigits: digits
+  }).format(n);
+}
+
+function comparisonFormatterFromCatalog(indicator, code) {
+  const text = normalizeComparisonText(`${indicator?.unidade || ""} ${indicator?.nome || ""}`);
+  if (text.includes("percentual") || text.includes("taxa") || text.includes("proporcao") || text.includes("participacao")) return formatPercent;
+  if (text.includes("reais") || text.includes("r$") || text.includes("salario") || text.includes("captacao")) {
+    return code === "IND-60" ? formatCurrencyMillions : formatCurrency;
   }
-};
+  if (text.includes("hora")) return v => `${comparisonDecimal(v, 1)}h`;
+  if (text.includes("razao") || text.includes("indice") || text.includes("conceito") || text.includes("media")) return v => comparisonDecimal(v, 1);
+  return formatNumber;
+}
+
+function buildComparisonIndicatorSets() {
+  const sets = {};
+  Object.entries(INDICATOR_CATALOG || {}).forEach(([key, indicator]) => {
+    const code = `IND-${Number(indicator.codigo)}`;
+    const getter = IND_FIELD_MAP[comparisonCatalogKeyForCode(code)] || IND_FIELD_MAP[key];
+    if (!getter) return;
+    const label = String(indicator.categoria || "Geral").trim() || "Geral";
+    const dimKey = comparisonDimensionSlug(label);
+    if (!sets[dimKey]) sets[dimKey] = { label, indicators: [], order: comparisonCodeNumber(code) };
+    sets[dimKey].order = Math.min(sets[dimKey].order, comparisonCodeNumber(code));
+    sets[dimKey].indicators.push({
+      code,
+      name: indicator.nome || code,
+      polarity: comparisonPolarityFromCatalog(indicator),
+      get: getter,
+      fmt: comparisonFormatterFromCatalog(indicator, code)
+    });
+  });
+  Object.values(sets).forEach(set => {
+    const byCode = new Map();
+    set.indicators.forEach(ind => {
+      if (!byCode.has(ind.code)) byCode.set(ind.code, ind);
+    });
+    set.indicators = [...byCode.values()].sort((a, b) => comparisonCodeNumber(a.code) - comparisonCodeNumber(b.code));
+  });
+  return Object.fromEntries(Object.entries(sets).sort((a, b) => a[1].order - b[1].order || a[1].label.localeCompare(b[1].label, "pt-BR")));
+}
+
+comparisonIndicatorSets = buildComparisonIndicatorSets();
 
 // Eixo Acesso:               u.occupancy        → IND-26 → Base Cursos INEP       (real)   → BR: brazil.result.occupancy  = 84.1 (benchmark estimado)
 // Eixo Permanência (retenção):100-u.dropout      → IND-5↑ → Base Cursos INEP       (real)   → BR: brazil.result.permanence = 88.1 (benchmark estimado)
@@ -4036,41 +4114,44 @@ function comparisonDimensionKey(c) {
   return comparisonIndicatorSets[c.f.dimension] ? c.f.dimension : "all";
 }
 
-function comparisonAllDimIndicators() {
+function comparisonDimensionOptions() {
   return [
-    { code:"IND-26", name:"Ocupação vagas",    polarity:"↑", get:u=>u.occupancy,   fmt:formatPercent },
-    { code:"IND-5",  name:"Desvinculação",     polarity:"↓", get:u=>u.dropout,     fmt:formatPercent },
-    { code:"IND-6",  name:"Doutores",          polarity:"↑", get:u=>u.doctors,     fmt:formatPercent },
-    { code:"IND-60", name:"Captação CNPq",     polarity:"↑", get:u=>u.cnpq,        fmt:formatCurrencyMillions },
-    { code:"IND-37", name:"Inserção PR",       polarity:"↑", get:u=>u.employment,  fmt:formatPercent },
-    { code:"IND-81", name:"Execução",          polarity:"↑", get:u=>u.execution,   fmt:formatPercent }
+    ["all", "Todas as dimensões"],
+    ...Object.entries(comparisonIndicatorSets).map(([key, dim]) => [key, dim.label])
   ];
 }
 
+function comparisonAllDimIndicators() {
+  return Object.values(comparisonIndicatorSets)
+    .map(dim => dim.indicators[0])
+    .filter(Boolean);
+}
+
+function comparisonDimensionForKey(key) {
+  return key === "all"
+    ? { label: "Visão geral (indicador-síntese por dimensão)", indicators: comparisonAllDimIndicators() }
+    : comparisonIndicatorSets[key] || { label: "Dimensão indisponível", indicators: [] };
+}
+
 function radarAxesForDimension(key) {
-  if (!key || key === "all" || !comparisonIndicatorSets[key]) return radarAxes;
+  if (!key || key === "all" || !comparisonIndicatorSets[key]) return comparisonAllDimIndicators()
+    .slice(0, 6)
+    .map(ind => ({ label: comparisonShortAxisLabel(ind.name), code: ind.code, get: ind.get, br: () => 50 }));
   const dim = comparisonIndicatorSets[key];
   const inds = dim.indicators.slice(0, 6);
-  const axes = inds.map(ind => ({ label: ind.name.replace(/\s+.*/,"").slice(0,12), code: ind.code, get: ind.get, br: () => 50 }));
+  const axes = inds.map(ind => ({ label: comparisonShortAxisLabel(ind.name), code: ind.code, get: ind.get, br: () => 50 }));
   while (axes.length < 3) axes.push(radarAxes[axes.length % radarAxes.length]);
   return axes;
 }
 
-const COMPARISON_DIM_OPTIONS = [
-  ["all",              "Todas as dimensões"],
-  ["acessoInclusao",   "Acesso e Inclusão"],
-  ["permanenciaConc",  "Permanência e Conclusão"],
-  ["qualidadeAcad",    "Qualidade Acadêmica"],
-  ["ofertaTerrit",     "Oferta e Territorialização"],
-  ["insercaoProf",     "Inserção Profissional"],
-  ["corpoDocente",     "Corpo Docente"],
-  ["pesquisaInov",     "Pesquisa e Inovação"],
-  ["internacionalizacao","Internacionalização"],
-  ["eficienciaOrc",    "Eficiência Orçamentária"],
-  ["estruturaGastos",  "Estrutura de Gastos"],
-  ["autonomiaDivers",  "Autonomia e Diversificação de Recursos"],
-  ["capacidadeInvest", "Capacidade de Investimento"]
-];
+function comparisonShortAxisLabel(label) {
+  return String(label || "")
+    .replace(/\s*\([^)]*\)/g, "")
+    .split(/\s+/)
+    .slice(0, 2)
+    .join(" ")
+    .slice(0, 18);
+}
 
 function renderComparisonDimensionBar() {
   const dim = state.comparisonDimension || "all";
@@ -4078,7 +4159,7 @@ function renderComparisonDimensionBar() {
     <label class="metric-selector">
       <span class="metric-selector-label">Dimensão de análise</span>
       <select onchange="setComparisonDimension(this.value)">
-        ${COMPARISON_DIM_OPTIONS.map(([k,l]) => `<option value="${k}"${k===dim?" selected":""}>${l}</option>`).join("")}
+        ${comparisonDimensionOptions().map(([k,l]) => `<option value="${k}"${k===dim?" selected":""}>${l}</option>`).join("")}
       </select>
     </label>
   </div>`;
@@ -4104,17 +4185,15 @@ function renderComparisonTab(c, summary) {
 
 function comparisonTable(c) {
   const key = comparisonDimensionKey(c);
-  const dimension = key === "all"
-    ? { label: "Visão geral (principais indicadores)", indicators: comparisonAllDimIndicators() }
-    : comparisonIndicatorSets[key];
+  const dimension = comparisonDimensionForKey(key);
   const isBR = isBrasilContext(c);
   const clusterRows = clusterRowsFor(c);
   const showOnly = !explicitClusterActive(c) || state.comparisonShowOnlyCluster;
   const rows = showOnly ? clusterRows : (c.base.length ? c.base : c.all);
   const clusterIds = new Set(clusterRows.map(u => u.id));
-  const means = Object.fromEntries(dimension.indicators.map(ind => [ind.code, mean(clusterRows, ind.get)]));
+  const means = Object.fromEntries(dimension.indicators.map(ind => [ind.code, comparisonMean(clusterRows, ind)]));
   const prRows = c.base.length ? c.base : c.all;
-  const prMeans = Object.fromEntries(dimension.indicators.map(ind => [ind.code, mean(prRows, ind.get)]));
+  const prMeans = Object.fromEntries(dimension.indicators.map(ind => [ind.code, comparisonMean(prRows, ind)]));
   const ranking = dimensionRanking(clusterRows, dimension.indicators);
   const sortedRows = [...rows].sort((a, b) => (ranking.get(a.id) || 999) - (ranking.get(b.id) || 999));
   const clusterMeanLabel = isBR ? "Média nacional" : "Média do cluster";
@@ -4127,19 +4206,39 @@ function comparisonTable(c) {
       <thead><tr><th>Ranking</th><th>IEES</th>${dimension.indicators.map(ind => `<th><span class="indicator-code">${ind.code}</span>${indicatorName(ind.code)}</th>`).join("")}</tr></thead>
       <tbody>${sortedRows.map(u => `<tr class="${clusterIds.has(u.id) ? "in-cluster" : "out-cluster"} ${isUniSelected(c.f, u.id) ? "selected-row" : ""}"><td><strong>${ranking.get(u.id) || "-"}º</strong></td><td><strong>${u.sigla}</strong><br><span>${u.groups[c.f.groupBy]}</span></td>${dimension.indicators.map(ind => indicatorCell(ind, u, means[ind.code])).join("")}</tr>`).join("")}</tbody>
       <tfoot>
-        <tr><td colspan="2"><strong>${clusterMeanLabel}</strong></td>${dimension.indicators.map(ind => `<td>${ind.fmt(means[ind.code])}</td>`).join("")}</tr>
-        ${!isBR ? `<tr class="pr-average-row"><td colspan="2"><strong>Média geral PR</strong></td>${dimension.indicators.map(ind => `<td>${ind.fmt(prMeans[ind.code])}</td>`).join("")}</tr>` : ""}
+        <tr><td colspan="2"><strong>${clusterMeanLabel}</strong></td>${dimension.indicators.map(ind => `<td>${comparisonFormat(ind, means[ind.code])}</td>`).join("")}</tr>
+        ${!isBR ? `<tr class="pr-average-row"><td colspan="2"><strong>Média geral PR</strong></td>${dimension.indicators.map(ind => `<td>${comparisonFormat(ind, prMeans[ind.code])}</td>`).join("")}</tr>` : ""}
       </tfoot>
     </table>
   </div>`;
 }
 
-function indicatorCell(ind, u, avg) {
+function comparisonValue(ind, u) {
   const value = ind.get(u);
+  const n = Number(value);
+  return Number.isFinite(n) ? n : null;
+}
+
+function comparisonValues(rows, ind) {
+  return rows.map(u => comparisonValue(ind, u)).filter(v => v != null);
+}
+
+function comparisonMean(rows, ind) {
+  const values = comparisonValues(rows, ind);
+  return values.length ? values.reduce((s, v) => s + v, 0) / values.length : null;
+}
+
+function comparisonFormat(ind, value) {
+  return value == null || !Number.isFinite(Number(value)) ? "—" : ind.fmt(value);
+}
+
+function indicatorCell(ind, u, avg) {
+  const value = comparisonValue(ind, u);
+  if (value == null || avg == null) return `<td class="conditional-cell"><strong>—</strong><span>sem dado</span></td>`;
   const cls = conditionalClass(value, avg, ind.polarity);
   const delta = value - avg;
   const sign = delta > 0 ? "+" : "";
-  return `<td class="conditional-cell ${cls}"><strong>${ind.fmt(value)}</strong><span>${sign}${delta.toFixed(1).replace(".", ",")} vs média</span></td>`;
+  return `<td class="conditional-cell ${cls}"><strong>${comparisonFormat(ind, value)}</strong><span>${sign}${delta.toFixed(1).replace(".", ",")} vs média</span></td>`;
 }
 
 function conditionalClass(value, avg, polarity) {
@@ -4160,12 +4259,15 @@ function dimensionRanking(rows, indicators) {
 }
 
 function dimensionScore(u, rows, indicators) {
-  return mean(indicators, ind => {
-    const values = rows.map(ind.get);
+  const scores = indicators.map(ind => {
+    const value = comparisonValue(ind, u);
+    const values = comparisonValues(rows, ind);
+    if (value == null || values.length < 2) return null;
     const min = Math.min(...values), max = Math.max(...values);
-    const n = max === min ? 0.5 : (ind.get(u) - min) / (max - min);
+    const n = max === min ? 0.5 : (value - min) / (max - min);
     return ind.polarity === "↓" ? 1 - n : n;
-  });
+  }).filter(v => v != null);
+  return scores.length ? scores.reduce((s, v) => s + v, 0) / scores.length : 0;
 }
 
 function comparisonRanking(c) {
@@ -4174,14 +4276,14 @@ function comparisonRanking(c) {
   const showAll = explicitClusterActive(c) && !state.comparisonShowOnlyCluster;
   const rows = showAll ? (c.base.length ? c.base : c.all) : clusterRows;
   const dimKey = comparisonDimensionKey(c);
-  const dimSet = dimKey !== "all" ? comparisonIndicatorSets[dimKey] : null;
-  const indicator = dimSet
-    ? { label: dimSet.label, format: v => `${(v * 100).toFixed(0)} pts`, get: u => Math.round(dimensionScore(u, clusterRows, dimSet.indicators) * 100) }
+  const dimSet = comparisonDimensionForKey(dimKey);
+  const indicator = dimSet.indicators.length
+    ? { label: dimSet.label, format: v => `${(v * 100).toFixed(0)} pts`, get: u => dimensionScore(u, clusterRows, dimSet.indicators) }
     : (resultIndicators[c.f.result] || resultIndicators.composite);
   const ranking = [...clusterRows].sort((a, b) => indicator.get(b) - indicator.get(a));
   const rankMap = new Map(ranking.map((u, index) => [u.id, index + 1]));
-  const max = Math.max(...rows.map(indicator.get), 1);
-  const ref = mean(clusterRows, indicator.get);
+  const max = Math.max(...rows.map(u => Number(indicator.get(u)) || 0), 1);
+  const ref = mean(clusterRows, u => Number(indicator.get(u)) || 0);
   const refPos = clamp(ref / max * 100, 0, 100);
   const ieesColors = { UEL: "#1f72b8", UEM: "#e05c00", UEPG: "#14804a", UNIOESTE: "#8b2fc9", UNICENTRO: "#c43f3a", UENP: "#af7a00", UNESPAR: "#0f6e56" };
   return `<article class="visual-card comparison-ranking-card">
@@ -4207,7 +4309,9 @@ function comparisonRadar(c) {
   const selected = c.selected && universe.some(u => u.id === c.selected.id) ? c.selected : universe[0];
   if (!selected) return empty();
   const refKey = state.radarReference || "cluster";
-  const axes = radarAxesForDimension(comparisonDimensionKey(c));
+  const dimKey = comparisonDimensionKey(c);
+  const dimension = comparisonDimensionForKey(dimKey);
+  const axes = radarAxesForDimension(dimKey);
 
   const allUnis = radarRefUniverse(c);
   const refIees = ["cluster","parana","brasil"].includes(refKey) ? null : allUnis.find(u => u.id === refKey);
@@ -4243,7 +4347,7 @@ function comparisonRadar(c) {
 
   return `<article class="visual-card radar-card">
     <div class="visual-card-header">
-      <div><h3>Radar IEES × referência</h3><p class="card-subtitle">IEES: ${selected.sigla}.</p></div>
+      <div><h3>Radar IEES × referência</h3><p class="card-subtitle">Dimensão: ${dimension.label} · IEES: ${selected.sigla}.</p></div>
       <label class="metric-selector">Comparar com
         <select id="radarReferenceSelect">
           <option value="cluster"${refKey === "cluster" ? " selected" : ""}>Média do cluster</option>
@@ -4257,7 +4361,7 @@ function comparisonRadar(c) {
     ${warnHtml}${radarSvg(selectedValues, referenceValues, axes, unavailableAxes)}${unavailNote}
     <div class="radar-analysis">
       <strong>Como interpretar este gráfico</strong>
-      <p>Cada eixo representa uma dimensão de desempenho institucional. Quanto maior a área do polígono, melhor o desempenho relativo da IEES. Os valores são normalizados entre 0 e 1 com base nas IEES do grupo de comparação ativo — ou seja, o valor 1 indica a melhor IEES do grupo naquele eixo, e 0 a pior. A linha de referência (pontilhada) representa a referência selecionada.</p>
+      <p>Cada eixo representa um indicador da dimensão selecionada. Quanto maior a área do polígono, melhor o desempenho relativo da IEES. Os valores são normalizados entre 0 e 1 com base nas IEES do grupo de comparação ativo — ou seja, o valor 1 indica a melhor IEES do grupo naquele eixo, e 0 a pior. A linha de referência (pontilhada) representa a referência selecionada.</p>
     </div>
     <div class="radar-legend"><span class="radar-selected-dot"></span>${selected.sigla}<span class="radar-reference-dot"></span>${refLabel}</div>
   </article>`;
@@ -4274,9 +4378,12 @@ function radarReferenceValue(axis, refKey, clusterRows, c, allUnis) {
 }
 
 function normalizeForRadar(value, values) {
-  const min = Math.min(...values), max = Math.max(...values);
+  const numericValues = values.map(Number).filter(Number.isFinite);
+  const n = Number(value);
+  if (!Number.isFinite(n) || !numericValues.length) return 0;
+  const min = Math.min(...numericValues), max = Math.max(...numericValues);
   if (max === min) return 0.5;
-  return clamp((value - min) / (max - min), 0, 1);
+  return clamp((n - min) / (max - min), 0, 1);
 }
 
 function radarSvg(selectedValues, referenceValues, activeAxes, unavailableAxes) {
@@ -4386,7 +4493,8 @@ function occupancyTimeline(c) {
   const years = [2020, 2021, 2022, 2023, 2024];
   const selIdx = years.indexOf(yr);
   const width = 420, height = 220, left = 34, top = 18, plotW = 350, plotH = 155;
-  const series = rows.map(u => ({ sigla: u.sigla, points: years.map(y => byYear(universities.find(x => x.id === u.id), String(y)).occupancy) }));
+  const allUniversities = scopeUniverse(c.f.scope);
+  const series = rows.map(u => ({ sigla: u.sigla, points: years.map(y => byYear(allUniversities.find(x => x.id === u.id), String(y)).occupancy) }));
   const avg = years.map((y, i) => mean(series, s => s.points[i]));
   const allValues = series.flatMap(s => s.points).concat(avg);
   const minV = Math.max(40, Math.floor(Math.min(...allValues) / 5) * 5 - 5), maxV = Math.min(100, Math.ceil(Math.max(...allValues) / 5) * 5 + 5);
@@ -4719,7 +4827,7 @@ function retentionYearRankingBlock(c) {
   const getVal = (u, met) => met === "completion" ? u.completion : met === "dropout" ? u.dropout : u.graduates;
   const fmt = metric === "graduates" ? formatNumber : formatPercent;
   const withVals = clusterRows.map(u => {
-    const base = universities.find(x => x.id === u.id);
+    const base = [...universities, ...universitiesBrasil].find(x => x.id === u.id);
     const yd = base ? byYear(base, yr) : u;
     return { ...yd, groups: u.groups, val: getVal(yd, metric) };
   });
@@ -4784,7 +4892,7 @@ function updateRankingDOM(prevYear) {
   const getVal = (u, met) => met === "completion" ? u.completion : met === "dropout" ? u.dropout : u.graduates;
   const fmt = metric === "graduates" ? formatNumber : formatPercent;
   const current = ids.map(id => {
-    const base = universities.find(u => u.id === id);
+    const base = [...universities, ...universitiesBrasil].find(u => u.id === id);
     if (!base) return null;
     const yd = byYear(base, yr);
     return { id, val: getVal(yd, metric) };
@@ -4792,7 +4900,7 @@ function updateRankingDOM(prevYear) {
   let prevPos = {};
   if (prevYear) {
     const prev = ids.map(id => {
-      const base = universities.find(u => u.id === id);
+      const base = [...universities, ...universitiesBrasil].find(u => u.id === id);
       if (!base) return null;
       const yd = byYear(base, prevYear);
       return { id, val: getVal(yd, metric) };
@@ -6944,7 +7052,7 @@ function budgetProfileClass(profile) {
 function efficiencyProfileLabel(rows, c) {
   if (explicitClusterActive(c) && c.f.groupBy === "v6") return c.f.groupLevel;
   const counts = rows.reduce((acc, u) => {
-    const label = u.groups.v6 || "Perfil Moderado-Expansivo";
+    const label = u.groups.v6 || null;
     acc[label] = (acc[label] || 0) + 1;
     return acc;
   }, {});
@@ -7334,8 +7442,9 @@ function buildCatalogItems(tabId) {
   let codes = (tabIndicatorCatalog[tabId] || []).map(num => indicatorCode(num));
   if (tabId === "comparison") {
     const dimKey = state.comparisonDimension || "all";
-    if (dimKey !== "all" && comparisonIndicatorSets[dimKey]) {
-      codes = comparisonIndicatorSets[dimKey].indicators.map(ind => ind.code);
+    const dim = comparisonDimensionForKey(dimKey);
+    if (dimKey !== "all" && dim.indicators.length) {
+      codes = dim.indicators.map(ind => ind.code);
     }
   }
   return codes.map(code => {
@@ -8476,9 +8585,9 @@ var comparisonTableBeforeBrasilScope = comparisonTable;
 comparisonTable = function comparisonTableWithoutBrasilClusters(c) {
   if (!isBrasilContext(c)) return comparisonTableBeforeBrasilScope(c);
   const key = comparisonDimensionKey(c);
-  const dimension = comparisonIndicatorSets[key];
+  const dimension = comparisonDimensionForKey(key);
   const rows = c.base.length ? c.base : c.all;
-  const means = Object.fromEntries(dimension.indicators.map(ind => [ind.code, mean(rows, ind.get)]));
+  const means = Object.fromEntries(dimension.indicators.map(ind => [ind.code, comparisonMean(rows, ind)]));
   const ranking = dimensionRanking(rows, dimension.indicators);
   const sortedRows = [...rows].sort((a, b) => (ranking.get(a.id) || 999) - (ranking.get(b.id) || 999));
   return `<div class="comparison-toolbar"><div><strong>Dimensão ${renderDimensionHelp()}</strong><span class="card-subtitle"> · ${dimension.label} · ${nationalReferenceLabel()}</span></div></div>
@@ -8486,7 +8595,7 @@ comparisonTable = function comparisonTableWithoutBrasilClusters(c) {
     <table class="data-table comparison-table">
       <thead><tr><th>Ranking</th><th>IEES</th>${dimension.indicators.map(ind => `<th><span class="indicator-code">${ind.code}</span>${indicatorName(ind.code)}</th>`).join("")}</tr></thead>
       <tbody>${sortedRows.map(u => `<tr class="${isUniSelected(c.f, u.id) ? "selected-row" : ""}"><td><strong>${ranking.get(u.id) || "-"}º</strong></td><td><strong>${u.sigla}</strong><br><span>${u.region}</span></td>${dimension.indicators.map(ind => indicatorCell(ind, u, means[ind.code])).join("")}</tr>`).join("")}</tbody>
-      <tfoot><tr><td colspan="2"><strong>${nationalMeanLabel()}</strong></td>${dimension.indicators.map(ind => `<td>${ind.fmt(means[ind.code])}</td>`).join("")}</tr></tfoot>
+      <tfoot><tr><td colspan="2"><strong>${nationalMeanLabel()}</strong></td>${dimension.indicators.map(ind => `<td>${comparisonFormat(ind, means[ind.code])}</td>`).join("")}</tr></tfoot>
     </table>
   </div>`;
 };
@@ -8496,11 +8605,15 @@ var comparisonRankingBeforeBrasilScope = comparisonRanking;
 comparisonRanking = function comparisonRankingWithoutBrasilClusters(c) {
   if (!isBrasilContext(c)) return comparisonRankingBeforeBrasilScope(c);
   const rows = c.base.length ? c.base : c.all;
-  const indicator = resultIndicators[c.f.result] || resultIndicators.composite;
+  const dimKey = comparisonDimensionKey(c);
+  const dimSet = comparisonDimensionForKey(dimKey);
+  const indicator = dimSet.indicators.length
+    ? { label: dimSet.label, format: v => `${(v * 100).toFixed(0)} pts`, get: u => dimensionScore(u, rows, dimSet.indicators) }
+    : (resultIndicators[c.f.result] || resultIndicators.composite);
   const ranking = [...rows].sort((a, b) => indicator.get(b) - indicator.get(a));
   const rankMap = new Map(ranking.map((u, index) => [u.id, index + 1]));
-  const max = Math.max(...rows.map(indicator.get), 1);
-  const ref = mean(rows, indicator.get);
+  const max = Math.max(...rows.map(u => Number(indicator.get(u)) || 0), 1);
+  const ref = mean(rows, u => Number(indicator.get(u)) || 0);
   const refPos = clamp(ref / max * 100, 0, 100);
   const ieesColors = { UEL: "#1f72b8", UEM: "#e05c00", UEPG: "#14804a", UNIOESTE: "#8b2fc9", UNICENTRO: "#c43f3a", UENP: "#af7a00", UNESPAR: "#0f6e56" };
   return `<article class="visual-card comparison-ranking-card">
@@ -8508,7 +8621,7 @@ comparisonRanking = function comparisonRankingWithoutBrasilClusters(c) {
     <p class="card-subtitle">${indicator.label}. Linha laranja = ${nationalMeanLabel()} (${indicator.format(ref)}).</p>
     <div class="bars comparison-ranking-bars" style="--ref-pos:${refPos}%">
       ${[...rows].sort((a,b)=>indicator.get(b)-indicator.get(a)).map(u => {
-        const value = indicator.get(u), selected = isUniSelected(c.f, u.id);
+        const value = Number(indicator.get(u)) || 0, selected = isUniSelected(c.f, u.id);
         const rank = rankMap.get(u.id);
         return `<div class="bar-row in-cluster ${selected ? "selected" : ""}"><span class="bar-name" title="${u.nome}">${rank ? rank + "º " : ""}${u.sigla}</span><span class="bar-track"><span class="bar-fill" style="width:${clamp(value / max * 100, 4, 100)}%; background:${ieesColors[u.sigla] || "var(--blue-700)"}"></span><span class="bar-reference" aria-hidden="true"></span></span><span class="bar-value">${indicator.format(value)} · ${rank || "-"}º</span></div>`;
       }).join("")}
@@ -8523,16 +8636,19 @@ comparisonRadar = function comparisonRadarWithoutBrasilClusters(c) {
   const universe = c.base.length ? c.base : c.all;
   const selected = c.selected && universe.some(u => u.id === c.selected.id) ? c.selected : universe[0];
   if (!selected) return empty();
-  const selectedValues = radarAxes.map(axis => normalizeForRadar(axis.get(selected), universe.map(axis.get)));
-  const referenceValues = radarAxes.map(axis => normalizeForRadar(axis.br(), universe.map(axis.get)));
+  const dimKey = comparisonDimensionKey(c);
+  const dimension = comparisonDimensionForKey(dimKey);
+  const axes = radarAxesForDimension(dimKey);
+  const selectedValues = axes.map(axis => normalizeForRadar(axis.get(selected), universe.map(axis.get)));
+  const referenceValues = axes.map(axis => normalizeForRadar(radarReferenceValue(axis, "brasil", universe, c, universe), universe.map(axis.get)));
   return `<article class="visual-card radar-card">
     <div class="visual-card-header">
-      <div><h3>Radar IEES × referência</h3><p class="card-subtitle">IEES: ${selected.sigla}. Referência: ${nationalMeanLabel()}.</p></div>
+      <div><h3>Radar IEES × referência</h3><p class="card-subtitle">Dimensão: ${dimension.label} · IEES: ${selected.sigla}. Referência: ${nationalMeanLabel()}.</p></div>
     </div>
-    ${radarSvg(selectedValues, referenceValues)}
+    ${radarSvg(selectedValues, referenceValues, axes)}
     <div class="radar-analysis">
       <strong>Como interpretar este gráfico</strong>
-      <p>Cada eixo representa uma dimensão de desempenho institucional. Quanto maior a área do polígono, melhor o desempenho relativo da IEES. Os valores são normalizados com base no comparativo nacional; a linha pontilhada representa a média nacional.</p>
+      <p>Cada eixo representa um indicador da dimensão selecionada. Quanto maior a área do polígono, melhor o desempenho relativo da IEES. Os valores são normalizados com base no comparativo nacional; a linha pontilhada representa a média nacional.</p>
     </div>
     <div class="radar-legend"><span class="radar-selected-dot"></span>${selected.sigla}<span class="radar-reference-dot"></span>${nationalMeanLabel()}</div>
   </article>`;
