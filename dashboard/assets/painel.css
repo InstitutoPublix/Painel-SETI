@@ -6798,3 +6798,16 @@ details.ind-detail-accordion .catalog-card { border: none; border-radius: 0; mar
   transform: translateX(-50%) translateY(0);
 }
 /* ── fim fontes e definições ─────────────────────────────────────────────── */
+
+/* ── Logos institucionais no header ─────────────────────────────────────── */
+.header-logos {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+}
+
+.header-logo {
+  height: 38px;
+  width: auto;
+  object-fit: contain;
+}
