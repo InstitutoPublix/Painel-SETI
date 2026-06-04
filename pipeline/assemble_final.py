@@ -1,5 +1,5 @@
 """
-Extrai os 22 indicadores das 7 IEES paranaenses + 15 IES nacionais de comparação.
+Extrai os indicadores das 7 IEES paranaenses + 33 IES nacionais de comparação (total: 40 IES).
 
 Uso:
     python pipeline/assemble_final.py
@@ -28,10 +28,10 @@ IEES_BR = [
     # 15 originais
     "USP", "UNESP", "UNICAMP", "UERJ", "UDESC", "UERGS",
     "UECE", "UNEB", "UESB", "UEG", "UEMA", "UEPB", "UEPA", "UEA", "UERN",
-    # 17 novas
+    # 17 novas + URCA (substitui UNIVESP, que é 100% EaD e incomparável)
     "UESC", "UNCISAL", "UVA", "UNIMONTES", "UPE", "UEFS", "UNEMAT",
     "UESPI", "UNITINS", "UENF", "UEMS", "UEMG", "UERR", "UNEAL",
-    "UEAP", "UEMASUL", "UnDF",
+    "UEAP", "UEMASUL", "UnDF", "URCA",
 ]
 
 IEES = IEES_PR + IEES_BR
@@ -79,6 +79,7 @@ CO_IES_MAP = {
     5701:  "UEAP",
     23410: "UEMASUL",
     27103: "UnDF",
+    746:   "URCA",
 }
 
 INDICATORS = [
@@ -419,6 +420,7 @@ CNPQ_MATCH = {
     "UEAP":     lambda s: ("AMAPÁ" in s or "AMAPA" in s) and "ESTADO" in s,
     "UEMASUL":  lambda s: "TOCANTINA" in s or "UEMASUL" in s,
     "UnDF":     lambda s: "DISTRITO FEDERAL" in s and "ESTADO" in s,
+    "URCA":     lambda s: "CARIRI" in s and ("REGIONAL" in s or "URCA" in s),
 }
 
 cnpq_data = {}
@@ -1197,7 +1199,7 @@ precomputed = {
     "sources":    {iees: sources[iees.lower()] for iees in IEES},
     "clusters":   {iees: clusters_raw.get(iees, {}) for iees in IEES},
     "quartiRefs": quartis_ref,
-    # byYear: 2024 = todos os indicadores para as 22 IES;
+    # byYear: 2024 = todos os indicadores para as 40 IES;
     # 2025/2026 = apenas campos D8050 para as 7 IES-PR
     "byYear": {
         iees: {

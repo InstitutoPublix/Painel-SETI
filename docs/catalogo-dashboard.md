@@ -23,7 +23,7 @@ O painel é composto por:
 | **IEES** | Multi-checkbox | 7 IEES (PR) + todas no escopo Brasil | Filtra as IES exibidas |
 | **Agrupamento** | Select | V1–V8 | Define o critério de comparação entre pares |
 | **Nível do grupo** | Chips | Depende do agrupamento | Isola um subconjunto de IES |
-| **Escopo** | Toggle | Paraná / Brasil | Inclui/exclui as 15 IES nacionais |
+| **Escopo** | Toggle | Paraná / Brasil | Inclui/exclui as 33 IES estaduais de referência nacional |
 
 **Ajuste temporal (`yearAdj`):** para anos anteriores a 2024, o painel aplica fatores de escala sobre os dados base. O ano 2024 usa os dados reais sem ajuste. Dados de 2020–2021 exibem aviso sobre impacto da pandemia.
 
@@ -117,7 +117,7 @@ Colunas:
 | Esforço relativo | `effort / média_grupo × 100` | Calculado |
 | Classificação | Chip colorido com rótulo do quadrante | Calculado |
 
-**Nota sobre dados Brasil:** A "Média Brasil" usa valores de referência do objeto `brazil` definido no `painel.js`. Estes são benchmarks estáticos derivados de publicações INEP/CNPq/CAPES — não são extraídos de bases XLSX. Os dados das 15 IES nacionais individuais (exibidos quando escopo = "Brasil") são carregados do JSON pré-processado (INEP real para students/doctors/capes) ou estimados para indicadores PR-only (budget, employment, etc.).
+**Nota sobre dados Brasil:** A "Média Brasil" usa valores de referência do objeto `brazil` definido no `painel.js`. Estes são benchmarks estáticos derivados de publicações INEP/CNPq/CAPES — não são extraídos de bases XLSX. Os dados das 33 IES estaduais de referência nacional (exibidos quando escopo = "Brasil") são carregados do JSON pré-processado via aliases que mapeiam os campos INEP reais (students, doctors, capes, pg, pgTop, cnpq) para o formato esperado por `byYear()`.
 
 ---
 
@@ -227,7 +227,7 @@ Colunas: IEES | Cursos | Vagas | Ocupação | Vagas não ocupadas | Custo por es
 #### 5.2 Gráfico de barras: Docentes com doutorado
 - **Dado:** `doctors` = `Proporção de docentes com doutorado × 100`
 - **Fonte:** Base IES - Brasil.xlsx / coluna "Proporção de docentes com doutorado"
-- **Escopo:** 22 IES (dado real de Base INEP)
+- **Escopo:** 40 IES (dado real de Base INEP)
 
 #### 5.3 Gráfico de barras: Captação CNPq por estudante
 - **Cálculo:** `cnpq × 1.000.000 / students` (R$ por estudante)
@@ -403,19 +403,19 @@ Alertas automáticos contextuais por aba:
 
 | Indicador | Campo no JS | Fonte primária | Escopo |
 |-----------|-------------|----------------|--------|
-| Matrículas | `students` | Base Cursos - Brasil.xlsx / `QT_MAT` | 22 IES |
-| Ingressantes | `entrants` | Base Cursos - Brasil.xlsx / `QT_ING` | 22 IES |
-| Concluintes | `graduates` | Base Cursos - Brasil.xlsx / `QT_CONC` | 22 IES |
-| Vagas | `vacancies` | Base Cursos - Brasil.xlsx / `QT_VG_TOTAL` | 22 IES |
-| Cursos | `courses` | Base Cursos - Brasil.xlsx / `QT_CURSO` | 22 IES |
-| Ocupação | `occupancy` | Calculado: `QT_ING / QT_VG_TOTAL × 100` | 22 IES |
-| Evasão | `dropout` | Calculado: `QT_SIT_DESVINCULADO / QT_MAT × 100` | 22 IES |
-| Conclusão | `completion` | Calculado: `QT_CONC / QT_MAT × 100` | 22 IES |
-| Doutores | `doctors` | Base IES - Brasil.xlsx / "Proporção de docentes com doutorado" × 100 | 22 IES |
+| Matrículas | `students` | Base Cursos - Brasil.xlsx / `QT_MAT` | 40 IES |
+| Ingressantes | `entrants` | Base Cursos - Brasil.xlsx / `QT_ING` | 40 IES |
+| Concluintes | `graduates` | Base Cursos - Brasil.xlsx / `QT_CONC` | 40 IES |
+| Vagas | `vacancies` | Base Cursos - Brasil.xlsx / `QT_VG_TOTAL` | 40 IES |
+| Cursos | `courses` | Base Cursos - Brasil.xlsx / `QT_CURSO` | 40 IES |
+| Ocupação | `occupancy` | Calculado: `QT_ING / QT_VG_TOTAL × 100` | 40 IES |
+| Evasão | `dropout` | Calculado: `QT_SIT_DESVINCULADO / QT_MAT × 100` | 40 IES |
+| Conclusão | `completion` | Calculado: `QT_CONC / QT_MAT × 100` | 40 IES |
+| Doutores | `doctors` | Base IES - Brasil.xlsx / "Proporção de docentes com doutorado" × 100 | 40 IES |
 | CNPq | `cnpq` | Base CNPq - Brasil.xlsx / soma por IES (R$ mi) | 7 PR (match por nome) |
-| CAPES | `capes` | Base CAPES / conceito médio por IES | 22 IES |
-| Programas PG | `pg` | Base CAPES / `NM_PROGRAMA_IES` distintos | 22 IES |
-| Programas top | `pgTop` | Base CAPES / `CD_CONCEITO_CURSO ≥ 5` | 22 IES |
+| CAPES | `capes` | Base CAPES / conceito médio por IES | 40 IES |
+| Programas PG | `pg` | Base CAPES / `NM_PROGRAMA_IES` distintos | 40 IES |
+| Programas top | `pgTop` | Base CAPES / `CD_CONCEITO_CURSO ≥ 5` | 40 IES |
 | Orçamento | `budget` | Relatório da Despesa 8050 / `sum(Liquidado)` (R$ mi) | 7 PR |
 | Execução | `execution` | Relatório da Despesa 8050 / Taxa de Execução Orçamentária | 7 PR |
 | Liquidação | `liquidation` | Relatório da Despesa 8050 / Taxa de Liquidação | 7 PR |
@@ -434,12 +434,12 @@ Alertas automáticos contextuais por aba:
 | Dado | Status | Observação |
 |------|--------|------------|
 | students, entrants, graduates, courses, vacancies, occupancy, dropout, completion (7 PR) | **Real** (INEP 2024) | Base Cursos Brasil |
-| students, entrants, graduates, courses, vacancies, occupancy, dropout, completion (15 BR) | **Real** (INEP 2024) | Base Cursos Brasil |
-| doctors (22 IES) | **Real** (INEP) | Base IES Brasil |
+| students, entrants, graduates, courses, vacancies, occupancy, dropout, completion (33 BR) | **Real** (INEP 2024) | JSON pré-processado via aliases `cursosStudents` etc. |
+| doctors (40 IES) | **Real** (INEP) | Base IES Brasil (loader ativo) + JSON pré-processado (alias `iesDocDout`) |
 | cnpq (5 das 7 PR) | **Real** | Base CNPq Brasil (match por nome) |
 | cnpq (UNICENTRO, UNESPAR) | **Null** | Sem correspondência no arquivo |
-| cnpq (15 IES nacionais) | **Null** | Não processado |
-| capes, pg, pgTop (22 IES) | **Real** | Base CAPES Brasil |
+| cnpq (33 IES nacionais) | **Real** | JSON pré-processado via alias `cnpqCaptacao` |
+| capes, pg, pgTop (40 IES) | **Real** | JSON pré-processado via alias `capesConceito` e leitura direta `_rc.pg`/`_rc.pgTop` |
 | budget, execution, liquidation (7 PR) | **Real** | Relatório da Despesa 8050 |
 | personnel (7 PR) | **Parcialmente real** | Valor por IES extraído do Relatório da Despesa 8050; fallback global apenas se a coluna estiver ausente |
 | supplementation (7 PR) | **Real** | Dados de Suplementação PR |

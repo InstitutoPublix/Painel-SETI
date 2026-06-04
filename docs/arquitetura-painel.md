@@ -24,8 +24,8 @@ python pipeline/assemble_final.py
 **Arquivos principais:**
 
 - `serve.py` — servidor HTTP + auto-geração do JSON
-- `pipeline/assemble_final.py` — extração dos indicadores das 22 IES
-- `data/seti_precomputed.json` — JSON com dados reais (22 IES, indicadores agregados e fontes documentadas)
+- `pipeline/assemble_final.py` — extração dos indicadores das 40 IES (7 PR + 33 BR)
+- `data/seti_precomputed.json` — JSON com dados reais (40 IES, indicadores agregados e fontes documentadas)
 - `dashboard/v8_painel_seti_html.html` — HTML shell
 - `dashboard/assets/data-hub.js` — camada de dados (loaders, DATA)
 - `dashboard/assets/painel.js` — UI (render, filtros, gráficos)

@@ -1864,7 +1864,7 @@ const rawBrasil = [
    18.0,3.6,38,6,
    750,88.0,91.0,81.5,13.8,
    60.0,3900,65.0,0,68,
-   ["Médio-alto","Médio-alto","Alto","Médio-alto","Médio-alto","Médio-alto","Médio-alto","Médio-baixo"]],
+   ["Alto","Médio-alto","Alto","Médio-alto","Médio-alto","Médio-alto","Médio-alto","Médio-baixo"]],
   ["uneb","UNEB","Universidade do Estado da Bahia","Nordeste","Salvador","Artes e formação docente","Licenciatura",
    28000,5500,2800,115,8000, 68.8,22.0,50.9,50.0,
    14.0,3.1,18,2,
@@ -1900,7 +1900,7 @@ const rawBrasil = [
    7.0,3.0,10,1,
    420,83.0,87.0,82.5,16.2,
    53.0,3300,60.0,0,77,
-   ["Médio-baixo","Médio-alto","Alto","Baixo","Médio-baixo","Médio-baixo","Médio-baixo","Baixo"]],
+   ["Médio-alto","Médio-alto","Alto","Baixo","Médio-baixo","Médio-baixo","Médio-baixo","Baixo"]],
   ["uea","UEA","Universidade do Estado do Amazonas","Norte","Manaus","Multicampi","Bacharelado",
    13000,3000,1400,60,4600, 65.2,22.0,46.7,45.0,
    6.0,2.8,9,1,
@@ -1936,7 +1936,7 @@ const rawBrasil = [
    null,null,null,null,
    null,null,null,null,null,
    null,null,null,null,0.554,
-   ["Médio-baixo","Médio-alto","Alto",null,null,null,null,null]],
+   ["Médio-alto","Médio-alto","Alto",null,null,null,null,null]],
   ["upe","UPE","Universidade de Pernambuco","Nordeste","Recife","Multicampi","Bacharelado",
    73889,null,null,317,null, null,null,null,null,
    null,null,null,null,
@@ -1978,7 +1978,7 @@ const rawBrasil = [
    null,null,null,null,
    null,null,null,null,null,
    null,null,null,null,0.527,
-   ["Baixo","Médio-alto","Médio-alto",null,null,null,null,null]],
+   ["Médio-baixo","Médio-alto","Médio-alto",null,null,null,null,null]],
   ["uemg","UEMG","Universidade do Estado de Minas Gerais","Sudeste","Belo Horizonte","Artes e formação docente","Licenciatura",
    109139,null,null,646,null, null,null,null,null,
    null,null,null,null,
@@ -1996,7 +1996,7 @@ const rawBrasil = [
    null,null,null,null,
    null,null,null,null,null,
    null,null,null,null,0.407,
-   ["Baixo","Médio-baixo","Médio-baixo",null,null,null,null,null]],
+   ["Médio-baixo","Médio-baixo","Médio-baixo",null,null,null,null,null]],
   ["ueap","UEAP","Universidade do Estado do Amapá","Norte","Macapá","Vocação territorial","Licenciatura",
    11351,null,null,67,null, null,null,null,null,
    null,null,null,null,
@@ -2015,6 +2015,12 @@ const rawBrasil = [
    null,null,null,null,null,
    null,null,null,null,null,
    ["Baixo","Baixo","Baixo",null,null,null,null,null]],
+  ["urca","URCA","Universidade Regional do Cariri","Nordeste","Crato","Vocação territorial","Licenciatura",
+   57628,null,null,157,null, null,null,null,null,
+   null,null,null,null,
+   null,null,null,null,null,
+   null,null,null,null,0.198,
+   ["Pequeno Porte","Oferta Reduzida","Sede Única / Baixa Dispersão","Qualif. Inicial","Estrutura Incipiente",null,null,null]],
 ];
 const universitiesBrasil = rawBrasil.map((r) => ({
   id:r[0], sigla:r[1], nome:r[2], region:r[3], municipality:r[4], profile:r[5], type:r[6],
@@ -2546,7 +2552,7 @@ function context(){
   if(f.attention){const ids=matrixRows(ref,f).filter(r=>r.resultRel<100&&r.effortRel>100).map(r=>r.id);ref=ref.filter(u=>ids.includes(u.id));display=display.filter(u=>ids.includes(u.id));}
   return {f,all,base,ref,display,selected,group};
 }
-function byYear(u,year){const [vol,bud,delta]=yearAdj[year]||yearAdj[2024];const c={...u,groups:{...u.groups},coursesFocus:[...u.coursesFocus]};["students","entrants","graduates","vacancies"].forEach(k=>c[k]=Math.round(c[k]*vol));c.budget=round(c.budget*bud,1);const cnpqReal=CNPQ_DATA[u.id]?.[Number(year)];if(cnpqReal){c.cnpq=round(cnpqReal.captacao,2);c.vinculos=cnpqReal.vinculos;}else{c.cnpq=round(c.cnpq*(.9+bud*.1),1);c.vinculos=null;}c.supplementation=round(c.supplementation+(1-bud)*3,1);["occupancy","completion","doctors","employment","facultyOcc","cres","execution","liquidation"].forEach(k=>c[k]=clamp(round(c[k]+delta,1),0,100));c.dropout=clamp(round(c.dropout-delta*.25,1),0,100);c.salary=Math.round(c.salary*(.88+bud*.12));const _rc=getRealIndicators(u.sigla,year);if(_rc&&_rc.cursosStudents!=null){if(_rc.cursosStudents!=null)c.students=_rc.cursosStudents;if(_rc.cursosEntrants!=null)c.entrants=_rc.cursosEntrants;if(_rc.cursosGraduates!=null)c.graduates=_rc.cursosGraduates;if(_rc.cursosCourses!=null)c.courses=_rc.cursosCourses;if(_rc.cursosVacancies!=null)c.vacancies=_rc.cursosVacancies;if(_rc.cursosOccupancy!=null)c.occupancy=_rc.cursosOccupancy;if(_rc.cursosDropout!=null)c.dropout=_rc.cursosDropout;if(_rc.cursosCompletion!=null)c.completion=_rc.cursosCompletion;c.vacanciesNova=_rc.cursosVacanciesNova??null;c.vacanciesDay=_rc.cursosVacanciesDay??null;c.vacanciesNight=_rc.cursosVacanciesNight??null;c.matDay=_rc.cursosMatDay??null;c.matNight=_rc.cursosMatNight??null;c.ingressOccupancy=_rc.cursosIngressOccupancy??null;c.vacanciesUnfilled=_rc.cursosVacanciesUnfilled??null;c.vacanciesNovaUnfilled=_rc.cursosVacanciesNovaUnfilled??null;c.mobility=_rc.cursosMobility??null;c.publicSchool=_rc.cursosPublicSchool??null;c.occDay=_rc.cursosOccupancyDay??null;c.occNight=_rc.cursosOccupancyNight??null;}if(_rc){if(_rc.iesDocDout!=null)c.doctors=_rc.iesDocDout;c.docForeign=_rc.iesDocForeign??null;c.capesPortal=_rc.iesCapesPortal??null;if(_rc.docTaxaOcup!=null)c.facultyOcc=_rc.docTaxaOcup;if(_rc.docCresTaxa!=null)c.cres=_rc.docCresTaxa;c.docVagasTotais=_rc.docVagasTotais??null;c.docVagasDisp=_rc.docVagasDisp??null;c.docVagasOcupadas=_rc.docVagasOcupadas??null;c.docTaxaUtil=_rc.docTaxaUtil??null;c.docVagasCond=_rc.docVagasCond??null;c.docPctCond=_rc.docPctCond??null;c.docTideAtrib=_rc.docTideAtrib??null;c.docTidePartic=_rc.docTidePartic??null;c.docTidePctNaoAtrib=_rc.docTidePctNaoAtrib??null;c.docChMedia=_rc.docChMedia??null;c.docCresAut=_rc.docCresAut??null;c.docCresUtil=_rc.docCresUtil??null;c.docCresSaldo=_rc.docCresSaldo??null;c.docCresOciosidade=_rc.docCresOciosidade??null;c.docCresPartic=_rc.docCresPartic??null;if(_rc.capesConceito!=null)c.capes=_rc.capesConceito;c.capesPct567=_rc.capesPct567??null;c.capesDocPermanentes=_rc.capesDocPermanentes??null;c.capesDocEstrangeiros=_rc.capesDocEstrangeiros??null;c.capesDocBolsa=_rc.capesDocBolsa??null;}if(_rc){c.budget=_rc.budget??c.budget;c.execution=_rc.execution??c.execution;c.liquidation=_rc.liquidation??c.liquidation;c.personnel=_rc.personnel??c.personnel;c.supplementation=_rc.supplementation??c.supplementation;if(_rc.cnpqCaptacao!=null){c.cnpq=_rc.cnpqCaptacao;}if(_rc.cnpqVinculos!=null){c.vinculos=_rc.cnpqVinculos;}}if(_rc){c.insertionRatePR=_rc.insertionRatePR??null;c.fundoParana=_rc.fundoParana??_rc.fundoVlRepassado??null;c.fundoExec=_rc.fundoExec??_rc.fundoPctExecucao??null;c.egressosMunicipios=_rc.egressosMunicipios??_rc.raisMunCount??null;}if(window.SETI_CLUSTERS&&window.SETI_CLUSTERS[u.sigla]){const cl=window.SETI_CLUSTERS[u.sigla];Object.keys(cl).forEach(k=>{if(cl[k]!=null)c.groups[k]=cl[k];});}return c;}
+function byYear(u,year){const [vol,bud,delta]=yearAdj[year]||yearAdj[2024];const c={...u,groups:{...u.groups},coursesFocus:[...u.coursesFocus]};["students","entrants","graduates","vacancies"].forEach(k=>c[k]=Math.round(c[k]*vol));c.budget=round(c.budget*bud,1);const cnpqReal=CNPQ_DATA[u.id]?.[Number(year)];if(cnpqReal){c.cnpq=round(cnpqReal.captacao,2);c.vinculos=cnpqReal.vinculos;}else{c.cnpq=round(c.cnpq*(.9+bud*.1),1);c.vinculos=null;}c.supplementation=round(c.supplementation+(1-bud)*3,1);["occupancy","completion","doctors","employment","facultyOcc","cres","execution","liquidation"].forEach(k=>c[k]=clamp(round(c[k]+delta,1),0,100));c.dropout=clamp(round(c.dropout-delta*.25,1),0,100);c.salary=Math.round(c.salary*(.88+bud*.12));const _rc=getRealIndicators(u.sigla,year);if(_rc&&_rc.cursosStudents!=null){if(_rc.cursosStudents!=null)c.students=_rc.cursosStudents;if(_rc.cursosEntrants!=null)c.entrants=_rc.cursosEntrants;if(_rc.cursosGraduates!=null)c.graduates=_rc.cursosGraduates;if(_rc.cursosCourses!=null)c.courses=_rc.cursosCourses;if(_rc.cursosVacancies!=null)c.vacancies=_rc.cursosVacancies;if(_rc.cursosOccupancy!=null)c.occupancy=_rc.cursosOccupancy;if(_rc.cursosDropout!=null)c.dropout=_rc.cursosDropout;if(_rc.cursosCompletion!=null)c.completion=_rc.cursosCompletion;c.vacanciesNova=_rc.cursosVacanciesNova??null;c.vacanciesDay=_rc.cursosVacanciesDay??null;c.vacanciesNight=_rc.cursosVacanciesNight??null;c.matDay=_rc.cursosMatDay??null;c.matNight=_rc.cursosMatNight??null;c.ingressOccupancy=_rc.cursosIngressOccupancy??null;c.vacanciesUnfilled=_rc.cursosVacanciesUnfilled??null;c.vacanciesNovaUnfilled=_rc.cursosVacanciesNovaUnfilled??null;c.mobility=_rc.cursosMobility??null;c.publicSchool=_rc.cursosPublicSchool??null;c.occDay=_rc.cursosOccupancyDay??null;c.occNight=_rc.cursosOccupancyNight??null;}if(_rc){if(_rc.iesDocDout!=null)c.doctors=_rc.iesDocDout;c.docForeign=_rc.iesDocForeign??null;c.capesPortal=_rc.iesCapesPortal??null;if(_rc.docTaxaOcup!=null)c.facultyOcc=_rc.docTaxaOcup;if(_rc.docCresTaxa!=null)c.cres=_rc.docCresTaxa;c.docVagasTotais=_rc.docVagasTotais??null;c.docVagasDisp=_rc.docVagasDisp??null;c.docVagasOcupadas=_rc.docVagasOcupadas??null;c.docTaxaUtil=_rc.docTaxaUtil??null;c.docVagasCond=_rc.docVagasCond??null;c.docPctCond=_rc.docPctCond??null;c.docTideAtrib=_rc.docTideAtrib??null;c.docTidePartic=_rc.docTidePartic??null;c.docTidePctNaoAtrib=_rc.docTidePctNaoAtrib??null;c.docChMedia=_rc.docChMedia??null;c.docCresAut=_rc.docCresAut??null;c.docCresUtil=_rc.docCresUtil??null;c.docCresSaldo=_rc.docCresSaldo??null;c.docCresOciosidade=_rc.docCresOciosidade??null;c.docCresPartic=_rc.docCresPartic??null;if(_rc.capesConceito!=null)c.capes=_rc.capesConceito;if(_rc.pg!=null)c.pg=_rc.pg;if(_rc.pgTop!=null)c.pgTop=_rc.pgTop;c.capesPct567=_rc.capesPct567??null;c.capesDocPermanentes=_rc.capesDocPermanentes??null;c.capesDocEstrangeiros=_rc.capesDocEstrangeiros??null;c.capesDocBolsa=_rc.capesDocBolsa??null;}if(_rc){c.budget=_rc.budget??c.budget;c.execution=_rc.execution??c.execution;c.liquidation=_rc.liquidation??c.liquidation;c.personnel=_rc.personnel??c.personnel;c.supplementation=_rc.supplementation??c.supplementation;if(_rc.cnpqCaptacao!=null){c.cnpq=_rc.cnpqCaptacao;}if(_rc.cnpqVinculos!=null){c.vinculos=_rc.cnpqVinculos;}}if(_rc){c.insertionRatePR=_rc.insertionRatePR??null;c.fundoParana=_rc.fundoParana??_rc.fundoVlRepassado??null;c.fundoExec=_rc.fundoExec??_rc.fundoPctExecucao??null;c.egressosMunicipios=_rc.egressosMunicipios??_rc.raisMunCount??null;}if(window.SETI_CLUSTERS&&window.SETI_CLUSTERS[u.sigla]){const cl=window.SETI_CLUSTERS[u.sigla];Object.keys(cl).forEach(k=>{if(cl[k]!=null)c.groups[k]=cl[k];});}return c;}
 function render(){const c=context();currentFilteredCount=c.ref.length;syncScopeToggle(c.f.scope);updateScopeAvailability(c.f.scope);updateActiveTabFilters();renderTop(c);renderKpis(c);renderSide(c);renderTab(c);}
 function renderTop(c){const t=tabInfo[state.activeTab];el.activeTabKicker.textContent=t[0];el.activeTabTitle.textContent=t[1];el.activeTabDescription.textContent=t[2];el.periodPill.textContent=`Ano base ${c.f.year} · Escopo ${c.f.scope}`;el.scopeLabel.textContent=c.selected?`${c.selected.sigla} | ${c.group}`:c.group==="all"?"Sistema estadual":`Grupo ${c.group}`;updateActiveClusterLabel(c);}
 function renderKpis(c){

@@ -97,8 +97,11 @@ Pipeline de extração de dados. Lê os XLSX diretamente via `openpyxl` (modo `r
 ```python
 IEES_PR = ["UEL", "UEM", "UEPG", "UNIOESTE", "UNICENTRO", "UENP", "UNESPAR"]
 IEES_BR = ["USP", "UNESP", "UNICAMP", "UERJ", "UDESC", "UERGS",
-           "UECE", "UNEB", "UESB", "UEG", "UEMA", "UEPB", "UEPA", "UEA", "UERN"]
-IEES = IEES_PR + IEES_BR  # 22 IES total
+           "UECE", "UNEB", "UESB", "UEG", "UEMA", "UEPB", "UEPA", "UEA", "UERN",
+           "UESC", "UNCISAL", "UVA", "UNIMONTES", "UPE", "UEFS", "UNEMAT",
+           "UESPI", "UNITINS", "UENF", "UEMS", "UEMG", "UERR", "UNEAL",
+           "UEAP", "UEMASUL", "UnDF", "URCA"]
+IEES = IEES_PR + IEES_BR  # 40 IES total (7 PR + 33 BR)
 ```
 
 `CO_IES_MAP` — dicionário `{código_INEP: sigla}` para identificar IES por código numérico nas bases nacionais.
@@ -107,18 +110,18 @@ IEES = IEES_PR + IEES_BR  # 22 IES total
 
 | Seção | Base Fonte | Indicadores Gerados | Escopo |
 |-------|-----------|---------------------|--------|
-| **1. INEP/IES** | `Base IES - Brasil.xlsx` / `Base_ IES_BRASIL` | `doctors` | 22 IES |
-| **2. INEP/Cursos** | `Base Cursos - Brasil.xlsx` / `_IES PÚBLICAS ESTADUAIS_CURSOS` | `students`, `entrants`, `graduates`, `vacancies`, `courses`, `occupancy`, `dropout`, `completion` | 22 IES |
+| **1. INEP/IES** | `Base IES - Brasil.xlsx` / `Base_ IES_BRASIL` | `doctors` | 40 IES |
+| **2. INEP/Cursos** | `Base Cursos - Brasil.xlsx` / `_IES PÚBLICAS ESTADUAIS_CURSOS` | `students`, `entrants`, `graduates`, `vacancies`, `courses`, `occupancy`, `dropout`, `completion` | 40 IES |
 | **3. Docentes PR** | `Base Docentes - Paraná.xlsx` / `Base_Docentes_PR` | `facultyOcc`, `cres`, `tide` | 7 PR |
 | **4. CNPq** | `Base CNPq - Brasil.xlsx` / `Base_CNPq_BR` | `cnpq` | 7 PR (match por nome) |
-| **5. CAPES** | `Base CAPES- Pós-Graduação - Brasil.xlsx` / `Base_Cursos` | `capes`, `pg`, `pgTop` | 22 IES |
+| **5. CAPES** | `Base CAPES- Pós-Graduação - Brasil.xlsx` / `Base_Cursos` | `capes`, `pg`, `pgTop` | 40 IES |
 | **6. Despesa 8050** | `Relatório da Despesa 8050 (2024 - 2026).xlsx` / `2024-2026` | `budget`, `execution`, `liquidation`, `personnel` | 7 PR |
 | **7. Suplementação** | `Dados de Suplementação das Universidades - Paraná.xlsx` / `matriz_cluster` | `supplementation` | 7 PR |
 | **8. CBO2/RAIS** | `CBO2 _ RAIS 2023 e 2024 - Paraná.xlsx` / `Análise Quantitativa` | `employment`, `salary` | 7 PR |
 | **9. Egressos** | `Base Egressos - Paraná.xlsx` / `Base_Egressos_PR` | `insertionRatePR` | 7 PR |
 | **10. Fundo Paraná** | `Base Fundo Paraná - Paraná.xlsx` / `Fundo_Parana_IES_Ano` | `fundoParana`, `fundoExec` | 7 PR |
 | **11. RAIS Municípios** | `Base RAIS - 2023 e 2024 - Paraná.xlsx` / `Base_RAIS_2023_2024` | `egressosMunicipios` | 7 PR |
-| **12. Estratificação** | `Estratificação_IES_Estaduais_BR.xlsx` | `clusters`, `quartiRefs` | 22 IES |
+| **12. Estratificação** | `Estratificação_IES_Estaduais_BR.xlsx` | `clusters`, `quartiRefs` | 40 IES |
 
 ### Lógica de cada Seção
 
@@ -282,7 +285,7 @@ DOMContentLoaded
     → render() — primeira renderização
     ↕  (async, paralelo)
 loadAllData()
-    → loadPrecomputedJson()      — JSON com 22 IES e 12 bases-fonte representadas
+    → loadPrecomputedJson()      — JSON com 40 IES e 12 bases-fonte representadas
     → loadEgressosBase()         — XLSX leve
     → loadIesBase()              — XLSX leve
     → loadDocentesBase()         — XLSX leve
@@ -303,7 +306,7 @@ UI principal do painel. Todas as funções de renderização, filtros e visualiz
 
 **`const raw`** — array com os 7 PR IES. Cada entrada tem 31 campos incluindo os indicadores pré-calculados (linha de base 2024). **Estes valores são substituídos pelo JSON** via `refreshPanelFromData()` quando os dados reais carregam.
 
-**`const rawBrasil`** — array com 15 IES nacionais de comparação. Dados parcialmente estimados para indicadores PR-only (budget, employment, etc.). Indicadores nacionais (students, doctors, capes, etc.) são sobrescritos pelo JSON.
+**`const rawBrasil`** — array com 33 IES estaduais de referência nacional. Dados base do rawBrasil (students, doctors, capes, pg, pgTop, cnpq) são sobrescritos via aliases do JSON pré-processado quando o painel carrega. Indicadores PR-only (budget, employment, etc.) permanecem null para IES-BR.
 
 **`const CNPQ_DATA`** — série histórica CNPq 2020–2025 para os 7 PR IES (uso interno em fórmulas de score composto; não exibido diretamente).
 
@@ -405,7 +408,7 @@ V6, V7 e V8 disponíveis apenas no escopo Paraná.
 
 5. Paralelo (async):
    └── loadAllData()
-       ├── loadPrecomputedJson() → fetch data/seti_precomputed.json (22 IES; 12 bases-fonte representadas)
+       ├── loadPrecomputedJson() → fetch data/seti_precomputed.json (40 IES; 12 bases-fonte representadas)
        ├── loadEgressosBase(), loadIesBase(), loadDocentesBase()...
        └── (finally) refreshPanelFromData() + reportDashboardStatus() → re-renderiza e registra status no terminal
 

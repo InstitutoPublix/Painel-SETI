@@ -509,7 +509,8 @@ const CURSOS_IES_MAP = {
   24:"UESC", 32:"UNCISAL", 95:"UVA", 367:"UNIMONTES",
   409:"UPE", 666:"UEFS", 719:"UNEMAT", 756:"UESPI",
   829:"UNITINS", 1027:"UENF", 1028:"UEMS", 1036:"UEMG",
-  5077:"UERR", 5242:"UNEAL", 5701:"UEAP", 23410:"UEMASUL", 27103:"UnDF"
+  5077:"UERR", 5242:"UNEAL", 5701:"UEAP", 23410:"UEMASUL", 27103:"UnDF",
+  746:"URCA"
 };
 const CURSOS_SIGLAS_SET = new Set(Object.values(CURSOS_IES_MAP));
 
@@ -1453,7 +1454,24 @@ async function loadPrecomputedJson() {
     DATA_STATUS.precomputedYear = year;
     let count = 0;
     for (const [sigla, vals] of Object.entries(indicators)) {
-      if (upsertYearIndicators(sigla, year, vals)) count++;
+      // Alias raw precomputed-JSON field names to the prefixed names that
+      // byYear() reads, so JSON data is applied even when the corresponding
+      // XLSX loader is disabled (cursos, capes, cnpq are enabled:false).
+      // XLSX loaders that ARE enabled (ies, docentes) run later and will
+      // override these aliases with fresher per-row data if available.
+      const augmented = Object.assign({}, vals);
+      if (vals.students   != null) augmented.cursosStudents   = vals.students;
+      if (vals.entrants   != null) augmented.cursosEntrants   = vals.entrants;
+      if (vals.graduates  != null) augmented.cursosGraduates  = vals.graduates;
+      if (vals.courses    != null) augmented.cursosCourses    = vals.courses;
+      if (vals.vacancies  != null) augmented.cursosVacancies  = vals.vacancies;
+      if (vals.occupancy  != null) augmented.cursosOccupancy  = vals.occupancy;
+      if (vals.dropout    != null) augmented.cursosDropout    = vals.dropout;
+      if (vals.completion != null) augmented.cursosCompletion = vals.completion;
+      if (vals.doctors    != null) augmented.iesDocDout       = vals.doctors;
+      if (vals.capes      != null) augmented.capesConceito    = vals.capes;
+      if (vals.cnpq       != null) augmented.cnpqCaptacao     = vals.cnpq;
+      if (upsertYearIndicators(sigla, year, augmented)) count++;
     }
     if (count === 0) throw new Error("no_valid_rows");
     // Carrega dados multi-ano do Relatório Despesa 8050 (2024/2025/2026)
