@@ -115,7 +115,7 @@ IEES = IEES_PR + IEES_BR  # 40 IES total (7 PR + 33 BR)
 | **3. Docentes PR** | `Base Docentes - Paraná.xlsx` / `Base_Docentes_PR` | `facultyOcc`, `cres`, `tide` | 7 PR |
 | **4. CNPq** | `Base CNPq - Brasil.xlsx` / `Base_CNPq_BR` | `cnpq` | 7 PR (match por nome) |
 | **5. CAPES** | `Base CAPES- Pós-Graduação - Brasil.xlsx` / `Base_Cursos` | `capes`, `pg`, `pgTop` | 40 IES |
-| **6. Despesa 8050** | `Relatório da Despesa 8050 (2024 - 2026).xlsx` / `2024-2026` | `budget`, `execution`, `liquidation`, `personnel` | 7 PR |
+| **6. Relatório 8050** | `Relatório da Despesa 8050 (2024 - 2026).xlsx` / `2024-2026` | `budget`, `execution`, `liquidation`, `personnel`, `ind81–95`, `composicaoFontes` | 7 PR |
 | **7. Suplementação** | `Dados de Suplementação das Universidades - Paraná.xlsx` / `matriz_cluster` | `supplementation` | 7 PR |
 | **8. CBO2/RAIS** | `CBO2 _ RAIS 2023 e 2024 - Paraná.xlsx` / `Análise Quantitativa` | `employment`, `salary` | 7 PR |
 | **9. Egressos** | `Base Egressos - Paraná.xlsx` / `Base_Egressos_PR` | `insertionRatePR` | 7 PR |
@@ -154,11 +154,7 @@ IEES = IEES_PR + IEES_BR  # 40 IES total (7 PR + 33 BR)
 - `pgTop` = programas com `CD_CONCEITO_CURSO >= 5`
 - `capes` = média de `CD_CONCEITO_CURSO` (ou coluna pré-calculada "Conceito médio dos programas de pós-graduação")
 
-**Seção 6 — Despesa 8050/Orçamento (PR):**
-- `budget`: soma `Liquidado` por IES/ano (R$ milhões), preferência para 2024
-- `execution`: taxa de execução orçamentária (empenho) do mesmo arquivo
-- `liquidation`: taxa de liquidação do mesmo arquivo
-- `personnel`: participação de pessoal e encargos por IES; fallback global só se a coluna vier ausente
+**Seção 6 — Relatório 8050/Orçamento (PR):** Lê `Relatório da Despesa 8050 (2024 - 2026).xlsx`. Extrai `budget`, `execution`, `liquidation`, `personnel` (ind81–87), `composicaoFontes` (grupo50/grupo70 por fonte) e `ind88–95`. Série histórica disponível para 2024, 2025 e 2026 (2026 parcial).
 
 **Seção 7 — Suplementação (PR):**
 - Coluna `col[3]` da sheet `matriz_cluster`
@@ -345,9 +341,9 @@ render()
 | V3 | Oferta territorial | `u.territory` (dispersão) | Muito Alta / Alta / Moderada / Sede Única / Baixa |
 | V4 | Qualificação docente | `u.doctors` | Consolidada / Avançada / Em Desenvolvimento / Inicial |
 | V5 | Estrutura acadêmica | `u.pg × u.capes` | Madura / Consolidada / Em Consolidação / Incipiente |
-| V6 | Dinâmica orçamentária (PR) | `exec×0.34 + liq×0.26 + (100-pes)×0.18 + (100-supl)×0.22` | Expansivo / Autônomo / Moderado-Expansivo / Moderado-Restritivo / Restritivo |
-| V7 | Renda do território (PR) | `u.territoryIncome` | Alta / Moderada-Alta / Moderada-Baixa / Baixa |
-| V8 | IDHM (PR) | `u.idhmRegional` | Alto / Médio-Alto / Médio-Baixo / Baixo |
+| V6 | Dinâmica orçamentária (PR) | Planilha `Estratificação_IES_Estaduais_BR.xlsx` / aba `9_Dinâmica Orçamentária PR` | Perfil Expansivo / Autônomo / Perfil Moderado-Expansivo / Perfil Moderado-Restritivo / Perfil Restritivo |
+| V7 | Renda do território (PR) | Planilha / aba `10_Renda Território PR` (`u.territoryIncome`) | Território de Alta Renda / Território de Renda Média-Alta / Território de Renda Moderada / Território de Baixa Renda |
+| V8 | IDHM (PR) | Planilha / aba `11_IDH Território PR` (`u.idhmRegional`) | Contexto Socioecon. Alto / Contexto Socioecon. Elevado / Contexto Socioecon. Moderado / Contexto Socioecon. Baixo |
 
 V6, V7 e V8 disponíveis apenas no escopo Paraná.
 
@@ -404,7 +400,7 @@ V6, V7 e V8 disponíveis apenas no escopo Paraná.
    ├── cache() — mapeia IDs DOM → variável el
    ├── populate() — preenche selects e checkboxes
    ├── bind() — registra todos os event listeners
-   └── render() — primeira renderização com dados estáticos (const raw)
+   └── render() — primeira renderização; grupos V1–V8 ficam vazios até o JSON oficial carregar
 
 5. Paralelo (async):
    └── loadAllData()
@@ -451,3 +447,5 @@ openpyxl>=3.1          # Leitura de .xlsx
 - **CRES > 100%:** usar sempre `round(float(v) * 100, 2)` diretamente, nunca `safe_pct()` — UNIOESTE tem CRES=121.98%.
 - **Personnel:** atualmente extraído por IES do `Relatório da Despesa 8050 (2024 - 2026).xlsx`; o fallback global só é usado se a coluna correspondente vier ausente.
 - **Catálogo de indicadores:** `5. Relação de Indicadores das Universidades.xlsx` não é carregado em runtime. O conteúdo relevante está embutido em `dashboard/assets/painel.js` como `INDICATOR_CATALOG`; mantenha a planilha como fonte editorial ou crie uma etapa de geração se quiser que alterações nela sejam refletidas automaticamente.
+- **Agrupamentos V1–V8:** a fonte oficial é exclusivamente `Estratificação_IES_Estaduais_BR.xlsx`, exportada para `data/seti_precomputed.json` pelo pipeline. O `painel.js` apenas renderiza os grupos recebidos em `SETI_CLUSTERS` e os rótulos/limiares recebidos em `SETI_QUARTIREFS`.
+- **Quadrantes:** se não houver critério oficial de quadrante na planilha/JSON, o painel exibe indisponibilidade metodológica em vez de calcular cortes por média, mediana ou fallback visual.

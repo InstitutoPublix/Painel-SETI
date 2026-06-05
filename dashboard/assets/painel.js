@@ -2035,23 +2035,14 @@ const universitiesBrasil = rawBrasil.map((r) => ({
 const universities = raw.map((r) => ({
   id:r[0], sigla:r[1], nome:r[2], region:r[3], municipality:r[4], profile:r[5], type:r[6], students:r[7], entrants:r[8], graduates:r[9], courses:r[10], vacancies:r[11], occupancy:r[12], dropout:r[13], completion:r[14], doctors:r[15], cnpq:r[16], capes:r[17], pg:r[18], pgTop:r[19], budget:r[20], execution:r[21], liquidation:r[22], personnel:r[23], supplementation:r[24], employment:r[25], salary:r[26], facultyOcc:r[27], cres:r[28], territory:r[29], groups:Object.fromEntries(groupKeys.map((k,i)=>[k,r[30][i]])), coursesFocus:["Administração","Agronomia","Direito","Enfermagem","Engenharia","Licenciaturas","Medicina"], vinculos:null
 }));
-const territorySocioClusters = {
-  uel:{income:1083.35,incomeGroup:"Alta Renda",idhm:0.778,idhmGroup:"IDHM Médio-Alto"},
-  uem:{income:1202.63,incomeGroup:"Alta Renda",idhm:0.808,idhmGroup:"IDHM Alto"},
-  uepg:{income:877.10,incomeGroup:"Renda Moderada-Baixa",idhm:0.763,idhmGroup:"IDHM Médio-Baixo"},
-  unioeste:{income:1003.38,incomeGroup:"Renda Moderada-Alta",idhm:0.782,idhmGroup:"IDHM Alto"},
-  unicentro:{income:750.09,incomeGroup:"Baixa Renda",idhm:0.731,idhmGroup:"IDHM Baixo"},
-  uenp:{income:770.55,incomeGroup:"Baixa Renda",idhm:0.743,idhmGroup:"IDHM Baixo"},
-  unespar:{income:852.66,incomeGroup:"Renda Moderada-Baixa",idhm:0.763,idhmGroup:"IDHM Médio-Baixo"}
-};
-universities.forEach(u=>{
-  const socio = territorySocioClusters[u.id];
-  if(!socio) return;
-  u.territoryIncome = socio.income;
-  u.idhmRegional = socio.idhm;
-  u.groups.v7 = socio.incomeGroup;
-  u.groups.v8 = socio.idhmGroup;
-});
+function clearEmbeddedClusterGroups(rows) {
+  rows.forEach(u => {
+    groupKeys.forEach(k => { u.groups[k] = null; });
+    u.territoryIncome = null;
+    u.idhmRegional = null;
+  });
+}
+clearEmbeddedClusterGroups(universities.concat(universitiesBrasil));
 const groupMeta = {
   v1:{label:"V1 - Porte institucional",getter:u=>u.students,format:formatNumber,criteria:[["Baixo","Até 9 mil estudantes"],["Médio-baixo","9 mil a 14 mil estudantes"],["Médio-alto","14 mil a 20 mil estudantes"],["Alto","Acima de 20 mil estudantes"]]},
   v2:{label:"V2 - Oferta acadêmica",getter:u=>u.courses*100+u.vacancies/100,format:v=>`${formatNumber(v)} pts`,criteria:[["Baixo","Oferta concentrada"],["Médio-baixo","Oferta intermediária"],["Médio-alto","Oferta ampla"],["Alto","Oferta muito diversificada"]]},
@@ -2059,8 +2050,8 @@ const groupMeta = {
   v4:{label:"V4 - Qualificação docente",getter:u=>u.doctors,format:formatPercent,criteria:[["Baixo","Até 78%"],["Médio-baixo","78% a 84%"],["Médio-alto","84% a 89%"],["Alto","Acima de 89%"]]},
   v5:{label:"V5 - Estrutura acadêmica e pós-graduação",getter:u=>u.pg*u.capes,format:v=>`${v.toFixed(0)} pts`,criteria:[["Baixo","Pós-graduação inicial"],["Médio-baixo","Estrutura em consolidação"],["Médio-alto","Pós-graduação consolidada"],["Alto","Alta maturidade acadêmica"]]},
   v6:{label:"V6 - Perfil de inserção profissional",getter:u=>u.employment,format:formatPercent,criteria:[["Baixo","Inserção abaixo da rede"],["Médio-baixo","Inserção moderada"],["Médio-alto","Inserção consistente"],["Alto","Alta inserção profissional"]]},
-  v7:{label:"V7 - Renda do território (PR)",getter:u=>u.territoryIncome||0,format:formatCurrency,criteria:[["Baixa Renda","Menor renda per capita do município-sede"],["Renda Moderada-Baixa","Renda per capita abaixo da faixa superior"],["Renda Moderada-Alta","Renda per capita intermediária alta"],["Alta Renda","Maior renda per capita do município-sede"]]},
-  v8:{label:"V8 - IDHM (PR)",getter:u=>u.idhmRegional||0,format:v=>(v||0).toFixed(3).replace(".",","),criteria:[["IDHM Baixo","Menor IDHM do município-sede"],["IDHM Médio-Baixo","IDHM abaixo da faixa superior"],["IDHM Médio-Alto","IDHM intermediário alto"],["IDHM Alto","Maior IDHM do município-sede"]]}
+  v7:{label:"V7 - Renda do território (PR)",getter:u=>u.territoryIncome,format:v=>v==null?"N/D":formatCurrency(v),criteria:[]},
+  v8:{label:"V8 - IDHM (PR)",getter:u=>u.idhmRegional,format:v=>v==null?"N/D":Number(v).toFixed(3).replace(".",","),criteria:[]}
 };
 const resultIndicators = {
   composite:{label:"Resultado institucional composto",get:u=>composite(u),format:v=>`${v.toFixed(1)} pts`},
@@ -2092,7 +2083,7 @@ const tabInfo = {
   employment:["Egressos e mercado","Inserção Profissional","Os egressos se inserem bem no mercado? Inserção no Paraná, aderência CBO2 e salários."],
   efficiency:["Análise central","Orçamento × Desempenho Acadêmico","Orçamento maior está associado a melhor desempenho? Análise da relação entre recursos aplicados, custo por aluno e resultados acadêmicos das IEES."]
 };
-const yearAdj = {2024:[1,1,0],2023:[.985,.93,-.8],2022:[.968,.86,-1.6],2021:[.952,.80,-2.4],2020:[.941,.74,-3.2]};
+const yearAdj = {2026:[1,1,0],2025:[1,1,0],2024:[1,1,0],2023:[.985,.93,-.8],2022:[.968,.86,-1.6],2021:[.952,.80,-2.4],2020:[.941,.74,-3.2]};
 const brazil = {result:{composite:82.4,occupancy:84.1,completion:58.8,permanence:88.1,doctorate:82.6,cnpq:1700,capes:3.9,employment:68.4,salary:5480},effort:{budgetPerStudent:49300,costGraduate:282000,costOccupiedVacancy:178000,costEmployed:393000,budget:780,personnelShare:80.4,supplementation:10.1}};
 const state = { activeTab:"overview", scope:"Paraná", accessCourseTypeFilter:"all", semaphoreYear:null, dayNightFilter:"all", synthTableGroup:"all" };
 
@@ -2224,36 +2215,67 @@ function setGroupByVariable(value) {
 }
 window.setGroupByVariable = setGroupByVariable;
 
-const groupOptions = {
-  v1:["Grande porte","Médio-Grande Porte","Médio-Pequeno Porte","Pequeno Porte"],
-  v2:["Oferta Extensa","Oferta Ampla","Oferta Moderada","Oferta Reduzida"],
-  v3:["Muito Alta Dispersão","Alta Dispersão","Dispersão Moderada","Sede Única","Baixa Dispersão"],
-  v4:["Qualif. Consolidada","Qualif. Avançada","Qualif. Em Desenvolvimento","Qualif. Inicial"],
-  v5:["Estrutura Madura","Estrutura Consolidada","Estrutura em Consolidação","Estrutura Incipiente"],
-  v6:["Perfil Expansivo / Autônomo","Perfil Moderado-Expansivo","Perfil Restritivo"],
-  v7:["Alta Renda","Renda Moderada-Alta","Renda Moderada-Baixa","Baixa Renda"],
-  v8:["IDHM Alto","IDHM Médio-Alto","IDHM Médio-Baixo","IDHM Baixo"]
-};
-const groupOptionNotes = {
-  v1:{"Grande porte":"Quartil superior de porte institucional","Médio-Grande Porte":"Porte acima da mediana","Médio-Pequeno Porte":"Porte abaixo da mediana","Pequeno Porte":"Quartil inferior de porte institucional"},
-  v2:{"Oferta Extensa":"Maior diversidade de cursos e vagas","Oferta Ampla":"Oferta acima da mediana","Oferta Moderada":"Oferta intermediária","Oferta Reduzida":"Oferta mais concentrada"},
-  v3:{"Muito Alta Dispersão":"Maior capilaridade territorial","Alta Dispersão":"Rede multicampi","Dispersão Moderada":"Presença territorial intermediária","Sede Única":"Oferta concentrada em sede única","Baixa Dispersão":"Baixa dispersão territorial"},
-  v4:{"Qualif. Consolidada":"Maior proporção de docentes doutores","Qualif. Avançada":"Qualificação acima da mediana","Qualif. Em Desenvolvimento":"Qualificação intermediária","Qualif. Inicial":"Qualificação em estágio inicial"},
-  v5:{"Estrutura Madura":"Maior maturidade acadêmica composta","Estrutura Consolidada":"Estrutura acadêmica consolidada","Estrutura em Consolidação":"Estrutura em processo de consolidação","Estrutura Incipiente":"Estrutura acadêmica incipiente"},
-  v6:{"Perfil Expansivo / Autônomo":"Maior dinâmica orçamentária e autonomia de recursos","Perfil Moderado-Expansivo":"Dinâmica moderada com tendência expansiva","Perfil Restritivo":"Menor dinâmica orçamentária relativa"},
-  v7:{"Alta Renda":"Município-sede em faixa superior de renda per capita (IBGE 2010)","Renda Moderada-Alta":"Renda per capita intermediária alta do município-sede","Renda Moderada-Baixa":"Renda per capita intermediária baixa do município-sede","Baixa Renda":"Município-sede em faixa inferior de renda per capita (IBGE 2010)"},
-  v8:{"IDHM Alto":"Município-sede em faixa superior de IDHM (Atlas Brasil 2010)","IDHM Médio-Alto":"IDHM intermediário alto do município-sede","IDHM Médio-Baixo":"IDHM intermediário baixo do município-sede","IDHM Baixo":"Município-sede em faixa inferior de IDHM (Atlas Brasil 2010)"}
-};
-const oldGroupMap = {
-  v1:{"Alto":"Grande porte","Médio-alto":"Médio-Grande Porte","Médio-baixo":"Médio-Pequeno Porte","Baixo":"Pequeno Porte"},
-  v2:{"Alto":"Oferta Extensa","Médio-alto":"Oferta Ampla","Médio-baixo":"Oferta Moderada","Baixo":"Oferta Reduzida"},
-  v3:{"Alto":"Muito Alta Dispersão","Médio-alto":"Alta Dispersão","Médio-baixo":"Dispersão Moderada","Baixo":"Baixa Dispersão"},
-  v4:{"Alto":"Qualif. Consolidada","Médio-alto":"Qualif. Avançada","Médio-baixo":"Qualif. Em Desenvolvimento","Baixo":"Qualif. Inicial"},
-  v5:{"Alto":"Estrutura Madura","Médio-alto":"Estrutura Consolidada","Médio-baixo":"Estrutura em Consolidação","Baixo":"Estrutura Incipiente"},
-  v6:{"Alto":"Perfil Expansivo / Autônomo","Médio-alto":"Perfil Moderado-Expansivo","Baixo":"Perfil Restritivo"}
-};
-universities.forEach(u=>groupKeys.forEach(k=>{if(oldGroupMap[k]&&oldGroupMap[k][u.groups[k]]) u.groups[k]=oldGroupMap[k][u.groups[k]];}));
+const groupOptions = Object.fromEntries(groupKeys.map(k => [k, []]));
+const groupOptionNotes = Object.fromEntries(groupKeys.map(k => [k, {}]));
 Object.entries(groupOptions).forEach(([key,labels])=>{if(groupMeta[key]) groupMeta[key].criteria=labels.map(label=>[label,groupOptionNotes[key][label]||""]);});
+let _clustersApplied = false;
+let _stratificationMetadataApplied = false;
+function stratText(value) {
+  return String(value || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+}
+function groupKeyFromQuartilRef(ref, index) {
+  const text = stratText(`${ref?.variable || ""} ${ref?.indicator || ""}`);
+  if (text.includes("porte institucional")) return "v1";
+  if (text.includes("oferta de cursos")) return "v2";
+  if (text.includes("oferta territorial")) return "v3";
+  if (text.includes("qualificacao docente")) return "v4";
+  if (text.includes("estrutura academica")) return "v5";
+  if (text.includes("dinamica orcamentaria")) return "v6";
+  if (text.includes("renda do territorio")) return "v7";
+  if (text.includes("contexto socioeconomico") || text.includes("idh")) return "v8";
+  return groupKeys[index] || null;
+}
+function quartilNoteForLabel(ref, label) {
+  const indicator = ref?.indicator || ref?.variable || "Critério oficial";
+  if (label === ref?.label_q1) return `${indicator}: até ${ref.q1_limiar}`;
+  if (label === ref?.label_q2) return `${indicator}: de ${ref.q1_limiar} a ${ref.q2_limiar}`;
+  if (label === ref?.label_q3) return `${indicator}: de ${ref.q2_limiar} a ${ref.q3_limiar}`;
+  if (label === ref?.label_q4) return `${indicator}: acima de ${ref.q3_limiar}`;
+  return indicator;
+}
+function syncStratificationMetadataFromPrecomputed() {
+  if (_stratificationMetadataApplied || !Array.isArray(window.SETI_QUARTIREFS)) return;
+  groupKeys.forEach(k => {
+    groupOptions[k] = [];
+    groupOptionNotes[k] = {};
+    if (groupMeta[k]) groupMeta[k].criteria = [];
+  });
+  window.SETI_QUARTIREFS.forEach((ref, index) => {
+    const key = groupKeyFromQuartilRef(ref, index);
+    if (!key || !groupMeta[key]) return;
+    const labels = [ref.label_q4, ref.label_q3, ref.label_q2, ref.label_q1].filter(Boolean);
+    groupOptions[key] = labels;
+    groupOptionNotes[key] = Object.fromEntries(labels.map(label => [label, quartilNoteForLabel(ref, label)]));
+    groupMeta[key].criteria = labels.map(label => [label, groupOptionNotes[key][label] || ""]);
+  });
+  _stratificationMetadataApplied = true;
+}
+function applyOfficialTerritoryValues(u) {
+  const real = typeof getRealIndicators === "function" ? getRealIndicators(u.sigla, "2024") : null;
+  u.territoryIncome = real?.territoryIncome ?? null;
+  u.idhmRegional = real?.idhmRegional ?? null;
+}
+function applySETIClusters() {
+  syncStratificationMetadataFromPrecomputed();
+  if (_clustersApplied || !window.SETI_CLUSTERS) return;
+  universities.concat(universitiesBrasil).forEach(u => {
+    const cl = window.SETI_CLUSTERS[u.sigla];
+    groupKeys.forEach(k => { u.groups[k] = cl && cl[k] != null ? cl[k] : null; });
+    applyOfficialTerritoryValues(u);
+  });
+  _clustersApplied = true;
+  if (el.groupBy) updateGroupOptions(el.groupBy.value || "v1");
+}
 groupMeta.v1.label="V1 – Porte institucional";
 groupMeta.v2.label="V2 – Oferta de cursos";
 groupMeta.v3.label="V3 – Oferta territorial";
@@ -2467,12 +2489,15 @@ function updateGroupOptions(variable){
   renderGroupVariableButtons();
 }
 function updateScopeAvailability(scope){
-  const v6Option = el.groupBy ? el.groupBy.querySelector('option[value="v6"]') : null;
-  if(!v6Option) return;
+  if(!el.groupBy) return;
   const isBrasil = scope === "Brasil" || scope === "BR";
-  v6Option.disabled = isBrasil;
-  v6Option.title = "Disponível apenas para escopo Paraná";
-  if(isBrasil && el.groupBy.value === "v6"){
+  ['v6','v7','v8'].forEach(v => {
+    const opt = el.groupBy.querySelector(`option[value="${v}"]`);
+    if(!opt) return;
+    opt.disabled = isBrasil;
+    opt.title = "Disponível apenas para escopo Paraná";
+  });
+  if(isBrasil && ['v6','v7','v8'].includes(el.groupBy.value)){
     el.groupBy.value = "v1";
     updateGroupOptions("v1");
   }
@@ -2549,11 +2574,11 @@ function context(){
   let ref=base.filter(u=>group==="all"||u.groups[f.groupBy]===group); if(!ref.length) ref=base;
   let display=f.university==="all"?ref:f.university==="none"?[]:ref.filter(u=>Array.isArray(f.university)&&f.university.includes(u.id));
   if(!display.length&&f.university!=="none") display=ref;
-  if(f.attention){const ids=matrixRows(ref,f).filter(r=>r.resultRel<100&&r.effortRel>100).map(r=>r.id);ref=ref.filter(u=>ids.includes(u.id));display=display.filter(u=>ids.includes(u.id));}
+  if(f.attention&&hasOfficialQuadrants()){const ids=matrixRows(ref,f).filter(r=>r.resultRel<100&&r.effortRel>100).map(r=>r.id);ref=ref.filter(u=>ids.includes(u.id));display=display.filter(u=>ids.includes(u.id));}
   return {f,all,base,ref,display,selected,group};
 }
-function byYear(u,year){const [vol,bud,delta]=yearAdj[year]||yearAdj[2024];const c={...u,groups:{...u.groups},coursesFocus:[...u.coursesFocus]};["students","entrants","graduates","vacancies"].forEach(k=>c[k]=Math.round(c[k]*vol));c.budget=round(c.budget*bud,1);const cnpqReal=CNPQ_DATA[u.id]?.[Number(year)];if(cnpqReal){c.cnpq=round(cnpqReal.captacao,2);c.vinculos=cnpqReal.vinculos;}else{c.cnpq=round(c.cnpq*(.9+bud*.1),1);c.vinculos=null;}c.supplementation=round(c.supplementation+(1-bud)*3,1);["occupancy","completion","doctors","employment","facultyOcc","cres","execution","liquidation"].forEach(k=>c[k]=clamp(round(c[k]+delta,1),0,100));c.dropout=clamp(round(c.dropout-delta*.25,1),0,100);c.salary=Math.round(c.salary*(.88+bud*.12));const _rc=getRealIndicators(u.sigla,year);if(_rc&&_rc.cursosStudents!=null){if(_rc.cursosStudents!=null)c.students=_rc.cursosStudents;if(_rc.cursosEntrants!=null)c.entrants=_rc.cursosEntrants;if(_rc.cursosGraduates!=null)c.graduates=_rc.cursosGraduates;if(_rc.cursosCourses!=null)c.courses=_rc.cursosCourses;if(_rc.cursosVacancies!=null)c.vacancies=_rc.cursosVacancies;if(_rc.cursosOccupancy!=null)c.occupancy=_rc.cursosOccupancy;if(_rc.cursosDropout!=null)c.dropout=_rc.cursosDropout;if(_rc.cursosCompletion!=null)c.completion=_rc.cursosCompletion;c.vacanciesNova=_rc.cursosVacanciesNova??null;c.vacanciesDay=_rc.cursosVacanciesDay??null;c.vacanciesNight=_rc.cursosVacanciesNight??null;c.matDay=_rc.cursosMatDay??null;c.matNight=_rc.cursosMatNight??null;c.ingressOccupancy=_rc.cursosIngressOccupancy??null;c.vacanciesUnfilled=_rc.cursosVacanciesUnfilled??null;c.vacanciesNovaUnfilled=_rc.cursosVacanciesNovaUnfilled??null;c.mobility=_rc.cursosMobility??null;c.publicSchool=_rc.cursosPublicSchool??null;c.occDay=_rc.cursosOccupancyDay??null;c.occNight=_rc.cursosOccupancyNight??null;}if(_rc){if(_rc.iesDocDout!=null)c.doctors=_rc.iesDocDout;c.docForeign=_rc.iesDocForeign??null;c.capesPortal=_rc.iesCapesPortal??null;if(_rc.docTaxaOcup!=null)c.facultyOcc=_rc.docTaxaOcup;if(_rc.docCresTaxa!=null)c.cres=_rc.docCresTaxa;c.docVagasTotais=_rc.docVagasTotais??null;c.docVagasDisp=_rc.docVagasDisp??null;c.docVagasOcupadas=_rc.docVagasOcupadas??null;c.docTaxaUtil=_rc.docTaxaUtil??null;c.docVagasCond=_rc.docVagasCond??null;c.docPctCond=_rc.docPctCond??null;c.docTideAtrib=_rc.docTideAtrib??null;c.docTidePartic=_rc.docTidePartic??null;c.docTidePctNaoAtrib=_rc.docTidePctNaoAtrib??null;c.docChMedia=_rc.docChMedia??null;c.docCresAut=_rc.docCresAut??null;c.docCresUtil=_rc.docCresUtil??null;c.docCresSaldo=_rc.docCresSaldo??null;c.docCresOciosidade=_rc.docCresOciosidade??null;c.docCresPartic=_rc.docCresPartic??null;if(_rc.capesConceito!=null)c.capes=_rc.capesConceito;if(_rc.pg!=null)c.pg=_rc.pg;if(_rc.pgTop!=null)c.pgTop=_rc.pgTop;c.capesPct567=_rc.capesPct567??null;c.capesDocPermanentes=_rc.capesDocPermanentes??null;c.capesDocEstrangeiros=_rc.capesDocEstrangeiros??null;c.capesDocBolsa=_rc.capesDocBolsa??null;}if(_rc){c.budget=_rc.budget??c.budget;c.execution=_rc.execution??c.execution;c.liquidation=_rc.liquidation??c.liquidation;c.personnel=_rc.personnel??c.personnel;c.supplementation=_rc.supplementation??c.supplementation;if(_rc.cnpqCaptacao!=null){c.cnpq=_rc.cnpqCaptacao;}if(_rc.cnpqVinculos!=null){c.vinculos=_rc.cnpqVinculos;}}if(_rc){c.insertionRatePR=_rc.insertionRatePR??null;c.fundoParana=_rc.fundoParana??_rc.fundoVlRepassado??null;c.fundoExec=_rc.fundoExec??_rc.fundoPctExecucao??null;c.egressosMunicipios=_rc.egressosMunicipios??_rc.raisMunCount??null;}if(window.SETI_CLUSTERS&&window.SETI_CLUSTERS[u.sigla]){const cl=window.SETI_CLUSTERS[u.sigla];Object.keys(cl).forEach(k=>{if(cl[k]!=null)c.groups[k]=cl[k];});}return c;}
-function render(){const c=context();currentFilteredCount=c.ref.length;syncScopeToggle(c.f.scope);updateScopeAvailability(c.f.scope);updateActiveTabFilters();renderTop(c);renderKpis(c);renderSide(c);renderTab(c);}
+function byYear(u,year){const [vol,bud,delta]=yearAdj[year]||yearAdj[2024];const c={...u,groups:{...u.groups},coursesFocus:[...u.coursesFocus]};["students","entrants","graduates","vacancies"].forEach(k=>c[k]=Math.round(c[k]*vol));c.budget=round(c.budget*bud,1);const cnpqReal=CNPQ_DATA[u.id]?.[Number(year)];if(cnpqReal){c.cnpq=round(cnpqReal.captacao,2);c.vinculos=cnpqReal.vinculos;}else{c.cnpq=round(c.cnpq*(.9+bud*.1),1);c.vinculos=null;}c.supplementation=round(c.supplementation+(1-bud)*3,1);["occupancy","completion","doctors","employment","facultyOcc","cres","execution","liquidation"].forEach(k=>c[k]=clamp(round(c[k]+delta,1),0,100));c.dropout=clamp(round(c.dropout-delta*.25,1),0,100);c.salary=Math.round(c.salary*(.88+bud*.12));const _rc=getRealIndicators(u.sigla,year);if(_rc&&_rc.cursosStudents!=null){if(_rc.cursosStudents!=null)c.students=_rc.cursosStudents;if(_rc.cursosEntrants!=null)c.entrants=_rc.cursosEntrants;if(_rc.cursosGraduates!=null)c.graduates=_rc.cursosGraduates;if(_rc.cursosCourses!=null)c.courses=_rc.cursosCourses;if(_rc.cursosVacancies!=null)c.vacancies=_rc.cursosVacancies;if(_rc.cursosOccupancy!=null)c.occupancy=_rc.cursosOccupancy;if(_rc.cursosDropout!=null)c.dropout=_rc.cursosDropout;if(_rc.cursosCompletion!=null)c.completion=_rc.cursosCompletion;c.vacanciesNova=_rc.cursosVacanciesNova??null;c.vacanciesDay=_rc.cursosVacanciesDay??null;c.vacanciesNight=_rc.cursosVacanciesNight??null;c.matDay=_rc.cursosMatDay??null;c.matNight=_rc.cursosMatNight??null;c.ingressOccupancy=_rc.cursosIngressOccupancy??null;c.vacanciesUnfilled=_rc.cursosVacanciesUnfilled??null;c.vacanciesNovaUnfilled=_rc.cursosVacanciesNovaUnfilled??null;c.mobility=_rc.cursosMobility??null;c.publicSchool=_rc.cursosPublicSchool??null;c.occDay=_rc.cursosOccupancyDay??null;c.occNight=_rc.cursosOccupancyNight??null;}if(_rc){if(_rc.iesDocDout!=null)c.doctors=_rc.iesDocDout;c.docForeign=_rc.iesDocForeign??null;c.capesPortal=_rc.iesCapesPortal??null;if(_rc.docTaxaOcup!=null)c.facultyOcc=_rc.docTaxaOcup;if(_rc.docCresTaxa!=null)c.cres=_rc.docCresTaxa;c.docVagasTotais=_rc.docVagasTotais??null;c.docVagasDisp=_rc.docVagasDisp??null;c.docVagasOcupadas=_rc.docVagasOcupadas??null;c.docTaxaUtil=_rc.docTaxaUtil??null;c.docVagasCond=_rc.docVagasCond??null;c.docPctCond=_rc.docPctCond??null;c.docTideAtrib=_rc.docTideAtrib??null;c.docTidePartic=_rc.docTidePartic??null;c.docTidePctNaoAtrib=_rc.docTidePctNaoAtrib??null;c.docChMedia=_rc.docChMedia??null;c.docCresAut=_rc.docCresAut??null;c.docCresUtil=_rc.docCresUtil??null;c.docCresSaldo=_rc.docCresSaldo??null;c.docCresOciosidade=_rc.docCresOciosidade??null;c.docCresPartic=_rc.docCresPartic??null;if(_rc.capesConceito!=null)c.capes=_rc.capesConceito;if(_rc.pg!=null)c.pg=_rc.pg;if(_rc.pgTop!=null)c.pgTop=_rc.pgTop;c.capesPct567=_rc.capesPct567??null;c.capesDocPermanentes=_rc.capesDocPermanentes??null;c.capesDocEstrangeiros=_rc.capesDocEstrangeiros??null;c.capesDocBolsa=_rc.capesDocBolsa??null;}if(_rc){c.budget=_rc.budget??c.budget;c.execution=_rc.execution??c.execution;c.liquidation=_rc.liquidation??c.liquidation;c.personnel=_rc.personnel??c.personnel;c.supplementation=_rc.supplementation??c.supplementation;if(_rc.cnpqCaptacao!=null){c.cnpq=_rc.cnpqCaptacao;}if(_rc.cnpqVinculos!=null){c.vinculos=_rc.cnpqVinculos;}}if(_rc){c.insertionRatePR=_rc.insertionRatePR??null;c.fundoParana=_rc.fundoParana??_rc.fundoVlRepassado??null;c.fundoExec=_rc.fundoExec??_rc.fundoPctExecucao??null;c.egressosMunicipios=_rc.egressosMunicipios??_rc.raisMunCount??null;c.territoryIncome=_rc.territoryIncome??null;c.idhmRegional=_rc.idhmRegional??null;}if(window.SETI_CLUSTERS&&window.SETI_CLUSTERS[u.sigla]){const cl=window.SETI_CLUSTERS[u.sigla];groupKeys.forEach(k=>{c.groups[k]=cl[k]!=null?cl[k]:null;});}return c;}
+function render(){applySETIClusters();const c=context();currentFilteredCount=c.ref.length;syncScopeToggle(c.f.scope);updateScopeAvailability(c.f.scope);updateActiveTabFilters();renderTop(c);renderKpis(c);renderSide(c);renderTab(c);}
 function renderTop(c){const t=tabInfo[state.activeTab];el.activeTabKicker.textContent=t[0];el.activeTabTitle.textContent=t[1];el.activeTabDescription.textContent=t[2];el.periodPill.textContent=`Ano base ${c.f.year} · Escopo ${c.f.scope}`;el.scopeLabel.textContent=c.selected?`${c.selected.sigla} | ${c.group}`:c.group==="all"?"Sistema estadual":`Grupo ${c.group}`;updateActiveClusterLabel(c);}
 function renderKpis(c){
   const data=c.display.length?c.display:c.ref, ref=c.ref.length?c.ref:c.all, a=agg(data), ar=agg(ref), res=resultIndicators[c.f.result], eff=effortIndicators[c.f.effort], rows=matrixRows(ref,c.f), selectedRow=c.selected&&rows.find(r=>r.id===c.selected.id);
@@ -2562,7 +2587,7 @@ function renderKpis(c){
   if(hasPrev){const dp=data.map(u=>byYear(u,prevYear)),rp=ref.map(u=>byYear(u,prevYear));aPrev=agg(dp);arPrev=agg(rp);}
   const d=(curr,prev,pol,unit)=>hasPrev?kpiDeltaHtml(curr,prev,pol,unit,prevYear):`<span class="kpi-delta kpi-delta-neutral">— sem variação</span>`;
   const cards=state.activeTab==="efficiency"?[
-    ["Orçamento liquidado do grupo",formatCurrencyMillions(ar.budget),`${ref.length} IEES no grupo`,"+6,8%",d(ar.budget,arPrev?.budget,"neutral","pct")],["Execução orçamentária média",formatPercent(ar.execution),"empenho sobre disponível",badge(ar.execution,93,90),d(ar.execution,arPrev?.execution,"higher","pp")],["Taxa de liquidação",formatPercent(ar.liquidation),"liquidado sobre empenhado",badge(ar.liquidation,91,88),d(ar.liquidation,arPrev?.liquidation,"higher","pp")],[eff.label,eff.format(mean(ref,eff.get)),"média do grupo","ref.",null],["Resultado médio do grupo",res.format(mean(ref,res.get)),res.label,"grupo",null],["Resultado relativo",selectedRow?`${selectedRow.resultRel.toFixed(1)}%`:`${mean(rows,r=>r.resultRel).toFixed(1)}%`,"base grupo = 100",selectedRow?selectedRow.resultLabel:"média",null],["Esforço relativo",selectedRow?`${selectedRow.effortRel.toFixed(1)}%`:`${mean(rows,r=>r.effortRel).toFixed(1)}%`,"base grupo = 100",selectedRow?selectedRow.effortLabel:"média",null],["Classificação relativa",selectedRow?selectedRow.quadrant:summarize(rows),"descrição por quadrante",`${rows.length} pontos`,null]
+    ["Orçamento liquidado do grupo",formatCurrencyMillions(ar.budget),`${ref.length} IEES no grupo`,"+6,8%",d(ar.budget,arPrev?.budget,"neutral","pct")],["Execução orçamentária média",formatPercent(ar.execution),"empenho sobre disponível",badge(ar.execution,93,90),d(ar.execution,arPrev?.execution,"higher","pp")],["Taxa de liquidação",formatPercent(ar.liquidation),"liquidado sobre empenhado",badge(ar.liquidation,91,88),d(ar.liquidation,arPrev?.liquidation,"higher","pp")],[eff.label,eff.format(mean(ref,eff.get)),"média do grupo","ref.",null],["Resultado médio do grupo",res.format(mean(ref,res.get)),res.label,"grupo",null],["Resultado relativo",selectedRow?`${selectedRow.resultRel.toFixed(1)}%`:`${mean(rows,r=>r.resultRel).toFixed(1)}%`,"base grupo = 100",selectedRow?selectedRow.resultLabel:"média",null],["Esforço relativo",selectedRow?`${selectedRow.effortRel.toFixed(1)}%`:`${mean(rows,r=>r.effortRel).toFixed(1)}%`,"base grupo = 100",selectedRow?selectedRow.effortLabel:"média",null],["Quadrante oficial",selectedRow?selectedRow.quadrant:summarize(rows),"planilha de estratificação",`${rows.length} pontos`,null]
   ]:[
     ["Total de estudantes",formatNumber(a.students),`${formatNumber(a.entrants)} ingressantes`,"+2,1%",d(a.students,aPrev?.students,"higher","pct")],["Taxa de ocupação das vagas",formatPercent(a.occupancy),`${formatNumber(a.vacancies)} vagas`,badge(a.occupancy,88,80),d(a.occupancy,aPrev?.occupancy,"higher","pp")],["Taxa de concluintes",formatPercent(a.completion),`${formatNumber(a.graduates)} concluintes`,badge(a.completion,62,56),d(a.completion,aPrev?.completion,"higher","pp")],["Docentes com doutorado",formatPercent(a.doctors),"proporção no corpo docente",badge(a.doctors,86,80),d(a.doctors,aPrev?.doctors,"higher","pp")],["Captação CNPq",formatCurrencyMillions(a.cnpq),"recursos captados","+4,4%",d(a.cnpq,aPrev?.cnpq,"higher","pct")],["Inserção no Paraná",formatPercent(a.employment),"egressos no mercado formal",badge(a.employment,72,67),d(a.employment,aPrev?.employment,"higher","pp")],["Orçamento liquidado",formatCurrencyMillions(a.budget),"grupo selecionado","+6,8%",d(a.budget,aPrev?.budget,"neutral","pct")],["Execução orçamentária",formatPercent(a.execution),"média ponderada",badge(a.execution,93,90),d(a.execution,aPrev?.execution,"higher","pp")]
   ];
@@ -2773,7 +2798,7 @@ function composicaoFontesSection(u) {
   const g70 = renderGrupo('grupo70');
   if (!g50 && !g70) return '';
   return `<article class="visual-card cf-card">
-    <h4 style="margin:0 0 .5rem;font-size:.9rem">${u.sigla}</h4>
+    <h4 class="cf-ies-title">${u.sigla}</h4>
     <div class="cf-grupos-row">${g50}${g70}</div>
   </article>`;
 }
@@ -2782,8 +2807,11 @@ function composicaoFontesSection(u) {
 // ── Bloco Eficiência e Estrutura Orçamentária (IND-81 a 87) ─────────────────
 function _orcColor(v, pol, g, y) {
   if (v == null) return '';
-  if (pol === 'up')   return v >= g ? 'style="color:#16a34a"' : v >= y ? 'style="color:#d97706"' : 'style="color:#dc2626"';
-  if (pol === 'down') return v <= g ? 'style="color:#16a34a"' : v <= y ? 'style="color:#d97706"' : 'style="color:#dc2626"';
+  const ok  = 'style="color:var(--color-success,#16a34a)"';
+  const mid = 'style="color:var(--color-warning,#d97706)"';
+  const bad = 'style="color:var(--color-danger,#dc2626)"';
+  if (pol === 'up')   return v >= g ? ok : v >= y ? mid : bad;
+  if (pol === 'down') return v <= g ? ok : v <= y ? mid : bad;
   return '';
 }
 function _orcFmt(v, sign) {
@@ -2904,11 +2932,12 @@ function investimentoBlock(u) {
       ${icard('IND-88','Razão Correntes/Capital',e88,'neutral',0,0,'Quanto maior, menor capacidade de investimento', fmt88)}
       ${icard('IND-92','Obras (Elem. 51)',e92,'up',3,1,'↑ melhor · % do Orçamento Atualizado',null)}
       ${icard('IND-93','Equipamentos (Elem. 52)',e93,'up',3,1,'↑ melhor · % do Orçamento Atualizado',null)}
-      ${icard('IND-95','Execução/LOA Inicial',e95,'up',85,70,'↑ melhor vs dotação inicial',null)}
+      ${icard('IND-95','Execução/LOA Inicial',e95,'up',85,70,'Referência ≥ 85%',null)}
     </div>
   </div>`;
 }
 function orcamentarioTable(rows) {
+  const fmt88 = v => v != null ? v.toFixed(1).replace('.', ',') + ':1' : '—';
   const cols=[
     ['IEES',u=>`<strong>${u.sigla}</strong>`,''],
     ['Execução (81)',u=>_orcFmt(u.ind81),u=>_orcColor(u.ind81,'up',90,75)],
@@ -2918,24 +2947,26 @@ function orcamentarioTable(rows) {
     ['Var Dot (85)',u=>_orcFmt(u.ind85,true),''],
     ['Pessoal (86)',u=>_orcFmt(u.ind86),''],
     ['Outras Corr (87)',u=>_orcFmt(u.ind87),''],
+    ['Corr/Cap (88)',u=>fmt88(u.ind88),''],
+    ['Exec/LOA (95)',u=>_orcFmt(u.ind95),u=>_orcColor(u.ind95,'up',85,70)],
   ];
   const hd = cols.map(([h])=>`<th>${h}</th>`).join('');
   const tbody = rows.map(u=>`<tr>${cols.map(([,val,col])=>`<td ${col?col(u):''}>${val(u)}</td>`).join('')}</tr>`).join('');
   return `<article class="visual-card orc-block">
-    <h3>Eficiência e Estrutura Orçamentária — Comparação · 2024</h3>
-    <p class="card-subtitle">Indicadores 81–87 — Relatório da Despesa 8050. Verde ≥ 90%, amarelo ≥ 75%, vermelho &lt; 75% (IND 81–83). IND-84 invertido (↓ melhor).</p>
-    <div style="overflow-x:auto"><table class="metric-table"><thead><tr>${hd}</tr></thead><tbody>${tbody}</tbody></table></div>
+    <h3>Eficiência e Estrutura Orçamentária — Comparação</h3>
+    <p class="card-subtitle">Indicadores 81–87, 88 e 95 — Relatório da Despesa 8050. Verde ≥ 90%, amarelo ≥ 75%, vermelho &lt; 75% (IND 81–83). IND-84 invertido (↓ melhor). IND-95: verde ≥ 85%.</p>
+    <div style="overflow-x:auto"><table class="data-table"><thead><tr>${hd}</tr></thead><tbody>${tbody}</tbody></table></div>
   </article>`;
 }
 function ind80Card(u) {
   const v = u.egressosMunicipios;
   const disp = u.ind80;
   if (v == null && disp == null) return '';
-  return `<div class="orc-kpi" style="background:#fafafa">
+  return `<div class="orc-kpi">
     <div class="orc-kpi-ind">IND-80</div>
     <div class="orc-kpi-title">Dispersão Territorial de Egressos</div>
     <div class="orc-kpi-val" style="font-size:1.2rem">${v != null ? v + ' municípios' : '—'}</div>
-    ${disp != null ? `<div class="orc-kpi-note">Índice: ${disp.toFixed(3)}% · par mais recente</div>` : '<div class="orc-kpi-note" style="color:#9ca3af">Índice não disponível</div>'}
+    ${disp != null ? `<div class="orc-kpi-note">${disp.toFixed(3).replace('.', ',')} (índice) · Razão entre municípios de destino distintos e total de egressos empregados por curso · Quanto maior, maior a dispersão territorial</div>` : '<div class="orc-kpi-note" style="color:#9ca3af">Índice não disponível</div>'}
   </div>`;
 }
 function orcamentarioBlock(c) {
@@ -2945,9 +2976,9 @@ function orcamentarioBlock(c) {
   return ies.length === 1 ? orcamentarioKpis(ies[0]) : orcamentarioTable(ies);
 }
 
-function efficiency(c){const d=c.ref,rows=matrixRows(d,c.f);if(!d.length)return empty();return `<div class="efficiency-layout"><article class="matrix-panel card-primary"><h3>Matriz de eficiência relativa por agrupamento dinâmico</h3><p class="card-subtitle">Eixo X: esforço orçamentário relativo ao grupo | Eixo Y: resultado relativo ao grupo | Tamanho: orçamento liquidado</p>${matrix(rows,c)}</article><div class="matrix-side"><article class="visual-card card-support"><h3>Classificação relativa</h3><p class="card-subtitle">Rótulos descritivos por quadrante</p>${legend(rows)}</article><article class="visual-card card-support"><h3>Insights automáticos</h3><p class="card-subtitle">Sinais contextuais para investigação</p>${insights(rows,c)}</article></div></div>${metricTable(d,[["IEES",u=>`<strong>${u.sigla}</strong><br><span>${u.groups[c.f.groupBy]}</span>`],["Orçamento",u=>formatCurrencyMillions(u.budget)],["Execução",u=>formatPercent(u.execution)],["Liquidação",u=>formatPercent(u.liquidation)],["Pessoal",u=>formatPercent(u.personnel)],["Suplementação",u=>formatPercent(u.supplementation)]],"Estrutura de gastos e execução orçamentária")}${orcamentarioBlock(c)}${c.f.scope==="Paraná"?(()=>{const _ies=(c.display.length?c.display:[...c.ref]).map(u=>composicaoFontesSection(byYear(u,c.f.year))).filter(Boolean);return _ies.length?`<article class="visual-card cf-card" style="margin-top:1.5rem"><h3>Composição por Fonte de Despesa</h3><p class="card-subtitle">Participação de cada fonte nos grupos de vinculação — Orçamento Atualizado 2024</p><div class="cf-all-ies">${_ies.join('')}</div></article>`:'';})():''}`;}
-function matrix(rows,c){const max=Math.max(...rows.map(r=>r.budget),1);return `<div class="efficiency-matrix" role="img" aria-label="Matriz resultado relativo por esforço orçamentário relativo"><div class="quadrant-label q1">alto resultado, baixo esforço</div><div class="quadrant-label q2">alto resultado, alto esforço</div><div class="quadrant-label q3">baixo resultado, baixo esforço</div><div class="quadrant-label q4">baixo resultado, alto esforço</div><div class="matrix-axis-x">Esforço orçamentário relativo</div><div class="matrix-axis-y">Resultado relativo</div>${rows.map(r=>{const size=36+r.budget/max*22;return `<button class="matrix-point ${r.tone}${isUniSelected(c.f,r.id)?" selected":""}" style="left:${relpos(r.effortRel)}%;bottom:${relpos(r.resultRel)}%;width:${size}px;height:${size}px" type="button">${r.sigla}<span class="matrix-tooltip">${r.nome}<br>Resultado: ${r.resultRel.toFixed(1)}% | Esforço: ${r.effortRel.toFixed(1)}%<br>${r.quadrant}</span></button>`}).join("")}</div>`;}
-function legend(rows){const counts=rows.reduce((a,r)=>(a[r.quadrant]=(a[r.quadrant]||0)+1,a),{});return `<div class="legend-list">${Object.entries(counts).map(([label,count])=>{const tone=label==="alto resultado, baixo esforço"?"high":label==="baixo resultado, alto esforço"?"low":"mid";return `<div class="legend-item ${tone}"><span><span class="legend-dot"></span> ${label}</span><strong>${count}</strong></div>`;}).join("")}</div>`;}
+function efficiency(c){const d=c.ref,rows=matrixRows(d,c.f);if(!d.length)return empty();return `<div class="efficiency-layout"><article class="matrix-panel card-primary"><h3>Matriz de eficiência relativa por agrupamento dinâmico</h3><p class="card-subtitle">Eixo X: esforço orçamentário relativo ao grupo | Eixo Y: resultado relativo ao grupo | Tamanho: orçamento liquidado</p>${matrix(rows,c)}</article><div class="matrix-side"><article class="visual-card card-support"><h3>Quadrante oficial</h3><p class="card-subtitle">Disponível apenas quando a planilha/JSON trouxer critério de quadrante.</p>${legend(rows)}</article><article class="visual-card card-support"><h3>Insights automáticos</h3><p class="card-subtitle">Sinais contextuais para investigação</p>${insights(rows,c)}</article></div></div>${metricTable(d,[["IEES",u=>`<strong>${u.sigla}</strong><br><span>${u.groups[c.f.groupBy]}</span>`],["Orçamento",u=>formatCurrencyMillions(u.budget)],["Execução",u=>formatPercent(u.execution)],["Liquidação",u=>formatPercent(u.liquidation)],["Pessoal",u=>formatPercent(u.personnel)],["Suplementação",u=>formatPercent(u.supplementation)]],"Estrutura de gastos e execução orçamentária")}${orcamentarioBlock(c)}${c.f.scope==="Paraná"?(()=>{const _ies=(c.display.length?c.display:[...c.ref]).map(u=>composicaoFontesSection(byYear(u,c.f.year))).filter(Boolean);return _ies.length?`<article class="visual-card cf-card" style="margin-top:1.5rem"><h3>Composição por Fonte de Despesa</h3><p class="card-subtitle">Participação de cada fonte nos grupos de vinculação — Orçamento Atualizado 2024</p><div class="cf-all-ies">${_ies.join('')}</div></article>`:'';})():''}`;}
+function matrix(rows,c){if(!hasOfficialQuadrants())return quadrantUnavailableBlock();const max=Math.max(...rows.map(r=>r.budget),1);return `<div class="efficiency-matrix" role="img" aria-label="Matriz resultado relativo por esforço orçamentário relativo"><div class="quadrant-label q1">alto resultado, baixo esforço</div><div class="quadrant-label q2">alto resultado, alto esforço</div><div class="quadrant-label q3">baixo resultado, baixo esforço</div><div class="quadrant-label q4">baixo resultado, alto esforço</div><div class="matrix-axis-x">Esforço orçamentário relativo</div><div class="matrix-axis-y">Resultado relativo</div>${rows.map(r=>{const size=36+r.budget/max*22;return `<button class="matrix-point ${r.tone}${isUniSelected(c.f,r.id)?" selected":""}" style="left:${relpos(r.effortRel)}%;bottom:${relpos(r.resultRel)}%;width:${size}px;height:${size}px" type="button">${r.sigla}<span class="matrix-tooltip">${r.nome}<br>Resultado: ${r.resultRel.toFixed(1)}% | Esforço: ${r.effortRel.toFixed(1)}%<br>${r.quadrant}</span></button>`}).join("")}</div>`;}
+function legend(rows){if(!hasOfficialQuadrants())return quadrantUnavailableBlock();const counts=rows.reduce((a,r)=>(a[r.quadrant]=(a[r.quadrant]||0)+1,a),{});return `<div class="legend-list">${Object.entries(counts).map(([label,count])=>{const tone=label==="alto resultado, baixo esforço"?"high":label==="baixo resultado, alto esforço"?"low":"mid";return `<div class="legend-item ${tone}"><span><span class="legend-dot"></span> ${label}</span><strong>${count}</strong></div>`;}).join("")}</div>`;}
 function insights(rows,c){const m=new Map(c.ref.map(u=>[u.id,u]));const a=rows.filter(r=>r.resultRel>=100&&r.effortRel<=100).map(r=>r.sigla).join(", ")||"Sem ocorrência";const b=rows.filter(r=>r.resultRel<100&&r.effortRel>100).map(r=>r.sigla).join(", ")||"Sem ocorrência";const cr=rows.filter(r=>{const u=m.get(r.id);return u&&u.execution<91&&u.cres<75}).map(r=>r.sigla).join(", ")||"Sem ocorrência";const cn=rows.filter(r=>{const u=m.get(r.id);return u&&u.doctors>84&&resultIndicators.cnpq.get(u)<mean(c.ref,resultIndicators.cnpq.get)}).map(r=>r.sigla).join(", ")||"Sem ocorrência";return `<ul class="insight-list"><li><strong>Resultado acima e esforço abaixo:</strong> ${a}</li><li><strong>Alto esforço e resultado abaixo:</strong> ${b}</li><li><strong>Baixa execução e ociosidade de CRES:</strong> ${cr}</li><li><strong>Alta qualificação e menor captação CNPq:</strong> ${cn}</li></ul>`;}
 function bars(d,get,fmt){const s=[...d].sort((a,b)=>get(b)-get(a)),max=Math.max(...s.map(get),1);return `<div class="bars">${s.map(u=>{const v=get(u);return `<div class="bar-row"><span class="bar-name" title="${u.nome}">${u.sigla}</span><span class="bar-track"><span class="bar-fill" style="width:${clamp(v/max*100,4,100)}%"></span></span><span class="bar-value">${fmt(v)}</span></div>`}).join("")}</div>`;}
 function rank(rows,val,sub){return `<div class="rank-list">${rows.map((r,i)=>`<div class="rank-item"><span class="rank-number">${i+1}</span><span><span class="rank-title">${r.sigla} - ${r.nome}</span><span class="rank-subtitle">${r[sub]||r.region}</span></span><span class="rank-value">${val(r)}</span></div>`).join("")}</div>`;}
@@ -2967,13 +2998,17 @@ function metricTable(d,cols,title,chartId,c){
 }
 function status(label,tone){return `<span class="status-pill ${tone==="high"?"status-high":tone==="low"?"status-low":"status-mid"}">${label}</span>`;}
 function empty(){return `<div class="empty-state">Nenhuma IEES encontrada para o recorte selecionado. Ajuste os filtros para visualizar o painel.</div>`;}
+const QUADRANT_UNAVAILABLE_MESSAGE = "Quadrante não disponível — dado não encontrado na planilha de estratificação das IES.";
+function hasOfficialQuadrants(){return !!(window.SETI_QUADRANTS&&Object.keys(window.SETI_QUADRANTS).length);}
+function quadrantUnavailable(){return {code:"q-na",label:QUADRANT_UNAVAILABLE_MESSAGE,tone:"mid"};}
+function quadrantUnavailableBlock(){return `<div class="empty-state">${QUADRANT_UNAVAILABLE_MESSAGE}</div>`;}
 function currentCohortFilter(){try{return typeof filters==="function"?(filters().cohort||"all"):"all";}catch(err){return "all";}}
 function realIndicatorsForUniversity(u){return typeof getRealIndicators==="function"?getRealIndicators(u.sigla,currentCohortFilter()):null;}
 function panelEmploymentRate(u){const real=realIndicatorsForUniversity(u);return real&&real.ind37!=null?clamp(Number(real.ind37)*100,0,100):u.employment;}
 function panelEmploymentSalary(u){const real=realIndicatorsForUniversity(u);return real&&real.ind40!=null?Number(real.ind40):u.salary;}
 function panelEgressosField(u,field,fallback){const real=realIndicatorsForUniversity(u);const val=real&&real[field]!=null?real[field]:null;return val!=null?val:fallback;}
 function agg(d){return {students:sum(d,u=>u.students),entrants:sum(d,u=>u.entrants),graduates:sum(d,u=>u.graduates),vacancies:sum(d,u=>u.vacancies),occupancy:wavg(d,u=>u.occupancy,u=>u.vacancies),completion:wavg(d,u=>u.completion,u=>u.entrants),doctors:wavg(d,u=>u.doctors,u=>u.students),cnpq:sum(d,u=>u.cnpq),employment:wavg(d,u=>panelEmploymentRate(u),u=>u.graduates),budget:sum(d,u=>u.budget),execution:wavg(d,u=>u.execution,u=>u.budget),liquidation:wavg(d,u=>u.liquidation,u=>u.budget),vinculos:sum(d,u=>u.vinculos||0)};}
-function matrixRows(d,f){if(!d.length)return [];const res=resultIndicators[f.result],eff=effortIndicators[f.effort],ra=mean(d,res.get)||1,ea=mean(d,eff.get)||1;return d.map(u=>{const result=res.get(u),effort=eff.get(u),resultRel=result/ra*100,effortRel=effort/ea*100,hr=resultRel>=100,le=effortRel<=100,quadrant=hr&&le?"alto resultado, baixo esforço":hr&&!le?"alto resultado, alto esforço":!hr&&le?"baixo resultado, baixo esforço":"baixo resultado, alto esforço",tone=hr&&le?"high":!hr&&!le?"low":"mid";return {...u,result,effort,resultRel,effortRel,quadrant,tone,resultLabel:hr?"acima da média":"abaixo da média",effortLabel:le?"esforço abaixo da média":"esforço acima da média"};});}
+function matrixRows(d,f){if(!d.length)return [];const res=resultIndicators[f.result],eff=effortIndicators[f.effort],ra=mean(d,res.get)||1,ea=mean(d,eff.get)||1,official=hasOfficialQuadrants();return d.map(u=>{const result=res.get(u),effort=eff.get(u),resultRel=result/ra*100,effortRel=effort/ea*100,hr=resultRel>=100,le=effortRel<=100,quad=official?{label:hr&&le?"alto resultado, baixo esforço":hr&&!le?"alto resultado, alto esforço":!hr&&le?"baixo resultado, baixo esforço":"baixo resultado, alto esforço",tone:hr&&le?"high":!hr&&!le?"low":"mid"}:quadrantUnavailable();return {...u,result,effort,resultRel,effortRel,quadrant:quad.label,tone:quad.tone,resultLabel:official?(hr?"acima da média":"abaixo da média"):"sem quadrante oficial",effortLabel:official?(le?"esforço abaixo da média":"esforço acima da média"):"sem quadrante oficial"};});}
 function composite(u){return u.occupancy*.15+u.completion*.15+(100-u.dropout)*.12+u.doctors*.14+norm(resultIndicators.cnpq.get(u),900,1900)*.12+norm(u.capes,3.2,5)*.1+panelEmploymentRate(u)*.12+norm(panelEmploymentSalary(u),4500,6500)*.1;}
 function summarize(rows){const top=rows.reduce((b,r)=>r.resultRel>(b?.resultRel||0)?r:b,null);return top?top.quadrant:"sem dados";}
 function badge(v,g,w){return v>=g?"adequado":v>=w?"atenção":"crítico";}
@@ -3390,7 +3425,7 @@ function indicatorSelectorBar(tabId, indicators) {
 const quartilReference = {
   v1: [["Q1 – Pequeno Porte", "≤ 33.243 mat."], ["Q2 – Médio-Pequeno Porte", "33.244 – 52.551 mat."], ["Q3 – Médio-Grande Porte", "52.552 – 86.904 mat."], ["Q4 – Grande Porte", "> 86.904 mat."]],
   v2: [["Q1 – Oferta Reduzida", "≤ 157 cursos"], ["Q2 – Oferta Moderada", "158 – 317 cursos"], ["Q3 – Oferta Ampla", "318 – 480 cursos"], ["Q4 – Oferta Extensa", "> 480 cursos"]],
-  v3: [["Q1 – Sede Única", "0 – 0,15"], ["Q2 – Dispersão Moderada", "0,16 – 0,37"], ["Q3 – Alta Dispersão", "0,38 – 0,60"], ["Q4 – Muito Alta Dispersão", "> 0,60"]],
+  v3: [["Q1 – Sede Única / Baixa Dispersão", "0 – 0,15"], ["Q2 – Dispersão Moderada", "0,16 – 0,37"], ["Q3 – Alta Dispersão", "0,38 – 0,60"], ["Q4 – Muito Alta Dispersão", "> 0,60"]],
   v4: [["Q1 – Qualif. Inicial", "< 45%"], ["Q2 – Qualif. Em Desenvolvimento", "45% – 56%"], ["Q3 – Qualif. Avançada", "57% – 75%"], ["Q4 – Qualif. Consolidada", "> 75%"]],
   v5: [["Q1 – Estrutura Incipiente", "0 – 0,25"], ["Q2 – Estrutura em Consolidação", "0,26 – 0,42"], ["Q3 – Estrutura Consolidada", "0,43 – 0,62"], ["Q4 – Estrutura Madura", "> 0,62"]],
   v6: [["Q1 – Perfil Restritivo", "< 0,43"], ["Q2 – Perfil Moderado-Restritivo", "0,43 – 0,53"], ["Q3 – Perfil Moderado-Expansivo", "0,54 – 0,64"], ["Q4 – Perfil Expansivo / Autônomo", "> 0,64"]]
@@ -3959,7 +3994,7 @@ function renderDefaultKpis(c) {
     ["Resultado médio do grupo", res.format(mean(ref, res.get)), res.label, "grupo"],
     ["Resultado relativo", selectedRow ? `${selectedRow.resultRel.toFixed(1)}%` : `${mean(rows, r => r.resultRel).toFixed(1)}%`, "base grupo = 100", selectedRow ? selectedRow.resultLabel : "média"],
     ["Esforço relativo", selectedRow ? `${selectedRow.effortRel.toFixed(1)}%` : `${mean(rows, r => r.effortRel).toFixed(1)}%`, "base grupo = 100", selectedRow ? selectedRow.effortLabel : "média"],
-    ["Classificação relativa", selectedRow ? selectedRow.quadrant : summarize(rows), "descrição por quadrante", `${rows.length} pontos`]
+    ["Quadrante oficial", selectedRow ? selectedRow.quadrant : summarize(rows), "planilha de estratificação", `${rows.length} pontos`]
   ] : [
     ["Total de estudantes", formatNumber(a.students), `${formatNumber(a.entrants)} ingressantes`, "+2,1%"],
     ["Taxa de ocupação das vagas", formatPercent(a.occupancy), `${formatNumber(a.vacancies)} vagas`, badge(a.occupancy, 88, 80)],
@@ -5261,13 +5296,8 @@ function retentionScatterBlock(c) {
       `</div>`;
   }).join("");
   return `<article class="visual-card"><h3>IND-5 × IND-27 · Dispersão formação</h3>
-    <p class="card-subtitle">X = desvinculação (→ pior); Y = taxa de concluintes (↑ melhor); tamanho = matrículas. Linhas laranja = média do cluster.</p>
-    <div class="retention-scatter" style="--avg-x:${clamp(avgDrop,0,100)}%;--avg-y:${clamp(avgComp,0,100)}%">
-      <span class="scatter-ref-v"></span><span class="scatter-ref-h"></span>
-      <div class="scatter-quadrant q-ref">Baixa desvinculação — Alta conclusão</div>
-      <div class="scatter-quadrant q-flow">Alta desvinculação — Alta conclusão</div>
-      <div class="scatter-quadrant q-hold">Baixa desvinculação — Baixa conclusão</div>
-      <div class="scatter-quadrant q-risk">Alta desvinculação — Baixa conclusão</div>
+    <p class="card-subtitle">X = desvinculação (→ pior); Y = taxa de concluintes (↑ melhor); tamanho = matrículas. Quadrantes indisponíveis na planilha.</p>
+    <div class="retention-scatter">
       ${dots}
     </div>
   </article>`;
@@ -5611,7 +5641,7 @@ function accessTerritoryTable(rows) {
     return vs.reduce((a, b) => a + b, 0) / Math.max(vs.length, 1);
   });
   const toneBg  = { g: "#f0faf5", y: "#fffbeb", r: "#fdf2f2" };
-  const toneBar = { g: "#14804a", y: "#f59e0b", r: "#c43f3a" };
+  const toneBar = { g: "#14804a", y: "#f59e0b", r: "var(--color-danger,#dc2626)" };
   function cellTone(v, avg, pol) {
     if (pol > 0) return v >= avg * 1.1 ? "g" : v <= avg * 0.9 ? "r" : "y";
     return v <= avg * 0.9 ? "g" : v >= avg * 1.1 ? "r" : "y";
@@ -5975,7 +6005,7 @@ function facultyTideBlock(c) {
 }
 
 function facultyCresBlock(c) {
-  return `<div class="chart-grid"><article class="visual-card"><h3>IND-56, IND-58 e IND-46 · Série mensal operacional</h3><p class="card-subtitle">2022-2026 · banda sombreada = min/max do cluster para utilização CRES.</p>${facultyTimeline(c)}</article><article class="visual-card"><h3>IND-59 × IND-46 · Esforço docente total</h3><p class="card-subtitle">X = participação CRES; Y = ocupação do quadro. Quadrantes interpretam estabilidade e sobrecarga.</p>${facultyCresScatter(c)}</article></div>`;
+  return `<div class="chart-grid"><article class="visual-card"><h3>IND-56, IND-58 e IND-46 · Série mensal operacional</h3><p class="card-subtitle">2022-2026 · banda sombreada = min/max do cluster para utilização CRES.</p>${facultyTimeline(c)}</article><article class="visual-card"><h3>IND-59 × IND-46 · Esforço docente total</h3><p class="card-subtitle">X = participação CRES; Y = ocupação do quadro. Quadrantes indisponíveis na planilha.</p>${facultyCresScatter(c)}</article></div>`;
 }
 
 function facultyTimeline(c) {
@@ -5999,7 +6029,7 @@ function facultyCresScatter(c) {
   const chartRows = explicitClusterActive(c) ? allRows : rows;
   const avgX = mean(rows, u => facultyMetrics(u).cresParticipation);
   const avgY = mean(rows, u => facultyMetrics(u).occupationRate);
-  return `<div class="retention-scatter faculty-scatter" style="--avg-x:${clamp(avgX,0,100)}%;--avg-y:${clamp(avgY,0,100)}%"><span class="scatter-ref-v"></span><span class="scatter-ref-h"></span><div class="scatter-quadrant q-ref">Quadro estável</div><div class="scatter-quadrant q-flow">Sobrecarregado com CRES</div><div class="scatter-quadrant q-hold">Capacidade ociosa</div><div class="scatter-quadrant q-risk">Dependência temporária</div>${chartRows.map(u => { const m = facultyMetrics(u); return `<button class="scatter-point ${clusterIds.has(u.id) ? "in-cluster" : "out-cluster"} ${isUniSelected(c.f, u.id) ? "selected" : ""}" style="left:${clamp(m.cresParticipation,2,96)}%;bottom:${clamp(m.occupationRate,2,96)}%;" title="${u.sigla}: IND-59 ${formatPercent(m.cresParticipation)}; IND-46 ${formatPercent(m.occupationRate)}" type="button">${u.sigla}</button>`; }).join('')}</div>`;
+  return `<div class="retention-scatter faculty-scatter">${chartRows.map(u => { const m = facultyMetrics(u); return `<button class="scatter-point ${clusterIds.has(u.id) ? "in-cluster" : "out-cluster"} ${isUniSelected(c.f, u.id) ? "selected" : ""}" style="left:${clamp(m.cresParticipation,2,96)}%;bottom:${clamp(m.occupationRate,2,96)}%;" title="${u.sigla}: IND-59 ${formatPercent(m.cresParticipation)}; IND-46 ${formatPercent(m.occupationRate)}" type="button">${u.sigla}</button>`; }).join('')}</div>`;
 }
 
 function facultyAlertsBlock(c) {
@@ -6362,7 +6392,7 @@ function localTalentCards(c) {
 
 function employmentCboSalaryBlock(c) {
   return `<div class="chart-grid">
-    <article class="visual-card"><h3>${indicatorName(37)} × ${indicatorName(40)}</h3><p class="card-subtitle">Tamanho da bolha = ${indicatorName(33)}. Cruzamento na média do cluster.</p>${employmentScatter(c, u => employmentMetrics(u).prRate, u => employmentMetrics(u).salary, u => employmentMetrics(u).totalEgress, "Inserção PR", "Salário")}</article>
+    <article class="visual-card"><h3>${indicatorName(37)} × ${indicatorName(40)}</h3><p class="card-subtitle">Tamanho da bolha = ${indicatorName(33)}. Quadrantes indisponíveis na planilha.</p>${employmentScatter(c, u => employmentMetrics(u).prRate, u => employmentMetrics(u).salary, u => employmentMetrics(u).totalEgress, "Inserção PR", "Salário")}</article>
     <article class="visual-card"><h3>${indicatorName(39)} × ${indicatorName(40)}</h3><p class="card-subtitle">Leitura de aderência formação-trabalho e valorização salarial.</p>${employmentScatter(c, u => employmentMetrics(u).cbo2Rate, u => employmentMetrics(u).salary, u => employmentMetrics(u).totalEgress, "Aderência CBO2", "Salário")}</article>
   </div>
   <article class="visual-card mt-14"><h3>Aderência formação-trabalho</h3><p class="card-subtitle">${indicatorName(39)} por IEES versus média do cluster.</p>${employmentAdherenceCards(c)}</article>`;
@@ -6378,7 +6408,7 @@ function employmentScatter(c, xGet, yGet, sizeGet, xLabel, yLabel) {
   const avgX = mean(clusterRows, xGet);
   const avgY = mean(clusterRows, yGet);
   const yRef = clamp((avgY - minY) / Math.max(maxY - minY, 1) * 100, 0, 100);
-  return `<div class="employment-scatter" style="--avg-x:${clamp(avgX, 0, 100)}%;--avg-y:${yRef}%"><span class="scatter-ref-v"></span><span class="scatter-ref-h"></span><div class="scatter-quadrant q-ref">Alta inserção + alto salário</div><div class="scatter-quadrant q-flow">Alta inserção + baixo salário</div><div class="scatter-quadrant q-hold">Baixa inserção + alto salário</div><div class="scatter-quadrant q-risk">Baixa inserção + baixo salário</div>${rows.map(u => {
+  return `<div class="employment-scatter">${rows.map(u => {
     const x = clamp(xGet(u), 3, 97);
     const y = clamp((yGet(u) - minY) / Math.max(maxY - minY, 1) * 92 + 4, 4, 96);
     const size = clamp(24 + sizeGet(u) / maxSize * 28, 24, 52);
@@ -6595,7 +6625,10 @@ renderNumberedTab = function(tabId, c, summary = "") {
   if (tabId !== "efficiency") return previousRenderNumberedTabEfficiency(tabId, c, summary);
   const blocks = tabBlocks[tabId] || [];
   const mode = `<div class="mode-selector" role="group" aria-label="Modo de análise orçamentária"><button class="mode-btn ${state.efficiencyMode === "movimentacao" ? "active" : ""}" data-mode="movimentacao" type="button" onclick="setEfficiencyMode('movimentacao')">Comparação por cluster</button><button class="mode-btn ${state.efficiencyMode === "eficiencia" ? "active" : ""}" data-mode="eficiencia" type="button" onclick="setEfficiencyMode('eficiencia')">Eficiência relativa</button></div>`;
-  return `<div class="tab-aba-wrapper" data-tab-id="${tabId}">${summary}${mode}${blocks.map((title, index) => renderBlock(index + 1, title, renderBlockContent(tabId, title, c))).join("")}</div>`;
+  const banner2026 = c.f.year === '2026'
+    ? '<div class="data-source-banner warning visible"><span class="dsb-icon" aria-hidden="true">⚠</span><div class="dsb-body"><strong>Dados parciais — 2026</strong><span>Dados de 2026 parciais — exercício em andamento (~3 meses executados). Valores de execução orçamentária não são comparáveis aos anos anteriores.</span></div></div>'
+    : '';
+  return `<div class="tab-aba-wrapper" data-tab-id="${tabId}">${summary}${banner2026}${mode}${blocks.map((title, index) => renderBlock(index + 1, title, renderBlockContent(tabId, title, c))).join("")}</div>`;
 };
 
 var previousRenderKpisEfficiency = renderKpis;
@@ -6873,25 +6906,16 @@ function renderBudgetPerformanceScatter(rows) {
     const api = academicPerformanceIndex(u);
     const xPct = clamp(cps / maxCps * 100, 5, 92);
     const yPct = clamp(api / maxApi * 100, 5, 92);
-    const isLowCost = cps <= avgCps, isHighPerf = api >= avgApi;
-    const q = isHighPerf && isLowCost ? "q1" : isHighPerf ? "q2" : isLowCost ? "q3" : "q4";
-    return `<button class="pilot-scatter-point ${q}" type="button"
+    return `<button class="pilot-scatter-point" type="button"
       style="left:${xPct}%;bottom:${yPct}%"
-      title="${u.sigla}: custo/aluno ${formatCurrency(cps)} · Índice desempenho ${api.toFixed(1).replace(".", ",")} · ${
-        q === "q1" ? "Referência em eficiência" : q === "q2" ? "Bom desempenho, intensivo em recursos" : q === "q3" ? "Resultado limitado, possível restrição" : "Alerta: alto custo e baixo desempenho"
-      }">${u.sigla}</button>`;
+      title="${u.sigla}: custo/aluno ${formatCurrency(cps)} · Índice desempenho ${api.toFixed(1).replace(".", ",")}">${u.sigla}</button>`;
   }).join("");
   return `<div class="pilot-scatter">
-    <span class="scatter-ref-v"></span><span class="scatter-ref-h"></span>
-    <span class="scatter-q-label q1">Referência em eficiência</span>
-    <span class="scatter-q-label q2">Bom desempenho,<br>intensivo em recursos</span>
-    <span class="scatter-q-label q3">Resultado limitado</span>
-    <span class="scatter-q-label q4">Alerta: alto custo,<br>baixo desempenho</span>
     ${points}
     <span class="scatter-axis-label x">Custo por aluno →</span>
     <span class="scatter-axis-label y">↑ Desempenho</span>
   </div>
-  <p class="card-subtitle" style="margin-top:4px">Média de custo: ${formatCurrency(avgCps)} por aluno · Média de desempenho: ${avgApi.toFixed(1).replace(".", ",")} pts</p>`;
+  <p class="card-subtitle" style="margin-top:4px">Média de custo: ${formatCurrency(avgCps)} por aluno · Média de desempenho: ${avgApi.toFixed(1).replace(".", ",")} pts · Quadrantes indisponíveis na planilha</p>`;
 }
 
 function renderEfficiencyRankingTable(rows) {
@@ -6976,12 +7000,12 @@ function _buildCDInner(rows, sA, sB) {
     if (Math.abs(pct)<2) return '<span style="color:var(--gray-500)">≈ equivalentes</span>';
     if (lowerBetter) {
       return pct<0
-        ? '<span style="color:#16875d">▼ '+abs+'% mais barata</span>'
-        : '<span style="color:#c43f3a">▲ '+abs+'% mais cara</span>';
+        ? '<span style="color:var(--color-success,#16a34a)">▼ '+abs+'% mais barata</span>'
+        : '<span style="color:var(--color-danger,#dc2626)">▲ '+abs+'% mais cara</span>';
     }
     return pct>0
-      ? '<span style="color:#16875d">▲ '+abs+'% acima</span>'
-      : '<span style="color:#c43f3a">▼ '+abs+'% abaixo</span>';
+      ? '<span style="color:var(--color-success,#16a34a)">▲ '+abs+'% acima</span>'
+      : '<span style="color:var(--color-danger,#dc2626)">▼ '+abs+'% abaixo</span>';
   }
 
   var ctxRows = [
@@ -7039,7 +7063,7 @@ function _buildCDInner(rows, sA, sB) {
       var pct = barPct(v);
       var avg = avgOf7();
       var isGood = v!=null&&avg!=null&&(ind.higher?v>=avg:v<=avg);
-      var col = v!=null ? (isGood?"#16875d":"#c43f3a") : "#d9e1ec";
+      var col = v!=null ? (isGood?"var(--color-success,#16a34a)":"var(--color-danger,#dc2626)") : "#d9e1ec";
       return '<div style="height:5px;background:#edf1f7;border-radius:3px;margin-top:4px">'+
         '<div style="height:100%;width:'+pct.toFixed(1)+'%;background:'+col+';border-radius:3px"></div>'+
         '</div>';
@@ -7069,12 +7093,12 @@ function _buildCDInner(rows, sA, sB) {
   }).join("");
 
   var total6 = _CD_INDS.length;
-  var scoreCellA = nA>nB ? '<strong style="color:#16875d">'+nA+'</strong>' : String(nA);
-  var scoreCellB = nB>nA ? '<strong style="color:#16875d">'+nB+'</strong>' : String(nB);
+  var scoreCellA = nA>nB ? '<strong style="color:var(--color-success,#16a34a)">'+nA+'</strong>' : String(nA);
+  var scoreCellB = nB>nA ? '<strong style="color:var(--color-success,#16a34a)">'+nB+'</strong>' : String(nB);
   var scoreWinTxt = nA>nB
-    ? '<strong style="color:#16875d">'+sA+' vence</strong>'
+    ? '<strong style="color:var(--color-success,#16a34a)">'+sA+' vence</strong>'
     : nB>nA
-    ? '<strong style="color:#16875d">'+sB+' vence</strong>'
+    ? '<strong style="color:var(--color-success,#16a34a)">'+sB+' vence</strong>'
     : '<span style="color:var(--gray-500)">Empate ('+nA+'×'+nB+')</span>';
 
   var placarRow =
@@ -7208,7 +7232,7 @@ function efficiencyBlock(title, c) {
         <div class="visual-card-header">
           <div>
             <h3>Matriz gasto × desempenho</h3>
-            <p class="card-subtitle">Posicionamento das IEES segundo custo por aluno e índice de desempenho acadêmico. Quadrantes definidos pela média do recorte.</p>
+            <p class="card-subtitle">Posicionamento das IEES segundo custo por aluno e índice de desempenho acadêmico. Quadrantes indisponíveis na planilha.</p>
           </div>
         </div>
         ${renderBudgetPerformanceScatter(rows)}
@@ -7458,6 +7482,7 @@ function budgetRelativeRows(c, resultOption) {
 }
 
 function budgetQuadrant(row) {
+  if (!hasOfficialQuadrants()) return quadrantUnavailable();
   if (row.costDelta <= 0 && row.resultDelta >= 0) return { code: "q1", label: "Entrega mais com menos", tone: "high" };
   if (row.costDelta > 0 && row.resultDelta >= 0) return { code: "q2", label: "Alto investimento, alto resultado", tone: "info" };
   if (row.costDelta <= 0 && row.resultDelta < 0) return { code: "q3", label: "Baixo recurso, baixo resultado", tone: "warn" };
@@ -7465,6 +7490,7 @@ function budgetQuadrant(row) {
 }
 
 function budgetRelativeScatter(c, resultOption) {
+  if (!hasOfficialQuadrants()) return quadrantUnavailableBlock();
   const rows = budgetRelativeRows(c, resultOption);
   const maxBudget = Math.max(...rows.map(r => r.m.liquidated), 1);
   return `<div class="budget-relative-scatter"><span class="scatter-ref-v"></span><span class="scatter-ref-h"></span><div class="budget-q q1">Entrega mais com menos</div><div class="budget-q q2">Alto investimento, alto resultado</div><div class="budget-q q3">Baixo recurso, baixo resultado</div><div class="budget-q q4">Alto recurso, resultado abaixo</div>${rows.map(row => {
@@ -7484,13 +7510,17 @@ function budgetOpportunityBlock(c) {
 
 function budgetDiagnosticTable(c, resultOption) {
   const rows = budgetRelativeRows(c, resultOption);
-  return `<div class="table-wrap mt-14"><h3>Tabela de diagnóstico</h3><p class="card-subtitle">Apenas IEES do cluster ativo; classificação calculada pela posição relativa no cluster.</p><table class="data-table budget-diagnostic-table"><thead><tr><th>IEES</th><th>Cluster</th><th>Custo relativo</th><th>Resultado relativo</th><th>Classificação</th><th>Indicador usado</th></tr></thead><tbody>${rows.map(row => {
+  const subtitle = hasOfficialQuadrants() ? "Apenas IEES do cluster ativo; classificação oficial de quadrante." : QUADRANT_UNAVAILABLE_MESSAGE;
+  return `<div class="table-wrap mt-14"><h3>Tabela de diagnóstico</h3><p class="card-subtitle">${subtitle}</p><table class="data-table budget-diagnostic-table"><thead><tr><th>IEES</th><th>Cluster</th><th>Custo relativo</th><th>Resultado relativo</th><th>Classificação</th><th>Indicador usado</th></tr></thead><tbody>${rows.map(row => {
     const quad = budgetQuadrant(row);
     return `<tr class="diag-${quad.code}"><td><strong>${row.u.sigla}</strong><br><span>${row.u.nome}</span></td><td>${row.u.groups[c.f.groupBy] || row.u.groups.v6}</td><td>${row.costDelta >= 0 ? "+" : ""}${row.costDelta.toFixed(1).replace(".", ",")}%</td><td>${row.resultDelta >= 0 ? "+" : ""}${row.resultDelta.toFixed(1).replace(".", ",")}%</td><td>${quad.label}</td><td>${resultOption.label}</td></tr>`;
   }).join("")}</tbody></table></div>`;
 }
 
 function budgetContextAlerts(c, resultOption) {
+  if (!hasOfficialQuadrants()) {
+    return `<article class="visual-card budget-alert-card"><h3>Alertas automáticos contextuais</h3>${quadrantUnavailableBlock()}</article>`;
+  }
   const rows = budgetRelativeRows(c, resultOption);
   const alerts = [];
   rows.forEach(row => {
@@ -8542,7 +8572,7 @@ context = function contextWithoutBrasilClusters() {
   let ref = base;
   let display = f.university === "all" ? ref : f.university === "none" ? [] : ref.filter(u => Array.isArray(f.university) && f.university.includes(u.id));
   if (!display.length && f.university !== "none") display = ref;
-  if (f.attention) {
+  if (f.attention && hasOfficialQuadrants()) {
     const ids = matrixRows(ref, f).filter(r => r.resultRel < 100 && r.effortRel > 100).map(r => r.id);
     ref = ref.filter(u => ids.includes(u.id));
     display = display.filter(u => ids.includes(u.id));
@@ -9337,6 +9367,7 @@ document.addEventListener("DOMContentLoaded", () => {
 var _OLD_BLOCKS = ["Custo por Resultado","Orçamento × Desempenho (Scatter)","Placar de Eficiência","Execução Orçamentária (contexto)"];
 tabBlocks.efficiency = tabBlocks.efficiency.filter(function(t) { return !_OLD_BLOCKS.includes(t); });
 tabBlocks.efficiency.push(
+  "Composição por Fonte de Despesa",
   "Custo por Resultado (8050)",
   "Execução Orçamentária 8050",
   "Evolução 2024–2026",
@@ -9372,6 +9403,20 @@ function _rc8050(sigla, year) {
   return (typeof getRealIndicators === "function")
     ? (getRealIndicators(String(sigla).toUpperCase(), String(year)) || {})
     : {};
+}
+
+// ── Composição por Fonte de Despesa (pizza charts) ───────────────────────────
+function renderComposicaoFontesBlock(c) {
+  if (c.f.scope !== 'Paraná') return '';
+  var rows = efficiencyRows(c);
+  var ies = rows.filter(function(u) { return u.composicaoFontes; });
+  if (!ies.length) return '<div class="empty-state">Dados de composição por fonte não disponíveis para o recorte selecionado.</div>';
+  var cards = ies.map(function(u) { return composicaoFontesSection(u); }).filter(Boolean);
+  if (!cards.length) return '<div class="empty-state">Sem fontes de despesa com participação no orçamento.</div>';
+  var gridStyle = ies.length === 1
+    ? ''
+    : 'display:grid;grid-template-columns:repeat(auto-fill,minmax(560px,1fr));gap:1rem';
+  return '<div style="' + gridStyle + '">' + cards.join('') + '</div>';
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -9422,7 +9467,7 @@ function renderOrcCustoPorResultado(rows) {
       var fillStyle = i === 0
         ? "background:linear-gradient(90deg,#0f6e56,#2fb47c)"
         : i === sorted.length - 1
-        ? "background:linear-gradient(90deg,#c43f3a,#e46a62)"
+        ? "background:linear-gradient(90deg,var(--color-danger,#dc2626),#e46a62)"
         : "";
       return '<div class="bar-row"><span class="bar-name" title="' + u.nome + '">' + u.sigla +
              '</span><span class="bar-track"><span class="bar-fill" style="width:' + pct.toFixed(1) + '%;' + fillStyle +
@@ -9454,8 +9499,8 @@ function renderOrcExecucao(rows) {
     if (v == null || avgV == null || !isFinite(v) || !isFinite(avgV)) return "";
     var better = higherBetter ? v > avgV : v < avgV;
     return better
-      ? "background:#e0f5ec;color:#16875d;font-weight:600"
-      : "background:#fdecea;color:#c43f3a;font-weight:600";
+      ? "background:#e0f5ec;color:var(--color-success,#16a34a);font-weight:600"
+      : "background:#fdecea;color:var(--color-danger,#dc2626);font-weight:600";
   }
 
   function avgOf(getter) { return _avgField(sorted, getter); }
@@ -9709,6 +9754,7 @@ function renderOrcEvolucao(c) {
 // ── Monkey-patch efficiencyBlock — novas seções 8050 ─────────────────────────
 var _prevEfficiencyBlockOrc2 = efficiencyBlock;
 efficiencyBlock = function orcamentariaBlock(title, c) {
+  if (title === "Composição por Fonte de Despesa") return renderComposicaoFontesBlock(c);
   if (title === "Custo por Resultado (8050)")  return renderOrcCustoPorResultado(efficiencyRows(c));
   if (title === "Execução Orçamentária 8050")  return renderOrcExecucao(efficiencyRows(c));
   if (title === "Evolução 2024–2026")          return renderOrcEvolucao(c);
@@ -9776,7 +9822,7 @@ function renderTab8CostCards(rows) {
       const fillStyle = v <= minV + range * 0.33
         ? "background:linear-gradient(90deg,#0f6e56,#2fb47c)"
         : v >= minV + range * 0.66
-        ? "background:linear-gradient(90deg,#c43f3a,#e46a62)"
+        ? "background:linear-gradient(90deg,var(--color-danger,#dc2626),#e46a62)"
         : "";
       return `<div class="bar-row"><span class="bar-name" title="${u.nome}">${u.sigla}</span><span class="bar-track"><span class="bar-fill" style="width:${pct.toFixed(1)}%;${fillStyle}"></span></span><span class="bar-value">${formatCurrency(v)}</span></div>`;
     }).join("");
@@ -9953,7 +9999,7 @@ function _buildComparadorInner(rows, sigla) {
     var txt;
     if (lowerIsBetter) txt = pct < 0 ? arrow+" "+abs+"% mais barata" : arrow+" "+abs+"% mais cara";
     else               txt = pct > 0 ? arrow+" "+abs+"% acima" : arrow+" "+abs+"% abaixo";
-    var color = better ? "#16875d" : "#c43f3a";
+    var color = better ? "var(--color-success,#16a34a)" : "var(--color-danger,#dc2626)";
     return '<div style="font-size:11px;font-weight:600;color:'+color+'">'+txt+'</div>';
   }
   function ctxBox(title, refFmt, avgFmt, diffHtml) {
@@ -10023,7 +10069,7 @@ function _buildComparadorInner(rows, sigla) {
         : clamp((worst-refVal)/(worst-best)*100, 0, 100);
     }
     var isGood = refVal!=null && avg7!=null && (ind.higher ? refVal>=avg7 : refVal<=avg7);
-    var barColor = refVal!=null && avg7!=null ? (isGood ? "#16875d" : "#c43f3a") : "#d9e1ec";
+    var barColor = refVal!=null && avg7!=null ? (isGood ? "var(--color-success,#16a34a)" : "var(--color-danger,#dc2626)") : "#d9e1ec";
     var miniBar = '<div style="height:5px;background:#edf1f7;border-radius:3px;margin-top:4px">'+
       '<div style="height:100%;width:'+barPct.toFixed(1)+'%;background:'+barColor+';border-radius:3px"></div>'+
       '</div>';
@@ -10037,13 +10083,13 @@ function _buildComparadorInner(rows, sigla) {
       statusHtml = onAvg
         ? '<span style="color:#c07000">⚠️ Na média</span>'
         : better
-          ? '<span style="color:#16875d">✅ Acima da média</span>'
-          : '<span style="color:#c43f3a">❌ Abaixo da média</span>';
+          ? '<span style="color:var(--color-success,#16a34a)">✅ Acima da média</span>'
+          : '<span style="color:var(--color-danger,#dc2626)">❌ Abaixo da média</span>';
     }
 
     // Posição (1º verde, 7º vermelho)
     var posHtml = refRank!=null
-      ? '<span style="font-weight:700;color:'+(refRank===1?"#16875d":refRank===rows.length?"#c43f3a":"inherit")+'">'+refRank+'º de '+rows.length+'</span>'
+      ? '<span style="font-weight:700;color:'+(refRank===1?"var(--color-success,#16a34a)":refRank===rows.length?"var(--color-danger,#dc2626)":"inherit")+'">'+refRank+'º de '+rows.length+'</span>'
       : "—";
 
     return '<tr>'+
@@ -10138,7 +10184,7 @@ function renderTab8ExecutionCards(rows) {
   function execCard(title, value, subtitle, thGood, thWarn) {
     if (!isValidNumber(value)) return `<article class="score-card budget-score-card"><h3>${title}</h3><p class="card-subtitle">${subtitle}</p><div class="score-value">—</div></article>`;
     const badge = value >= thGood ? "adequado" : value >= thWarn ? "atenção" : "crítico";
-    const badgeColor = badge === "adequado" ? "#16875d" : badge === "atenção" ? "#c07000" : "#c43f3a";
+    const badgeColor = badge === "adequado" ? "var(--color-success,#16a34a)" : badge === "atenção" ? "#c07000" : "var(--color-danger,#dc2626)";
     return `<article class="score-card budget-score-card">
 <h3>${title}</h3>
 <p class="card-subtitle">${subtitle}</p>
@@ -10291,20 +10337,15 @@ function _buildOrcScatterInner(rows, yKey) {
   }
   yLabels += '<text x="' + (PL - 52) + '" y="' + (PT + CH / 2).toFixed(1) + '" text-anchor="middle" fill="#374151" font-size="11" font-weight="600" transform="rotate(-90 ' + (PL - 52) + ' ' + (PT + CH / 2).toFixed(1) + ')">↑ ' + opt.label + '</text>';
 
-  // Linhas divisórias dos quadrantes (mediana X e mediana Y)
-  var medX = _medianArr(xs), medY = _medianArr(ys);
-  var mxSvg = sx(medX).toFixed(1), mySvg = sy(medY).toFixed(1);
-  var quadLines =
-    '<line x1="' + mxSvg + '" y1="' + PT + '" x2="' + mxSvg + '" y2="' + (PT + CH) + '" stroke="#d1d5db" stroke-width="1" stroke-dasharray="5,4"/>' +
-    '<line x1="' + PL + '" y1="' + mySvg + '" x2="' + (PL + CW) + '" y2="' + mySvg + '" stroke="#d1d5db" stroke-width="1" stroke-dasharray="5,4"/>';
-
-  // Labels dos quadrantes (cantos)
-  var qStyle = 'fill="#b0b7c3" font-size="9" font-style="italic"';
-  var quadLabels =
-    '<text x="' + (PL + 4) + '" y="' + (PT + 13) + '" text-anchor="start" ' + qStyle + '>Alta eficiência</text>' +
-    '<text x="' + (PL + CW - 4) + '" y="' + (PT + 13) + '" text-anchor="end" ' + qStyle + '>Alto desempenho, alto custo</text>' +
-    '<text x="' + (PL + 4) + '" y="' + (PT + CH - 5) + '" text-anchor="start" ' + qStyle + '>Baixo custo, baixo desempenho</text>' +
-    '<text x="' + (PL + CW - 4) + '" y="' + (PT + CH - 5) + '" text-anchor="end" ' + qStyle + '>Baixa eficiência</text>';
+  var quadLines = "", quadLabels = "";
+  if (hasOfficialQuadrants()) {
+    // Linhas oficiais de quadrante devem ser carregadas da planilha/JSON.
+    var medX = _medianArr(xs), medY = _medianArr(ys);
+    var mxSvg = sx(medX).toFixed(1), mySvg = sy(medY).toFixed(1);
+    quadLines =
+      '<line x1="' + mxSvg + '" y1="' + PT + '" x2="' + mxSvg + '" y2="' + (PT + CH) + '" stroke="#d1d5db" stroke-width="1" stroke-dasharray="5,4"/>' +
+      '<line x1="' + PL + '" y1="' + mySvg + '" x2="' + (PL + CW) + '" y2="' + mySvg + '" stroke="#d1d5db" stroke-width="1" stroke-dasharray="5,4"/>';
+  }
 
   // Regressão linear — fórmula exata conforme spec
   var regLine = "", r2Anno = "";
@@ -10393,7 +10434,7 @@ function renderOrcScatter(c) {
   return '<article class="visual-card">' +
     '<div class="visual-card-header">' +
     '<div><h3>Orçamento × Desempenho</h3>' +
-    '<p class="card-subtitle">Cada ponto = uma IEES · tamanho ∝ número de alunos · linha tracejada = tendência linear · quadrantes pela mediana</p></div>' +
+    '<p class="card-subtitle">Cada ponto = uma IEES · tamanho ∝ número de alunos · linha tracejada = tendência linear · ' + (hasOfficialQuadrants() ? "quadrantes oficiais" : "quadrantes indisponíveis na planilha") + '</p></div>' +
     '<div style="display:flex;align-items:center;gap:8px">' +
     '<span style="font-size:12px;color:var(--gray-500)">Eixo Y:</span>' + selHtml +
     '</div></div>' +
@@ -10553,7 +10594,7 @@ window.efficiencyBlock = efficiencyBlock;
     // ── Eficiência relativa ────────────────────────────────────────────────────
     [/eficiência relativa|matriz.*efic|estrutura.*gastos/i,
       "INEP 2024 × SETI/PR 2024 (Relatório da Despesa 8050)",
-      "Cruzamento entre esforço orçamentário relativo ao grupo (eixo X) e resultado relativo ao grupo (eixo Y). Quadrante ideal: alto resultado com baixo esforço orçamentário."],
+      "Cruzamento entre esforço orçamentário relativo ao grupo (eixo X) e resultado relativo ao grupo (eixo Y). Quadrantes só são exibidos quando houver critério oficial na planilha/JSON."],
 
     // ── Genérico resultado ─────────────────────────────────────────────────────
     [/resultado.*institu|institu.*resultado/i,

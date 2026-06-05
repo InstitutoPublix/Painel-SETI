@@ -25,6 +25,10 @@
   --radius: 8px;
   --radius-sm: 6px;
   --content-max: 1480px;
+  --color-success: #16a34a;
+  --color-warning: #d97706;
+  --color-danger:  #dc2626;
+  --color-neutral: var(--gray-500, #6b7280);
 }
 
 * {
@@ -3800,6 +3804,12 @@ body {
   color: var(--gray-500, #6b7280);
   margin-left: 15px;
 }
+.cf-ies-title {
+  margin: 0 0 .5rem;
+  font-size: .9rem;
+  font-weight: 600;
+  color: var(--blue-950, #0f172a);
+}
 
 .dual-ref-bars .bar-track {
   position: relative;
@@ -6230,6 +6240,18 @@ details.indicator-catalog[open] > summary {
   display: flex;
   align-items: flex-start;
   gap: 10px;
+}
+.data-source-banner.warning {
+  background: var(--yellow-50, #fefce8);
+  border-left: 4px solid var(--yellow-500, #eab308);
+  color: var(--yellow-900, #713f12);
+}
+.data-source-banner.warning .dsb-body strong {
+  color: var(--yellow-900, #713f12);
+}
+.data-source-banner.warning .dsb-body span {
+  color: var(--yellow-900, #713f12);
+  opacity: .85;
 }
 .data-source-banner .dsb-icon {
   font-size: 20px;

@@ -20,7 +20,7 @@ sys.stdout.reconfigure(encoding="utf-8")
 
 DATA_DIR = Path(__file__).parent.parent / "data"
 
-# IES paranaenses — têm dados de SELO, Suplementação, Clusterização, CBO2/RAIS
+# IES paranaenses — têm dados do Relatório 8050, Suplementação, Clusterização, CBO2/RAIS
 IEES_PR = ["UEL", "UEM", "UEPG", "UNIOESTE", "UNICENTRO", "UENP", "UNESPAR"]
 
 # IES nacionais de comparação — têm dados de Cursos, IES, CAPES (bases Brasil)
@@ -940,6 +940,15 @@ def _strat_label(v):
         return None
     return s
 
+def _strat_float(v, digits=None):
+    if v is None or v == "":
+        return None
+    try:
+        n = float(v)
+    except (TypeError, ValueError):
+        return None
+    return round(n, digits) if digits is not None else n
+
 wb = openpyxl.load_workbook(
     DATA_DIR / "Estratificação_IES_Estaduais_BR.xlsx", read_only=True, data_only=True
 )
@@ -982,6 +991,53 @@ for row in ws_ref.iter_rows(min_row=6, values_only=True):
         "label_q3":   str(row[7]).strip() if row[7] else None,
         "label_q4":   str(row[8]).strip() if row[8] else None,
     })
+
+# 12c. Valores territoriais oficiais (PR) para V7 e V8.
+# As abas 10/11 trazem valores ponderados por território atendido; estes campos
+# substituem qualquer valor antigo baseado em município-sede.
+for row in wb["10_Renda Território PR"].iter_rows(min_row=6, values_only=True):
+    sigla = str(row[2]).strip() if len(row) > 2 and row[2] else None
+    if sigla not in IEES_PR:
+        continue
+    key = sigla.lower()
+    renda = _strat_float(row[5] if len(row) > 5 else None, 2)
+    faixa = _strat_label(row[6] if len(row) > 6 else None)
+    if renda is not None:
+        results[key]["territoryIncome"] = renda
+        sources[key]["territoryIncome"] = (
+            "Estratificação_IES_Estaduais_BR.xlsx / 10_Renda Território PR"
+            " / Renda Per Capita Ponderada (R$)"
+        )
+    if faixa:
+        results[key]["v7_label"] = faixa
+        sources[key]["v7_label"] = (
+            "Estratificação_IES_Estaduais_BR.xlsx / 10_Renda Território PR"
+            " / Faixa de Renda Territorial"
+        )
+        if sigla in clusters_raw:
+            clusters_raw[sigla]["v7"] = faixa
+
+for row in wb["11_IDH Território PR"].iter_rows(min_row=6, values_only=True):
+    sigla = str(row[2]).strip() if len(row) > 2 and row[2] else None
+    if sigla not in IEES_PR:
+        continue
+    key = sigla.lower()
+    idh = _strat_float(row[5] if len(row) > 5 else None, 4)
+    faixa = _strat_label(row[6] if len(row) > 6 else None)
+    if idh is not None:
+        results[key]["idhmRegional"] = idh
+        sources[key]["idhmRegional"] = (
+            "Estratificação_IES_Estaduais_BR.xlsx / 11_IDH Território PR"
+            " / IDH Municipal Ponderado (0–1)"
+        )
+    if faixa:
+        results[key]["v8_label"] = faixa
+        sources[key]["v8_label"] = (
+            "Estratificação_IES_Estaduais_BR.xlsx / 11_IDH Território PR"
+            " / Faixa de Contexto Socioeconômico"
+        )
+        if sigla in clusters_raw:
+            clusters_raw[sigla]["v8"] = faixa
 
 wb.close()
 
@@ -1153,11 +1209,11 @@ for sigla in IEES_PR:
 # o índice composto e a faixa de perfil orçamentário por IES-PR.
 # Substitui clusters_raw[sigla]["v6"] com o rótulo oficial.
 #
-# Estrutura da aba (cabeçalho na linha 4, dados a partir da 5):
-#   col 2  (idx 1)  = Sigla
-#   col 13 (idx 12) = Índice Composto
-#   col 14 (idx 13) = Faixa de Perfil Orçamentário
-
+# Estrutura da aba (cabeçalho na linha 5, dados a partir da 6):
+#   col [2]  = Sigla
+#   col [13] = Índice Composto (0–1)
+#   col [14] = Faixa de Perfil Orçamentário
+#
 _wb_v6 = openpyxl.load_workbook(
     DATA_DIR / "Estratificação_IES_Estaduais_BR.xlsx", read_only=True, data_only=True
 )
@@ -1167,19 +1223,21 @@ for _row in _ws_v6.iter_rows(min_row=6, values_only=True):
     _sigla = str(_row[2]).strip() if len(_row) > 2 and _row[2] else None
     if _sigla not in IEES_PR:
         continue
+
     try:
         _v6_indice = round(float(_row[13]), 4) if len(_row) > 13 and _row[13] is not None else None
     except (TypeError, ValueError):
         _v6_indice = None
     _v6_perfil = str(_row[14]).strip() if len(_row) > 14 and _row[14] else None
+    _src = "Estratificação_IES_Estaduais_BR.xlsx / 9_Dinâmica Orçamentária PR"
 
     _key = _sigla.lower()
     if _v6_indice is not None:
         results[_key]["v6_indice"] = _v6_indice
-        sources[_key]["v6_indice"] = "Estratificação_IES_Estaduais_BR.xlsx / 9_Dinâmica Orçamentária PR"
+        sources[_key]["v6_indice"] = _src
     if _v6_perfil:
         results[_key]["v6_perfil"] = _v6_perfil
-        sources[_key]["v6_perfil"] = "Estratificação_IES_Estaduais_BR.xlsx / 9_Dinâmica Orçamentária PR"
+        sources[_key]["v6_perfil"] = _src
         if _sigla in clusters_raw:
             clusters_raw[_sigla]["v6"] = _v6_perfil
 

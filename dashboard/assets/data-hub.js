@@ -367,7 +367,7 @@ function updateDataStatusUI() {
   }
   const footerDot = document.getElementById("footerStatusDot");
   if (footerDot) {
-              footerDot.style.background = hasError ? "#c43f3a" : "#16875d";
+              footerDot.style.background = hasError ? "var(--color-danger,#dc2626)" : "var(--color-success,#16a34a)";
   }
   const footerDetail = document.getElementById("footerBasesDetail");
   if (footerDetail && DATA_STATUS.loadedBases.length > 0) {
@@ -1500,6 +1500,13 @@ async function loadPrecomputedJson() {
     for (const [sigla, yearMap] of Object.entries(byYearData)) {
       for (const [yr, vals] of Object.entries(yearMap || {})) {
         upsertYearIndicators(sigla, yr, vals);
+      }
+    }
+    // Propaga composicaoFontes para todos os anos carregados via byYear
+    for (const [sigla, cf] of Object.entries(composicaoFontes)) {
+      if (!cf) continue;
+      for (const yr of Object.keys(byYearData[sigla] || {})) {
+        upsertYearIndicators(sigla, yr, { composicaoFontes: cf });
       }
     }
     if (data.clusters)   window.SETI_CLUSTERS   = data.clusters;

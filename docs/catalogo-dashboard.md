@@ -100,8 +100,8 @@ Colunas: IEES | Estudantes | Cursos | Ocupação | Concluintes | Orçamento | Gr
 - **Referências adicionadas:** linha de média do grupo, média Paraná, média Brasil
 
 #### 2.2 Posição relativa (Ranking)
-- **O que mostra:** ranking por resultado relativo com classificação descritiva por quadrante
-- **Quadrantes:** "alto resultado, baixo esforço" / "alto resultado, alto esforço" / "baixo resultado, baixo esforço" / "baixo resultado, alto esforço"
+- **O que mostra:** ranking por resultado relativo. A classificação por quadrante só é exibida quando houver critério oficial na planilha/JSON.
+- **Quadrantes:** indisponíveis quando não houver campo/aba oficial de quadrante em `Estratificação_IES_Estaduais_BR.xlsx`.
 
 #### 2.3 Tabela comparativa das IEES
 
@@ -115,7 +115,7 @@ Colunas:
 | Média Paraná | Média das 7 IEES-PR | Calculado |
 | Média Brasil | Valor de benchmark nacional (`brazil.result[...]`) | Estimado (referência INEP) |
 | Esforço relativo | `effort / média_grupo × 100` | Calculado |
-| Classificação | Chip colorido com rótulo do quadrante | Calculado |
+| Classificação | Rótulo oficial de quadrante, quando disponível | Planilha/JSON |
 
 **Nota sobre dados Brasil:** A "Média Brasil" usa valores de referência do objeto `brazil` definido no `painel.js`. Estes são benchmarks estáticos derivados de publicações INEP/CNPq/CAPES — não são extraídos de bases XLSX. Os dados das 33 IES estaduais de referência nacional (exibidos quando escopo = "Brasil") são carregados do JSON pré-processado via aliases que mapeiam os campos INEP reais (students, doctors, capes, pg, pgTop, cnpq) para o formato esperado por `byYear()`.
 
@@ -360,7 +360,7 @@ Colunas: IEES | Paraná | Região Sul | Cidade-sede | Aderência CBO2 | Dispers�
 - **Seleção de IEES:** pontos da IES selecionada no filtro são destacados
 
 #### 8.2 Legenda da classificação
-- Contagem de IES por quadrante no recorte ativo
+- Contagem de IES por quadrante apenas quando houver critério oficial de quadrante na planilha/JSON; caso contrário, o painel mostra indisponibilidade metodológica.
 
 #### 8.3 Insights automáticos
 Quatro sinalizações calculadas em tempo real:
@@ -385,7 +385,7 @@ Colunas: IEES | Orçamento | Execução | Liquidação | Pessoal | Suplementaç�
 - Cards para cada grupo com IES-membro e valor no indicador da variável
 
 ### Leitura institucional
-- Se uma IES estiver selecionada: exibe resultado relativo, esforço relativo e classificação descritiva
+- Se uma IES estiver selecionada: exibe resultado relativo, esforço relativo e quadrante oficial quando disponível
 - Se nenhuma selecionada: nota analítica contextual da aba ativa
 
 ### Alertas do sistema
