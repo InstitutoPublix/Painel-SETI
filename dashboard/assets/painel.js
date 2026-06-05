@@ -2656,7 +2656,296 @@ function retention(c){const d=c.ref,a=agg(d);if(!d.length)return empty();return 
 function quality(c){const d=c.ref;if(!d.length)return empty();return `<div class="score-grid">${score("Qualificação docente",formatPercent(mean(d,u=>u.doctors)),"Docentes com doutorado",mean(d,u=>u.doctors))}${score("Pesquisa e CNPq",formatCurrencyMillions(sum(d,u=>u.cnpq)),"Captação no recorte",78)}${score("Pós-graduação CAPES",mean(d,u=>u.capes).toFixed(1),"Conceito médio dos programas",mean(d,u=>u.capes)*18)}</div><div class="chart-grid mt-14"><article class="visual-card card-primary"><h3>Docentes com doutorado</h3><p class="card-subtitle">Qualificação docente por IEES</p>${bars(d,u=>u.doctors,formatPercent)}</article><article class="visual-card card-support"><h3>Captação CNPq por estudante</h3><p class="card-subtitle">Eficiência acadêmico-científica</p>${bars(d,resultIndicators.cnpq.get,formatCurrency)}</article></div>${metricTable(d,[["IEES",u=>`<strong>${u.sigla}</strong><br><span>${u.profile}</span>`],["Programas PG",u=>formatNumber(u.pg)],["CAPES",u=>u.capes.toFixed(1)],["CAPES 5, 6 e 7",u=>formatNumber(u.pgTop)],["Doutores",u=>formatPercent(u.doctors)],["CNPq",u=>formatCurrencyMillions(u.cnpq)]],"Qualidade acadêmica, pós-graduação e pesquisa")}`;}
 function faculty(c){const d=c.ref;if(!d.length)return empty();return `<div class="chart-grid"><article class="visual-card card-primary"><h3>Taxa de ocupação do quadro docente</h3><p class="card-subtitle">Vagas efetivas ocupadas sobre disponíveis</p>${bars(d,u=>u.facultyOcc,formatPercent)}</article><article class="visual-card card-support"><h3>Utilização da CRES</h3><p class="card-subtitle">Carga horária CRES utilizada sobre autorizada</p>${bars(d,u=>u.cres,formatPercent)}</article></div>${metricTable(d,[["IEES",u=>`<strong>${u.sigla}</strong><br><span>${u.region}</span>`],["Ocupação docente",u=>formatPercent(u.facultyOcc)],["TIDE estimado",u=>formatPercent((u.facultyOcc+u.doctors)/2)],["CRES",u=>formatPercent(u.cres)],["Despesa pessoal",u=>formatPercent(u.personnel)],["Estudantes/docente",u=>(u.students/Math.max(1,Math.round(u.students/15))).toFixed(1)]],"Quadro docente, TIDE e capacidade operacional")}`;}
 function employment(c){const d=c.ref;if(!d.length)return empty();return `<div class="score-grid">${score("Inserção no Paraná",formatPercent(mean(d,u=>u.employment)),"Egressos no mercado formal",mean(d,u=>u.employment))}${score("Aderência CBO2",formatPercent(mean(d,u=>u.employment-5)),"Ocupações aderentes à formação",mean(d,u=>u.employment-5))}${score("Média salarial",formatCurrency(mean(d,u=>u.salary)),"Egressos aderentes ao CBO2",76)}</div><div class="chart-grid mt-14"><article class="visual-card card-primary"><h3>Inserção profissional no Paraná</h3><p class="card-subtitle">Taxa de egressos empregados no estado</p>${bars(d,u=>u.employment,formatPercent)}</article><article class="visual-card card-support"><h3>Média salarial dos egressos</h3><p class="card-subtitle">Egressos aderentes ao filtro CBO2</p>${bars(d,u=>u.salary,formatCurrency)}</article></div>${metricTable(d,[["IEES",u=>`<strong>${u.sigla}</strong><br><span>${u.municipality}</span>`],["Paraná",u=>formatPercent(u.employment)],["Região Sul",u=>formatPercent(u.employment+5)],["Cidade-sede",u=>formatPercent(Math.max(25,u.employment-34))],["Aderência CBO2",u=>formatPercent(u.employment-5)],["Dispersão territorial",u=>`${u.territory} pts`]],"Inserção profissional, território e aderência ocupacional")}`;}
-function efficiency(c){const d=c.ref,rows=matrixRows(d,c.f);if(!d.length)return empty();return `<div class="efficiency-layout"><article class="matrix-panel card-primary"><h3>Matriz de eficiência relativa por agrupamento dinâmico</h3><p class="card-subtitle">Eixo X: esforço orçamentário relativo ao grupo | Eixo Y: resultado relativo ao grupo | Tamanho: orçamento liquidado</p>${matrix(rows,c)}</article><div class="matrix-side"><article class="visual-card card-support"><h3>Classificação relativa</h3><p class="card-subtitle">Rótulos descritivos por quadrante</p>${legend(rows)}</article><article class="visual-card card-support"><h3>Insights automáticos</h3><p class="card-subtitle">Sinais contextuais para investigação</p>${insights(rows,c)}</article></div></div>${metricTable(d,[["IEES",u=>`<strong>${u.sigla}</strong><br><span>${u.groups[c.f.groupBy]}</span>`],["Orçamento",u=>formatCurrencyMillions(u.budget)],["Execução",u=>formatPercent(u.execution)],["Liquidação",u=>formatPercent(u.liquidation)],["Pessoal",u=>formatPercent(u.personnel)],["Suplementação",u=>formatPercent(u.supplementation)]],"Estrutura de gastos e execução orçamentária")}`;}
+
+// ── Mini gráfico de linhas SVG — série histórica ind81–87 ───────────────────
+function svgLines(series, years, W, H) {
+  // series: [{label, color, values:[v2024, v2025, v2026]}]
+  // years: ['2024','2025','2026']
+  const pad = {t:12, r:10, b:24, l:36};
+  const iW = W - pad.l - pad.r, iH = H - pad.t - pad.b;
+  const allVals = series.flatMap(s => s.values).filter(v => v != null);
+  if (!allVals.length) return '';
+  const minV = Math.max(0, Math.floor(Math.min(...allVals) / 5) * 5);
+  const maxV = Math.min(100, Math.ceil(Math.max(...allVals) / 5) * 5);
+  const range = maxV - minV || 1;
+  const xOf = i => pad.l + (i / (years.length - 1)) * iW;
+  const yOf = v => pad.t + iH - ((v - minV) / range) * iH;
+
+  let svg = `<svg width="${W}" height="${H}" style="overflow:visible" aria-hidden="true">`;
+  // Y grid lines + labels
+  for (const tick of [minV, (minV+maxV)/2, maxV]) {
+    const y = yOf(tick);
+    svg += `<line x1="${pad.l}" y1="${y}" x2="${W-pad.r}" y2="${y}" stroke="#e5e7eb" stroke-width="1"/>`;
+    svg += `<text x="${pad.l-4}" y="${y+4}" text-anchor="end" font-size="9" fill="#9ca3af">${tick.toFixed(0)}</text>`;
+  }
+  // X axis labels
+  years.forEach((yr, i) => {
+    svg += `<text x="${xOf(i)}" y="${H-4}" text-anchor="middle" font-size="9" fill="#6b7280">${yr}</text>`;
+  });
+  // Lines + dots
+  for (const s of series) {
+    const pts = s.values.map((v, i) => v != null ? [xOf(i), yOf(v)] : null);
+    // path
+    const segs = [];
+    let inSeg = false;
+    for (let i = 0; i < pts.length; i++) {
+      if (pts[i]) {
+        segs.push((inSeg ? 'L' : 'M') + pts[i][0].toFixed(1) + ',' + pts[i][1].toFixed(1));
+        inSeg = true;
+      } else { inSeg = false; }
+    }
+    if (segs.length > 1) svg += `<path d="${segs.join(' ')}" fill="none" stroke="${s.color}" stroke-width="2" stroke-linejoin="round"/>`;
+    // dots + tooltips
+    for (let i = 0; i < pts.length; i++) {
+      if (!pts[i]) continue;
+      const [px, py] = pts[i];
+      svg += `<circle cx="${px}" cy="${py}" r="3.5" fill="${s.color}" stroke="white" stroke-width="1.5"><title>${s.label} ${years[i]}: ${s.values[i]?.toFixed(1)}%</title></circle>`;
+    }
+  }
+  svg += '</svg>';
+  return svg;
+}
+function historicalChart(u, precomp) {
+  // precomp: { '2024': {ind81,ind82,...}, '2025': {...}, '2026': {...} }
+  if (!precomp) return '';
+  const years = ['2024','2025','2026'];
+  const series = [
+    {label:'Execução (81)', color:'#3b82f6', values: years.map(y => precomp[y]?.ind81 ?? null)},
+    {label:'Liquidação (82)', color:'#10b981', values: years.map(y => precomp[y]?.ind82 ?? null)},
+    {label:'Contingenciamento (84)', color:'#f59e0b', values: years.map(y => precomp[y]?.ind84 ?? null)},
+    {label:'Pessoal (86)', color:'#ef4444', values: years.map(y => precomp[y]?.ind86 ?? null)},
+  ].filter(s => s.values.some(v => v != null));
+  if (!series.length) return '';
+  const chart = svgLines(series, years, 340, 120);
+  const legend = series.map(s =>
+    `<span><span class="orc-dot" style="background:${s.color}"></span>${s.label}</span>`
+  ).join('');
+  return `<div class="orc-sub-block">
+    <div class="orc-sub-header"><strong>Evolução 2024–2026 · ${u.sigla}</strong><span class="orc-ref-note">Hover nos pontos para valor exato</span></div>
+    <div style="overflow-x:auto">${chart}</div>
+    <div class="orc-bar-legend" style="margin-top:.4rem">${legend}</div>
+  </div>`;
+}
+
+// ── Gráficos de pizza — Composição de Fontes de Despesa ─────────────────────
+function svgPie(slices, size) {
+  const R = size / 2 - 4, cx = size / 2, cy = size / 2;
+  let svg = `<svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}" aria-hidden="true">`;
+  let start = -Math.PI / 2;
+  for (const s of slices) {
+    if (!s.pct || s.pct <= 0) continue;
+    const ang = (s.pct / 100) * 2 * Math.PI;
+    const end = start + ang;
+    if (s.pct >= 99.9) {
+      svg += `<circle cx="${cx}" cy="${cy}" r="${R}" fill="${s.color}"/>`;
+    } else {
+      const x1 = (cx + R * Math.cos(start)).toFixed(1);
+      const y1 = (cy + R * Math.sin(start)).toFixed(1);
+      const x2 = (cx + R * Math.cos(end)).toFixed(1);
+      const y2 = (cy + R * Math.sin(end)).toFixed(1);
+      svg += `<path d="M${cx},${cy} L${x1},${y1} A${R},${R} 0 ${ang > Math.PI ? 1 : 0},1 ${x2},${y2} Z" fill="${s.color}" stroke="white" stroke-width="1.5" opacity="0.92"/>`;
+    }
+    start = end;
+  }
+  return svg + '</svg>';
+}
+const _CF_CORES = {'500':'#3a7abf','501':'#6db3e8','700':'#e8792a','703':'#f4a261','706':'#fbbf24','outros':'#94a3b8'};
+function composicaoFontesSection(u) {
+  const cf = u && u.composicaoFontes;
+  if (!cf) return '';
+  function renderGrupo(gKey) {
+    const g = cf[gKey];
+    if (!g || !g.total_pct) return '';
+    const fontes = Object.entries(g.fontes || {}).filter(([,f]) => f && f.pct_no_orcamento > 0);
+    if (!fontes.length) return '';
+    const slices = fontes.map(([code, f]) => ({pct: f.pct_no_grupo, color: _CF_CORES[code] || _CF_CORES['outros']}));
+    const pie = svgPie(slices, 100);
+    const legend = fontes.map(([code, f]) =>
+      `<li><span style="display:inline-block;width:9px;height:9px;border-radius:50%;background:${_CF_CORES[code]||_CF_CORES['outros']};margin-right:4px;vertical-align:middle"></span><span>${f.nome}</span>
+       <span class="cf-vals">${f.pct_no_orcamento?.toFixed(1) ?? '—'}% orç. · ${f.pct_no_grupo?.toFixed(1) ?? '—'}% grp${f.valor != null ? ` · R$ ${f.valor.toFixed(1)}M` : ''}</span></li>`
+    ).join('');
+    return `<div class="cf-grupo">
+      <div class="cf-grupo-header"><strong>${g.nome}</strong><span class="kpi-badge">${g.total_pct?.toFixed(1)}%</span></div>
+      <div class="cf-pie-row">${pie}<ul class="cf-legend">${legend}</ul></div>
+    </div>`;
+  }
+  const g50 = renderGrupo('grupo50');
+  const g70 = renderGrupo('grupo70');
+  if (!g50 && !g70) return '';
+  return `<article class="visual-card cf-card">
+    <h4 style="margin:0 0 .5rem;font-size:.9rem">${u.sigla}</h4>
+    <div class="cf-grupos-row">${g50}${g70}</div>
+  </article>`;
+}
+
+
+// ── Bloco Eficiência e Estrutura Orçamentária (IND-81 a 87) ─────────────────
+function _orcColor(v, pol, g, y) {
+  if (v == null) return '';
+  if (pol === 'up')   return v >= g ? 'style="color:#16a34a"' : v >= y ? 'style="color:#d97706"' : 'style="color:#dc2626"';
+  if (pol === 'down') return v <= g ? 'style="color:#16a34a"' : v <= y ? 'style="color:#d97706"' : 'style="color:#dc2626"';
+  return '';
+}
+function _orcFmt(v, sign) {
+  if (v == null) return '—';
+  const s = (sign && v > 0) ? '+' : '';
+  return s + v.toFixed(1).replace('.', ',') + '%';
+}
+function orcamentarioKpis(u) {
+  const e81=u.ind81, e82=u.ind82, e83=u.ind83, e84=u.ind84, e85=u.ind85, e86=u.ind86, e87=u.ind87;
+  const cap=u.part_capital;
+  function card(ind, title, v, pol, g, y, note) {
+    const col = _orcColor(v, pol, g, y);
+    return `<div class="orc-kpi"><div class="orc-kpi-ind">${ind}</div><div class="orc-kpi-title">${title}</div><div class="orc-kpi-val" ${col}>${_orcFmt(v, ind==='IND-85')}</div>${note?`<div class="orc-kpi-note">${note}</div>`:''}</div>`;
+  }
+  // Pie de estrutura do orçamento (IND-86/87/capital)
+  const pieSlices = [
+    {pct: e86||0, color:'#3a7abf'},
+    {pct: e87||0, color:'#6db3e8'},
+    {pct: cap||0, color:'#94a3b8'},
+  ].filter(s => s.pct > 0);
+  const pieSvg = svgPie(pieSlices, 100);
+  const pieLegend = [
+    ['Pessoal e Encargos (IND-86)','#3a7abf', e86],
+    ['Outras Despesas Correntes (IND-87)','#6db3e8', e87],
+    ['Despesas de Capital','#94a3b8', cap],
+  ].filter(([,, v]) => v).map(([lbl, cor, v]) =>
+    `<li><span class="orc-dot" style="background:${cor}"></span>${lbl}: <strong>${_orcFmt(v)}</strong></li>`
+  ).join('');
+  // Bar de estrutura de gastos (IND-86/87)
+  const pw = e86 ? Math.min(100, e86) : 0;
+  const ow = e87 ? Math.min(100 - pw, e87) : 0;
+  const cw = cap ? Math.min(100 - pw - ow, cap) : 0;
+  const estrutura = `<div class="orc-struct">
+    <div class="orc-struct-header"><strong>IND-86/87 — Estrutura de Gastos Correntes</strong><span class="orc-ref-note">Referência setorial: 77,5% em Pessoal (linha tracejada)</span></div>
+    <div class="orc-struct-body">
+      <div class="orc-pie-col">
+        <div class="orc-pie-title">Estrutura do Orçamento Atualizado</div>
+        ${pieSvg}
+        <ul class="orc-pie-legend">${pieLegend}</ul>
+      </div>
+      <div class="orc-bar-col">
+        <div class="orc-bar-wrap">
+          <div class="orc-bar-ref" style="left:77.5%" title="Referência setorial 77,5%"></div>
+          <div class="orc-bar-seg" style="width:${pw}%;background:#3a7abf" title="Pessoal e Encargos: ${_orcFmt(e86)}"></div>
+          <div class="orc-bar-seg" style="width:${ow}%;background:#6db3e8" title="Outras Despesas Correntes: ${_orcFmt(e87)}"></div>
+          ${cw>0?`<div class="orc-bar-seg" style="width:${cw}%;background:#94a3b8" title="Capital: ${_orcFmt(cap)}"></div>`:''}
+        </div>
+        <div class="orc-bar-legend">
+          <span><span class="orc-dot" style="background:#3a7abf"></span>Pessoal (IND-86): ${_orcFmt(e86)}</span>
+          <span><span class="orc-dot" style="background:#6db3e8"></span>Outras Correntes (IND-87): ${_orcFmt(e87)}</span>
+          ${cap?`<span><span class="orc-dot" style="background:#94a3b8"></span>Capital: ${_orcFmt(cap)}</span>`:''}
+        </div>
+      </div>
+    </div>
+  </div>`;
+  return `<article class="visual-card orc-block">
+    <h3>Eficiência e Estrutura Orçamentária · ${u.sigla} · 2024</h3>
+    <p class="card-subtitle">Indicadores 81–87 — Relatório da Despesa 8050</p>
+    <div class="orc-kpis-row">
+      ${card('IND-81','Execução (Empenho)',e81,'up',90,75)}
+      ${card('IND-82','Liquidação',e82,'up',90,75)}
+      ${card('IND-83','Pgto / Liquidado',e83,'up',90,75)}
+      ${card('IND-84','Contingenciamento ↓',e84,'down',5,15,'Meta ≤ 5%')}
+      ${card('IND-85','Variação Dotação',e85,'neutral',0,0,'vs LOA inicial · Neutro')}
+    </div>
+    ${estrutura}
+    ${autonomiaBlock(u)}
+    ${investimentoBlock(u)}
+    ${(()=>{const c80=ind80Card(u);return c80?`<div class="orc-sub-block"><div class="orc-sub-header"><strong>Inserção Profissional — Dispersão Territorial</strong></div><div class="orc-kpis-row">${c80}</div></div>`:'';})()} 
+    ${(()=>{try{const _precomp=window.SETI_BYEAR&&window.SETI_BYEAR[u.sigla];return historicalChart(u,_precomp);}catch(e){return '';}})()}
+  </article>`;
+}
+function autonomiaBlock(u) {
+  const e89=u.ind89, e90=u.ind90, e91=u.ind91;
+  if (e89==null && e90==null && e91==null) return '';
+  // Nota: ind90 (Arrecadação Própria, Fonte 501) é SUBCONJUNTO de ind89 (Grupo 50).
+  // Barra correta: Tesouro=(ind89-ind90) + Própria=ind90 + Transferências=ind91 + Outros=resto
+  const tesouro = e89!=null && e90!=null ? Math.max(0, e89-e90) : (e89||0);
+  const propria = e90||0;
+  const transfer = e91||0;
+  const outros = Math.max(0, 100 - tesouro - propria - transfer);
+  const bar = `<div class="orc-bar-wrap">
+    <div class="orc-bar-seg" style="width:${tesouro.toFixed(1)}%;background:#1e40af" title="Tesouro (Fonte 500): ${tesouro.toFixed(1)}%"></div>
+    <div class="orc-bar-seg" style="width:${propria.toFixed(1)}%;background:#3b82f6" title="Arrecadação Própria (IND-90/Fonte 501): ${_orcFmt(e90)}"></div>
+    <div class="orc-bar-seg" style="width:${transfer.toFixed(1)}%;background:#93c5fd" title="Transferências Grupo 70 (IND-91): ${_orcFmt(e91)}"></div>
+    ${outros>0.5?`<div class="orc-bar-seg" style="width:${outros.toFixed(1)}%;background:#dbeafe" title="Outros: ${outros.toFixed(1)}%"></div>`:''}
+  </div>
+  <div class="orc-bar-legend">
+    <span><span class="orc-dot" style="background:#1e40af"></span>Rec. Livres - Tesouro: ${tesouro.toFixed(1)}%</span>
+    <span><span class="orc-dot" style="background:#3b82f6"></span>Arrecadação Própria (IND-90): ${_orcFmt(e90)}</span>
+    <span><span class="orc-dot" style="background:#93c5fd"></span>Transferências (IND-91): ${_orcFmt(e91)}</span>
+    ${outros>0.5?`<span><span class="orc-dot" style="background:#dbeafe"></span>Outros: ${outros.toFixed(1)}%</span>`:''}
+  </div>`;
+  function acard(ind, title, v, pol, g, y, note) {
+    return `<div class="orc-kpi"><div class="orc-kpi-ind">${ind}</div><div class="orc-kpi-title">${title}</div><div class="orc-kpi-val" ${_orcColor(v,pol,g,y)}>${_orcFmt(v)}</div>${note?`<div class="orc-kpi-note">${note}</div>`:''}</div>`;
+  }
+  return `<div class="orc-sub-block">
+    <div class="orc-sub-header"><strong>Autonomia e Diversificação de Recursos</strong></div>
+    <div class="orc-kpis-row">
+      ${acard('IND-89','Recursos Livres (Grupo 50)',e89,'neutral',0,0,'Alta dependência = vulnerabilidade a cortes estaduais')}
+      ${acard('IND-90','Recursos Próprios (Fonte 501)',e90,'up',10,5,'↑ melhor — maior autonomia')}
+      ${acard('IND-91','Transferências (Grupo 70)',e91,'up',10,5,'↑ melhor — diversificação')}
+    </div>
+    ${bar}
+  </div>`;
+}
+function investimentoBlock(u) {
+  const e88=u.ind88, e92=u.ind92, e93=u.ind93, e95=u.ind95;
+  if (e88==null && e92==null && e93==null && e95==null) return '';
+  function icard(ind, title, v, pol, g, y, note, fmt) {
+    const val = fmt ? fmt(v) : _orcFmt(v);
+    return `<div class="orc-kpi"><div class="orc-kpi-ind">${ind}</div><div class="orc-kpi-title">${title}</div><div class="orc-kpi-val" ${_orcColor(v,pol,g,y)}>${val}</div>${note?`<div class="orc-kpi-note">${note}</div>`:''}</div>`;
+  }
+  const fmt88 = v => v!=null ? v.toFixed(1).replace('.',',')+':1' : '—';
+  return `<div class="orc-sub-block">
+    <div class="orc-sub-header"><strong>Capacidade de Investimento</strong></div>
+    <div class="orc-kpis-row">
+      ${icard('IND-88','Razão Correntes/Capital',e88,'neutral',0,0,'Quanto maior, menor capacidade de investimento', fmt88)}
+      ${icard('IND-92','Obras (Elem. 51)',e92,'up',3,1,'↑ melhor · % do Orçamento Atualizado',null)}
+      ${icard('IND-93','Equipamentos (Elem. 52)',e93,'up',3,1,'↑ melhor · % do Orçamento Atualizado',null)}
+      ${icard('IND-95','Execução/LOA Inicial',e95,'up',85,70,'↑ melhor vs dotação inicial',null)}
+    </div>
+  </div>`;
+}
+function orcamentarioTable(rows) {
+  const cols=[
+    ['IEES',u=>`<strong>${u.sigla}</strong>`,''],
+    ['Execução (81)',u=>_orcFmt(u.ind81),u=>_orcColor(u.ind81,'up',90,75)],
+    ['Liquidação (82)',u=>_orcFmt(u.ind82),u=>_orcColor(u.ind82,'up',90,75)],
+    ['Pgto/Liq (83)',u=>_orcFmt(u.ind83),u=>_orcColor(u.ind83,'up',90,75)],
+    ['Conting (84)',u=>_orcFmt(u.ind84),u=>_orcColor(u.ind84,'down',5,15)],
+    ['Var Dot (85)',u=>_orcFmt(u.ind85,true),''],
+    ['Pessoal (86)',u=>_orcFmt(u.ind86),''],
+    ['Outras Corr (87)',u=>_orcFmt(u.ind87),''],
+  ];
+  const hd = cols.map(([h])=>`<th>${h}</th>`).join('');
+  const tbody = rows.map(u=>`<tr>${cols.map(([,val,col])=>`<td ${col?col(u):''}>${val(u)}</td>`).join('')}</tr>`).join('');
+  return `<article class="visual-card orc-block">
+    <h3>Eficiência e Estrutura Orçamentária — Comparação · 2024</h3>
+    <p class="card-subtitle">Indicadores 81–87 — Relatório da Despesa 8050. Verde ≥ 90%, amarelo ≥ 75%, vermelho &lt; 75% (IND 81–83). IND-84 invertido (↓ melhor).</p>
+    <div style="overflow-x:auto"><table class="metric-table"><thead><tr>${hd}</tr></thead><tbody>${tbody}</tbody></table></div>
+  </article>`;
+}
+function ind80Card(u) {
+  const v = u.egressosMunicipios;
+  const disp = u.ind80;
+  if (v == null && disp == null) return '';
+  return `<div class="orc-kpi" style="background:#fafafa">
+    <div class="orc-kpi-ind">IND-80</div>
+    <div class="orc-kpi-title">Dispersão Territorial de Egressos</div>
+    <div class="orc-kpi-val" style="font-size:1.2rem">${v != null ? v + ' municípios' : '—'}</div>
+    ${disp != null ? `<div class="orc-kpi-note">Índice: ${disp.toFixed(3)}% · par mais recente</div>` : '<div class="orc-kpi-note" style="color:#9ca3af">Índice não disponível</div>'}
+  </div>`;
+}
+function orcamentarioBlock(c) {
+  if (c.f.scope !== 'Paraná') return '';
+  const ies = (c.display.length ? c.display : [...c.ref]).map(u => byYear(u, c.f.year)).filter(u => u.ind81 != null);
+  if (!ies.length) return '';
+  return ies.length === 1 ? orcamentarioKpis(ies[0]) : orcamentarioTable(ies);
+}
+
+function efficiency(c){const d=c.ref,rows=matrixRows(d,c.f);if(!d.length)return empty();return `<div class="efficiency-layout"><article class="matrix-panel card-primary"><h3>Matriz de eficiência relativa por agrupamento dinâmico</h3><p class="card-subtitle">Eixo X: esforço orçamentário relativo ao grupo | Eixo Y: resultado relativo ao grupo | Tamanho: orçamento liquidado</p>${matrix(rows,c)}</article><div class="matrix-side"><article class="visual-card card-support"><h3>Classificação relativa</h3><p class="card-subtitle">Rótulos descritivos por quadrante</p>${legend(rows)}</article><article class="visual-card card-support"><h3>Insights automáticos</h3><p class="card-subtitle">Sinais contextuais para investigação</p>${insights(rows,c)}</article></div></div>${metricTable(d,[["IEES",u=>`<strong>${u.sigla}</strong><br><span>${u.groups[c.f.groupBy]}</span>`],["Orçamento",u=>formatCurrencyMillions(u.budget)],["Execução",u=>formatPercent(u.execution)],["Liquidação",u=>formatPercent(u.liquidation)],["Pessoal",u=>formatPercent(u.personnel)],["Suplementação",u=>formatPercent(u.supplementation)]],"Estrutura de gastos e execução orçamentária")}${orcamentarioBlock(c)}${c.f.scope==="Paraná"?(()=>{const _ies=(c.display.length?c.display:[...c.ref]).map(u=>composicaoFontesSection(byYear(u,c.f.year))).filter(Boolean);return _ies.length?`<article class="visual-card cf-card" style="margin-top:1.5rem"><h3>Composição por Fonte de Despesa</h3><p class="card-subtitle">Participação de cada fonte nos grupos de vinculação — Orçamento Atualizado 2024</p><div class="cf-all-ies">${_ies.join('')}</div></article>`:'';})():''}`;}
 function matrix(rows,c){const max=Math.max(...rows.map(r=>r.budget),1);return `<div class="efficiency-matrix" role="img" aria-label="Matriz resultado relativo por esforço orçamentário relativo"><div class="quadrant-label q1">alto resultado, baixo esforço</div><div class="quadrant-label q2">alto resultado, alto esforço</div><div class="quadrant-label q3">baixo resultado, baixo esforço</div><div class="quadrant-label q4">baixo resultado, alto esforço</div><div class="matrix-axis-x">Esforço orçamentário relativo</div><div class="matrix-axis-y">Resultado relativo</div>${rows.map(r=>{const size=36+r.budget/max*22;return `<button class="matrix-point ${r.tone}${isUniSelected(c.f,r.id)?" selected":""}" style="left:${relpos(r.effortRel)}%;bottom:${relpos(r.resultRel)}%;width:${size}px;height:${size}px" type="button">${r.sigla}<span class="matrix-tooltip">${r.nome}<br>Resultado: ${r.resultRel.toFixed(1)}% | Esforço: ${r.effortRel.toFixed(1)}%<br>${r.quadrant}</span></button>`}).join("")}</div>`;}
 function legend(rows){const counts=rows.reduce((a,r)=>(a[r.quadrant]=(a[r.quadrant]||0)+1,a),{});return `<div class="legend-list">${Object.entries(counts).map(([label,count])=>{const tone=label==="alto resultado, baixo esforço"?"high":label==="baixo resultado, alto esforço"?"low":"mid";return `<div class="legend-item ${tone}"><span><span class="legend-dot"></span> ${label}</span><strong>${count}</strong></div>`;}).join("")}</div>`;}
 function insights(rows,c){const m=new Map(c.ref.map(u=>[u.id,u]));const a=rows.filter(r=>r.resultRel>=100&&r.effortRel<=100).map(r=>r.sigla).join(", ")||"Sem ocorrência";const b=rows.filter(r=>r.resultRel<100&&r.effortRel>100).map(r=>r.sigla).join(", ")||"Sem ocorrência";const cr=rows.filter(r=>{const u=m.get(r.id);return u&&u.execution<91&&u.cres<75}).map(r=>r.sigla).join(", ")||"Sem ocorrência";const cn=rows.filter(r=>{const u=m.get(r.id);return u&&u.doctors>84&&resultIndicators.cnpq.get(u)<mean(c.ref,resultIndicators.cnpq.get)}).map(r=>r.sigla).join(", ")||"Sem ocorrência";return `<ul class="insight-list"><li><strong>Resultado acima e esforço abaixo:</strong> ${a}</li><li><strong>Alto esforço e resultado abaixo:</strong> ${b}</li><li><strong>Baixa execução e ociosidade de CRES:</strong> ${cr}</li><li><strong>Alta qualificação e menor captação CNPq:</strong> ${cn}</li></ul>`;}
@@ -9036,6 +9325,8 @@ document.addEventListener("DOMContentLoaded", () => {
         "part_emendas_federais"
       ];
       D8050.forEach(function(f) { if (rc[f] != null) c[f] = rc[f]; });
+      if (rc.composicaoFontes != null) c.composicaoFontes = rc.composicaoFontes;
+      ['ind81','ind82','ind83','ind84','ind85','ind86','ind87','ind88','ind89','ind90','ind91','ind92','ind93','ind94','ind95'].forEach(function(f){if(rc[f]!=null)c[f]=rc[f];});
     }
     return c;
   };

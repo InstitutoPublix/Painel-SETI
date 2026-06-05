@@ -1471,9 +1471,30 @@ async function loadPrecomputedJson() {
       if (vals.doctors    != null) augmented.iesDocDout       = vals.doctors;
       if (vals.capes      != null) augmented.capesConceito    = vals.capes;
       if (vals.cnpq       != null) augmented.cnpqCaptacao     = vals.cnpq;
+      // Indicadores 81–87 (Eficiência e Estrutura Orçamentária — IES-PR)
+      if (vals.ind81 != null) augmented.ind81 = vals.ind81;
+      if (vals.ind82 != null) augmented.ind82 = vals.ind82;
+      if (vals.ind83 != null) augmented.ind83 = vals.ind83;
+      if (vals.ind84 != null) augmented.ind84 = vals.ind84;
+      if (vals.ind85 != null) augmented.ind85 = vals.ind85;
+      if (vals.ind86 != null) augmented.ind86 = vals.ind86;
+      if (vals.ind87 != null) augmented.ind87 = vals.ind87;
+      if (vals.ind88 != null) augmented.ind88 = vals.ind88;
+      if (vals.ind89 != null) augmented.ind89 = vals.ind89;
+      if (vals.ind90 != null) augmented.ind90 = vals.ind90;
+      if (vals.ind91 != null) augmented.ind91 = vals.ind91;
+      if (vals.ind92 != null) augmented.ind92 = vals.ind92;
+      if (vals.ind93 != null) augmented.ind93 = vals.ind93;
+      if (vals.ind94 != null) augmented.ind94 = vals.ind94;
+      if (vals.ind95 != null) augmented.ind95 = vals.ind95;
       if (upsertYearIndicators(sigla, year, augmented)) count++;
     }
     if (count === 0) throw new Error("no_valid_rows");
+    // Propaga composicaoFontes para DATA[sigla].byYear[year] (IES-PR)
+    const composicaoFontes = data.composicaoFontes || {};
+    for (const [sigla, cf] of Object.entries(composicaoFontes)) {
+      if (cf) upsertYearIndicators(sigla, year, { composicaoFontes: cf });
+    }
     // Carrega dados multi-ano do Relatório Despesa 8050 (2024/2025/2026)
     const byYearData = data.byYear || {};
     for (const [sigla, yearMap] of Object.entries(byYearData)) {
@@ -1483,6 +1504,8 @@ async function loadPrecomputedJson() {
     }
     if (data.clusters)   window.SETI_CLUSTERS   = data.clusters;
     if (data.quartiRefs) window.SETI_QUARTIREFS  = data.quartiRefs;
+    // Expõe byYear por IES para série histórica ind81-87 (2024/2025/2026)
+    if (data.byYear)     window.SETI_BYEAR       = data.byYear;
     registerBase(NOME_BASE + " (ano=" + year + ")", "real", count, inferPrecomputedSourceBases(data));
   } catch (err) {
     const reason = friendlyError(err);

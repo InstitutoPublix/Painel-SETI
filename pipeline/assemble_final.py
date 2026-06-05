@@ -1128,6 +1128,25 @@ for sigla in IEES_PR:
         for field in fields_2024:
             sources[key][field] = src
 
+# ── Aliases ind81–ind87 (Eficiência e Estrutura Orçamentária) ─────────────────
+# Mapeados dos campos D8050 já extraídos. Escopo: 7 IES-PR, ano 2024.
+_IND8X_MAP = {
+    "ind81": "tx_execucao_empenho",   # Execução (Empenho)
+    "ind82": "tx_liquidacao",          # Liquidação
+    "ind83": "tx_pagamento_liq",       # Pagamento/Liquidado
+    "ind84": "grau_contingenciamento", # Contingenciamento ↓ melhor
+    "ind85": "var_dotacao_loa",        # Variação Dotação vs LOA inicial
+    "ind86": "part_pessoal",           # Participação Pessoal e Encargos
+    "ind87": "part_outras_correntes",  # Participação Outras Despesas Correntes
+}
+for sigla in IEES_PR:
+    key = sigla.lower()
+    for ind, campo in _IND8X_MAP.items():
+        val = results[key].get(campo)
+        if val is not None:
+            results[key][ind] = val
+            sources[key][ind] = sources[key].get(campo, "")
+
 
 # ── Seção 10 — Estratificação V6 (Dinâmica Orçamentária PR) ──────────────────
 # Lê a aba '9_Dinâmica Orçamentária PR' do arquivo de estratificação e extrai
@@ -1182,6 +1201,212 @@ for _s in IEES_PR:
 print(_SEP10, file=sys.stderr)
 
 
+# ── Seção 13 — Composição de Fontes de Despesa ───────────────────────────────
+# Derivado dos campos já extraídos em d8050_by_year para 2024.
+# Calcula pct_no_grupo e valor (R$ mi) para cada fonte dentro dos grupos 50 e 70.
+
+_FONTES_NOMES = {
+    "500": "Recursos do Tesouro",
+    "501": "Arrecadação Própria",
+    "700": "Convênios da União",
+    "703": "Conv. Entidades Privadas",
+    "706": "Emendas Federais",
+}
+
+def _composicao_fontes(yr_data):
+    g50 = yr_data.get("part_recursos_livres")
+    g70 = yr_data.get("part_demais_vincul")
+    orc = yr_data.get("orcamento_atualizado")  # R$ milhões
+
+    def _fonte(code, pct_orc, g_pct):
+        if pct_orc is None:
+            return None
+        return {
+            "nome": _FONTES_NOMES.get(code, code),
+            "pct_no_orcamento": round(pct_orc, 2),
+            "pct_no_grupo": round(pct_orc / g_pct * 100, 2) if g_pct else None,
+            "valor": round(pct_orc / 100 * orc, 3) if orc else None,
+        }
+
+    def _grupo(nome, total_pct, fontes_raw):
+        fontes = {k: v for k, v in fontes_raw.items() if v is not None}
+        return {"nome": nome, "total_pct": total_pct, "fontes": fontes}
+
+    return {
+        "grupo50": _grupo(
+            "Recursos Livres (não vinculados)", g50,
+            {
+                "500": _fonte("500", yr_data.get("part_fonte_500"), g50),
+                "501": _fonte("501", yr_data.get("part_fonte_501"), g50),
+            },
+        ),
+        "grupo70": _grupo(
+            "Demais Vinculações Decorrentes", g70,
+            {
+                "700": _fonte("700", yr_data.get("part_convenios_uniao"), g70),
+                "703": _fonte("703", yr_data.get("part_convenios_privados"), g70),
+                "706": _fonte("706", yr_data.get("part_emendas_federais"), g70),
+            },
+        ),
+    }
+
+composicaoFontes = {}
+for _sigla in IEES_PR:
+    _yr = d8050_by_year.get(_sigla, {}).get("2024", {})
+    if _yr:
+        composicaoFontes[_sigla] = _composicao_fontes(_yr)
+
+
+# ── Seção 13b — IND 80 (Dispersão Territorial dos Egressos) ──────────────────
+# Fonte: Base RAIS - 2023 e 2024 - Paraná.xlsx / Base_RAIS_2023_2024
+# Coluna [22]: Índice de dispersão territorial dos egressos por curso (pré-calculado)
+# ind80 = média do índice por IES, par (coorte, ano_rais) mais recente
+# Valores típicos: 0.004–0.015 (escala original do arquivo)
+# Escopo: 7 IES-PR
+
+wb_rais80 = openpyxl.load_workbook(DATA_DIR / "Base RAIS - 2023 e 2024 - Paraná.xlsx", read_only=True, data_only=True)
+ws_rais80 = wb_rais80["Base_RAIS_2023_2024"]
+next(ws_rais80.iter_rows(min_row=1, max_row=1))  # pula header
+
+_rais80_raw = {}  # {iees: {(coorte, ano_rais): [disp_vals]}}
+for _row in ws_rais80.iter_rows(min_row=2, values_only=True):
+    _iees = str(_row[3]).strip().upper() if _row[3] else None
+    if _iees not in IEES_PR:
+        continue
+    try:
+        _ano_eg = int(_row[1]); _ano_rais = int(_row[2])
+    except (TypeError, ValueError):
+        continue
+    _disp = _row[22]
+    if _disp is None:
+        continue
+    try:
+        _disp = float(_disp)
+    except (TypeError, ValueError):
+        continue
+    if _iees not in _rais80_raw:
+        _rais80_raw[_iees] = {}
+    _par = (_ano_eg, _ano_rais)
+    if _par not in _rais80_raw[_iees]:
+        _rais80_raw[_iees][_par] = []
+    _rais80_raw[_iees][_par].append(_disp)
+wb_rais80.close()
+
+_SRC_RAIS80 = "Base RAIS - 2023 e 2024 - Paraná.xlsx / Base_RAIS_2023_2024 / [22] Índice dispersão territorial / média por IES (par mais recente)"
+for _iees in IEES_PR:
+    _key = _iees.lower()
+    if _iees not in _rais80_raw:
+        results[_key]["ind80"] = None
+        sources[_key]["ind80"] = _SRC_RAIS80 + " / base insuficiente"
+        continue
+    _pares = sorted(_rais80_raw[_iees].keys(), reverse=True)
+    if not _pares:
+        results[_key]["ind80"] = None
+        continue
+    _best = _pares[0]
+    _vals = _rais80_raw[_iees][_best]
+    _media = sum(_vals) / len(_vals)
+    # Multiplica por 100 para apresentar em % (0.0083 → 0.83%)
+    results[_key]["ind80"] = round(_media * 100, 4)
+    sources[_key]["ind80"] = _SRC_RAIS80 + f" / coorte={_best[0]} RAIS={_best[1]} / n_cursos={len(_vals)}"
+
+
+# ── Seção 14 — IND 88–95 (Estrutura e Capacidade de Investimento) ────────────
+# ind88: Razão Correntes/Capital — Cat 3 vs Cat 4
+# ind89: Recursos Livres → alias de part_recursos_livres
+# ind90: Recursos Próprios → alias de part_fonte_501
+# ind91: Transferências → alias de part_demais_vincul
+# ind92: Obras (Elemento 51, Liquidado / Orçamento Atualizado × 100)
+# ind93: Equipamentos (Elemento 52, Liquidado / Orçamento Atualizado × 100)
+# ind94: Variação Dotação → alias de var_dotacao_loa (= ind85)
+# ind95: Execução sobre LOA Inicial (Liquidado / DotaçãoInicial × 100)
+# Colunas (0-indexed): [0]=Ano [6]=UO [13]=Categoria [16]=Elemento
+#   [33]=DotaçãoInicial [37]=OrcAtualizado [47]=Liquidado [49]=Co_IES
+
+# ind89, ind90, ind91, ind94: aliases de campos já existentes em results
+_IND9X_DIRECT = {
+    "ind89": "part_recursos_livres",
+    "ind90": "part_fonte_501",
+    "ind91": "part_demais_vincul",
+    "ind94": "var_dotacao_loa",
+}
+for _sig in IEES_PR:
+    _k = _sig.lower()
+    for _ind, _campo in _IND9X_DIRECT.items():
+        _v = results[_k].get(_campo)
+        if _v is not None:
+            results[_k][_ind] = _v
+            sources[_k][_ind] = sources[_k].get(_campo, "")
+
+# ind88, ind92, ind93, ind95: lidos do arquivo D8050
+_inv_data = {
+    sig: {"orc_corr": 0.0, "orc_cap": 0.0,
+          "liq_51": 0.0, "liq_52": 0.0,
+          "liq_total": 0.0, "dot_total": 0.0}
+    for sig in IEES_PR
+}
+
+wb_inv = openpyxl.load_workbook(DATA_DIR / _DESPESA_FILE, read_only=True, data_only=True)
+ws_inv = wb_inv[_DESPESA_SHEET]
+for _row in ws_inv.iter_rows(min_row=2, values_only=True):
+    try:
+        _uo = int(_row[6]); _ano = int(_row[0])
+    except Exception:
+        continue
+    _sig = _UO_IES_MAP.get(_uo)
+    if _sig is None or _ano != 2024:
+        continue
+    _d = _inv_data[_sig]
+    _cat = str(_row[13]) if _row[13] is not None else ""
+    _el  = str(_row[16]) if _row[16] is not None else ""
+    def _f(v):
+        try: return float(v) if v else 0.0
+        except: return 0.0
+    _orc = _f(_row[37]); _liq = _f(_row[47]); _dot = _f(_row[33])
+    if _cat == "3": _d["orc_corr"] += _orc
+    if _cat == "4": _d["orc_cap"]  += _orc
+    if _el  == "51": _d["liq_51"]  += _liq
+    if _el  == "52": _d["liq_52"]  += _liq
+    _d["liq_total"] += _liq
+    _d["dot_total"]  += _dot
+wb_inv.close()
+
+_SRC_INV = f"{_DESPESA_FILE} / {_DESPESA_SHEET} / ano=2024"
+for _sig in IEES_PR:
+    _k = _sig.lower()
+    _d = _inv_data[_sig]
+    _orc_total = (_d["orc_corr"] + _d["orc_cap"]) or 1.0
+    # ind88: razão Correntes/Capital (não percentual — razão ex: 22.6)
+    if _d["orc_cap"] > 0:
+        results[_k]["ind88"] = round(_d["orc_corr"] / _d["orc_cap"], 2)
+        sources[_k]["ind88"] = _SRC_INV + " / OrcCorrente÷OrcCapital (Cat3÷Cat4)"
+    # ind92: Obras (Elemento 51)
+    results[_k]["ind92"] = round(_d["liq_51"] / _orc_total * 100, 2)
+    sources[_k]["ind92"] = _SRC_INV + " / Liquidado Elemento 51 ÷ OrcAtualizado × 100"
+    # ind93: Equipamentos (Elemento 52)
+    results[_k]["ind93"] = round(_d["liq_52"] / _orc_total * 100, 2)
+    sources[_k]["ind93"] = _SRC_INV + " / Liquidado Elemento 52 ÷ OrcAtualizado × 100"
+    # ind95: Execução sobre LOA Inicial
+    if _d["dot_total"] > 0:
+        results[_k]["ind95"] = round(_d["liq_total"] / _d["dot_total"] * 100, 2)
+        sources[_k]["ind95"] = _SRC_INV + " / sum(Liquidado) ÷ sum(DotaçãoInicial) × 100"
+
+
+# ── Seção 15 — Aliases ind81–87 nos anos 2025 e 2026 (série histórica) ───────
+# d8050_by_year já tem tx_execucao_empenho etc. para 2024/2025/2026.
+# Adiciona aliases ind81–87 nos yearData de cada ano para que o dashboard
+# possa acessar pelo nome ind81 independente do ano selecionado.
+for _sig in IEES_PR:
+    for _yr in ["2024", "2025", "2026"]:
+        _yr_data = d8050_by_year.get(_sig, {}).get(_yr, {})
+        if not _yr_data:
+            continue
+        for _ind, _campo in _IND8X_MAP.items():
+            _v = _yr_data.get(_campo)
+            if _v is not None:
+                _yr_data[_ind] = _v
+
+
 # ── Saída stdout (retrocompatível) ────────────────────────────────────────────
 
 print(json.dumps({"results": results, "sources": sources}, indent=2, ensure_ascii=False))
@@ -1199,6 +1424,7 @@ precomputed = {
     "sources":    {iees: sources[iees.lower()] for iees in IEES},
     "clusters":   {iees: clusters_raw.get(iees, {}) for iees in IEES},
     "quartiRefs": quartis_ref,
+    "composicaoFontes": composicaoFontes,
     # byYear: 2024 = todos os indicadores para as 40 IES;
     # 2025/2026 = apenas campos D8050 para as 7 IES-PR
     "byYear": {

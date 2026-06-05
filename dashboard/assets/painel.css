@@ -3697,6 +3697,110 @@ body {
   color: var(--blue-900);
 }
 
+/* ── IND 81–87 Eficiência e Estrutura Orçamentária ──────────────────────── */
+.orc-block { margin-top: 1rem; }
+.orc-kpis-row {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+  margin-bottom: 1.25rem;
+}
+.orc-kpi {
+  flex: 1 1 130px;
+  min-width: 110px;
+  background: var(--gray-50, #f9fafb);
+  border: 1px solid var(--gray-200, #e5e7eb);
+  border-radius: 8px;
+  padding: .75rem;
+  display: flex;
+  flex-direction: column;
+  gap: .25rem;
+}
+.orc-kpi-ind  { font-size: .68rem; color: var(--gray-400, #9ca3af); font-weight: 600; text-transform: uppercase; letter-spacing: .05em; }
+.orc-kpi-title{ font-size: .78rem; color: var(--gray-700, #374151); line-height: 1.3; }
+.orc-kpi-val  { font-size: 1.5rem; font-weight: 700; line-height: 1.1; }
+.orc-kpi-note { font-size: .7rem; color: var(--gray-500, #6b7280); margin-top: .2rem; }
+.orc-struct { border-top: 1px solid var(--gray-200, #e5e7eb); padding-top: .75rem; }
+.orc-struct-header { display: flex; align-items: baseline; gap: .75rem; margin-bottom: .6rem; font-size: .82rem; flex-wrap: wrap; }
+.orc-ref-note { font-size: .7rem; color: var(--gray-400, #9ca3af); }
+.orc-bar-wrap {
+  position: relative;
+  height: 24px;
+  border-radius: 4px;
+  overflow: hidden;
+  background: var(--gray-100, #f3f4f6);
+  display: flex;
+  margin-bottom: .5rem;
+}
+.orc-bar-seg { height: 100%; transition: width .3s; }
+.orc-bar-ref {
+  position: absolute;
+  top: 0; bottom: 0;
+  width: 2px;
+  background: #1e3a5f;
+  opacity: .5;
+  z-index: 2;
+  border-right: 1px dashed #1e3a5f;
+}
+.orc-bar-legend { display: flex; gap: 1rem; flex-wrap: wrap; font-size: .75rem; color: var(--gray-600, #4b5563); }
+.orc-dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 4px; vertical-align: middle; }
+.orc-struct-body { display: flex; gap: 1.5rem; flex-wrap: wrap; align-items: flex-start; margin-top: .5rem; }
+.orc-pie-col { display: flex; flex-direction: column; align-items: center; gap: .4rem; flex: 0 0 auto; }
+.orc-pie-title { font-size: .75rem; font-weight: 600; color: var(--gray-600, #4b5563); text-align: center; }
+.orc-pie-legend { list-style: none; padding: 0; margin: 0; font-size: .72rem; color: var(--gray-600, #4b5563); display: flex; flex-direction: column; gap: .2rem; }
+.orc-bar-col { flex: 1 1 200px; display: flex; flex-direction: column; gap: .5rem; justify-content: center; }
+.orc-sub-block { border-top: 1px solid var(--gray-200,#e5e7eb); margin-top: 1rem; padding-top: .75rem; }
+.orc-sub-header { font-size: .82rem; margin-bottom: .6rem; color: var(--gray-700,#374151); }
+
+/* ── Composição de Fontes de Despesa (pizza charts) ─────────────────────── */
+.cf-card { margin-top: 1.5rem; }
+
+/* Container do conjunto de cards por IES — ocupa a largura total */
+.cf-all-ies {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(560px, 1fr));
+  gap: 1.5rem;
+  margin-top: .5rem;
+}
+
+/* Um card por IES contém os dois grupos (50 e 70) lado a lado */
+.cf-grupos-row {
+  display: flex;
+  gap: 1.5rem;
+  flex-wrap: wrap;
+}
+.cf-grupo { flex: 1 1 220px; min-width: 200px; }
+.cf-grupo-header {
+  display: flex;
+  align-items: center;
+  gap: .5rem;
+  margin-bottom: .6rem;
+  font-size: .82rem;
+}
+.cf-pie-row {
+  display: flex;
+  align-items: center;
+  gap: .75rem;
+  flex-wrap: wrap;
+}
+.cf-legend {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  font-size: .75rem;
+  display: flex;
+  flex-direction: column;
+  gap: .3rem;
+  flex: 1 1 120px;
+}
+.cf-legend li { display: flex; flex-direction: column; gap: 1px; }
+.cf-vals {
+  display: block;
+  font-size: .68rem;
+  color: var(--gray-500, #6b7280);
+  margin-left: 15px;
+}
+
 .dual-ref-bars .bar-track {
   position: relative;
   overflow: visible;
