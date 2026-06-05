@@ -2081,7 +2081,8 @@ const tabInfo = {
   quality:["Qualidade acadêmica e ciência","Qualidade, Pesquisa e Pós-Graduação","Onde está a maturidade acadêmica e científica? Qualificação docente, CAPES, CNPq e internacionalização."],
   faculty:["Capacidade operacional","Corpo Docente e Capacidade Operacional","Há capacidade operacional suficiente? Quadro legal, ocupação docente, TIDE, CRES e alertas."],
   employment:["Egressos e mercado","Inserção Profissional","Os egressos se inserem bem no mercado? Inserção no Paraná, aderência CBO2 e salários."],
-  efficiency:["Análise central","Orçamento × Desempenho Acadêmico","Orçamento maior está associado a melhor desempenho? Análise da relação entre recursos aplicados, custo por aluno e resultados acadêmicos das IEES."]
+  efficiency:["Execução","Execução Orçamentária","Dados do Relatório da Despesa 8050: execução, liquidação, composição e evolução orçamentária das universidades estaduais do Paraná."],
+  performance:["Desempenho","Desempenho e Eficiência Relativa","Orçamento maior está associado a melhor desempenho? Resposta ao piloto, cruzamentos de desempenho e matriz de oportunidades das IEES."]
 };
 const yearAdj = {2026:[1,1,0],2025:[1,1,0],2024:[1,1,0],2023:[.985,.93,-.8],2022:[.968,.86,-1.6],2021:[.952,.80,-2.4],2020:[.941,.74,-3.2]};
 const brazil = {result:{composite:82.4,occupancy:84.1,completion:58.8,permanence:88.1,doctorate:82.6,cnpq:1700,capes:3.9,employment:68.4,salary:5480},effort:{budgetPerStudent:49300,costGraduate:282000,costOccupiedVacancy:178000,costEmployed:393000,budget:780,personnelShare:80.4,supplementation:10.1}};
@@ -2637,7 +2638,8 @@ const sideContext={
   quality:{analyticalNote:"Conceito CAPES abaixo de 4 em mais de 30% dos programas indica fragilidade da pós-graduação.",alertRules:[..._ca]},
   faculty:{analyticalNote:"Taxa de utilização da CRES abaixo de 60% sugere capacidade ociosa. Taxa acima de 95% sugere pressão sobre o quadro efetivo.",alertRules:[..._ca,c=>c.f.scope==="Brasil"?{level:"warning",message:"Dados LGU (CRES, TIDE, ocupação docente) disponíveis apenas no escopo Paraná. Resultados desta aba podem estar incompletos."}:null]},
   employment:{analyticalNote:"Taxa de inserção abaixo de 50% na Região Sul merece investigação qualitativa sobre o perfil dos cursos.",alertRules:[..._ca]},
-  efficiency:{analyticalNote:"Execução abaixo de 85% do orçamento disponível indica dificuldade de absorção. Correlacione com contingenciamento.",alertRules:[..._ca]}
+  efficiency:{analyticalNote:"Execução abaixo de 85% do orçamento disponível indica dificuldade de absorção. Correlacione com contingenciamento.",alertRules:[..._ca]},
+  performance:{analyticalNote:"IEES com menor custo por aluno e desempenho superior ao cluster apontam eficiência relativa. Analise cruzando perfil V6 e resultado acadêmico.",alertRules:[..._ca]}
 };
 function renderSide(c){
   if (c.f.noGroup) {
@@ -2814,6 +2816,18 @@ function _orcColor(v, pol, g, y) {
   if (pol === 'down') return v <= g ? ok : v <= y ? mid : bad;
   return '';
 }
+function _orcColorVal(v, pol, g, y) {
+  if (v == null) return 'var(--blue-400,#60a5fa)';
+  if (pol === 'up')   return v >= g ? 'var(--color-success,#16a34a)' : v >= y ? 'var(--color-warning,#d97706)' : 'var(--color-danger,#dc2626)';
+  if (pol === 'down') return v <= g ? 'var(--color-success,#16a34a)' : v <= y ? 'var(--color-warning,#d97706)' : 'var(--color-danger,#dc2626)';
+  return 'var(--blue-400,#60a5fa)';
+}
+function _orcClass(v, pol, g, y) {
+  if (v == null) return '';
+  if (pol === 'up')   return v >= g ? 'class="orc-cell-good"' : v >= y ? 'class="orc-cell-warn"' : 'class="orc-cell-bad"';
+  if (pol === 'down') return v <= g ? 'class="orc-cell-good"' : v <= y ? 'class="orc-cell-warn"' : 'class="orc-cell-bad"';
+  return '';
+}
 function _orcFmt(v, sign) {
   if (v == null) return '—';
   const s = (sign && v > 0) ? '+' : '';
@@ -2940,15 +2954,15 @@ function orcamentarioTable(rows) {
   const fmt88 = v => v != null ? v.toFixed(1).replace('.', ',') + ':1' : '—';
   const cols=[
     ['IEES',u=>`<strong>${u.sigla}</strong>`,''],
-    ['Execução (81)',u=>_orcFmt(u.ind81),u=>_orcColor(u.ind81,'up',90,75)],
-    ['Liquidação (82)',u=>_orcFmt(u.ind82),u=>_orcColor(u.ind82,'up',90,75)],
-    ['Pgto/Liq (83)',u=>_orcFmt(u.ind83),u=>_orcColor(u.ind83,'up',90,75)],
-    ['Conting (84)',u=>_orcFmt(u.ind84),u=>_orcColor(u.ind84,'down',5,15)],
+    ['Execução (81)',u=>_orcFmt(u.ind81),u=>_orcClass(u.ind81,'up',90,75)],
+    ['Liquidação (82)',u=>_orcFmt(u.ind82),u=>_orcClass(u.ind82,'up',90,75)],
+    ['Pgto/Liq (83)',u=>_orcFmt(u.ind83),u=>_orcClass(u.ind83,'up',90,75)],
+    ['Conting (84)',u=>_orcFmt(u.ind84),u=>_orcClass(u.ind84,'down',5,15)],
     ['Var Dot (85)',u=>_orcFmt(u.ind85,true),''],
     ['Pessoal (86)',u=>_orcFmt(u.ind86),''],
     ['Outras Corr (87)',u=>_orcFmt(u.ind87),''],
     ['Corr/Cap (88)',u=>fmt88(u.ind88),''],
-    ['Exec/LOA (95)',u=>_orcFmt(u.ind95),u=>_orcColor(u.ind95,'up',85,70)],
+    ['Exec/LOA (95)',u=>_orcFmt(u.ind95),u=>_orcClass(u.ind95,'up',85,70)],
   ];
   const hd = cols.map(([h])=>`<th>${h}</th>`).join('');
   const tbody = rows.map(u=>`<tr>${cols.map(([,val,col])=>`<td ${col?col(u):''}>${val(u)}</td>`).join('')}</tr>`).join('');
@@ -2976,11 +2990,11 @@ function orcamentarioBlock(c) {
   return ies.length === 1 ? orcamentarioKpis(ies[0]) : orcamentarioTable(ies);
 }
 
-function efficiency(c){const d=c.ref,rows=matrixRows(d,c.f);if(!d.length)return empty();return `<div class="efficiency-layout"><article class="matrix-panel card-primary"><h3>Matriz de eficiência relativa por agrupamento dinâmico</h3><p class="card-subtitle">Eixo X: esforço orçamentário relativo ao grupo | Eixo Y: resultado relativo ao grupo | Tamanho: orçamento liquidado</p>${matrix(rows,c)}</article><div class="matrix-side"><article class="visual-card card-support"><h3>Quadrante oficial</h3><p class="card-subtitle">Disponível apenas quando a planilha/JSON trouxer critério de quadrante.</p>${legend(rows)}</article><article class="visual-card card-support"><h3>Insights automáticos</h3><p class="card-subtitle">Sinais contextuais para investigação</p>${insights(rows,c)}</article></div></div>${metricTable(d,[["IEES",u=>`<strong>${u.sigla}</strong><br><span>${u.groups[c.f.groupBy]}</span>`],["Orçamento",u=>formatCurrencyMillions(u.budget)],["Execução",u=>formatPercent(u.execution)],["Liquidação",u=>formatPercent(u.liquidation)],["Pessoal",u=>formatPercent(u.personnel)],["Suplementação",u=>formatPercent(u.supplementation)]],"Estrutura de gastos e execução orçamentária")}${orcamentarioBlock(c)}${c.f.scope==="Paraná"?(()=>{const _ies=(c.display.length?c.display:[...c.ref]).map(u=>composicaoFontesSection(byYear(u,c.f.year))).filter(Boolean);return _ies.length?`<article class="visual-card cf-card" style="margin-top:1.5rem"><h3>Composição por Fonte de Despesa</h3><p class="card-subtitle">Participação de cada fonte nos grupos de vinculação — Orçamento Atualizado 2024</p><div class="cf-all-ies">${_ies.join('')}</div></article>`:'';})():''}`;}
+function efficiency(c){const d=c.ref,rows=matrixRows(d,c.f);if(!d.length)return empty();return `${c.f.scope==="Paraná"?'<div class="metodologia-note"><span class="metodologia-icon">ℹ</span>Para a análise dos dados do Relatório da Despesa 8050, foram consideradas apenas as ações da Gestão das Atividades Universitárias.</div>':''}<div class="efficiency-layout"><article class="matrix-panel card-primary"><h3>Matriz de eficiência relativa por agrupamento dinâmico</h3><p class="card-subtitle">Eixo X: esforço orçamentário relativo ao grupo | Eixo Y: resultado relativo ao grupo | Tamanho: orçamento liquidado</p>${matrix(rows,c)}</article><div class="matrix-side"><article class="visual-card card-support"><h3>Quadrante oficial</h3><p class="card-subtitle">Disponível apenas quando a planilha/JSON trouxer critério de quadrante.</p>${legend(rows)}</article><article class="visual-card card-support"><h3>Insights automáticos</h3><p class="card-subtitle">Sinais contextuais para investigação</p>${insights(rows,c)}</article></div></div>${metricTable(d,[["IEES",u=>`<strong>${u.sigla}</strong><br><span>${u.groups[c.f.groupBy]}</span>`],["Orçamento",u=>formatCurrencyMillions(u.budget)],["Execução",u=>formatPercent(u.execution)],["Liquidação",u=>formatPercent(u.liquidation)],["Pessoal",u=>formatPercent(u.personnel)],["Suplementação",u=>formatPercent(u.supplementation)]],"Estrutura de gastos e execução orçamentária")}${orcamentarioBlock(c)}${c.f.scope==="Paraná"?(()=>{const _ies=(c.display.length?c.display:[...c.ref]).map(u=>composicaoFontesSection(byYear(u,c.f.year))).filter(Boolean);return _ies.length?`<article class="visual-card cf-card" style="margin-top:1.5rem"><h3>Composição por Fonte de Despesa</h3><p class="card-subtitle">Participação de cada fonte nos grupos de vinculação — Orçamento Atualizado 2024</p><div class="cf-all-ies">${_ies.join('')}</div></article>`:'';})():''}`;}
 function matrix(rows,c){if(!hasOfficialQuadrants())return quadrantUnavailableBlock();const max=Math.max(...rows.map(r=>r.budget),1);return `<div class="efficiency-matrix" role="img" aria-label="Matriz resultado relativo por esforço orçamentário relativo"><div class="quadrant-label q1">alto resultado, baixo esforço</div><div class="quadrant-label q2">alto resultado, alto esforço</div><div class="quadrant-label q3">baixo resultado, baixo esforço</div><div class="quadrant-label q4">baixo resultado, alto esforço</div><div class="matrix-axis-x">Esforço orçamentário relativo</div><div class="matrix-axis-y">Resultado relativo</div>${rows.map(r=>{const size=36+r.budget/max*22;return `<button class="matrix-point ${r.tone}${isUniSelected(c.f,r.id)?" selected":""}" style="left:${relpos(r.effortRel)}%;bottom:${relpos(r.resultRel)}%;width:${size}px;height:${size}px" type="button">${r.sigla}<span class="matrix-tooltip">${r.nome}<br>Resultado: ${r.resultRel.toFixed(1)}% | Esforço: ${r.effortRel.toFixed(1)}%<br>${r.quadrant}</span></button>`}).join("")}</div>`;}
 function legend(rows){if(!hasOfficialQuadrants())return quadrantUnavailableBlock();const counts=rows.reduce((a,r)=>(a[r.quadrant]=(a[r.quadrant]||0)+1,a),{});return `<div class="legend-list">${Object.entries(counts).map(([label,count])=>{const tone=label==="alto resultado, baixo esforço"?"high":label==="baixo resultado, alto esforço"?"low":"mid";return `<div class="legend-item ${tone}"><span><span class="legend-dot"></span> ${label}</span><strong>${count}</strong></div>`;}).join("")}</div>`;}
 function insights(rows,c){const m=new Map(c.ref.map(u=>[u.id,u]));const a=rows.filter(r=>r.resultRel>=100&&r.effortRel<=100).map(r=>r.sigla).join(", ")||"Sem ocorrência";const b=rows.filter(r=>r.resultRel<100&&r.effortRel>100).map(r=>r.sigla).join(", ")||"Sem ocorrência";const cr=rows.filter(r=>{const u=m.get(r.id);return u&&u.execution<91&&u.cres<75}).map(r=>r.sigla).join(", ")||"Sem ocorrência";const cn=rows.filter(r=>{const u=m.get(r.id);return u&&u.doctors>84&&resultIndicators.cnpq.get(u)<mean(c.ref,resultIndicators.cnpq.get)}).map(r=>r.sigla).join(", ")||"Sem ocorrência";return `<ul class="insight-list"><li><strong>Resultado acima e esforço abaixo:</strong> ${a}</li><li><strong>Alto esforço e resultado abaixo:</strong> ${b}</li><li><strong>Baixa execução e ociosidade de CRES:</strong> ${cr}</li><li><strong>Alta qualificação e menor captação CNPq:</strong> ${cn}</li></ul>`;}
-function bars(d,get,fmt){const s=[...d].sort((a,b)=>get(b)-get(a)),max=Math.max(...s.map(get),1);return `<div class="bars">${s.map(u=>{const v=get(u);return `<div class="bar-row"><span class="bar-name" title="${u.nome}">${u.sigla}</span><span class="bar-track"><span class="bar-fill" style="width:${clamp(v/max*100,4,100)}%"></span></span><span class="bar-value">${fmt(v)}</span></div>`}).join("")}</div>`;}
+function bars(d,get,fmt,colorFn){const s=[...d].sort((a,b)=>get(b)-get(a)),max=Math.max(...s.map(get),1);return `<div class="bars">${s.map(u=>{const v=get(u);const bg=colorFn?`;background:${colorFn(v)}`:'';return `<div class="bar-row"><span class="bar-name" title="${u.nome}">${u.sigla}</span><span class="bar-track"><span class="bar-fill" style="width:${clamp(v/max*100,4,100)}%${bg}"></span></span><span class="bar-value">${fmt(v)}</span></div>`;}).join("")}</div>`;}
 function rank(rows,val,sub){return `<div class="rank-list">${rows.map((r,i)=>`<div class="rank-item"><span class="rank-number">${i+1}</span><span><span class="rank-title">${r.sigla} - ${r.nome}</span><span class="rank-subtitle">${r[sub]||r.region}</span></span><span class="rank-value">${val(r)}</span></div>`).join("")}</div>`;}
 function score(t,v,s,w,r){const ref=(r!=null&&isFinite(r))?`<span class="score-meter-ref" style="left:${clamp(r,0,100)}%"><span class="score-meter-ref-label">Br</span></span>`:"";return `<article class="score-card"><h3>${t}</h3><p class="card-subtitle">${s}</p><div class="score-value">${v}</div><div class="score-meter"><span style="width:${clamp(w,5,100)}%"></span>${ref}</div></article>`;}
 function funnel(l,v,w){return `<div class="funnel-step" style="width:${clamp(w,28,100)}%"><strong>${l}</strong><span>${formatNumber(v)}</span></div>`;}
@@ -3102,7 +3116,8 @@ const decisoryQuestions = {
   quality: "A pesquisa e a pós-graduação estão avançando?",
   faculty: "O quadro docente está sendo utilizado plenamente?",
   employment: "Os egressos estão sendo absorvidos pelo mercado?",
-  efficiency: "Orçamento maior está associado a melhor desempenho acadêmico?"
+  efficiency: "Como está a execução orçamentária das universidades estaduais?",
+  performance: "Orçamento maior está associado a melhor desempenho acadêmico?"
 };
 
 const tabBlocks = {
@@ -3112,7 +3127,8 @@ const tabBlocks = {
   quality: ["Qualificação docente", "Pós-grad e CAPES", "Pesquisa e CNPq", "Internacionalização"],
   faculty: ["Quadro legal", "Vagas disponíveis e condicionadas", "TIDE", "CRES e esforço", "Alertas"],
   employment: ["Inserção geral", "Inserção PR e Sul", "CBO2 e salário", "Destino territorial", "Por curso", "Perfil ocupacional"],
-  efficiency: ["Resposta ao Piloto", "Perfil da movimentação", "Fundo Paraná", "Composição crédito e despesa", "Cruzamento desempenho acadêmico", "Cruzamento corpo docente", "Matriz de oportunidades e alertas"]
+  efficiency: ["Perfil da movimentação", "Fundo Paraná", "Composição crédito e despesa"],
+  performance: ["Resposta ao Piloto", "Cruzamento desempenho acadêmico", "Cruzamento corpo docente", "Matriz de oportunidades e alertas"]
 };
 
 const tabIndicators = {
@@ -3402,7 +3418,9 @@ const tabBlockIndMap = {
   },
   efficiency: {
     "Perfil da movimentação":             ["ind81","ind82","ind83","ind84","ind85"],
-    "Composição crédito e despesa":       ["ind86","ind89","ind90"],
+    "Composição crédito e despesa":       ["ind86","ind89","ind90"]
+  },
+  performance: {
     "Cruzamento desempenho acadêmico":    ["ind95","ind96","ind97"],
     "Cruzamento corpo docente":           ["ind95","ind96","ind97"],
     "Matriz de oportunidades e alertas":  ["ind81","ind82","ind83","ind84","ind85","ind86","ind89","ind90","ind95","ind96","ind97"]
@@ -6590,16 +6608,16 @@ window.setEfficiencyResult = function setEfficiencyResult(value) {
 var previousUpdateScopeAvailabilityEfficiency = updateScopeAvailability;
 updateScopeAvailability = function(scope) {
   const v6Option = el.groupBy ? el.groupBy.querySelector('option[value="v6"]') : null;
-  if (state.activeTab === "efficiency" && v6Option) {
+  if ((state.activeTab === "efficiency" || state.activeTab === "performance") && v6Option) {
     v6Option.disabled = false;
-    v6Option.title = "Variável padrão da aba Orçamento e Desempenho (Despesa 8050)";
+    v6Option.title = "Variável padrão das abas de Orçamento e Desempenho (Despesa 8050)";
     return;
   }
   previousUpdateScopeAvailabilityEfficiency(scope);
 };
 
 function applyEfficiencyDefaults() {
-  if (state.activeTab !== "efficiency" || state.efficiencyDefaultApplied || !el.groupBy) return;
+  if ((state.activeTab !== "efficiency" && state.activeTab !== "performance") || state.efficiencyDefaultApplied || !el.groupBy) return;
   const v6Option = el.groupBy.querySelector('option[value="v6"]');
   if (v6Option) v6Option.disabled = false;
   el.groupBy.value = "v6";
@@ -6617,15 +6635,18 @@ render = function renderWithEfficiencyDefaults() {
 var previousRenderBlockContentEfficiency = renderBlockContent;
 renderBlockContent = function(tabId, title, c) {
   if (tabId === "efficiency") return efficiencyBlock(title, c);
+  if (tabId === "performance") return performanceBlock(title, c);
   return previousRenderBlockContentEfficiency(tabId, title, c);
 };
 
 var previousRenderNumberedTabEfficiency = renderNumberedTab;
 renderNumberedTab = function(tabId, c, summary = "") {
-  if (tabId !== "efficiency") return previousRenderNumberedTabEfficiency(tabId, c, summary);
+  if (tabId !== "efficiency" && tabId !== "performance") return previousRenderNumberedTabEfficiency(tabId, c, summary);
   const blocks = tabBlocks[tabId] || [];
-  const mode = `<div class="mode-selector" role="group" aria-label="Modo de análise orçamentária"><button class="mode-btn ${state.efficiencyMode === "movimentacao" ? "active" : ""}" data-mode="movimentacao" type="button" onclick="setEfficiencyMode('movimentacao')">Comparação por cluster</button><button class="mode-btn ${state.efficiencyMode === "eficiencia" ? "active" : ""}" data-mode="eficiencia" type="button" onclick="setEfficiencyMode('eficiencia')">Eficiência relativa</button></div>`;
-  const banner2026 = c.f.year === '2026'
+  const mode = tabId === "efficiency"
+    ? `<div class="mode-selector" role="group" aria-label="Modo de análise orçamentária"><button class="mode-btn ${state.efficiencyMode === "movimentacao" ? "active" : ""}" data-mode="movimentacao" type="button" onclick="setEfficiencyMode('movimentacao')">Comparação por cluster</button><button class="mode-btn ${state.efficiencyMode === "eficiencia" ? "active" : ""}" data-mode="eficiencia" type="button" onclick="setEfficiencyMode('eficiencia')">Eficiência relativa</button></div>`
+    : "";
+  const banner2026 = (tabId === "efficiency" && c.f.year === '2026')
     ? '<div class="data-source-banner warning visible"><span class="dsb-icon" aria-hidden="true">⚠</span><div class="dsb-body"><strong>Dados parciais — 2026</strong><span>Dados de 2026 parciais — exercício em andamento (~3 meses executados). Valores de execução orçamentária não são comparáveis aos anos anteriores.</span></div></div>'
     : '';
   return `<div class="tab-aba-wrapper" data-tab-id="${tabId}">${summary}${banner2026}${mode}${blocks.map((title, index) => renderBlock(index + 1, title, renderBlockContent(tabId, title, c))).join("")}</div>`;
@@ -6633,7 +6654,7 @@ renderNumberedTab = function(tabId, c, summary = "") {
 
 var previousRenderKpisEfficiency = renderKpis;
 renderKpis = function(c) {
-  if (state.activeTab !== "efficiency") return previousRenderKpisEfficiency(c);
+  if (state.activeTab !== "efficiency" && state.activeTab !== "performance") return previousRenderKpisEfficiency(c);
   el.kpiGrid.classList.remove("overview-kpi-grid");
   el.kpiGrid.classList.add("efficiency-kpi-grid");
   el.kpiGrid.style.display = "";
@@ -6661,7 +6682,7 @@ updateFooter = function(c) {
   const ctx = c || context();
   const groupName = ctx.group === "all" ? "Todos os grupos" : ctx.group;
   if (footerCluster) footerCluster.textContent = `${ctx.f.groupBy.toUpperCase()} – ${groupName}`;
-  if (footerScope) footerScope.textContent = state.activeTab === "faculty" ? "Paraná (SETI/LGU)" : state.activeTab === "efficiency" ? "Paraná (Despesa 8050)" : ctx.f.scope;
+  if (footerScope) footerScope.textContent = state.activeTab === "faculty" ? "Paraná (SETI/LGU)" : (state.activeTab === "efficiency" || state.activeTab === "performance") ? "Paraná (Despesa 8050)" : ctx.f.scope;
 };
 
 var previousUpdateContextBarEfficiency = updateContextBar;
@@ -6670,7 +6691,7 @@ updateContextBar = function(c) {
   if (q) q.textContent = decisoryQuestions[state.activeTab] || decisoryQuestions.overview;
   const badge = document.getElementById("scopeBadge");
   if (badge) {
-    const lockedPR = state.activeTab === "faculty" || state.activeTab === "efficiency";
+    const lockedPR = state.activeTab === "faculty" || state.activeTab === "efficiency" || state.activeTab === "performance";
     const isBR = c.f.scope === "Brasil" && !lockedPR;
     badge.className = `scope-badge ${isBR ? "scope-br" : "scope-pr"}`;
     badge.textContent = isBR ? "🌐 Brasil" : "📍 Paraná";
@@ -6689,7 +6710,7 @@ renderTop = function(c) {
   el.activeTabKicker.textContent = t[0];
   el.activeTabTitle.textContent = t[1];
   el.activeTabDescription.textContent = t[2];
-  const scopeText = state.activeTab === "faculty" ? "Paraná · SETI/LGU" : state.activeTab === "efficiency" ? "Paraná · Despesa 8050" : c.f.scope;
+  const scopeText = state.activeTab === "faculty" ? "Paraná · SETI/LGU" : (state.activeTab === "efficiency" || state.activeTab === "performance") ? "Paraná · Despesa 8050" : c.f.scope;
   el.periodPill.textContent = `Ano base ${c.f.year} · Escopo ${scopeText}`;
   el.scopeLabel.textContent = c.selected ? `${c.selected.sigla} | ${c.group}` : c.group === "all" ? "Sistema estadual" : `Grupo ${c.group}`;
   updateActiveClusterLabel(c);
@@ -7254,6 +7275,10 @@ function efficiencyBlock(title, c) {
   return budgetOpportunityBlock(c);
 }
 
+function performanceBlock(title, c) {
+  return efficiencyBlock(title, c);
+}
+
 function budgetFundoBlock(c) {
   const rows = efficiencyRows(c);
   const hasFundo = rows.some(u => u.fundoParana != null);
@@ -7264,12 +7289,12 @@ function budgetFundoBlock(c) {
       <article class="visual-card">
         <h3>Total repassado pelo Fundo Paraná (R$ milhões)</h3>
         <p class="card-subtitle">Valores acumulados repassados pelo Fundo Paraná a cada IEES. Fonte: Base Fundo Paraná – Paraná.</p>
-        ${bars(fundoRows, u => u.fundoParana ?? 0, formatCurrencyMillions)}
+        ${bars(fundoRows, u => u.fundoParana ?? 0, formatCurrencyMillions, () => 'var(--blue-400,#60a5fa)')}
       </article>
       <article class="visual-card">
         <h3>Taxa de execução dos contratos Fundo Paraná</h3>
         <p class="card-subtitle">Percentual de execução dos contratos vinculados ao Fundo Paraná. Verde ≥ 90%; amarelo entre 75% e 90%; vermelho abaixo de 75%.</p>
-        ${bars(fundoRows, u => u.fundoExec ?? 0, formatPercent)}
+        ${bars(fundoRows, u => u.fundoExec ?? 0, formatPercent, v => _orcColorVal(v, 'up', 90, 75))}
       </article>
     </div>
     ${metricTable(fundoRows, [
@@ -7428,10 +7453,10 @@ function budgetStackedBars(c, type) {
   const avg = budgetAgg(rows);
   const avgValues = type === "expense" ? [avg.personnel, avg.odc, avg.investment] : [avg.freeResources, avg.ownResources, avg.transfers];
   const labels = type === "expense" ? ["Pessoal", "Outras DC", "Investimento"] : ["Recursos livres", "Recursos próprios", "Transferências"];
-  return `<div class="budget-stack-reference"><strong>Composição média do cluster</strong><div class="budget-stack-track">${avgValues.map((v, i) => `<span class="budget-seg seg-${i}" style="width:${clamp(v, 0, 100)}%" title="${labels[i]} ${formatPercent(v)}"></span>`).join("")}</div></div><div class="budget-stacked-list">${rows.map(u => {
+  return `<div class="budget-stack-reference"><strong>Composição média do cluster</strong><div class="budget-stack-track">${avgValues.map((v, i) => `<span class="budget-seg seg-${i} has-tip" style="width:${clamp(v, 0, 100)}%" data-tip="${labels[i]}: ${formatPercent(v)}"></span>`).join("")}</div></div><div class="budget-stacked-list">${rows.map(u => {
     const m = budgetMetrics(u);
     const values = type === "expense" ? [m.personnel, m.odc, m.investment] : [m.freeResources, m.ownResources, m.transfers];
-    return `<div class="budget-stack-row ${isUniSelected(c.f, u.id) ? "selected" : ""}"><span class="stack-name">${u.sigla}</span><div class="budget-stack-track">${values.map((v, i) => `<span class="budget-seg seg-${i}" style="width:${clamp(v, 0, 100)}%" title="${labels[i]}: ${formatPercent(v)} · ${formatCurrencyMillions(m.liquidated * v / 100)}"></span>`).join("")}</div><span class="stack-value">${formatPercent(values[0])}</span></div>`;
+    return `<div class="budget-stack-row ${isUniSelected(c.f, u.id) ? "selected" : ""}"><span class="stack-name">${u.sigla}</span><div class="budget-stack-track">${values.map((v, i) => `<span class="budget-seg seg-${i} has-tip" style="width:${clamp(v, 0, 100)}%" data-tip="${labels[i]}: ${formatPercent(v)} · ${formatCurrencyMillions(m.liquidated * v / 100)}"></span>`).join("")}</div><span class="stack-value">${formatPercent(values[0])}</span></div>`;
   }).join("")}</div><div class="stack-legend">${labels.map((label, i) => `<span><i class="budget-dot seg-${i}"></i>${label}</span>`).join("")}</div>`;
 }
 
@@ -7452,13 +7477,12 @@ function budgetWaterfall(c) {
     ["Liquidado", m.liquidated, "total"]
   ];
   const maxAbs = Math.max(...steps.map(s => Math.abs(s[1])), 1);
-  return `<div class="budget-waterfall"><div class="waterfall-title"><strong>${u.sigla}</strong><span>${indicatorName(85)} ${formatPercent(m.variationRate)} · ${indicatorName(84)} ${formatPercent(m.contingencyRate)} · ${indicatorName(97)} ${formatPercent(m.execUpdated)}</span></div><div class="waterfall-bars">${steps.map(([label, value, type]) => `<div class="waterfall-step ${type}"><span class="waterfall-label">${label}</span><div class="waterfall-track"><span style="width:${clamp(Math.abs(value) / maxAbs * 100, 6, 100)}%"></span></div><strong>${formatCurrencyMillions(Math.abs(value))}</strong></div>`).join("")}</div></div>`;
+  return `<div class="budget-waterfall"><div class="waterfall-title"><strong>${u.sigla}</strong><span>${indicatorName(85)} ${formatPercent(m.variationRate)} · ${indicatorName(84)} ${formatPercent(m.contingencyRate)} · ${indicatorName(97)} ${formatPercent(m.execUpdated)}</span></div><div class="waterfall-bars">${steps.map(([label, value, type]) => `<div class="waterfall-step ${type}"><span class="waterfall-label">${label}</span><div class="waterfall-track"><span class="has-tip" style="width:${clamp(Math.abs(value) / maxAbs * 100, 6, 100)}%" data-tip="${label}: ${formatCurrencyMillions(Math.abs(value))}"></span></div><strong>${formatCurrencyMillions(Math.abs(value))}</strong></div>`).join("")}</div></div>`;
 }
 
 function budgetAcademicBlock(c) {
   const options = ["completion", "occupancy", "employment", "doctorate"];
-  return `${budgetResultSelector("Indicador de resultado dos scatters acadêmicos")}
-  <div class="chart-grid budget-relative-grid">${options.map(key => `<article class="visual-card"><h3>Custo relativo × ${budgetResultOptions[key].label}</h3><p class="card-subtitle">Eixos calculados em relação à média do cluster ativo.</p>${budgetRelativeScatter(c, budgetResultOptions[key])}</article>`).join("")}</div>`;
+  return `<div class="chart-grid budget-relative-grid">${options.map(key => `<article class="visual-card"><h3>Custo relativo × ${budgetResultOptions[key].label}</h3><p class="card-subtitle">Eixos calculados em relação à média do cluster ativo.</p>${budgetRelativeScatter(c, budgetResultOptions[key])}</article>`).join("")}</div>`;
 }
 
 function budgetFacultyBlock(c) {
@@ -7541,11 +7565,6 @@ function budgetProfileClass(profile) {
   return "profile-moderate";
 }
 
-function budgetResultSelector(label) {
-  const id = label.toLowerCase().includes("matriz") ? "efficiencyMatrixResultSelector" : "efficiencyAcademicResultSelector";
-  return `<div class="budget-result-selector"><label for="${id}">${label}</label><select id="${id}" onchange="setEfficiencyResult(this.value)">${Object.entries(budgetResultOptions).map(([key, opt]) => `<option value="${key}" ${state.efficiencyResult === key ? "selected" : ""}>${opt.label}</option>`).join("")}</select></div>`;
-}
-
 function budgetMovementBlock(c) {
   const rows = chartRowsByLocal(c, "budgetMovementBlock", efficiencyRows(c));
   const a = budgetAgg(rows);
@@ -7570,7 +7589,7 @@ function deltaForRenderedKpi(label, c) {
   const previousYear = Number(c.f.year) - 1;
   if (!yearAdj[previousYear]) return kpiDeltaForValue(null, null, "neutral", "pp", previousYear, label);
 
-  if (state.activeTab === "efficiency") {
+  if (state.activeTab === "efficiency" || state.activeTab === "performance") {
     const rows = efficiencyRows(c);
     const previous = budgetAgg(previousYearRows(rows, previousYear));
     const current = budgetAgg(rows);
@@ -7630,7 +7649,7 @@ renderKpis = function(c) {
     if (el.kpiGrid) el.kpiGrid.innerHTML = `<p style="grid-column:1/-1;text-align:center;padding:20px;color:var(--gray-500)">Selecione pelo menos uma IEES para ver os indicadores.</p>`;
     return;
   }
-  if (state.activeTab !== "efficiency" && el.kpiGrid) el.kpiGrid.classList.remove("efficiency-kpi-grid");
+  if (state.activeTab !== "efficiency" && state.activeTab !== "performance" && el.kpiGrid) el.kpiGrid.classList.remove("efficiency-kpi-grid");
   renderKpisEfficiencyCleanup(c);
   appendMissingKpiDeltas(c);
 };
@@ -8154,7 +8173,8 @@ const BUTTON_AUDIT_MAP = [
   { selector: ".tab-button[data-tab='quality']", label: "Aba 5 - Qualidade", handler: "activateTab('quality')" },
   { selector: ".tab-button[data-tab='faculty']", label: "Aba 6 - Corpo Docente", handler: "activateTab('faculty')" },
   { selector: ".tab-button[data-tab='employment']", label: "Aba 7 - Insercao Profissional", handler: "activateTab('employment')" },
-  { selector: ".tab-button[data-tab='efficiency']", label: "Aba 8 - Orcamento e Eficiencia", handler: "activateTab('efficiency')" },
+  { selector: ".tab-button[data-tab='efficiency']", label: "Aba 8 - Execucao Orcamentaria", handler: "activateTab('efficiency')" },
+  { selector: ".tab-button[data-tab='performance']", label: "Aba 9 - Desempenho e Eficiencia Relativa", handler: "activateTab('performance')" },
   { selector: ".export-btn", label: "Exportar", handler: "exportTabData()" }
 ];
 window.BUTTON_AUDIT_MAP = BUTTON_AUDIT_MAP;
@@ -8299,7 +8319,7 @@ updateScopeAvailability = function updateScopeAvailability(scope) {
 window.updateScopeAvailability = updateScopeAvailability;
 
 applyEfficiencyDefaults = function applyEfficiencyDefaults() {
-  if (state.activeTab !== "efficiency" || state.efficiencyDefaultApplied || !el.groupBy) return;
+  if ((state.activeTab !== "efficiency" && state.activeTab !== "performance") || state.efficiencyDefaultApplied || !el.groupBy) return;
   if (isBrasilScope(state.scope)) {
     state.efficiencyDefaultApplied = true;
     return;
@@ -8347,7 +8367,7 @@ const TABS_WITH_BRASIL = new Set(["overview","comparison","access","retention","
 function activateTab(tabId, options = {}) {
   const nextTab = tabInfo[tabId] ? tabId : "overview";
   state.activeTab = nextTab;
-  if (nextTab !== "efficiency") state.efficiencyDefaultApplied = false;
+  if (nextTab !== "efficiency" && nextTab !== "performance") state.efficiencyDefaultApplied = false;
   const tabs = el.tabs?.length ? el.tabs : [...document.querySelectorAll(".tab-button")];
   tabs.forEach(tab => {
     const active = tab.dataset.tab === nextTab;
@@ -8989,8 +9009,9 @@ window.renderBlockContent = renderBlockContent;
 
 var renderTabBeforeBrasilScope = renderTab;
 renderTab = function renderTabWithoutBrasilClusterViews(c) {
-  if (isBrasilContext(c) && state.activeTab === "efficiency") {
-    if (el.tabContent) el.tabContent.innerHTML = `<div class="tab-aba-wrapper" data-tab-id="efficiency">${brasilClusterUnavailableState()}</div>`;
+  if (isBrasilContext(c) && (state.activeTab === "efficiency" || state.activeTab === "performance")) {
+    const _btid = state.activeTab;
+    if (el.tabContent) el.tabContent.innerHTML = `<div class="tab-aba-wrapper" data-tab-id="${_btid}">${brasilClusterUnavailableState()}</div>`;
     return;
   }
   renderTabBeforeBrasilScope(c);
