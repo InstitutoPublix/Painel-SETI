@@ -6410,11 +6410,18 @@ function localTalentCards(c) {
 
 function employmentCboSalaryBlock(c) {
   return `<div class="chart-grid">
-    <article class="visual-card"><h3>${indicatorName(37)} × ${indicatorName(40)}</h3><p class="card-subtitle">Tamanho da bolha = ${indicatorName(33)}. Quadrantes indisponíveis na planilha.</p>${employmentScatter(c, u => employmentMetrics(u).prRate, u => employmentMetrics(u).salary, u => employmentMetrics(u).totalEgress, "Inserção PR", "Salário")}</article>
-    <article class="visual-card"><h3>${indicatorName(39)} × ${indicatorName(40)}</h3><p class="card-subtitle">Leitura de aderência formação-trabalho e valorização salarial.</p>${employmentScatter(c, u => employmentMetrics(u).cbo2Rate, u => employmentMetrics(u).salary, u => employmentMetrics(u).totalEgress, "Aderência CBO2", "Salário")}</article>
+    <article class="visual-card"><h3>${indicatorName(37)} × ${indicatorName(40)}</h3><p class="card-subtitle">Tamanho da bolha = ${indicatorName(33)}. Quadrantes definidos pela média do cluster.</p>${employmentScatter(c, u => employmentMetrics(u).prRate, u => employmentMetrics(u).salary, u => employmentMetrics(u).totalEgress, "Inserção PR", "Salário")}</article>
+    <article class="visual-card"><h3>${indicatorName(39)} × ${indicatorName(40)}</h3><p class="card-subtitle">Leitura de aderência formação-trabalho e valorização salarial. Quadrantes definidos pela média do cluster.</p>${employmentScatter(c, u => employmentMetrics(u).cbo2Rate, u => employmentMetrics(u).salary, u => employmentMetrics(u).totalEgress, "Aderência CBO2", "Salário")}</article>
   </div>
   <article class="visual-card mt-14"><h3>Aderência formação-trabalho</h3><p class="card-subtitle">${indicatorName(39)} por IEES versus média do cluster.</p>${employmentAdherenceCards(c)}</article>`;
 }
+
+var _EMP_COLORS = {
+  uel:'#1e40af', uem:'#0891b2', uepg:'#065f46',
+  unioeste:'#7c3aed', unicentro:'#b45309',
+  uenp:'#be123c', unespar:'#0f766e'
+};
+function _empColor(sigla) { return _EMP_COLORS[sigla.toLowerCase()] || '#185fa5'; }
 
 function employmentScatter(c, xGet, yGet, sizeGet, xLabel, yLabel) {
   const rows = employmentChartRows(c);
@@ -6425,15 +6432,47 @@ function employmentScatter(c, xGet, yGet, sizeGet, xLabel, yLabel) {
   const maxSize = Math.max(...rows.map(sizeGet), 1);
   const avgX = mean(clusterRows, xGet);
   const avgY = mean(clusterRows, yGet);
-  const yRef = clamp((avgY - minY) / Math.max(maxY - minY, 1) * 100, 0, 100);
-  return `<div class="employment-scatter">${rows.map(u => {
+  const avgXPos = clamp(avgX, 3, 97);
+  const avgYPos = clamp((avgY - minY) / Math.max(maxY - minY, 1) * 92 + 4, 4, 96);
+  const qHighX = xLabel.includes("Aderência") ? "Alta aderência" : "Alta inserção";
+  const qLowX  = xLabel.includes("Aderência") ? "Baixa aderência" : "Baixa inserção";
+  const points = rows.map(u => {
     const x = clamp(xGet(u), 3, 97);
     const y = clamp((yGet(u) - minY) / Math.max(maxY - minY, 1) * 92 + 4, 4, 96);
     const size = clamp(24 + sizeGet(u) / maxSize * 28, 24, 52);
     const m = employmentMetrics(u);
-    return `<button class="scatter-point ${clusterIds.has(u.id) ? "in-cluster" : "out-cluster"} ${isUniSelected(c.f, u.id) ? "selected" : ""}" style="left:${x}%;bottom:${y}%;width:${size}px;height:${size}px" type="button" title="${u.sigla}: ${xLabel} ${formatPercent(xGet(u))}; ${yLabel} ${formatCurrency(yGet(u))}; ${indicatorName(33)} ${formatNumber(m.totalEgress)}">${u.sigla}</button>`;
-  }).join("")}<span class="axis-caption x">${xLabel}</span><span class="axis-caption y">${yLabel}</span></div>`;
+    const inCluster = clusterIds.has(u.id);
+    const color = inCluster ? _empColor(u.sigla) : '#94a3b8';
+    const tipData = `${u.sigla}|${xLabel}: ${formatPercent(xGet(u))}|${yLabel}: ${formatCurrency(yGet(u))}|Egressos: ${formatNumber(m.totalEgress)}`;
+    return `<button class="scatter-point ${inCluster ? "in-cluster" : "out-cluster"} ${isUniSelected(c.f, u.id) ? "selected" : ""}" style="left:${x}%;bottom:${y}%;width:${size}px;height:${size}px;background:${color}" type="button" onclick="showScatterTip(event,'${tipData}')">${u.sigla}</button>`;
+  }).join('');
+  const legend = clusterRows.map(u =>
+    `<span class="scatter-leg-item"><i style="background:${_empColor(u.sigla)}"></i>${u.sigla}</span>`
+  ).join('');
+  return `<div class="employment-scatter" style="--avg-x:${avgXPos}%;--avg-y:${avgYPos}%"><div class="scatter-qdiv-v"></div><div class="scatter-qdiv-h"></div><span class="scatter-quadrant q-ref">${qHighX} · Alto salário</span><span class="scatter-quadrant q-hold">${qLowX} · Alto salário</span><span class="scatter-quadrant q-flow">${qHighX} · Baixo salário</span><span class="scatter-quadrant q-risk">${qLowX} · Baixo salário</span>${points}<span class="axis-caption x">${xLabel}</span><span class="axis-caption y">${yLabel}</span></div><div class="scatter-legend">${legend}</div>`;
 }
+
+window.showScatterTip = function(evt, data) {
+  evt.stopPropagation();
+  var parts = data.split('|');
+  var name = parts[0];
+  var lines = parts.slice(1);
+  var tip = document.getElementById('_scatterTip');
+  if (!tip) {
+    tip = document.createElement('div');
+    tip.id = '_scatterTip';
+    tip.className = 'scatter-tooltip';
+    tip.style.position = 'fixed';
+    document.body.appendChild(tip);
+    document.addEventListener('click', function() { var t = document.getElementById('_scatterTip'); if (t) t.style.display = 'none'; });
+  }
+  tip.innerHTML = '<strong>' + name + '</strong>' + lines.map(function(l) { return '<div>' + l + '</div>'; }).join('');
+  tip.style.display = 'block';
+  var rect = evt.currentTarget.getBoundingClientRect();
+  tip.style.left = (rect.left + rect.width / 2) + 'px';
+  tip.style.top  = (rect.top - 10) + 'px';
+  tip.style.transform = 'translateX(-50%) translateY(-100%)';
+};
 
 function employmentAdherenceCards(c) {
   const rows = employmentRows(c);
@@ -6476,8 +6515,40 @@ function employmentDestinationMap(c) {
 
 function employmentCourseBlock(c) {
   const rows = c.selected ? [c.selected] : employmentRows(c);
-  return `<article class="visual-card"><h3>Inserção por curso e tipo de curso</h3><p class="card-subtitle">Taxas sintéticas por curso; a comparação usa média do cluster para o mesmo tipo de curso.</p>${employmentCourseTable(c, rows)}</article>`;
+  const uniqueIees = [...new Set(rows.map(u => u.sigla))].sort();
+  const totalRows = rows.reduce((n, u) => n + u.coursesFocus.length, 0);
+  const ieesOptions = uniqueIees.map(s => `<option value="${s}">${s}</option>`).join('');
+  const filterBar = `<div class="course-filter-bar"><input type="text" id="filterCurso" placeholder="Filtrar por curso..." class="course-filter-input" oninput="applyCourseFilters()"><select id="filterIees" class="course-filter-select" onchange="applyCourseFilters()"><option value="">Todas as IEES</option>${ieesOptions}</select><select id="filterTipoCurso" class="course-filter-select" onchange="applyCourseFilters()"><option value="">Todos os tipos</option><option value="Bacharelado">Bacharelado</option><option value="Licenciatura">Licenciatura</option></select><button id="filterCursoLimpar" class="course-filter-clear" onclick="clearCourseFilters()">Limpar filtros</button></div><div class="course-filter-count">Exibindo <strong id="courseRowCount">${totalRows}</strong> cursos</div>`;
+  return `<article class="visual-card"><h3>Inserção por curso e tipo de curso</h3><p class="card-subtitle">Taxas sintéticas por curso; a comparação usa média do cluster para o mesmo tipo de curso.</p>${filterBar}${employmentCourseTable(c, rows)}</article>`;
 }
+
+window.applyCourseFilters = function() {
+  const tbl = document.querySelector('.employment-course-table .data-table');
+  if (!tbl) return;
+  const cursor = (document.getElementById('filterCurso')?.value || '').toLowerCase();
+  const iees   = document.getElementById('filterIees')?.value || '';
+  const tipo   = document.getElementById('filterTipoCurso')?.value || '';
+  let count = 0;
+  Array.from(tbl.querySelectorAll('tbody tr')).forEach(tr => {
+    const cells = tr.querySelectorAll('td');
+    const matchCurso = !cursor || (cells[0]?.textContent.toLowerCase().includes(cursor));
+    const matchIees  = !iees   || cells[1]?.textContent.trim() === iees;
+    const matchTipo  = !tipo   || cells[2]?.textContent.trim() === tipo;
+    const show = matchCurso && matchIees && matchTipo;
+    tr.style.display = show ? '' : 'none';
+    if (show) count++;
+  });
+  const counter = document.getElementById('courseRowCount');
+  if (counter) counter.textContent = count;
+};
+
+window.clearCourseFilters = function() {
+  ['filterCurso','filterIees','filterTipoCurso'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.value = '';
+  });
+  window.applyCourseFilters();
+};
 
 function employmentCourseTable(c, rows) {
   const clusterRows = employmentRows(c);
@@ -6642,6 +6713,9 @@ renderBlockContent = function(tabId, title, c) {
 var previousRenderNumberedTabEfficiency = renderNumberedTab;
 renderNumberedTab = function(tabId, c, summary = "") {
   if (tabId !== "efficiency" && tabId !== "performance") return previousRenderNumberedTabEfficiency(tabId, c, summary);
+  if (c.f.groupBy === 'v7' || c.f.groupBy === 'v8') {
+    return `<div class="tab-aba-wrapper" data-tab-id="${tabId}"><div class="metodologia-note"><span class="metodologia-icon">⚠</span> Agrupamento não disponível — dados de Renda/IDH pendentes (fonte: IBGE/PNUD).</div></div>`;
+  }
   const blocks = tabBlocks[tabId] || [];
   const mode = tabId === "efficiency"
     ? `<div class="mode-selector" role="group" aria-label="Modo de análise orçamentária"><button class="mode-btn ${state.efficiencyMode === "movimentacao" ? "active" : ""}" data-mode="movimentacao" type="button" onclick="setEfficiencyMode('movimentacao')">Comparação por cluster</button><button class="mode-btn ${state.efficiencyMode === "eficiencia" ? "active" : ""}" data-mode="eficiencia" type="button" onclick="setEfficiencyMode('eficiencia')">Eficiência relativa</button></div>`
@@ -6649,7 +6723,10 @@ renderNumberedTab = function(tabId, c, summary = "") {
   const banner2026 = (tabId === "efficiency" && c.f.year === '2026')
     ? '<div class="data-source-banner warning visible"><span class="dsb-icon" aria-hidden="true">⚠</span><div class="dsb-body"><strong>Dados parciais — 2026</strong><span>Dados de 2026 parciais — exercício em andamento (~3 meses executados). Valores de execução orçamentária não são comparáveis aos anos anteriores.</span></div></div>'
     : '';
-  return `<div class="tab-aba-wrapper" data-tab-id="${tabId}">${summary}${banner2026}${mode}${blocks.map((title, index) => renderBlock(index + 1, title, renderBlockContent(tabId, title, c))).join("")}</div>`;
+  const perfNote = tabId === "performance"
+    ? '<div class="metodologia-note"><span class="metodologia-icon">ℹ</span> Esta aba apresenta o desempenho relativo das IEES-PR com base em indicadores compostos, cruzamentos acadêmicos e a avaliação de resposta ao Piloto Orçamento para Resultados.</div>'
+    : '';
+  return `<div class="tab-aba-wrapper" data-tab-id="${tabId}">${summary}${banner2026}${perfNote}${mode}${blocks.map((title, index) => renderBlock(index + 1, title, renderBlockContent(tabId, title, c))).join("")}</div>`;
 };
 
 var previousRenderKpisEfficiency = renderKpis;
@@ -10465,7 +10542,7 @@ function renderOrcScatter(c) {
 }
 
 // ── Registra o bloco 11 e despacha pelo mesmo padrão dos blocos 8-10 ────────
-tabBlocks.efficiency.push("Scatter Orçamento × Desempenho");
+tabBlocks.performance.unshift("Scatter Orçamento × Desempenho");
 
 var _prevEffBlockSct = efficiencyBlock;
 efficiencyBlock = function(title, c) {
