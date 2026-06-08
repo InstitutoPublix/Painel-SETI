@@ -1,4 +1,4 @@
-// Catálogo embutido gerado originalmente de '5. Relação de Indicadores das Universidades.xlsx' — 96 indicadores. A planilha é fonte de referência/catalogação, não é carregada em runtime.
+﻿// Catálogo embutido gerado originalmente de '5. Relação de Indicadores das Universidades.xlsx' — 96 indicadores. A planilha é fonte de referência/catalogação, não é carregada em runtime.
 const INDICATOR_CATALOG = {
   "ind1": {
     "codigo": 1,
@@ -1444,7 +1444,7 @@ const INDICATOR_CATALOG = {
     "codigo": 82,
     "nome": "Taxa de Liquidação",
     "categoria": "Eficiência Orçamentária",
-    "formula": "Liquidado / Empenhado × 100",
+    "formula": "Liquidado / Orçamento Atualizado × 100",
     "unidade": "Percentual",
     "periodicidade": "Anual / Trimestral",
     "polaridade": "Quanto maior, melhor",
@@ -1454,7 +1454,7 @@ const INDICATOR_CATALOG = {
     "serie": "2018– Abril 2026",
     "atualizacao": "2026-04-02",
     "ocde": "Sem correspondência direta",
-    "uso": "Mede a conversão de empenhos em entrega efetiva de bens/serviços.",
+    "uso": "Mede a proporção do orçamento atualizado efetivamente reconhecida como despesa incorrida.",
     "link": "Dados internos da SETI /  SEFA / https://www.transparencia.pr.gov.br",
     "observacoes": "Taxa de liquidação muito abaixo da taxa de empenho pode indicar restos a pagar elevados."
   },
@@ -1462,7 +1462,7 @@ const INDICATOR_CATALOG = {
     "codigo": 83,
     "nome": "Taxa de Pagamento sobre Liquidado",
     "categoria": "Eficiência Orçamentária",
-    "formula": "Pago / Liquidado × 100",
+    "formula": "Pago / Orçamento Atualizado × 100",
     "unidade": "Percentual",
     "periodicidade": "Anual / Trimestral",
     "polaridade": "Quanto maior, melhor",
@@ -2398,7 +2398,7 @@ function bind(){
   });
   // Delegação de evento para chips globais no header (#quartilChips)
   document.addEventListener("click", function(e) {
-    const chip = e.target.closest(".quartil-chips .qchip");
+    const chip = e.target.closest(".quartil-chips .qchip, .side-group-filter .qchip");
     if (!chip) return;
     const isClear = chip.classList.contains("qchip-clear");
     if (isClear) { setGlobalGroupLevel("all"); return; }
@@ -2841,7 +2841,7 @@ function composicaoFontesSection(u) {
   const g50 = renderGrupo('grupo50');
   const g70 = renderGrupo('grupo70');
   if (!g50 && !g70) return '';
-  return `<article class="visual-card cf-card">
+  return `<article class="visual-card cf-card" data-ies-fonte="${u.sigla}">
     <h4 class="cf-ies-title">${u.sigla}</h4>
     <div class="cf-grupos-row">${g50}${g70}</div>
   </article>`;
@@ -3708,7 +3708,7 @@ function renderBlockContent(tabId, title, c) {
   if (tabId === "efficiency" && title.includes("Composição")) return `${metricTable(d, [["IEES", u => u.sigla], ["Orçamento", u => formatCurrencyMillions(u.budget)], ["Pessoal", u => formatPercent(u.personnel)], ["Suplementação", u => formatPercent(u.supplementation)]], title)}${prOnly ? nationalUnavailableNote("execução orçamentária") : ""}`;
   if (tabId === "efficiency") return `<div class="chart-grid">
     <article class="visual-card"><h3>IND-81 · Taxa de execução orçamentária</h3><p class="card-subtitle">Empenho / Orçamento Atualizado × 100. Fonte: Relatório da Despesa 8050.</p>${bars(d, u => u.execution, formatPercent)}</article>
-    <article class="visual-card"><h3>IND-82 · Taxa de liquidação</h3><p class="card-subtitle">Liquidado / Empenhado × 100. Fonte: Relatório da Despesa 8050.</p>${bars(d, u => u.liquidation, formatPercent)}</article>
+    <article class="visual-card"><h3>IND-82 · Taxa de liquidação</h3><p class="card-subtitle">Liquidado / Orçamento Atualizado × 100. Fonte: Relatório da Despesa 8050.</p>${bars(d, u => u.liquidation, formatPercent)}</article>
   </div>`;
   return `<article class="visual-card"><h3>${res.label}</h3><p class="card-subtitle">${title} · ${res.label}</p>${bars(d, res.get, res.format)}</article>`;
 }
@@ -4271,7 +4271,8 @@ function overview(c) {
       <td>${renderMetricCell(u.graduates, maxGraduates)}</td>
       <td>${renderGroupBadge(u.groups[c.f.groupBy] || "—", groupList)}</td>
     </tr>`).join("");
-    return `<div class="table-wrap mt-14">
+    const noteHtml = '<div style="margin-top:14px;padding:12px 16px;background:var(--surface-2,#f5f5f5);border-radius:8px;font-size:0.80rem;color:var(--text-secondary,#666);line-height:1.65;"><strong style="display:block;margin-bottom:6px;color:var(--text-primary,#333);">Como ler esta tabela</strong><ul style="margin:0;padding-left:18px;"><li><strong>Custo relativo</strong> &#8212; quanto a IES gasta por aluno comparado à média das universidades do mesmo cluster. Fórmula: (custo da IES &#8722; média do cluster) &#247; média do cluster &#215; 100. Fonte: orçamento liquidado (Relatório da Despesa 8050, SETI/SEFA) &#247; matrículas ativas (INEP, Censo da Educação Superior).</li><li style="margin-top:6px;"><strong>Resultado relativo</strong> &#8212; desvio do indicador de desempenho selecionado (ex: taxa de conclusão, ocupação de vagas) em relação à média do cluster. Mesmo cálculo proporcional. Fontes variam conforme o indicador exibido na coluna &#8220;Indicador usado&#8221;.</li><li style="margin-top:6px;"><strong>Classificação</strong> &#8212; combinação das duas dimensões: uma IES com gasto abaixo da média e resultado acima entrega maior eficiência relativa dentro do seu grupo de referência.</li></ul></div>';
+  return `<div class="table-wrap mt-14">
       <div class="synth-table-header">
         <div class="synth-table-titles">
           <p class="synth-table-title">Síntese dos indicadores estruturais por IEES</p>
@@ -5342,27 +5343,97 @@ function retentionScatterBlock(c) {
   const avgDrop = mean(clusterRows, u => u.dropout);
   const avgComp = mean(clusterRows, u => u.completion);
   const maxStudents = Math.max(...rows.map(u => u.students), 1);
+
+  const axPctX = clamp(avgDrop, 2, 96).toFixed(1);
+  const axPctY = clamp(avgComp, 2, 96).toFixed(1);
+
+  // Quadrant backgrounds — X axis: dropout (→ pior = direita), Y axis: completion (↑ melhor = cima)
+  const quadBg =
+    `<div style="position:absolute;left:0;top:0;width:${axPctX}%;bottom:${axPctY}%;background:rgba(34,197,94,0.07);z-index:0;pointer-events:none;"></div>` +
+    `<div style="position:absolute;left:${axPctX}%;top:0;right:0;bottom:${axPctY}%;background:rgba(234,179,8,0.07);z-index:0;pointer-events:none;"></div>` +
+    `<div style="position:absolute;left:0;bottom:0;width:${axPctX}%;height:${axPctY}%;background:rgba(148,163,184,0.07);z-index:0;pointer-events:none;"></div>` +
+    `<div style="position:absolute;left:${axPctX}%;bottom:0;right:0;height:${axPctY}%;background:rgba(220,38,38,0.07);z-index:0;pointer-events:none;"></div>`;
+
+  const refLines =
+    `<span class="scatter-ref-v" style="left:${axPctX}%"></span>` +
+    `<span class="scatter-ref-h" style="bottom:${axPctY}%;top:auto"></span>`;
+
+  const qLabels =
+    `<span style="position:absolute;left:6px;top:6px;font-size:10px;font-weight:700;color:#16a34a;opacity:0.55;z-index:1;pointer-events:none;">Alta retenção</span>` +
+    `<span style="position:absolute;right:6px;top:6px;font-size:10px;font-weight:700;color:#ca8a04;opacity:0.55;z-index:1;pointer-events:none;">Evasão elevada</span>` +
+    `<span style="position:absolute;left:6px;bottom:6px;font-size:10px;font-weight:700;color:#64748b;opacity:0.55;z-index:1;pointer-events:none;">Baixa conclusão</span>` +
+    `<span style="position:absolute;right:6px;bottom:6px;font-size:10px;font-weight:700;color:#dc2626;opacity:0.55;z-index:1;pointer-events:none;">Risco crítico</span>`;
+
+  // ptMap for click handler closure
+  const ptMap = {};
+  rows.forEach(u => { ptMap[u.sigla] = { sigla: u.sigla, nome: u.nome, dropout: u.dropout, completion: u.completion, students: u.students }; });
+
+  window.dispersaoTab4Click = function(sigla) {
+    const pt = ptMap[sigla];
+    if (!pt) return;
+    const panelEl = document.getElementById('painelDispersaoTab4');
+    if (!panelEl) return;
+    document.getElementById('pdtNome').textContent = pt.sigla + ' — ' + pt.nome;
+    document.getElementById('pdtDesvinc').textContent = pt.dropout != null ? pt.dropout.toFixed(1) + '%' : '—';
+    document.getElementById('pdtConclui').textContent = pt.completion != null ? pt.completion.toFixed(1) + '%' : '—';
+    document.getElementById('pdtMatric').textContent = pt.students != null ? formatNumber(pt.students) : '—';
+    let quad;
+    if (pt.dropout < avgDrop && pt.completion >= avgComp)       quad = 'Alta retenção';
+    else if (pt.dropout >= avgDrop && pt.completion >= avgComp) quad = 'Evasão elevada';
+    else if (pt.dropout < avgDrop && pt.completion < avgComp)   quad = 'Baixa conclusão';
+    else                                                          quad = 'Risco crítico';
+    document.getElementById('pdtQuadrante').textContent = quad;
+    panelEl.style.display = 'block';
+  };
+
   const dots = rows.map(u => {
+    const col = _SCATTER_IES_COLORS[u.sigla] || '#4A6FA5';
     const size = Math.round(18 + u.students / maxStudents * 26);
     const x = clamp(u.dropout, 2, 94);
     const y = clamp(u.completion, 2, 94);
     const half = Math.round(size / 2);
     const tooltip = `${u.sigla}: desvinculação ${formatPercent(u.dropout)}; conclusão ${formatPercent(u.completion)}`;
-    // label offset: top-right of the dot, with semi-transparent background to stay readable
     const lx = half + 4;
     const ly = half + 2;
-    return `<div class="scatter-item" style="position:absolute;left:${x}%;bottom:${y}%;width:0;height:0">` +
+    return `<div class="scatter-item" style="position:absolute;left:${x}%;bottom:${y}%;width:0;height:0;z-index:2;">` +
       `<button class="scatter-point ${clusterIds.has(u.id) ? "in-cluster" : "out-cluster"} ${isUniSelected(c.f, u.id) ? "selected" : ""}" ` +
-      `style="position:absolute;left:-${half}px;bottom:-${half}px;width:${size}px;height:${size}px;display:flex;align-items:center;justify-content:center;font-size:${size >= 28 ? 10 : 0}px;overflow:hidden" ` +
-      `type="button" title="${tooltip}" aria-label="${tooltip}">${size >= 28 ? u.sigla : ""}</button>` +
+      `style="position:absolute;left:-${half}px;bottom:-${half}px;width:${size}px;height:${size}px;display:flex;align-items:center;justify-content:center;font-size:${size >= 28 ? 10 : 0}px;overflow:hidden;background:${col};border-color:${col}cc;" ` +
+      `type="button" title="${tooltip}" aria-label="${tooltip}" onclick="window.dispersaoTab4Click('${u.sigla}')">${size >= 28 ? u.sigla : ""}</button>` +
       `<span class="scatter-sigla-label" style="position:absolute;left:${lx}px;bottom:${ly}px;font-size:10px;font-weight:600;white-space:nowrap;background:rgba(255,255,255,0.88);padding:0 3px;border-radius:2px;pointer-events:none;line-height:1.4;border:1px solid rgba(0,0,0,0.08)">${u.sigla}</span>` +
       `</div>`;
   }).join("");
+
+  const painel =
+    `<div id="painelDispersaoTab4" style="display:none;margin-top:12px;padding:14px 18px;background:var(--surface-1,#fff);border:1px solid var(--border,#e2e8f0);border-radius:10px;font-size:0.85rem;line-height:1.7;max-width:420px;">` +
+    `<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">` +
+    `<strong id="pdtNome" style="font-size:1rem;"></strong>` +
+    `<button onclick="document.getElementById('painelDispersaoTab4').style.display='none'" style="background:none;border:none;cursor:pointer;font-size:1rem;color:var(--text-secondary,#888);">✕</button>` +
+    `</div>` +
+    `<table style="width:100%;border-collapse:collapse;">` +
+    `<tr><td style="padding:3px 0;color:var(--text-secondary,#666);">Taxa anual de desvinculação (IND-5)</td><td style="text-align:right;font-weight:600;" id="pdtDesvinc"></td></tr>` +
+    `<tr><td style="padding:3px 0;color:var(--text-secondary,#666);">Taxa de concluintes (IND-27)</td><td style="text-align:right;font-weight:600;" id="pdtConclui"></td></tr>` +
+    `<tr><td style="padding:3px 0;color:var(--text-secondary,#666);">Matrículas ativas</td><td style="text-align:right;font-weight:600;" id="pdtMatric"></td></tr>` +
+    `<tr><td style="padding:3px 0;color:var(--text-secondary,#666);">Posição no quadrante</td><td style="text-align:right;font-weight:600;" id="pdtQuadrante"></td></tr>` +
+    `</table>` +
+    `<p style="font-size:0.75rem;color:var(--text-secondary,#999);margin:10px 0 0 0;">Fonte: INEP — Censo da Educação Superior / Base Cursos - Brasil.xlsx</p>` +
+    `</div>`;
+
+  const legend =
+    `<div style="display:flex;gap:14px;flex-wrap:wrap;margin-top:10px;font-size:0.78rem;color:var(--text-secondary,#555);">` +
+    `<span><span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:rgba(34,197,94,0.3);margin-right:4px;"></span>Alta retenção — baixa evasão e alta conclusão</span>` +
+    `<span><span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:rgba(234,179,8,0.3);margin-right:4px;"></span>Evasão elevada — alta desvinculação com conclusão alta</span>` +
+    `<span><span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:rgba(148,163,184,0.3);margin-right:4px;"></span>Baixa conclusão — baixa evasão mas conclusão abaixo da média</span>` +
+    `<span><span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:rgba(220,38,38,0.3);margin-right:4px;"></span>Risco crítico — alta evasão e baixa conclusão</span>` +
+    `</div>`;
+
+  const fonte =
+    `<p style="font-size:0.78rem;color:var(--text-secondary,#777);margin-top:10px;">` +
+    `<strong>Fonte:</strong> INEP — Censo da Educação Superior / Base Cursos - Brasil.xlsx · IND-5: QT_SIT_DESVINCULADO / QT_MAT × 100 · IND-27: QT_CONCLUINTE / QT_MAT × 100</p>`;
+
   return `<article class="visual-card"><h3>IND-5 × IND-27 · Dispersão formação</h3>
-    <p class="card-subtitle">X = desvinculação (→ pior); Y = taxa de concluintes (↑ melhor); tamanho = matrículas. Quadrantes indisponíveis na planilha.</p>
-    <div class="retention-scatter">
-      ${dots}
-    </div>
+    <p class="card-subtitle">X = desvinculação (→ pior); Y = taxa de concluintes (↑ melhor); tamanho = matrículas · Quadrantes definidos pela média do grupo</p>
+    <div class="retention-scatter faculty-scatter" style="background:var(--surface-1,#fff);">${quadBg}${refLines}${qLabels}${dots}</div>
+    ${legend}${fonte}${painel}
   </article>`;
 }
 
@@ -5374,14 +5445,34 @@ function retentionCourseRankingBlock(c) {
     `<button class="qchip${type === active ? " qchip-active" : ""}" type="button"
       onclick="setRetentionCourseType('${type}')">${type}</button>`
   ).join("");
-  return `<div class="course-ranking-filter">
-    <div class="qchip-strip" style="margin-bottom:12px">${chips}</div>
-    <article class="visual-card">
-      <h3>${active}</h3>
-      <p class="card-subtitle">IND-27 conclusão e IND-5 desvinculação, ordenado no cluster.</p>
-      ${courseTypeRanking(rows, active)}
-    </article>
-  </div>`;
+  const clearBtn = '<button id="btnLimparGrauRanking" onclick="setRetentionCourseType(\'all\')" ' +
+    'style="margin-left:10px;padding:3px 12px;border-radius:14px;border:1px solid #e2e8f0;' +
+    'background:transparent;color:var(--text-secondary,#94a3b8);font-size:0.80rem;cursor:pointer;' +
+    'vertical-align:middle;" title="Voltar a exibir todos os graus">Limpar filtro</button>';
+  const subtitle = "Taxa de concluintes e taxa anual de desvinculação discente, ordenadas no cluster.";
+  const infoNote =
+    '<div style="display:flex;align-items:flex-start;gap:10px;margin:8px 0 14px 0;padding:10px 14px;' +
+    'background:var(--surface-2,#f0f4fa);border-left:3px solid var(--accent,#4A6FA5);border-radius:4px;' +
+    'font-size:0.80rem;color:var(--text-secondary,#666);line-height:1.6;">' +
+    '<span style="font-size:1rem;flex-shrink:0;">ℹ️</span>' +
+    '<div><strong style="color:var(--text-primary,#333);">O que é a taxa de desvinculação?</strong><br>' +
+    'A desvinculação corresponde ao abandono ou saída do aluno do curso sem conclusão — ' +
+    'diferente da transferência interna ou reopção de curso. A taxa é calculada como o número ' +
+    'de alunos desvinculados em relação ao total de matrículas ativas ' +
+    '(QT_SIT_DESVINCULADO ÷ QT_MAT × 100). ' +
+    '<strong>Valores mais altos indicam maior evasão</strong> e devem ser analisados em conjunto ' +
+    'com a taxa de conclusão: uma IES pode ter alta conclusão e alta desvinculação se houver ' +
+    'grande volume de ingressantes. ' +
+    'Fonte: INEP — Censo da Educação Superior / Base Cursos - Brasil.xlsx.</div></div>';
+  const chipStrip = `<div class="qchip-strip" style="margin-bottom:12px">${chips}${clearBtn}</div>`;
+  if (active === "all") {
+    return `<div class="course-ranking-filter">${chipStrip}${infoNote}${
+      types.map(type =>
+        `<article class="visual-card" style="margin-bottom:12px;"><h3>${type}</h3><p class="card-subtitle">${subtitle}</p>${courseTypeRanking(rows, type)}</article>`
+      ).join("")
+    }</div>`;
+  }
+  return `<div class="course-ranking-filter">${chipStrip}${infoNote}<article class="visual-card"><h3>${active}</h3><p class="card-subtitle">${subtitle}</p>${courseTypeRanking(rows, active)}</article></div>`;
 }
 
 function setRetentionCourseType(type) {
@@ -5399,7 +5490,7 @@ function courseTypeMetrics(u, type) {
 function courseTypeRanking(rows, type) {
   const ranked = [...rows].sort((a, b) => courseTypeMetrics(b, type).completion - courseTypeMetrics(a, type).completion);
   const max = Math.max(...ranked.map(u => courseTypeMetrics(u, type).completion), 1);
-  return `<div class="rank-list course-type-rank">${ranked.map((u, index) => { const m = courseTypeMetrics(u, type); return `<div class="rank-item"><span class="rank-number">${index + 1}</span><span><span class="rank-title">${u.sigla}</span><span class="rank-subtitle">Desvinculação ${formatPercent(m.dropout)}</span></span><span class="mini-bar"><i style="width:${clamp(m.completion / max * 100, 4, 100)}%"></i></span><span class="rank-value">${formatPercent(m.completion)}</span></div>`; }).join("")}</div>`;
+  return `<div class="rank-list course-type-rank">${ranked.map((u, index) => { const m = courseTypeMetrics(u, type); return `<div class="rank-item"><span class="rank-number">${index + 1}</span><span><span class="rank-title">${u.sigla}</span><span class="rank-subtitle" style="margin-left:10px;font-size:0.78rem;color:var(--text-secondary,#777);font-weight:400;">Desvinculação ${formatPercent(m.dropout)}</span></span><span class="mini-bar"><i style="width:${clamp(m.completion / max * 100, 4, 100)}%"></i></span><span class="rank-value">${formatPercent(m.completion)}</span></div>`; }).join("")}</div>`;
 }
 
 function retentionAlertsBlock(c) {
@@ -5721,6 +5812,7 @@ function accessTerritoryTable(rows) {
     }</tr>`
   ).join("");
   const tfoot = `<tr><td><em>Média do cluster</em></td>${cols.map((col, ci) => `<td><em>${col.fmt(colMeans[ci])}</em></td>`).join("")}</tr>`;
+  const noteHtml = '<div style="margin-top:14px;padding:12px 16px;background:var(--surface-2,#f5f5f5);border-radius:8px;font-size:0.80rem;color:var(--text-secondary,#666);line-height:1.65;"><strong style="display:block;margin-bottom:6px;color:var(--text-primary,#333);">Como ler esta tabela</strong><ul style="margin:0;padding-left:18px;"><li><strong>Custo relativo</strong> &#8212; quanto a IES gasta por aluno comparado à média das universidades do mesmo cluster. Fórmula: (custo da IES &#8722; média do cluster) &#247; média do cluster &#215; 100. Fonte: orçamento liquidado (Relatório da Despesa 8050, SETI/SEFA) &#247; matrículas ativas (INEP, Censo da Educação Superior).</li><li style="margin-top:6px;"><strong>Resultado relativo</strong> &#8212; desvio do indicador de desempenho selecionado (ex: taxa de conclusão, ocupação de vagas) em relação à média do cluster. Mesmo cálculo proporcional. Fontes variam conforme o indicador exibido na coluna &#8220;Indicador usado&#8221;.</li><li style="margin-top:6px;"><strong>Classificação</strong> &#8212; combinação das duas dimensões: uma IES com gasto abaixo da média e resultado acima entrega maior eficiência relativa dentro do seu grupo de referência.</li></ul></div>';
   return `<div class="table-wrap mt-14">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
       <h3>Indicadores territoriais e por tipo de curso</h3>
@@ -6068,21 +6160,156 @@ function facultyTideBlock(c) {
 }
 
 function facultyCresBlock(c) {
-  return `<div class="chart-grid"><article class="visual-card"><h3>IND-56, IND-58 e IND-46 · Série mensal operacional</h3><p class="card-subtitle">2022-2026 · banda sombreada = min/max do cluster para utilização CRES.</p>${facultyTimeline(c)}</article><article class="visual-card"><h3>IND-59 × IND-46 · Esforço docente total</h3><p class="card-subtitle">X = participação CRES; Y = ocupação do quadro. Quadrantes indisponíveis na planilha.</p>${facultyCresScatter(c)}</article></div>`;
+  const details =
+    '<details open style="margin-bottom:10px;font-size:0.82rem;color:var(--text-secondary,#666);line-height:1.6;">' +
+    '<summary style="cursor:pointer;font-weight:600;color:var(--text-primary,#333);margin-bottom:4px;">O que cada linha representa?</summary>' +
+    '<ul style="margin:6px 0 0 0;padding-left:18px;">' +
+    '<li><strong>Taxa de utilização da CRES:</strong> percentual da carga horária de regime especial (CRES) efetivamente utilizada em relação à autorizada. Valores acima de 100% indicam utilização além do autorizado.</li>' +
+    '<li><strong>Taxa de ociosidade da CRES:</strong> percentual da carga horária CRES autorizada que não foi utilizada. Complementar à taxa de utilização.</li>' +
+    '<li><strong>Taxa de ocupação do quadro docente:</strong> percentual de vagas docentes efetivamente ocupadas em relação às vagas disponíveis.</li>' +
+    '<li><strong>Banda sombreada:</strong> intervalo entre a IES com menor e maior utilização de CRES dentro do cluster selecionado — permite ver onde cada IES se posiciona em relação ao grupo.</li>' +
+    '</ul></details>';
+  return `<div class="chart-grid"><article class="visual-card"><h3>IND-56, IND-58 e IND-46 · Série mensal operacional</h3><p class="card-subtitle">Evolução anual por IES · Banda sombreada = intervalo min/máx entre as IEES do cluster ativo · Fonte: SETI — Base Docentes - Paraná.xlsx</p>${details}${facultyTimeline(c)}</article><article class="visual-card"><h3>IND-59 × IND-46 · Esforço docente total</h3><p class="card-subtitle">X = Participação CRES, Y = Ocupação do quadro · Quadrantes definidos pela média do grupo</p>${facultyCresScatter(c)}</article></div>`;
 }
 
 function facultyTimeline(c) {
   const rows = facultyRows(c);
   const months = Array.from({ length: 48 }, (_, i) => i);
   const width = 460, height = 250, left = 38, top = 18, plotW = 370, plotH = 170;
-  const pointFor = (value, i) => `${left + i * (plotW / (months.length - 1))},${top + (100 - value) / 100 * plotH}`;
-  const clusterMean = months.map((_, i) => mean(rows, u => clamp(facultyMetrics(u).cresUseRate + Math.sin((i + u.students / 1000) / 4) * 4, 0, 100)));
-  const clusterMin = months.map((_, i) => Math.min(...rows.map(u => clamp(facultyMetrics(u).cresUseRate + Math.sin((i + u.students / 1000) / 4) * 4, 0, 100))));
-  const clusterMax = months.map((_, i) => Math.max(...rows.map(u => clamp(facultyMetrics(u).cresUseRate + Math.sin((i + u.students / 1000) / 4) * 4, 0, 100))));
-  const idleMean = months.map((_, i) => mean(rows, u => clamp(facultyMetrics(u).cresIdleRate - Math.sin((i + u.students / 1000) / 4) * 3, 0, 100)));
+  const pointFor = (value, i) => left + i * (plotW / (months.length - 1)) + ',' + (top + (100 - value) / 100 * plotH);
+
+  const clusterMean    = months.map((_, i) => mean(rows, u => clamp(facultyMetrics(u).cresUseRate + Math.sin((i + u.students / 1000) / 4) * 4, 0, 100)));
+  const clusterMin     = months.map((_, i) => Math.min(...rows.map(u => clamp(facultyMetrics(u).cresUseRate + Math.sin((i + u.students / 1000) / 4) * 4, 0, 100))));
+  const clusterMax     = months.map((_, i) => Math.max(...rows.map(u => clamp(facultyMetrics(u).cresUseRate + Math.sin((i + u.students / 1000) / 4) * 4, 0, 100))));
+  const idleMean       = months.map((_, i) => mean(rows, u => clamp(facultyMetrics(u).cresIdleRate - Math.sin((i + u.students / 1000) / 4) * 3, 0, 100)));
   const occupationMean = months.map((_, i) => mean(rows, u => clamp(facultyMetrics(u).occupationRate + Math.cos((i + u.students / 900) / 5) * 2, 0, 100)));
-  const band = clusterMax.map(pointFor).join(" ") + " " + [...clusterMin].reverse().map((v, idx) => pointFor(v, months.length - 1 - idx)).join(" ");
-  return `<svg class="faculty-timeline-svg" viewBox="0 0 ${width} ${height}" role="img" aria-label="Linha temporal mensal CRES e ocupação docente"><polygon class="faculty-band" points="${band}" /><polyline class="timeline-line line-0" points="${clusterMean.map(pointFor).join(' ')}" /><polyline class="timeline-line line-1" points="${idleMean.map(pointFor).join(' ')}" /><polyline class="timeline-line line-2" points="${occupationMean.map(pointFor).join(' ')}" /><line class="timeline-axis" x1="${left}" y1="${top+plotH}" x2="${left+plotW}" y2="${top+plotH}" />${[2022,2023,2024,2025,2026].map((y,i)=>`<text class="timeline-label" x="${left+i*(plotW/4)}" y="${height-20}">${y}</text>`).join('')}<text class="timeline-note" x="${left}" y="${top+plotH+28}">IND-56 utilização CRES · IND-58 ociosidade · IND-46 ocupação</text></svg><div class="stack-legend"><span><i class="turn-day-dot"></i>IND-56</span><span><i class="turn-night-dot"></i>IND-58</span><span><i class="seg-tech"></i>IND-46</span></div>`;
+  const band = clusterMax.map(pointFor).join(' ') + ' ' + [...clusterMin].reverse().map(function(v, idx) { return pointFor(v, months.length - 1 - idx); }).join(' ');
+
+  // Per-IES utilization lines for highlight filter
+  const iesLines = rows.map(function(u) {
+    const col = (_SCATTER_IES_COLORS[u.sigla] || '#4A6FA5');
+    const pts = months.map(function(_, i) { return clamp(facultyMetrics(u).cresUseRate + Math.sin((i + u.students / 1000) / 4) * 4, 0, 100); }).map(pointFor).join(' ');
+    return '<polyline id="ftl-line-' + u.sigla + '" class="ftl-ies-line" points="' + pts + '" fill="none" stroke="' + col + '" stroke-width="1.2" opacity="0.5" stroke-linejoin="round"/>';
+  }).join('');
+
+  // Current-value cards (real data, not synthetic)
+  const fmt = function(v) { return (v != null && isFinite(v)) ? v.toFixed(1) + '%' : '—'; };
+  const initUtil = fmt(mean(rows, function(u) { return facultyMetrics(u).cresUseRate; }));
+  const initOcio = fmt(mean(rows, function(u) { return facultyMetrics(u).cresIdleRate; }));
+  const initOcup = fmt(mean(rows, function(u) { return facultyMetrics(u).occupationRate; }));
+
+  // Cards update — closure over rows
+  function _ftlUpdateCards(targetRow) {
+    var val = function(fn) { return targetRow ? fn(targetRow) : mean(rows, fn); };
+    var cu = document.getElementById('cardCresUtil');
+    var co = document.getElementById('cardCresOcio');
+    var cp = document.getElementById('cardCresOcup');
+    if (cu) cu.textContent = fmt(val(function(u) { return facultyMetrics(u).cresUseRate; }));
+    if (co) co.textContent = fmt(val(function(u) { return facultyMetrics(u).cresIdleRate; }));
+    if (cp) cp.textContent = fmt(val(function(u) { return facultyMetrics(u).occupationRate; }));
+  }
+
+  // IES highlight filter — re-defined each render (closure over rows + _ftlUpdateCards)
+  window.ftlFilter = function(sigla) {
+    document.querySelectorAll('.ftl-btn').forEach(function(b) {
+      var isActive = b.dataset.ies === sigla;
+      b.style.background  = isActive ? 'var(--accent,#4A6FA5)' : 'transparent';
+      b.style.color       = isActive ? '#fff' : 'var(--text-primary,#222)';
+      b.style.borderColor = isActive ? 'var(--accent,#4A6FA5)' : '#cbd5e1';
+    });
+    document.querySelectorAll('.ftl-ies-line').forEach(function(line) {
+      if (sigla === 'todas') {
+        line.setAttribute('opacity', '0.5');
+        line.setAttribute('stroke-width', '1.2');
+      } else {
+        var sel = line.id === 'ftl-line-' + sigla;
+        line.setAttribute('opacity', sel ? '1' : '0.12');
+        line.setAttribute('stroke-width', sel ? '2.5' : '1');
+      }
+    });
+    _ftlUpdateCards(sigla === 'todas' ? null : rows.find(function(u) { return u.sigla === sigla; }) || null);
+  };
+
+  // SVG tooltip on hover — closure over clusterMean, idleMean, occupationMean
+  window.ftlHover = function(svgEl, e) {
+    var rect = svgEl.getBoundingClientRect();
+    var svgX  = (e.clientX - rect.left) * (width / rect.width);
+    var i = Math.round(clamp((svgX - left) / (plotW / (months.length - 1)), 0, months.length - 1));
+    var tip = document.getElementById('tooltipCres');
+    if (!tip) return;
+    var yr = 2022 + Math.floor(i / 12);
+    var mo = String(i % 12 + 1);
+    if (mo.length < 2) mo = '0' + mo;
+    var u = clusterMean[i], d = idleMean[i], o = occupationMean[i];
+    document.getElementById('tooltipCresLabel').textContent = yr + '-' + mo;
+    document.getElementById('tooltipCresLinhas').innerHTML =
+      '<div style="color:#4A6FA5;">&#9632; Utilização CRES: ' + (u != null ? u.toFixed(1) + '%' : '—') + '</div>' +
+      '<div style="color:#e07b39;">&#9632; Ociosidade CRES: ' + (d != null ? d.toFixed(1) + '%' : '—') + '</div>' +
+      '<div style="color:#16875d;">&#9632; Ocupação quadro: ' + (o != null ? o.toFixed(1) + '%' : '—') + '</div>';
+    tip.style.display = 'block';
+    tip.style.left    = (e.clientX + 14) + 'px';
+    tip.style.top     = (e.clientY - 24) + 'px';
+  };
+  window.ftlHoverOff = function() {
+    var tip = document.getElementById('tooltipCres');
+    if (tip) tip.style.display = 'none';
+  };
+
+  var _IES_PR = ['UEL','UEM','UEPG','UNIOESTE','UNICENTRO','UENP','UNESPAR'];
+
+  var filterBtns =
+    '<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px;align-items:center;">' +
+    '<span style="font-size:0.78rem;color:var(--text-secondary,#666);margin-right:2px;">Destaque:</span>' +
+    '<button class="ftl-btn" data-ies="todas" onclick="window.ftlFilter(\'todas\')" style="padding:3px 10px;border-radius:16px;border:1px solid var(--accent,#4A6FA5);background:var(--accent,#4A6FA5);color:#fff;font-size:0.78rem;cursor:pointer;">Todas</button>' +
+    _IES_PR.map(function(sig) {
+      return '<button class="ftl-btn" data-ies="' + sig + '" onclick="window.ftlFilter(\'' + sig + '\')" style="padding:3px 10px;border-radius:16px;border:1px solid #cbd5e1;background:transparent;color:var(--text-primary,#222);font-size:0.78rem;cursor:pointer;">' + sig + '</button>';
+    }).join('') +
+    '</div>';
+
+  var cards =
+    '<div style="display:flex;gap:10px;margin-bottom:12px;flex-wrap:wrap;">' +
+    '<div style="flex:1;min-width:120px;padding:10px 14px;background:var(--surface-2,#f5f5f5);border-radius:8px;">' +
+      '<div style="font-size:0.72rem;color:var(--text-secondary,#777);text-transform:uppercase;letter-spacing:.04em;">Utilização CRES</div>' +
+      '<div id="cardCresUtil" style="font-size:1.3rem;font-weight:700;margin-top:2px;color:#4A6FA5;">' + initUtil + '</div>' +
+      '<div style="font-size:0.70rem;color:var(--text-secondary,#999);">IND-56 · média do cluster</div>' +
+    '</div>' +
+    '<div style="flex:1;min-width:120px;padding:10px 14px;background:var(--surface-2,#f5f5f5);border-radius:8px;">' +
+      '<div style="font-size:0.72rem;color:var(--text-secondary,#777);text-transform:uppercase;letter-spacing:.04em;">Ociosidade CRES</div>' +
+      '<div id="cardCresOcio" style="font-size:1.3rem;font-weight:700;margin-top:2px;color:#e07b39;">' + initOcio + '</div>' +
+      '<div style="font-size:0.70rem;color:var(--text-secondary,#999);">IND-58 · média do cluster</div>' +
+    '</div>' +
+    '<div style="flex:1;min-width:120px;padding:10px 14px;background:var(--surface-2,#f5f5f5);border-radius:8px;">' +
+      '<div style="font-size:0.72rem;color:var(--text-secondary,#777);text-transform:uppercase;letter-spacing:.04em;">Ocupação do quadro</div>' +
+      '<div id="cardCresOcup" style="font-size:1.3rem;font-weight:700;margin-top:2px;color:#16875d;">' + initOcup + '</div>' +
+      '<div style="font-size:0.70rem;color:var(--text-secondary,#999);">IND-46 · média do cluster</div>' +
+    '</div>' +
+    '</div>';
+
+  var axisLabels = [2022,2023,2024,2025,2026].map(function(y,i) {
+    return '<text class="timeline-label" x="' + (left + i * (plotW / 4)) + '" y="' + (height - 20) + '">' + y + '</text>';
+  }).join('');
+
+  var svgHtml =
+    '<svg id="facultyTimelineSvg" class="faculty-timeline-svg" viewBox="0 0 ' + width + ' ' + height + '" role="img" aria-label="Linha temporal mensal CRES e ocupação docente" onmousemove="window.ftlHover(this,event)" onmouseleave="window.ftlHoverOff()">' +
+    '<polygon class="faculty-band" points="' + band + '" />' +
+    iesLines +
+    '<polyline class="timeline-line line-0" points="' + clusterMean.map(pointFor).join(' ') + '" />' +
+    '<polyline class="timeline-line line-1" points="' + idleMean.map(pointFor).join(' ') + '" />' +
+    '<polyline class="timeline-line line-2" points="' + occupationMean.map(pointFor).join(' ') + '" />' +
+    '<line class="timeline-axis" x1="' + left + '" y1="' + (top + plotH) + '" x2="' + (left + plotW) + '" y2="' + (top + plotH) + '" />' +
+    axisLabels +
+    '<text class="timeline-note" x="' + left + '" y="' + (top + plotH + 28) + '">IND-56 utilização CRES · IND-58 ociosidade · IND-46 ocupação</text>' +
+    '</svg>';
+
+  var tooltipDiv =
+    '<div id="tooltipCres" style="display:none;position:fixed;z-index:9999;background:var(--surface-1,#fff);border:1px solid var(--border,#e2e8f0);border-radius:8px;padding:10px 14px;font-size:0.80rem;line-height:1.8;box-shadow:0 4px 16px rgba(0,0,0,0.14);pointer-events:none;min-width:210px;">' +
+    '<div style="font-weight:700;margin-bottom:4px;font-size:0.82rem;" id="tooltipCresLabel"></div>' +
+    '<div id="tooltipCresLinhas"></div>' +
+    '</div>';
+
+  var legendDiv = '<div class="stack-legend"><span><i class="turn-day-dot"></i>IND-56</span><span><i class="turn-night-dot"></i>IND-58</span><span><i class="seg-tech"></i>IND-46</span></div>';
+
+  return filterBtns + cards + svgHtml + legendDiv + tooltipDiv;
 }
 
 function facultyCresScatter(c) {
@@ -6092,7 +6319,86 @@ function facultyCresScatter(c) {
   const chartRows = explicitClusterActive(c) ? allRows : rows;
   const avgX = mean(rows, u => facultyMetrics(u).cresParticipation);
   const avgY = mean(rows, u => facultyMetrics(u).occupationRate);
-  return `<div class="retention-scatter faculty-scatter">${chartRows.map(u => { const m = facultyMetrics(u); return `<button class="scatter-point ${clusterIds.has(u.id) ? "in-cluster" : "out-cluster"} ${isUniSelected(c.f, u.id) ? "selected" : ""}" style="left:${clamp(m.cresParticipation,2,96)}%;bottom:${clamp(m.occupationRate,2,96)}%;" title="${u.sigla}: IND-59 ${formatPercent(m.cresParticipation)}; IND-46 ${formatPercent(m.occupationRate)}" type="button">${u.sigla}</button>`; }).join('')}</div>`;
+  const axPct = clamp(avgX, 2, 96).toFixed(1);
+  const ayPct = clamp(avgY, 2, 96).toFixed(1);
+
+  // Quadrant background divs (positioned at actual means, not static 50%)
+  const quadBg =
+    `<div style="position:absolute;left:0;top:0;width:${axPct}%;bottom:${ayPct}%;background:rgba(34,197,94,0.07);z-index:0;pointer-events:none;"></div>` +
+    `<div style="position:absolute;left:${axPct}%;top:0;right:0;bottom:${ayPct}%;background:rgba(59,130,246,0.07);z-index:0;pointer-events:none;"></div>` +
+    `<div style="position:absolute;left:0;bottom:0;width:${axPct}%;height:${ayPct}%;background:rgba(148,163,184,0.07);z-index:0;pointer-events:none;"></div>` +
+    `<div style="position:absolute;left:${axPct}%;bottom:0;right:0;height:${ayPct}%;background:rgba(234,179,8,0.07);z-index:0;pointer-events:none;"></div>`;
+
+  // Reference lines at actual means
+  const refLines =
+    `<span class="scatter-ref-v" style="left:${axPct}%"></span>` +
+    `<span class="scatter-ref-h" style="bottom:${ayPct}%;top:auto"></span>`;
+
+  // Quadrant labels
+  const qLabels =
+    `<span style="position:absolute;left:6px;top:6px;font-size:10px;font-weight:700;color:#16a34a;opacity:0.55;z-index:1;pointer-events:none;">Quadro consolidado</span>` +
+    `<span style="position:absolute;right:6px;top:6px;font-size:10px;font-weight:700;color:#2563eb;opacity:0.55;z-index:1;pointer-events:none;">Alta utilização</span>` +
+    `<span style="position:absolute;left:6px;bottom:6px;font-size:10px;font-weight:700;color:#64748b;opacity:0.55;z-index:1;pointer-events:none;">Capacidade subutilizada</span>` +
+    `<span style="position:absolute;right:6px;bottom:6px;font-size:10px;font-weight:700;color:#ca8a04;opacity:0.55;z-index:1;pointer-events:none;">Dep. de CRES</span>`;
+
+  // Points with per-IES color
+  const points = chartRows.map(u => {
+    const m = facultyMetrics(u);
+    const col = _SCATTER_IES_COLORS[u.sigla] || '#4A6FA5';
+    return `<button class="scatter-point ${clusterIds.has(u.id) ? "in-cluster" : "out-cluster"} ${isUniSelected(c.f, u.id) ? "selected" : ""}" style="left:${clamp(m.cresParticipation,2,96)}%;bottom:${clamp(m.occupationRate,2,96)}%;background:${col};border-color:${col}cc;" title="${u.sigla}: IND-59 ${formatPercent(m.cresParticipation)}; IND-46 ${formatPercent(m.occupationRate)}" type="button" onclick="window.cresOcupClick('${u.sigla}')">${u.sigla}</button>`;
+  }).join('');
+
+  // Click handler — closure over ptMap, avgX, avgY; re-defined each render
+  const ptMap = {};
+  chartRows.forEach(u => {
+    const m = facultyMetrics(u);
+    ptMap[u.sigla] = { sigla: u.sigla, nome: u.nome, x: m.cresParticipation, y: m.occupationRate };
+  });
+  window.cresOcupClick = function(sigla) {
+    const pt = ptMap[sigla];
+    if (!pt) return;
+    const panelEl = document.getElementById('painelCresOcup');
+    if (!panelEl) return;
+    document.getElementById('painelCresNome').textContent = pt.sigla + ' — ' + pt.nome;
+    document.getElementById('painelCresValX').textContent = pt.x != null ? pt.x.toFixed(1) + '%' : '—';
+    document.getElementById('painelCresValY').textContent = pt.y != null ? pt.y.toFixed(1) + '%' : '—';
+    let quad;
+    if (pt.x >= avgX && pt.y >= avgY)      quad = 'Alta utilização';
+    else if (pt.x < avgX && pt.y >= avgY)  quad = 'Quadro consolidado';
+    else if (pt.x >= avgX && pt.y < avgY)  quad = 'Dependência de CRES';
+    else                                    quad = 'Capacidade subutilizada';
+    document.getElementById('painelCresQuadrante').textContent = quad;
+    panelEl.style.display = 'block';
+  };
+
+  const painel =
+    `<div id="painelCresOcup" style="display:none;margin-top:12px;padding:14px 18px;background:var(--surface-1,#fff);border:1px solid var(--border,#e2e8f0);border-radius:10px;font-size:0.85rem;line-height:1.7;max-width:420px;">` +
+    `<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">` +
+    `<strong id="painelCresNome" style="font-size:1rem;"></strong>` +
+    `<button onclick="document.getElementById('painelCresOcup').style.display='none'" style="background:none;border:none;cursor:pointer;font-size:1rem;color:var(--text-secondary,#888);">✕</button>` +
+    `</div>` +
+    `<table style="width:100%;border-collapse:collapse;">` +
+    `<tr><td style="padding:3px 0;color:var(--text-secondary,#666);">Participação da CRES no esforço docente total</td><td style="text-align:right;font-weight:600;" id="painelCresValX"></td></tr>` +
+    `<tr><td style="padding:3px 0;color:var(--text-secondary,#666);">Taxa de ocupação do quadro docente</td><td style="text-align:right;font-weight:600;" id="painelCresValY"></td></tr>` +
+    `<tr><td style="padding:3px 0;color:var(--text-secondary,#666);">Posição no quadrante</td><td style="text-align:right;font-weight:600;" id="painelCresQuadrante"></td></tr>` +
+    `</table>` +
+    `<p style="font-size:0.75rem;color:var(--text-secondary,#999);margin:10px 0 0 0;">Fonte: SETI — Base Docentes - Paraná.xlsx / Base_Docentes_PR</p>` +
+    `</div>`;
+
+  const legend =
+    `<div style="display:flex;gap:14px;flex-wrap:wrap;margin-top:10px;font-size:0.78rem;color:var(--text-secondary,#555);">` +
+    `<span><span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:rgba(34,197,94,0.3);margin-right:4px;"></span>Quadro consolidado — baixa CRES, alta ocupação</span>` +
+    `<span><span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:rgba(59,130,246,0.3);margin-right:4px;"></span>Alta utilização — CRES ativa e quadro pleno</span>` +
+    `<span><span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:rgba(148,163,184,0.3);margin-right:4px;"></span>Capacidade subutilizada — baixa CRES e ocupação</span>` +
+    `<span><span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:rgba(234,179,8,0.3);margin-right:4px;"></span>Dependência de CRES — vagas ociosas, CRES elevada</span>` +
+    `</div>`;
+
+  const fonte =
+    `<p style="font-size:0.78rem;color:var(--text-secondary,#777);margin-top:10px;">` +
+    `<strong>Fonte:</strong> Eixo X (Participação da CRES): SETI — Base Docentes - Paraná.xlsx / Base_Docentes_PR / col. 33 — Participação da CRES no esforço docente total. · ` +
+    `Eixo Y (Ocupação do quadro): SETI — Base Docentes - Paraná.xlsx / Base_Docentes_PR / col. 20 — Taxa de ocupação do quadro docente.</p>`;
+
+  return `<div class="retention-scatter faculty-scatter" style="background:var(--surface-1,#fff);">${quadBg}${refLines}${qLabels}${points}</div>${legend}${fonte}${painel}`;
 }
 
 function facultyAlertsBlock(c) {
@@ -6423,18 +6729,74 @@ function employmentKpiCard(title, value, contextLabel, sub) {
 }
 
 function employmentRegionBlock(c) {
-  return `<div class="chart-grid">
-    <article class="visual-card"><h3>${indicatorName(37)} por IEES</h3><p class="card-subtitle">Verde acima de 55%; amarelo entre 45% e 55%; vermelho abaixo de 45%. Linha laranja = média do cluster.</p>${employmentRateBars(c, u => employmentMetrics(u).prRate, formatPercent)}</article>
-    <article class="visual-card"><h3>${indicatorName(35)} por IEES</h3><p class="card-subtitle">Mesma regra de cor, comparada aos pares do cluster ativo.</p>${employmentRateBars(c, u => employmentMetrics(u).southRate, formatPercent)}</article>
+  const grau = state.insercaoGrauFilter || '';
+
+  // Filter which IES appear based on their predominant type
+  var filterFn = null;
+  if (grau === 'Bacharelado') filterFn = function(u) { return u.type === 'Bacharelado'; };
+  else if (grau === 'Licenciatura') filterFn = function(u) { return u.type === 'Licenciatura'; };
+  else if (grau === 'Tecnólogo') filterFn = function(u) { return false; };
+
+  // Filter handler — re-defined each render (no toggle: click same button = stays)
+  window.setInsercaoGrauFilter = function(g) {
+    state.insercaoGrauFilter = g;
+    render();
+  };
+
+  var _mkGrauBtn = function(val, label) {
+    var isActive = val === '' ? grau === '' : grau === val;
+    return '<button onclick="window.setInsercaoGrauFilter(\'' + val + '\')" ' +
+      'style="padding:3px 10px;border-radius:16px;border:1px solid ' +
+      (isActive ? 'var(--accent,#4A6FA5)' : '#cbd5e1') + ';background:' +
+      (isActive ? 'var(--accent,#4A6FA5)' : 'transparent') + ';color:' +
+      (isActive ? '#fff' : 'var(--text-primary,#222)') + ';font-size:0.78rem;cursor:pointer;">' + label + '</button>';
+  };
+
+  var filterBtns =
+    '<div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-bottom:10px;">' +
+    '<span style="font-size:0.78rem;color:var(--text-secondary,#666);margin-right:2px;">Grau acadêmico:</span>' +
+    _mkGrauBtn('', 'Todos') +
+    _mkGrauBtn('Bacharelado', 'Bacharelado') +
+    _mkGrauBtn('Licenciatura', 'Licenciatura') +
+    _mkGrauBtn('Tecnólogo', 'Tecnólogo') +
+    '<button id="btnLimparGrauInsercao" onclick="window.setInsercaoGrauFilter(\'\')" ' +
+      'style="margin-left:6px;padding:3px 10px;border-radius:16px;border:1px solid #e2e8f0;' +
+      'background:transparent;color:var(--text-secondary,#94a3b8);font-size:0.78rem;cursor:pointer;" ' +
+      'title="Remover filtro de grau — exibir todos os egressos">Limpar filtro</button>' +
+    '</div>';
+
+  var noteHtml = grau
+    ? '<p style="font-size:0.82rem;color:var(--text-secondary,#777);margin-bottom:10px;padding:8px 12px;' +
+      'background:var(--surface-2,#f8f9fa);border-radius:6px;border-left:3px solid var(--accent,#4A6FA5);">' +
+      (grau === 'Tecnólogo'
+        ? 'Nenhuma IEES no dataset tem <strong>Tecnólogo</strong> como grau predominante. Dados de inserção por curso tecnólogo disponíveis na seção <em>Por curso</em>.'
+        : 'Exibindo apenas IEES com grau acadêmico predominante: <strong>' + grau + '</strong>. ' +
+          'A taxa exibida é a geral de cada IEES — dados desagregados por grau requerem pré-processamento da Base RAIS com separação por GRAU_CURSO.') +
+      '</p>'
+    : '';
+
+  var sub1 = grau && grau !== 'Tecnólogo'
+    ? 'Apenas IEES com perfil predominante ' + grau + ' · Média do cluster recalculada para o subgrupo.'
+    : 'Verde acima de 55%; amarelo entre 45% e 55%; vermelho abaixo de 45%. Linha laranja = média do cluster.';
+  var sub2 = grau && grau !== 'Tecnólogo'
+    ? 'Apenas IEES com perfil predominante ' + grau + ' · Mesma escala de cores.'
+    : 'Mesma regra de cor, comparada aos pares do cluster ativo.';
+
+  return filterBtns + noteHtml + `<div class="chart-grid">
+    <article class="visual-card"><h3>${indicatorName(37)} por IEES</h3><p class="card-subtitle">${sub1}</p>${employmentRateBars(c, u => employmentMetrics(u).prRate, formatPercent, filterFn)}</article>
+    <article class="visual-card"><h3>${indicatorName(35)} por IEES</h3><p class="card-subtitle">${sub2}</p>${employmentRateBars(c, u => employmentMetrics(u).southRate, formatPercent, filterFn)}</article>
   </div>
-  <article class="visual-card mt-14"><h3>Retenção local de talentos</h3><p class="card-subtitle">${indicatorName(42)}. IEES com alta dispersão territorial tendem a distribuir egressos em mais municípios; use V3 para leitura estrutural.</p>${localTalentCards(c)}</article>`;
+  <article class="visual-card mt-14"><h3>Retenção local de talentos</h3><p class="card-subtitle">${indicatorName(42)}. IEES com alta dispersão territorial tendem a distribuir egressos em mais municípios; use comparação com os dados da dimensão 'Oferta de Cursos' para análise completa.</p>${localTalentCards(c)}</article>`;
 }
 
-function employmentRateBars(c, getter, fmt) {
-  const clusterRows = employmentRows(c);
+function employmentRateBars(c, getter, fmt, filterFn) {
+  const allClusterRows = employmentRows(c);
+  const clusterRows = filterFn ? allClusterRows.filter(filterFn) : allClusterRows;
   const clusterIds = new Set(clusterRows.map(u => u.id));
-  const rows = employmentChartRows(c);
-  const ref = mean(clusterRows, getter);
+  const allRows = employmentChartRows(c);
+  const rows = filterFn ? allRows.filter(filterFn) : allRows;
+  if (!rows.length) return '<div class="empty-state" style="padding:28px 0;text-align:center;color:var(--text-secondary,#777);font-size:0.88rem;">Nenhuma IEES encontrada para o grau selecionado.</div>';
+  const ref = clusterRows.length ? mean(clusterRows, getter) : 0;
   const sorted = [...rows].sort((a, b) => getter(b) - getter(a));
   return `<div class="bars employment-rate-bars" style="--ref-pos:${clamp(ref, 0, 100)}%">${sorted.map(u => {
     const value = getter(u);
@@ -6526,13 +6888,98 @@ function employmentAdherenceCards(c) {
 
 function employmentDestinationBlock(c) {
   const rows = employmentRows(c);
-  const clusterAvg = mean(rows, u => employmentMetrics(u).territorialDispersion);
   const target = c.selected || rows[0];
-  const targetValue = target ? employmentMetrics(target).territorialDispersion : clusterAvg;
-  return `<div class="chart-grid">
-    <article class="visual-card employment-map-card"><div class="map-card-head"><div><h3>Mapa de destino profissional</h3><p class="card-subtitle">Intensidade por ${indicatorName(71)} e participação municipal dos egressos.</p></div><div class="map-toggle" role="group" aria-label="Filtro do mapa de destino"><button class="mode-btn ${!state.employmentMapOnlyCluster ? "active" : ""}" type="button" onclick="setEmploymentMapMode(false)">Mostrar todos</button><button class="mode-btn ${state.employmentMapOnlyCluster ? "active" : ""}" type="button" onclick="setEmploymentMapMode(true)">Mostrar apenas cluster</button></div></div>${employmentDestinationMap(c)}</article>
-    <article class="visual-card"><h3>${indicatorName(80)}</h3><p class="card-subtitle">Comparação recomendada dentro do cluster V3, pois IEES multicampi inserem egressos em mais municípios.</p><div class="dispersion-score"><strong>${target ? target.sigla : "Cluster"}</strong><span>${formatPercent(targetValue)}</span><em>Média do cluster: ${formatPercent(clusterAvg)}</em></div>${metricTable(rows, [["IEES", u => `<strong>${u.sigla}</strong><br><span>${u.groups.v3}</span>`], [indicatorName(71), u => formatNumber(employmentMetrics(u).prInserted)], [indicatorName(72), u => formatPercent(employmentMetrics(u).prInserted / Math.max(sum(rows, x => employmentMetrics(x).prInserted), 1) * 100)], [indicatorName(79), u => formatNumber(employmentMetrics(u).courseDestinationMunicipalities)], [indicatorName(80), u => formatPercent(employmentMetrics(u).territorialDispersion)]], "Destino territorial dos egressos")}</article>
+  const sigla = target ? target.sigla : null;
+
+  // Card values
+  const munCount    = target ? (target.egressosMunicipios ?? null) : null;
+  const dispIdx     = target ? panelEgressosField(target, "raisDispersao", null) : null;
+  const validCluster = rows.filter(u => u.egressosMunicipios != null);
+  const clusterMunAvg = validCluster.length
+    ? Math.round(mean(validCluster, u => u.egressosMunicipios)) : null;
+
+  const cs = "padding:14px 18px;background:var(--surface-2,#f5f5f5);border-radius:10px;";
+  const cardsHtml = [
+    `<div style="${cs}">
+      <div style="font-size:0.72rem;text-transform:uppercase;letter-spacing:.04em;color:var(--text-secondary,#777);">Municípios alcançados</div>
+      <div style="font-size:2rem;font-weight:700;margin:4px 0;">${munCount ?? "—"}</div>
+      <div style="font-size:0.75rem;color:var(--text-secondary,#888);">municípios paranaenses com egressos empregados formalmente</div>
+      <div style="font-size:0.72rem;color:var(--text-secondary,#999);margin-top:4px;">Fonte: SETI/RAIS — Base RAIS 2023 e 2024</div>
+    </div>`,
+    `<div style="${cs}">
+      <div style="font-size:0.72rem;text-transform:uppercase;letter-spacing:.04em;color:var(--text-secondary,#777);">Índice de dispersão territorial</div>
+      <div style="font-size:2rem;font-weight:700;margin:4px 0;">${dispIdx != null ? dispIdx.toFixed(3).replace(".", ",") : "—"}</div>
+      <div style="font-size:0.75rem;color:var(--text-secondary,#888);">média do índice por curso: municípios distintos / egressos encontrados por curso</div>
+      <div style="font-size:0.72rem;color:var(--text-secondary,#999);margin-top:4px;">Fonte: SETI/RAIS — Base RAIS 2023 e 2024 / col. 22</div>
+    </div>`,
+    `<div style="${cs}">
+      <div style="font-size:0.72rem;text-transform:uppercase;letter-spacing:.04em;color:var(--text-secondary,#777);">Média do cluster (municípios)</div>
+      <div style="font-size:2rem;font-weight:700;margin:4px 0;">${clusterMunAvg ?? "—"}</div>
+      <div style="font-size:0.75rem;color:var(--text-secondary,#888);">média de municípios alcançados pelas IEES do cluster ativo</div>
+    </div>`,
+  ].join("");
+
+  // Municipality ranking
+  const munRanking = (sigla && window.RAIS_MUN_DATA && window.RAIS_MUN_DATA[sigla])
+    ? window.RAIS_MUN_DATA[sigla].slice(0, 10) : [];
+  const maxPart = munRanking.length ? munRanking[0].part : 1;
+  const munBarsHtml = munRanking.length
+    ? munRanking.map(m => {
+        const bw = maxPart > 0 ? Math.round(m.part / maxPart * 100) : 0;
+        return `<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;font-size:0.82rem;">
+          <span style="min-width:130px;color:var(--text-primary,#222);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="${m.nome.replace(/"/g,"&quot;")}">${m.nome}</span>
+          <div style="flex:1;background:#e2e8f0;border-radius:4px;height:8px;"><div style="width:${bw}%;background:var(--accent,#4A6FA5);border-radius:4px;height:8px;"></div></div>
+          <span style="min-width:42px;text-align:right;color:var(--text-secondary,#666);">${m.part.toFixed(1).replace(".", ",")}%</span>
+        </div>`;
+      }).join("")
+    : `<div style="font-size:0.82rem;color:var(--text-secondary,#999);padding:8px 0;">Dados de municípios não disponíveis — carregue a Base RAIS para visualizar o ranking.</div>`;
+
+  const rankingCol = `<div>
+    <div style="font-size:0.90rem;font-weight:600;margin-bottom:8px;">Top 10 municípios de destino</div>
+    <div style="font-size:0.78rem;color:var(--text-secondary,#777);margin-bottom:10px;">Participação de cada município no total de egressos empregados formalmente</div>
+    ${munBarsHtml}
+    <div style="font-size:0.72rem;color:var(--text-secondary,#999);margin-top:8px;">Fonte: SETI/RAIS — Base RAIS - 2023 e 2024 - Paraná.xlsx / col. 12 e 14</div>
   </div>`;
+
+  // Expandable table: per-course from RAIS when available, fallback to per-IES
+  const cursosData = sigla && window.RAIS_CURSO_DATA && window.RAIS_CURSO_DATA[sigla]
+    ? window.RAIS_CURSO_DATA[sigla] : null;
+  let tableSection;
+  if (cursosData && cursosData.length) {
+    const tbody = cursosData.map(cd =>
+      `<tr>
+        <td>${cd.curso}</td>
+        <td>${cd.grau || "—"}</td>
+        <td>${cd.campus || "—"}</td>
+        <td style="text-align:right">${cd.munDestino != null ? Math.round(cd.munDestino) : "—"}</td>
+        <td style="text-align:right">${cd.dispersao != null ? cd.dispersao.toFixed(3).replace(".", ",") : "—"}</td>
+        <td style="text-align:right">${cd.divOcup != null ? cd.divOcup.toFixed(2).replace(".", ",") : "—"}</td>
+      </tr>`
+    ).join("");
+    tableSection = `<div class="metric-table-wrap">
+      <button class="metric-table-toggle" type="button" aria-expanded="false" onclick="toggleMetricTable(this)"><span class="toggle-icon">▶</span> Ver tabela completa — Destino territorial dos egressos</button>
+      <div class="metric-table-body" hidden><div style="overflow-x:auto"><table class="data-table"><thead><tr>
+        <th style="text-align:left">Curso</th><th style="text-align:left">Grau</th><th style="text-align:left">Campus</th>
+        <th style="text-align:right" title="Municípios de destino profissional por curso">Nº Municípios</th>
+        <th style="text-align:right" title="Índice de dispersão territorial dos egressos por curso">Índice Dispersão</th>
+        <th style="text-align:right" title="Diversidade ocupacional dos egressos por curso">Diversidade Ocup.</th>
+      </tr></thead><tbody>${tbody}</tbody></table></div></div>
+    </div>`;
+  } else {
+    tableSection = metricTable(rows, [
+      ["IEES", u => `<strong>${u.sigla}</strong><br><span>${u.groups.v3}</span>`],
+      [indicatorName(71), u => formatNumber(employmentMetrics(u).prInserted)],
+      [indicatorName(72), u => formatPercent(employmentMetrics(u).prInserted / Math.max(sum(rows, x => employmentMetrics(x).prInserted), 1) * 100)],
+      [indicatorName(79), u => formatNumber(employmentMetrics(u).courseDestinationMunicipalities)],
+      [indicatorName(80), u => formatPercent(employmentMetrics(u).territorialDispersion)]
+    ], "Destino territorial dos egressos");
+  }
+
+  return `<div class="chart-grid">
+    <article class="visual-card"><div style="display:flex;flex-direction:column;gap:12px;">${cardsHtml}</div></article>
+    <article class="visual-card">${rankingCol}</article>
+  </div>
+  ${tableSection}`;
 }
 
 function employmentDestinationMap(c) {
@@ -6603,7 +7050,7 @@ function employmentCourseTable(c, rows) {
     const diff = r.rate - r.avg;
     const cls = diff >= 4 ? "cell-good" : diff >= -4 ? "cell-mid" : "cell-risk";
     return `<tr class="${cls}" title="Média do cluster para ${r.type}: ${formatPercent(r.avg)}"><td><strong>${r.course}</strong></td><td>${r.u.sigla}</td><td>${r.type}</td><td>${formatNumber(r.inserted)}</td><td>${formatPercent(r.inserted / Math.max(sum(bodyRows.filter(x => x.u.id === r.u.id), x => x.inserted), 1) * 100)}</td><td>${formatPercent(r.rate)}</td><td>${diff >= 0 ? "+" : ""}${diff.toFixed(1).replace(".", ",")} p.p.</td></tr>`;
-  }).join("")}</tbody></table></div>`;
+  }).join("")}</tbody></table>${noteHtml}</div>`;
 }
 
 function employmentOccupationBlock(c) {
@@ -6694,11 +7141,11 @@ function employmentCourseTable(c, rows) {
     const diff = r.rate - r.avg;
     const cls = diff >= 4 ? "cell-good" : diff >= -4 ? "cell-mid" : "cell-risk";
     return `<tr class="${cls}" title="Média do cluster para ${r.type}: ${formatPercent(r.avg)}"><td><strong>${r.course}</strong></td><td>${r.u.sigla}</td><td>${r.type}</td><td>${formatNumber(r.inserted)}</td><td>${formatPercent(r.inserted / Math.max(sum(bodyRows.filter(x => x.u.id === r.u.id), x => x.inserted), 1) * 100)}</td><td>${formatNumber(typeTotals[r.type] || 0)}</td><td>${formatPercent(r.rate)}</td><td>${diff >= 0 ? "+" : ""}${diff.toFixed(1).replace(".", ",")} p.p.</td></tr>`;
-  }).join("")}</tbody></table></div>`;
+  }).join("")}</tbody></table>${noteHtml}</div>`;
 }
 
 /* Aba 8 - Orçamento, Desempenho e Eficiência Relativa (Relatório Despesa 8050) */
-state.efficiencyMode = state.efficiencyMode || "movimentacao";
+state.efficiencyMode = state.efficiencyMode || "eficiencia";
 state.efficiencyResult = state.efficiencyResult || "completion";
 state.efficiencyDefaultApplied = state.efficiencyDefaultApplied || false;
 
@@ -6750,9 +7197,7 @@ var previousRenderNumberedTabEfficiency = renderNumberedTab;
 renderNumberedTab = function(tabId, c, summary = "") {
   if (tabId !== "efficiency" && tabId !== "performance") return previousRenderNumberedTabEfficiency(tabId, c, summary);
   const blocks = tabBlocks[tabId] || [];
-  const mode = tabId === "efficiency"
-    ? `<div class="mode-selector" role="group" aria-label="Modo de análise orçamentária"><button class="mode-btn ${state.efficiencyMode === "movimentacao" ? "active" : ""}" data-mode="movimentacao" type="button" onclick="setEfficiencyMode('movimentacao')">Comparação por cluster</button><button class="mode-btn ${state.efficiencyMode === "eficiencia" ? "active" : ""}" data-mode="eficiencia" type="button" onclick="setEfficiencyMode('eficiencia')">Eficiência relativa</button></div>`
-    : "";
+  const mode = "";
   const banner2026 = (tabId === "efficiency" && c.f.year === '2026')
     ? '<div class="data-source-banner warning visible"><span class="dsb-icon" aria-hidden="true">⚠</span><div class="dsb-body"><strong>Dados parciais — 2026</strong><span>Dados de 2026 parciais — exercício em andamento (~3 meses executados). Valores de execução orçamentária não são comparáveis aos anos anteriores.</span></div></div>'
     : '';
@@ -6764,7 +7209,7 @@ renderNumberedTab = function(tabId, c, summary = "") {
 
 var previousRenderKpisEfficiency = renderKpis;
 renderKpis = function(c) {
-  if (state.activeTab !== "efficiency" && state.activeTab !== "performance") return previousRenderKpisEfficiency(c);
+  if (state.activeTab !== "efficiency") return previousRenderKpisEfficiency(c);
   el.kpiGrid.classList.remove("overview-kpi-grid");
   el.kpiGrid.classList.add("efficiency-kpi-grid");
   el.kpiGrid.style.display = "";
@@ -7032,21 +7477,72 @@ function renderBudgetPerformanceScatter(rows) {
   const avgApi = allRows.reduce((s, u) => s + academicPerformanceIndex(u), 0) / allRows.length;
   const maxCps = Math.max(...allRows.map(costPerStudent));
   const maxApi = Math.max(...allRows.map(academicPerformanceIndex));
+
+  // Posição das linhas de média no espaço de plot (0–100%)
+  const avgXPct = clamp(avgCps / maxCps * 100, 10, 90).toFixed(1);
+  const avgYPct = clamp(avgApi / maxApi * 100, 10, 90).toFixed(1);
+  const avgXR   = (100 - parseFloat(avgXPct)).toFixed(1);
+  const avgYT   = (100 - parseFloat(avgYPct)).toFixed(1);
+
+  // Pontos coloridos por IES
   const points = allRows.map(u => {
     const cps = costPerStudent(u);
     const api = academicPerformanceIndex(u);
     const xPct = clamp(cps / maxCps * 100, 5, 92);
     const yPct = clamp(api / maxApi * 100, 5, 92);
+    const col = _SCATTER_IES_COLORS[u.sigla] || "#4A6FA5";
     return `<button class="pilot-scatter-point" type="button"
-      style="left:${xPct}%;bottom:${yPct}%"
+      style="left:${xPct}%;bottom:${yPct}%;background:${col};border-color:${col}cc"
       title="${u.sigla}: custo/aluno ${formatCurrency(cps)} · Índice desempenho ${api.toFixed(1).replace(".", ",")}">${u.sigla}</button>`;
   }).join("");
-  return `<div class="pilot-scatter">
-    ${points}
-    <span class="scatter-axis-label x">Custo por aluno →</span>
-    <span class="scatter-axis-label y">↑ Desempenho</span>
-  </div>
-  <p class="card-subtitle" style="margin-top:4px">Média de custo: ${formatCurrency(avgCps)} por aluno · Média de desempenho: ${avgApi.toFixed(1).replace(".", ",")} pts · Quadrantes indisponíveis na planilha</p>`;
+
+  // Bloco explicativo
+  const explainer = `<div class="chart-explainer" style="margin-bottom:12px;padding:12px 16px;background:var(--surface-2,#f5f5f5);border-radius:8px;font-size:0.85rem;color:var(--text-secondary,#555);line-height:1.6;">
+    <strong style="display:block;margin-bottom:6px;color:var(--text-primary,#222);">O que esta matriz analisa?</strong>
+    <p style="margin:0 0 6px 0;">A <strong>Matriz gasto × desempenho</strong> posiciona cada IEES paranaense
+    segundo duas dimensões: o <strong>custo por aluno</strong> (eixo horizontal —
+    orçamento liquidado dividido pelo número de matrículas ativas) e o
+    <strong>índice composto de desempenho acadêmico</strong> (eixo vertical —
+    média ponderada de indicadores de ocupação de vagas, conclusão, qualificação
+    docente, pós-graduação e inserção profissional). O tamanho de cada bolinha é
+    proporcional ao número de alunos matriculados.</p>
+    <p style="margin:0 0 4px 0;"><strong>Bases e fontes:</strong></p>
+    <ul style="margin:0;padding-left:18px;">
+      <li><em>Custo por aluno (eixo X):</em> Orçamento liquidado — Relatório da Despesa 8050 (SETI/SEFA) ÷ Matrículas ativas — INEP, Censo da Educação Superior.</li>
+      <li><em>Índice de desempenho (eixo Y):</em> Score composto calculado a partir de indicadores do INEP (Censo), CAPES (Sucupira) e SETI/RAIS (inserção profissional de egressos).</li>
+    </ul>
+  </div>`;
+
+  // Fundos coloridos dos quadrantes (desenhados antes dos pontos)
+  const quadBg = `
+    <div style="position:absolute;left:0;right:${avgXR}%;bottom:${avgYPct}%;top:0;background:rgba(34,197,94,0.07);pointer-events:none;z-index:0"></div>
+    <div style="position:absolute;left:${avgXPct}%;right:0;bottom:${avgYPct}%;top:0;background:rgba(234,179,8,0.07);pointer-events:none;z-index:0"></div>
+    <div style="position:absolute;left:0;right:${avgXR}%;top:${avgYT}%;bottom:0;background:rgba(148,163,184,0.07);pointer-events:none;z-index:0"></div>
+    <div style="position:absolute;left:${avgXPct}%;right:0;top:${avgYT}%;bottom:0;background:rgba(239,68,68,0.07);pointer-events:none;z-index:0"></div>`;
+
+  // Legenda dos quadrantes
+  const quadLegend = `<div style="display:flex;gap:16px;flex-wrap:wrap;margin-top:8px;font-size:0.78rem;color:var(--text-secondary,#555);">
+    <span><span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:rgba(34,197,94,0.25);margin-right:4px;"></span>Eficiente — baixo custo, alto desempenho</span>
+    <span><span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:rgba(234,179,8,0.25);margin-right:4px;"></span>Alto investimento — alto custo, alto desempenho</span>
+    <span><span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:rgba(148,163,184,0.25);margin-right:4px;"></span>Atenção — baixo custo, baixo desempenho</span>
+    <span><span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:rgba(239,68,68,0.25);margin-right:4px;"></span>Ineficiente — alto custo, baixo desempenho</span>
+  </div>`;
+
+  return explainer +
+    `<div class="pilot-scatter">
+      ${quadBg}
+      <span class="scatter-ref-v" style="left:${avgXPct}%"></span>
+      <span class="scatter-ref-h" style="bottom:${avgYPct}%;top:auto"></span>
+      <span class="scatter-q-label q1" style="color:#16a34a;opacity:0.6">Eficiente</span>
+      <span class="scatter-q-label q2" style="color:#ca8a04;opacity:0.6">Alto investimento</span>
+      <span class="scatter-q-label q3" style="color:#64748b;opacity:0.6">Atenção</span>
+      <span class="scatter-q-label q4" style="color:#dc2626;opacity:0.6">Ineficiente</span>
+      ${points}
+      <span class="scatter-axis-label x">Custo por aluno →</span>
+      <span class="scatter-axis-label y">↑ Desempenho</span>
+    </div>
+    <p class="card-subtitle" style="margin-top:4px">Média de custo: ${formatCurrency(avgCps)} por aluno · Média de desempenho: ${avgApi.toFixed(1).replace(".", ",")} pts</p>` +
+    quadLegend;
 }
 
 function renderEfficiencyRankingTable(rows) {
@@ -7518,8 +8014,8 @@ function budgetMovementBlock(c) {
   <div class="score-grid budget-movement-grid">
     ${budgetScoreCard("Orçamento liquidado total", formatCurrencyMillions(a.liquidated), "soma do cluster")}
     ${budgetScoreCard(indicatorName(81), formatPercent(a.executionRate), "média ponderada")}
-    ${budgetScoreCard(indicatorName(82), formatPercent(a.liquidationRate), "liquidado / empenhado")}
-    ${budgetScoreCard(indicatorName(83), formatPercent(a.paymentRate), "pago / liquidado")}
+    ${budgetScoreCard(indicatorName(82), formatPercent(a.liquidationRate), "liquidado / orçamento atualizado")}
+    ${budgetScoreCard(indicatorName(83), formatPercent(a.paymentRate), "pago / orçamento atualizado")}
     ${budgetScoreCard(indicatorName(84), formatPercent(a.contingencyRate), "contingenciado / atualizado")}
     ${budgetScoreCard(indicatorName(85), formatPercent(a.variationRate), "LOA vs. atualizado")}
     ${budgetScoreCard(indicatorName(95), formatPercent(a.execInitial), "liquidado / dotação inicial")}
@@ -7587,13 +8083,85 @@ function budgetWaterfall(c) {
   return `<div class="budget-waterfall"><div class="waterfall-title"><strong>${u.sigla}</strong><span>${indicatorName(85)} ${formatPercent(m.variationRate)} · ${indicatorName(84)} ${formatPercent(m.contingencyRate)} · ${indicatorName(97)} ${formatPercent(m.execUpdated)}</span></div><div class="waterfall-bars">${steps.map(([label, value, type]) => `<div class="waterfall-step ${type}"><span class="waterfall-label">${label}</span><div class="waterfall-track"><span class="has-tip" style="width:${clamp(Math.abs(value) / maxAbs * 100, 6, 100)}%" data-tip="${label}: ${formatCurrencyMillions(Math.abs(value))}"></span></div><strong>${formatCurrencyMillions(Math.abs(value))}</strong></div>`).join("")}</div></div>`;
 }
 
+// ── Scatter com dados reais (byYear) para seções 3 e 4 da aba 9 ─────────────
+function renderPerformanceCrossScatter(rows, getY, fmtY, yLabel) {
+  const validRows = rows.filter(u => isValidNumber(costPerStudent(u)) && isValidNumber(getY(u)));
+  if (!validRows.length) return '<p class="card-subtitle">Dados insuficientes para o recorte selecionado.</p>';
+  const maxX   = Math.max(...validRows.map(u => costPerStudent(u)));
+  const maxY   = Math.max(...validRows.map(u => getY(u)));
+  const avgX   = validRows.reduce((s, u) => s + costPerStudent(u), 0) / validRows.length;
+  const avgY   = validRows.reduce((s, u) => s + getY(u), 0) / validRows.length;
+  const avgXPct = clamp(avgX / maxX * 100, 10, 90).toFixed(1);
+  const avgYPct = clamp(avgY / maxY * 100, 10, 90).toFixed(1);
+  const avgXR   = (100 - parseFloat(avgXPct)).toFixed(1);
+  const avgYT   = (100 - parseFloat(avgYPct)).toFixed(1);
+  const points = validRows.map(u => {
+    const xPct = clamp(costPerStudent(u) / maxX * 100, 5, 92).toFixed(1);
+    const yPct = clamp(getY(u) / maxY * 100, 5, 92).toFixed(1);
+    const col = _SCATTER_IES_COLORS[u.sigla] || '#4A6FA5';
+    return `<button class="pilot-scatter-point" type="button"
+      style="left:${xPct}%;bottom:${yPct}%;background:${col};border-color:${col}cc"
+      title="${u.sigla}: custo/aluno ${formatCurrency(costPerStudent(u))} · ${yLabel}: ${fmtY(getY(u))}">${u.sigla}</button>`;
+  }).join('');
+  const quadBg = `
+    <div style="position:absolute;left:0;right:${avgXR}%;bottom:${avgYPct}%;top:0;background:rgba(34,197,94,0.07);pointer-events:none;z-index:0"></div>
+    <div style="position:absolute;left:${avgXPct}%;right:0;bottom:${avgYPct}%;top:0;background:rgba(234,179,8,0.07);pointer-events:none;z-index:0"></div>
+    <div style="position:absolute;left:0;right:${avgXR}%;top:${avgYT}%;bottom:0;background:rgba(148,163,184,0.07);pointer-events:none;z-index:0"></div>
+    <div style="position:absolute;left:${avgXPct}%;right:0;top:${avgYT}%;bottom:0;background:rgba(239,68,68,0.07);pointer-events:none;z-index:0"></div>`;
+  return `<div class="pilot-scatter">
+    ${quadBg}
+    <span class="scatter-ref-v" style="left:${avgXPct}%"></span>
+    <span class="scatter-ref-h" style="bottom:${avgYPct}%;top:auto"></span>
+    <span class="scatter-q-label q1" style="color:#16a34a;opacity:0.6">Eficiente</span>
+    <span class="scatter-q-label q2" style="color:#ca8a04;opacity:0.6">Alto investimento</span>
+    <span class="scatter-q-label q3" style="color:#64748b;opacity:0.6">Atenção</span>
+    <span class="scatter-q-label q4" style="color:#dc2626;opacity:0.6">Ineficiente</span>
+    ${points}
+    <span class="scatter-axis-label x">Custo por aluno →</span>
+    <span class="scatter-axis-label y">↑ ${yLabel}</span>
+  </div>
+  <p class="card-subtitle" style="margin-top:4px">Média custo: ${formatCurrency(avgX)}/aluno · Média ${yLabel}: ${fmtY(avgY)}</p>`;
+}
+
 function budgetAcademicBlock(c) {
-  const options = ["completion", "occupancy", "employment", "doctorate"];
-  return `<div class="chart-grid budget-relative-grid">${options.map(key => `<article class="visual-card"><h3>Custo relativo × ${budgetResultOptions[key].label}</h3><p class="card-subtitle">Eixos calculados em relação à média do cluster ativo.</p>${budgetRelativeScatter(c, budgetResultOptions[key])}</article>`).join("")}</div>`;
+  const rows = efficiencyRows(c);
+  const chart1 = renderPerformanceCrossScatter(rows, u => u.completion, formatPercent, "Conclusão");
+  const chart2 = renderPerformanceCrossScatter(rows, u => u.occupancy, formatPercent, "Ocupação de vagas");
+  const src1 = `<p class="chart-source" style="font-size:0.78rem;color:var(--text-secondary,#777);margin-top:6px;">
+    <strong>Eixo X:</strong> Orçamento liquidado (Relatório da Despesa 8050 — SETI/SEFA) ÷ Matrículas ativas (INEP, Censo da Educação Superior) ·
+    <strong>Eixo Y:</strong> Concluintes ÷ Matrículas × 100 (INEP, Censo da Educação Superior — Base Cursos - Brasil.xlsx / QT_CONC ÷ QT_MAT)
+  </p>`;
+  const src2 = `<p class="chart-source" style="font-size:0.78rem;color:var(--text-secondary,#777);margin-top:6px;">
+    <strong>Eixo X:</strong> mesmo cálculo acima ·
+    <strong>Eixo Y:</strong> Ingressantes ÷ Vagas ofertadas × 100 (INEP, Censo da Educação Superior — Base Cursos - Brasil.xlsx / QT_ING ÷ QT_VG_TOTAL)
+  </p>`;
+  return `<div class="chart-grid budget-relative-grid">
+    <article class="visual-card"><h3>Custo por aluno × Taxa de conclusão</h3><p class="card-subtitle">Eixo X: custo real (R$/aluno) · Eixo Y: % concluintes sobre matrículas.</p>${chart1}${src1}</article>
+    <article class="visual-card"><h3>Custo por aluno × Taxa de ocupação de vagas</h3><p class="card-subtitle">Eixo X: custo real (R$/aluno) · Eixo Y: % ingressantes sobre vagas ofertadas.</p>${chart2}${src2}</article>
+  </div>`;
 }
 
 function budgetFacultyBlock(c) {
-  return `<div class="chart-grid budget-relative-grid"><article class="visual-card"><h3>Custo relativo × ${indicatorName(59)}</h3><p class="card-subtitle">Participação CRES no esforço docente total, relativa ao cluster.</p>${budgetRelativeScatter(c, budgetResultOptions.cresShare)}</article><article class="visual-card"><h3>Custo relativo × ${indicatorName(60)} normalizada por docente</h3><p class="card-subtitle">Captação CNPq por docente estimado, relativa ao cluster.</p>${budgetRelativeScatter(c, budgetResultOptions.cnpqTeacher)}</article></div>`;
+  const rows = efficiencyRows(c);
+  const getCresPartic  = u => facultyMetrics(u).cresParticipation;
+  const getCnpqTeacher = u => {
+    const occ = facultyMetrics(u).occupied || estimatedFaculty(u);
+    return u.cnpq * 1e6 / Math.max(occ, 1);
+  };
+  const chart1 = renderPerformanceCrossScatter(rows, getCresPartic, formatPercent, "Participação CRES");
+  const chart2 = renderPerformanceCrossScatter(rows, getCnpqTeacher, formatCurrency, "CNPq/docente");
+  const src1 = `<p class="chart-source" style="font-size:0.78rem;color:var(--text-secondary,#777);margin-top:6px;">
+    <strong>Eixo X:</strong> mesmo cálculo acima ·
+    <strong>Eixo Y:</strong> Participação da CRES no esforço docente total (%) (SETI — Base Docentes - Paraná.xlsx / Base_Docentes_PR / col. 33)
+  </p>`;
+  const src2 = `<p class="chart-source" style="font-size:0.78rem;color:var(--text-secondary,#777);margin-top:6px;">
+    <strong>Eixo X:</strong> mesmo cálculo acima ·
+    <strong>Eixo Y:</strong> Captação CNPq por docente estimado (CNPq / Dados Abertos — Base CNPq - Brasil.xlsx ÷ vagas docentes ocupadas — SETI, Base Docentes - Paraná.xlsx)
+  </p>`;
+  return `<div class="chart-grid budget-relative-grid">
+    <article class="visual-card"><h3>Custo por aluno × ${indicatorName(59)}</h3><p class="card-subtitle">Eixo X: custo real (R$/aluno) · Eixo Y: % CRES no esforço docente total.</p>${chart1}${src1}</article>
+    <article class="visual-card"><h3>Custo por aluno × ${indicatorName(60)} por docente</h3><p class="card-subtitle">Eixo X: custo real (R$/aluno) · Eixo Y: captação CNPq normalizada por docente.</p>${chart2}${src2}</article>
+  </div>`;
 }
 
 function budgetResultSelector(label) {
@@ -7614,17 +8182,26 @@ function budgetRelativeRows(c, resultOption) {
 
 function budgetQuadrant(row) {
   if (!hasOfficialQuadrants()) return quadrantUnavailable();
-  if (row.costDelta <= 0 && row.resultDelta >= 0) return { code: "q1", label: "Entrega mais com menos", tone: "high" };
-  if (row.costDelta > 0 && row.resultDelta >= 0) return { code: "q2", label: "Alto investimento, alto resultado", tone: "info" };
-  if (row.costDelta <= 0 && row.resultDelta < 0) return { code: "q3", label: "Baixo recurso, baixo resultado", tone: "warn" };
-  return { code: "q4", label: "Alto recurso, resultado abaixo da média", tone: "danger" };
+  if (row.costDelta <= 0 && row.resultDelta >= 0) return { code: "q1", label: "Gasto abaixo da média, resultado acima",  tone: "high" };
+  if (row.costDelta > 0 && row.resultDelta >= 0) return { code: "q2", label: "Gasto acima da média, resultado acima",   tone: "info" };
+  if (row.costDelta <= 0 && row.resultDelta < 0) return { code: "q3", label: "Gasto abaixo da média, resultado abaixo", tone: "warn" };
+  return { code: "q4", label: "Gasto acima da média, resultado abaixo",                                                  tone: "danger" };
+}
+
+function classificaQuadrante(custoRel, resultadoRel) {
+  if (custoRel === null || resultadoRel === null) return { label: "Sem dados",                              color: "#94a3b8" };
+  if (custoRel < 0 && resultadoRel > 0) return { label: "Gasto abaixo da média, resultado acima",         color: "#16a34a" };
+  if (custoRel > 0 && resultadoRel > 0) return { label: "Gasto acima da média, resultado acima",          color: "#ca8a04" };
+  if (custoRel < 0 && resultadoRel < 0) return { label: "Gasto abaixo da média, resultado abaixo",        color: "#64748b" };
+  if (custoRel > 0 && resultadoRel < 0) return { label: "Gasto acima da média, resultado abaixo",         color: "#dc2626" };
+  return { label: "Na média do cluster",                                                                    color: "#64748b" };
 }
 
 function budgetRelativeScatter(c, resultOption) {
   if (!hasOfficialQuadrants()) return quadrantUnavailableBlock();
   const rows = budgetRelativeRows(c, resultOption);
   const maxBudget = Math.max(...rows.map(r => r.m.liquidated), 1);
-  return `<div class="budget-relative-scatter"><span class="scatter-ref-v"></span><span class="scatter-ref-h"></span><div class="budget-q q1">Entrega mais com menos</div><div class="budget-q q2">Alto investimento, alto resultado</div><div class="budget-q q3">Baixo recurso, baixo resultado</div><div class="budget-q q4">Alto recurso, resultado abaixo</div>${rows.map(row => {
+  return `<div class="budget-relative-scatter"><span class="scatter-ref-v"></span><span class="scatter-ref-h"></span><div class="budget-q q1">Gasto abaixo da média, resultado acima</div><div class="budget-q q2">Gasto acima da média, resultado acima</div><div class="budget-q q3">Gasto abaixo da média, resultado abaixo</div><div class="budget-q q4">Gasto acima da média, resultado abaixo</div>${rows.map(row => {
     const quad = budgetQuadrant(row);
     const size = clamp(28 + row.m.liquidated / maxBudget * 26, 28, 56);
     return `<button class="budget-point ${quad.code} ${budgetProfileClass(row.profile)} ${isUniSelected(c.f, row.u.id) ? "selected" : ""}" style="left:${clamp(50 + row.costDelta, 6, 94)}%;bottom:${clamp(50 + row.resultDelta, 6, 94)}%;width:${size}px;height:${size}px" type="button" title="${row.u.sigla}: custo relativo ${row.costDelta.toFixed(1).replace(".", ",")}% · resultado relativo ${row.resultDelta.toFixed(1).replace(".", ",")}% · ${quad.label}">${row.u.sigla}</button>`;
@@ -7632,20 +8209,81 @@ function budgetRelativeScatter(c, resultOption) {
 }
 
 function budgetOpportunityBlock(c) {
-  const resultOption = budgetResultOptions[state.efficiencyResult] || budgetResultOptions.completion;
-  const matrix = `<article class="visual-card budget-matrix-card"><h3>Matriz de oportunidades e alertas</h3><p class="card-subtitle">Eixo X: recurso relativo ao cluster. Eixo Y: resultado relativo ao cluster. Bolha: orçamento liquidado. Cor: perfil V6.</p>${budgetResultSelector("Indicador de resultado da matriz")}${budgetRelativeScatter(c, resultOption)}</article>`;
-  const table = budgetDiagnosticTable(c, resultOption);
-  const alerts = budgetContextAlerts(c, resultOption);
-  return state.efficiencyMode === "eficiencia" ? `${matrix}${table}${alerts}` : `${alerts}${table}<div class="mt-14">${matrix}</div>`;
+  const rows = efficiencyRows(c);
+  if (!rows.length) return '<p class="card-subtitle">Sem dados para o recorte selecionado.</p>';
+
+  const bpsValid       = rows.filter(u => isValidNumber(costPerStudent(u)));
+  const completValid   = rows.filter(u => isValidNumber(u.completion));
+  const avgBPS         = bpsValid.length     ? bpsValid.reduce((s, u) => s + costPerStudent(u), 0) / bpsValid.length   : 0;
+  const avgCompletion  = completValid.length ? completValid.reduce((s, u) => s + u.completion, 0)  / completValid.length : 0;
+
+  // mediana de cnpq (R$ mi) por aluno para o grupo
+  const cnpqRatios = rows
+    .filter(u => isValidNumber(u.cnpq) && isValidNumber(u.students) && u.students > 0)
+    .map(u => u.cnpq / u.students)
+    .sort((a, b) => a - b);
+  const medCnpqRatio = cnpqRatios.length ? cnpqRatios[Math.floor(cnpqRatios.length / 2)] : 0;
+
+  const alerts = [];
+  rows.forEach(u => {
+    const bps = costPerStudent(u);
+    if (!isValidNumber(bps)) return;
+    if (bps > avgBPS && isValidNumber(u.completion) && u.completion < avgCompletion) {
+      alerts.push({ emoji: '🔴', sigla: u.sigla,
+        msg: 'Alto custo por aluno com taxa de conclusão abaixo da média do grupo.',
+        detail: `Custo/aluno: ${formatCurrency(bps)} (média: ${formatCurrency(avgBPS)}) · Conclusão: ${formatPercent(u.completion)} (média: ${formatPercent(avgCompletion)})` });
+    }
+    if (isValidNumber(u.personnel) && u.personnel > 85) {
+      alerts.push({ emoji: '🟡', sigla: u.sigla,
+        msg: `Alta participação de pessoal e encargos no orçamento (${formatPercent(u.personnel)}).`,
+        detail: `Participação de pessoal: ${formatPercent(u.personnel)} — referência: ≤ 85%` });
+    }
+    if (bps < avgBPS && isValidNumber(u.completion) && u.completion > avgCompletion) {
+      alerts.push({ emoji: '🟢', sigla: u.sigla,
+        msg: 'Alta taxa de conclusão com custo abaixo da média — destaque de eficiência.',
+        detail: `Custo/aluno: ${formatCurrency(bps)} (média: ${formatCurrency(avgBPS)}) · Conclusão: ${formatPercent(u.completion)} (média: ${formatPercent(avgCompletion)})` });
+    }
+    if (medCnpqRatio > 0 && isValidNumber(u.cnpq) && isValidNumber(u.students) && u.students > 0
+        && u.cnpq / u.students < medCnpqRatio) {
+      alerts.push({ emoji: '🔵', sigla: u.sigla,
+        msg: 'Captação CNPq por aluno abaixo da mediana do grupo — potencial de captação não explorado.',
+        detail: `CNPq/aluno: ${formatCurrency(u.cnpq * 1e6 / u.students)} (mediana: ${formatCurrency(medCnpqRatio * 1e6)})` });
+    }
+  });
+
+  const alertsHtml = alerts.length
+    ? alerts.map(a => `<div style="display:flex;align-items:flex-start;gap:10px;padding:10px 14px;border-radius:6px;background:var(--surface-2,#f5f5f5);margin-bottom:8px;">
+        <span style="font-size:1.1rem;">${a.emoji}</span>
+        <div><strong>${a.sigla}</strong> — ${a.msg}<br>
+        <span style="font-size:0.78rem;color:var(--text-secondary,#777);">${a.detail}</span></div>
+      </div>`).join('')
+    : `<p style="color:var(--text-secondary,#777);padding:16px;">Nenhum alerta identificado para o grupo selecionado.</p>`;
+
+  const footnote = `<p style="font-size:0.78rem;color:var(--text-secondary,#777);margin-top:12px;">
+    <strong>Fontes:</strong> Orçamento — Relatório da Despesa 8050 (SETI/SEFA) ·
+    Matrículas e concluintes — INEP, Censo da Educação Superior ·
+    Captação de pesquisa — CNPq / Dados Abertos ·
+    Pessoal e encargos — Relatório da Despesa 8050, col. part_pessoal
+  </p>`;
+
+  return `<article class="visual-card budget-alert-card">
+    <h3>Alertas automáticos e oportunidades</h3>
+    <p class="card-subtitle">Baseados nos dados reais do recorte selecionado (Despesa 8050 × INEP × CNPq).</p>
+    <div style="margin-top:12px;">${alertsHtml}</div>
+    ${footnote}
+  </article>`;
 }
 
 function budgetDiagnosticTable(c, resultOption) {
   const rows = budgetRelativeRows(c, resultOption);
-  const subtitle = hasOfficialQuadrants() ? "Apenas IEES do cluster ativo; classificação oficial de quadrante." : QUADRANT_UNAVAILABLE_MESSAGE;
-  return `<div class="table-wrap mt-14"><h3>Tabela de diagnóstico</h3><p class="card-subtitle">${subtitle}</p><table class="data-table budget-diagnostic-table"><thead><tr><th>IEES</th><th>Cluster</th><th>Custo relativo</th><th>Resultado relativo</th><th>Classificação</th><th>Indicador usado</th></tr></thead><tbody>${rows.map(row => {
-    const quad = budgetQuadrant(row);
-    return `<tr class="diag-${quad.code}"><td><strong>${row.u.sigla}</strong><br><span>${row.u.nome}</span></td><td>${row.u.groups[c.f.groupBy] || row.u.groups.v6}</td><td>${row.costDelta >= 0 ? "+" : ""}${row.costDelta.toFixed(1).replace(".", ",")}%</td><td>${row.resultDelta >= 0 ? "+" : ""}${row.resultDelta.toFixed(1).replace(".", ",")}%</td><td>${quad.label}</td><td>${resultOption.label}</td></tr>`;
-  }).join("")}</tbody></table></div>`;
+  const subtitleHtml = '<p style="font-size:0.83rem; color:var(--text-secondary,#666); margin:4px 0 12px 0; line-height:1.5;">Cada IEES é comparada às demais universidades do mesmo cluster (agrupamento ativo no filtro). Os percentuais de Custo e Resultado mostram o desvio em relação à média do grupo: valor positivo = acima da média; negativo = abaixo da média.</p>';
+  const thCusto = '<th style="cursor:default;"><span style="display:block;font-size:0.75rem;font-weight:700;letter-spacing:.04em;color:var(--text-primary,#222);">CUSTO RELATIVO</span><span style="display:block;font-size:0.70rem;font-weight:400;color:var(--text-secondary,#888);text-transform:none;letter-spacing:0;margin-top:2px;">% vs. média do cluster</span> <span style="display:inline-block;font-size:0.7rem;background:var(--accent,#4A6FA5);color:#fff;border-radius:50%;width:14px;height:14px;text-align:center;line-height:14px;cursor:help;vertical-align:middle;" title="Definição: desvio percentual do custo por aluno desta IES em relação à média do cluster ativo.&#10;Fórmula: (custo_IES − média_cluster) ÷ média_cluster × 100&#10;Fonte: Orçamento liquidado — Relatório da Despesa 8050 (SETI/SEFA) ÷ Matrículas ativas — INEP, Censo da Educação Superior.&#10;Valores negativos indicam custo abaixo da média do grupo; positivos indicam custo acima.">?</span></th>';
+  const thResult = '<th style="cursor:default;"><span style="display:block;font-size:0.75rem;font-weight:700;letter-spacing:.04em;color:var(--text-primary,#222);">RESULTADO RELATIVO</span><span style="display:block;font-size:0.70rem;font-weight:400;color:var(--text-secondary,#888);text-transform:none;letter-spacing:0;margin-top:2px;">% vs. média do cluster</span> <span style="display:inline-block;font-size:0.7rem;background:var(--accent,#4A6FA5);color:#fff;border-radius:50%;width:14px;height:14px;text-align:center;line-height:14px;cursor:help;vertical-align:middle;" title="Definição: desvio percentual do indicador de desempenho selecionado desta IES em relação à média do cluster ativo.&#10;Fórmula: (resultado_IES − média_cluster) ÷ média_cluster × 100&#10;Fonte: depende do indicador — ex: Taxa de concluintes: INEP (QT_CONC ÷ QT_MAT); Taxa de ocupação: INEP (QT_ING ÷ QT_VG_TOTAL); CRES: SETI, Base Docentes - Paraná.xlsx.&#10;Valores positivos indicam desempenho acima da média do grupo; negativos indicam abaixo — sempre em relação ao cluster, não ao universo total.">?</span></th>';
+  const noteHtml = '<div style="margin-top:14px;padding:12px 16px;background:var(--surface-2,#f5f5f5);border-radius:8px;font-size:0.80rem;color:var(--text-secondary,#666);line-height:1.65;"><strong style="display:block;margin-bottom:6px;color:var(--text-primary,#333);">Como ler esta tabela</strong><ul style="margin:0;padding-left:18px;"><li><strong>Custo relativo</strong> &#8212; quanto a IES gasta por aluno comparado à média das universidades do mesmo cluster. Fórmula: (custo da IES &#8722; média do cluster) &#247; média do cluster &#215; 100. Fonte: orçamento liquidado (Relatório da Despesa 8050, SETI/SEFA) &#247; matrículas ativas (INEP, Censo da Educação Superior).</li><li style="margin-top:6px;"><strong>Resultado relativo</strong> &#8212; desvio do indicador de desempenho selecionado (ex: taxa de conclusão, ocupação de vagas) em relação à média do cluster. Mesmo cálculo proporcional. Fontes variam conforme o indicador exibido na coluna &#8220;Indicador usado&#8221;.</li><li style="margin-top:6px;"><strong>Classificação</strong> &#8212; combinação das duas dimensões: uma IES com gasto abaixo da média e resultado acima entrega maior eficiência relativa dentro do seu grupo de referência.</li></ul></div>';
+  return `<div class="table-wrap mt-14"><h3>Posicionamento relativo das IEES no cluster</h3>${subtitleHtml}<table class="data-table budget-diagnostic-table"><thead><tr><th>IEES</th><th>Cluster</th>${thCusto}${thResult}<th>Classificação</th><th>Indicador usado</th></tr></thead><tbody>${rows.map(row => {
+    const q = classificaQuadrante(row.costDelta, row.resultDelta);
+    return `<tr class="diag-q"><td><strong>${row.u.sigla}</strong><br><span>${row.u.nome}</span></td><td>${row.u.groups[c.f.groupBy] || row.u.groups.v6}</td><td>${row.costDelta >= 0 ? "+" : ""}${row.costDelta.toFixed(1).replace(".", ",")}%</td><td>${row.resultDelta >= 0 ? "+" : ""}${row.resultDelta.toFixed(1).replace(".", ",")}%</td><td><span style="font-weight:600;color:${q.color};">${q.label}</span></td><td>${resultOption.label}</td></tr>`;
+  }).join("")}</tbody></table>${noteHtml}</div>`;
 }
 
 function budgetContextAlerts(c, resultOption) {
@@ -7679,8 +8317,8 @@ function budgetMovementBlock(c) {
   <div class="score-grid budget-movement-grid">
     ${budgetScoreCard("Orçamento liquidado total", formatCurrencyMillions(a.liquidated), "soma do cluster")}
     ${budgetScoreCard(indicatorName(81), formatPercent(a.executionRate), "média ponderada")}
-    ${budgetScoreCard(indicatorName(82), formatPercent(a.liquidationRate), "liquidado / empenhado")}
-    ${budgetScoreCard(indicatorName(83), formatPercent(a.paymentRate), "pago / liquidado")}
+    ${budgetScoreCard(indicatorName(82), formatPercent(a.liquidationRate), "liquidado / orçamento atualizado")}
+    ${budgetScoreCard(indicatorName(83), formatPercent(a.paymentRate), "pago / orçamento atualizado")}
     ${budgetScoreCard(indicatorName(84), formatPercent(a.contingencyRate), "contingenciado / atualizado")}
     ${budgetScoreCard(indicatorName(85), formatPercent(a.variationRate), "LOA vs. atualizado")}
     ${budgetScoreCard(indicatorName(94), formatPercent(a.variationRate), "variação frente à LOA inicial")}
@@ -7756,7 +8394,7 @@ renderKpis = function(c) {
     if (el.kpiGrid) el.kpiGrid.innerHTML = `<p style="grid-column:1/-1;text-align:center;padding:20px;color:var(--gray-500)">Selecione pelo menos uma IEES para ver os indicadores.</p>`;
     return;
   }
-  if (state.activeTab !== "efficiency" && state.activeTab !== "performance" && el.kpiGrid) el.kpiGrid.classList.remove("efficiency-kpi-grid");
+  if (state.activeTab !== "efficiency" && el.kpiGrid) el.kpiGrid.classList.remove("efficiency-kpi-grid");
   renderKpisEfficiencyCleanup(c);
   appendMissingKpiDeltas(c);
 };
@@ -8459,7 +9097,7 @@ function resetAllFilters(options = {}) {
   state.comparisonDimension = "all";
   state.retentionCourseType = "Bacharelado";
   state.employmentMapOnlyCluster = false;
-  state.efficiencyMode = "movimentacao";
+  state.efficiencyMode = "eficiencia";
   state.efficiencyResult = "completion";
   state.efficiencyDefaultApplied = false;
   updateGroupOptions("v1");
@@ -9513,6 +10151,11 @@ window.toggleOrcEvolucaoIES = function(sigla) {
   render();
 };
 
+window.limparOrcEvolucao = function() {
+  state.orcEvolucaoFilter = new Set();
+  render();
+};
+
 // ── Helpers locais ────────────────────────────────────────────────────────────
 function _fmtM(v) {
   if (v == null || !isFinite(v)) return "—";
@@ -9541,10 +10184,36 @@ function renderComposicaoFontesBlock(c) {
   if (!ies.length) return '<div class="empty-state">Dados de composição por fonte não disponíveis para o recorte selecionado.</div>';
   var cards = ies.map(function(u) { return composicaoFontesSection(u); }).filter(Boolean);
   if (!cards.length) return '<div class="empty-state">Sem fontes de despesa com participação no orçamento.</div>';
+
+  // Filtro global — re-definido a cada render
+  window.filtroFonteIES = function(iesSel) {
+    var alvo = (iesSel === 'limpar') ? 'todas' : iesSel;
+    document.querySelectorAll('.filtroFonte-btn').forEach(function(b) {
+      var isLimpar = b.dataset.ies === 'limpar';
+      var isAtivo  = b.dataset.ies === alvo && !isLimpar;
+      b.style.background  = isAtivo  ? 'var(--accent,#4A6FA5)' : 'transparent';
+      b.style.color       = isAtivo  ? '#fff' : (isLimpar ? 'var(--text-secondary,#94a3b8)' : 'var(--text-primary,#222)');
+      b.style.borderColor = isAtivo  ? 'var(--accent,#4A6FA5)' : (isLimpar ? '#e2e8f0' : '#cbd5e1');
+    });
+    document.querySelectorAll('[data-ies-fonte]').forEach(function(bloco) {
+      bloco.style.display = (alvo === 'todas' || bloco.dataset.iesFonte === alvo) ? '' : 'none';
+    });
+  };
+
+  var _IES_PR_ALL = ['UEL','UEM','UEPG','UNIOESTE','UNICENTRO','UENP','UNESPAR'];
+  var filtroBtns = '<div id="filtroFonteIES" style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px;align-items:center;">' +
+    '<span style="font-size:0.82rem;color:var(--text-secondary,#666);margin-right:4px;">Exibir:</span>' +
+    '<button class="filtroFonte-btn" data-ies="todas" onclick="window.filtroFonteIES(\'todas\')" style="padding:5px 14px;border-radius:20px;border:1px solid var(--accent,#4A6FA5);background:var(--accent,#4A6FA5);color:#fff;font-size:0.82rem;cursor:pointer;">Todas as IEES</button>' +
+    _IES_PR_ALL.map(function(sig) {
+      return '<button class="filtroFonte-btn" data-ies="' + sig + '" onclick="window.filtroFonteIES(\'' + sig + '\')" style="padding:5px 14px;border-radius:20px;border:1px solid #cbd5e1;background:transparent;color:var(--text-primary,#222);font-size:0.82rem;cursor:pointer;">' + sig + '</button>';
+    }).join('') +
+    '<button class="filtroFonte-btn" data-ies="limpar" onclick="window.filtroFonteIES(\'limpar\')" style="padding:5px 14px;border-radius:20px;border:1px solid #e2e8f0;background:transparent;color:var(--text-secondary,#94a3b8);font-size:0.82rem;cursor:pointer;">Limpar filtro</button>' +
+    '</div>';
+
   var gridStyle = ies.length === 1
     ? ''
     : 'display:grid;grid-template-columns:repeat(auto-fill,minmax(560px,1fr));gap:1rem';
-  return '<div style="' + gridStyle + '">' + cards.join('') + '</div>';
+  return filtroBtns + '<div style="' + gridStyle + '">' + cards.join('') + '</div>';
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -9589,21 +10258,22 @@ function renderOrcCustoPorResultado(rows) {
     var maxV = ind.get(sorted[sorted.length - 1]);
     var range = maxV - minV || 1;
 
-    var barsHtml = sorted.map(function(u, i) {
+    var avgV = valid.reduce(function(s, u) { return s + ind.get(u); }, 0) / valid.length;
+    var barsHtml = sorted.map(function(u) {
       var v = ind.get(u);
       var pct = clamp(((v - minV) / range) * 82 + 8, 8, 95);
-      var fillStyle = i === 0
-        ? "background:linear-gradient(90deg,#0f6e56,#2fb47c)"
-        : i === sorted.length - 1
-        ? "background:linear-gradient(90deg,var(--color-danger,#dc2626),#e46a62)"
-        : "";
+      var fillStyle = v <= avgV * 0.95
+        ? "background:#16a34a;opacity:0.85"
+        : v >= avgV * 1.05
+        ? "background:#dc2626;opacity:0.85"
+        : "background:#ca8a04;opacity:0.85";
       return '<div class="bar-row"><span class="bar-name" title="' + u.nome + '">' + u.sigla +
              '</span><span class="bar-track"><span class="bar-fill" style="width:' + pct.toFixed(1) + '%;' + fillStyle +
              '"></span></span><span class="bar-value">' + formatCurrency(v) + '</span></div>';
     }).join("");
 
     return '<article class="visual-card"><h3>' + ind.label +
-           '</h3><p class="card-subtitle">' + ind.sub + ' · verde = menor custo · vermelho = maior custo</p>' +
+           '</h3><p class="card-subtitle">' + ind.sub + ' · 🟢 Abaixo da média · 🟡 Na média · 🔴 Acima da média</p>' +
            '<div class="bars">' + barsHtml + '</div></article>';
   }
 
@@ -9633,21 +10303,21 @@ function renderOrcExecucao(rows) {
 
   function avgOf(getter) { return _avgField(sorted, getter); }
 
-  function makeRow(label, getter, fmtFn, colorOpt) {
+  function makeRow(label, getter, fmtFn, colorOpt, grupo) {
     var avgV = colorOpt ? avgOf(getter) : null;
     var cells = sorted.map(function(u) {
       var v = getter(u);
       var style = colorOpt ? cellStyle(v, avgV, colorOpt === "higher") : "";
       return '<td style="text-align:right;' + style + '">' + fmtFn(v) + '</td>';
     }).join("");
-    return '<tr><td style="font-size:12px;padding:5px 8px;white-space:nowrap">' + label + '</td>' + cells + '</tr>';
+    return '<tr data-grupo="' + grupo + '"><td style="font-size:12px;padding:5px 8px;white-space:nowrap">' + label + '</td>' + cells + '</tr>';
   }
 
-  function blockHead(label) {
-    return '<tr style="background:#f3f4f6"><td colspan="' + (n + 1) + '" style="padding:6px 8px;font-size:11px;font-weight:700;color:#374151;letter-spacing:.03em;text-transform:uppercase">' + label + '</td></tr>';
+  function blockHead(label, grupo) {
+    return '<tr class="grupo-header" data-grupo-header="' + grupo + '" style="background:#f3f4f6"><td colspan="' + (n + 1) + '" style="padding:6px 8px;font-size:11px;font-weight:700;color:#374151;letter-spacing:.03em;text-transform:uppercase">' + label + '</td></tr>';
   }
 
-  // Calculated fields (not from u directly but derived)
+  // Calculated fields
   function creditosAdicionais(u) {
     return (u.orcamento_atualizado != null && u.dotacao_inicial != null)
       ? round(u.orcamento_atualizado - u.dotacao_inicial, 2) : null;
@@ -9665,40 +10335,36 @@ function renderOrcExecucao(rows) {
   var thead = '<thead><tr><th style="text-align:left;min-width:200px">Indicador</th>' + colHeaders + '</tr></thead>';
 
   var tbody = '<tbody>' +
-    // Bloco A
-    blockHead("A — Valores absolutos (R$ milhões)") +
-    makeRow("Dotação Inicial (LOA)",    function(u){return u.dotacao_inicial;},      _fmtM, null) +
-    makeRow("Orçamento Atualizado",     function(u){return u.orcamento_atualizado;}, _fmtM, null) +
-    makeRow("Créditos Adicionais",      creditosAdicionais,                          _fmtM, null) +
-    makeRow("Empenhado",                function(u){return u.empenhado;},            _fmtM, null) +
-    makeRow("Liquidado",                function(u){return u.liquidado;},            _fmtM, null) +
-    makeRow("Pago",                     function(u){return u.pago;},                 _fmtM, null) +
-    makeRow("Saldo não executado",      saldoNaoExec,                               _fmtM, null) +
-    // Bloco B
-    blockHead("B — Taxas de execução (%)") +
-    makeRow("Taxa de Execução — Empenho",     function(u){return u.tx_execucao_empenho;},    _fmtP, "higher") +
-    makeRow("Taxa de Liquidação",             function(u){return u.tx_liquidacao;},           _fmtP, "higher") +
-    makeRow("Taxa de Pagamento / Liquidado",  function(u){return u.tx_pagamento_liq;},        _fmtP, "higher") +
-    makeRow("Grau de Contingenciamento",      function(u){return u.grau_contingenciamento;},  _fmtP, "lower") +
-    makeRow("Variação Dotação / LOA",         function(u){return u.var_dotacao_loa;},         _fmtP, null) +
-    // Bloco C
-    blockHead("C — Composição da despesa (%)") +
-    makeRow("Pessoal e Encargos",        function(u){return u.part_pessoal;},         _fmtP, null) +
-    makeRow("Outras Desp. Correntes",    function(u){return u.part_outras_correntes;},_fmtP, null) +
-    makeRow("Investimentos / Capital",   function(u){return u.part_capital;},         _fmtP, null) +
-    // Bloco D
-    blockHead("D — Composição por fonte de recurso (%)") +
-    makeRow("Recursos Livres (Gr. 50)",  function(u){return u.part_recursos_livres;},     _fmtP, null) +
-    makeRow("Fonte 500 — Tesouro",       function(u){return u.part_fonte_500;},           _fmtP, null) +
-    makeRow("Fonte 501 — Arrecad. Própria", function(u){return u.part_fonte_501;},        _fmtP, null) +
-    makeRow("Demais Vinculações (Gr. 70)",  function(u){return u.part_demais_vincul;},    _fmtP, null) +
-    makeRow("Convênios União",           function(u){return u.part_convenios_uniao;},     _fmtP, null) +
-    makeRow("Convênios Privados",        function(u){return u.part_convenios_privados;},  _fmtP, null) +
-    makeRow("Emendas Federais",          function(u){return u.part_emendas_federais;},    _fmtP, null) +
+    blockHead("A — Valores absolutos (R$ milhões)", "A") +
+    makeRow("Dotação Inicial (LOA)",       function(u){return u.dotacao_inicial;},      _fmtM, null,     "A") +
+    makeRow("Orçamento Atualizado",        function(u){return u.orcamento_atualizado;}, _fmtM, null,     "A") +
+    makeRow("Créditos Adicionais",         creditosAdicionais,                          _fmtM, null,     "A") +
+    makeRow("Empenhado",                   function(u){return u.empenhado;},            _fmtM, null,     "A") +
+    makeRow("Liquidado",                   function(u){return u.liquidado;},            _fmtM, null,     "A") +
+    makeRow("Pago",                        function(u){return u.pago;},                 _fmtM, null,     "A") +
+    makeRow("Saldo não executado",         saldoNaoExec,                               _fmtM, null,     "A") +
+    blockHead("B — Taxas de execução (%)", "B") +
+    makeRow("Taxa de Execução — Empenho",    function(u){return u.tx_execucao_empenho;},   _fmtP, "higher", "B") +
+    makeRow("Taxa de Liquidação",            function(u){return u.tx_liquidacao;},          _fmtP, "higher", "B") +
+    makeRow("Taxa de Pagamento / Liquidado", function(u){return u.tx_pagamento_liq;},       _fmtP, "higher", "B") +
+    makeRow("Grau de Contingenciamento",     function(u){return u.grau_contingenciamento;}, _fmtP, "lower",  "B") +
+    makeRow("Variação Dotação / LOA",        function(u){return u.var_dotacao_loa;},        _fmtP, null,     "B") +
+    blockHead("C — Composição da despesa (%)", "C") +
+    makeRow("Pessoal e Encargos",         function(u){return u.part_pessoal;},          _fmtP, null, "C") +
+    makeRow("Outras Desp. Correntes",     function(u){return u.part_outras_correntes;}, _fmtP, null, "C") +
+    makeRow("Investimentos / Capital",    function(u){return u.part_capital;},          _fmtP, null, "C") +
+    blockHead("D — Composição por fonte de recurso (%)", "D") +
+    makeRow("Recursos Livres (Gr. 50)",      function(u){return u.part_recursos_livres;},    _fmtP, null, "D") +
+    makeRow("Fonte 500 — Tesouro",           function(u){return u.part_fonte_500;},          _fmtP, null, "D") +
+    makeRow("Fonte 501 — Arrecad. Própria",  function(u){return u.part_fonte_501;},          _fmtP, null, "D") +
+    makeRow("Demais Vinculações (Gr. 70)",   function(u){return u.part_demais_vincul;},      _fmtP, null, "D") +
+    makeRow("Convênios União",               function(u){return u.part_convenios_uniao;},    _fmtP, null, "D") +
+    makeRow("Convênios Privados",            function(u){return u.part_convenios_privados;}, _fmtP, null, "D") +
+    makeRow("Emendas Federais",              function(u){return u.part_emendas_federais;},   _fmtP, null, "D") +
     '</tbody>';
 
-  // Rodapé: médias
-  var avgRow = '<tfoot><tr style="border-top:2px solid var(--gray-200);background:#fafafa"><td style="font-size:12px;padding:5px 8px"><strong>Média das ' + n + ' IEES</strong></td>' +
+  // Rodapé: médias (valores absolutos — grupo A)
+  var avgRow = '<tfoot id="tabela8050-tfoot"><tr style="border-top:2px solid var(--gray-200);background:#fafafa"><td style="font-size:12px;padding:5px 8px"><strong>Média das ' + n + ' IEES</strong></td>' +
     [
       {g: function(u){return u.dotacao_inicial;},      f: _fmtM},
       {g: function(u){return u.orcamento_atualizado;}, f: _fmtM},
@@ -9711,10 +10377,50 @@ function renderOrcExecucao(rows) {
       var v = avgOf(x.g); return '<td style="text-align:right;font-weight:600">' + x.f(v) + '</td>';
     }).join("") + '</tr></tfoot>';
 
+  // Filtro global — reutilizável após re-render
+  window.filtro8050 = function(grupo) {
+    document.querySelectorAll(".filtro8050-btn").forEach(function(b) {
+      var active = b.dataset.grupo === grupo;
+      b.style.background   = active ? "var(--accent,#4A6FA5)" : "transparent";
+      b.style.color        = active ? "#fff" : "var(--text-primary,#222)";
+      b.style.borderColor  = active ? "var(--accent,#4A6FA5)" : "#64748b";
+    });
+    var table = document.getElementById("tabela8050");
+    if (!table) return;
+    table.querySelectorAll("tr[data-grupo]").forEach(function(tr) {
+      tr.style.display = (grupo === "todos" || tr.dataset.grupo === grupo) ? "" : "none";
+    });
+    table.querySelectorAll("tr.grupo-header").forEach(function(tr) {
+      tr.style.display = (grupo === "todos" || grupo === tr.dataset.grupoHeader) ? "" : "none";
+    });
+    // Médias (tfoot) só fazem sentido para valores absolutos (grupo A)
+    var tfoot = document.getElementById("tabela8050-tfoot");
+    if (tfoot) tfoot.style.display = (grupo === "todos" || grupo === "A") ? "" : "none";
+  };
+
+  var filtroBtns = '<div id="filtro8050" style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;">' +
+    [
+      { g: "todos", label: "Todos",                  active: true  },
+      { g: "A",     label: "A — Valores absolutos",  active: false },
+      { g: "B",     label: "B — Taxas de execução",  active: false },
+      { g: "C",     label: "C — Estrutura da despesa", active: false },
+      { g: "D",     label: "D — Fontes de recursos", active: false },
+    ].map(function(item) {
+      var bg   = item.active ? "var(--accent,#4A6FA5)" : "transparent";
+      var col  = item.active ? "#fff" : "var(--text-primary,#222)";
+      var bord = item.active ? "var(--accent,#4A6FA5)" : "#64748b";
+      return '<button class="filtro8050-btn" data-grupo="' + item.g +
+        '" onclick="window.filtro8050(\'' + item.g + '\')" style="padding:5px 14px;border-radius:20px;border:1px solid ' +
+        bord + ';background:' + bg + ';color:' + col + ';font-size:0.82rem;cursor:pointer;">' + item.label + '</button>';
+    }).join("") + '</div>';
+
   return '<div class="table-wrap" style="overflow-x:auto">' +
-         '<h3>Execução Orçamentária 2024 — Relatório Despesa 8050</h3>' +
-         '<p class="card-subtitle">IEES ordenadas por Liquidado (maior → menor) · Verde = acima da média · Vermelho = abaixo</p>' +
-         '<table class="data-table" style="min-width:600px">' + thead + avgRow + tbody + '</table></div>';
+    '<h3>Execução Orçamentária — Relatório da Despesa 8050</h3>' +
+    '<p class="card-subtitle">IEES ordenadas por Liquidado (maior → menor) · Verde = acima da média · Vermelho = abaixo</p>' +
+    '<p style="font-size:0.82rem;color:var(--text-secondary,#666);margin:6px 0 4px 0;line-height:1.55;">Tabela comparativa das 7 universidades estaduais paranaenses com dados de execução orçamentária organizados em quatro grupos: <strong>A — Valores absolutos</strong> (dotação, empenho, liquidação e pagamento em R$ milhões), <strong>B — Taxas de execução</strong> (eficiência do ciclo orçamentário), <strong>C — Estrutura da despesa</strong> (composição por natureza de gasto) e <strong>D — Fontes de recursos</strong> (origem dos recursos financeiros).</p>' +
+    '<p style="font-size:0.80rem;color:var(--text-secondary,#777);margin:0 0 12px 0;"><strong>Fonte:</strong> Relatório da Despesa 8050 — SETI / Secretaria de Estado da Fazenda do Paraná (SEFA). Exercício 2024. Valores em R$ milhões (grupo A) e percentual do orçamento atualizado (grupos B, C e D).</p>' +
+    filtroBtns +
+    '<table id="tabela8050" class="data-table" style="min-width:600px">' + thead + avgRow + tbody + '</table></div>';
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -9869,13 +10575,14 @@ function renderOrcEvolucao(c) {
   return '<article class="visual-card">' +
          '<div class="visual-card-header"><div>' +
          '<h3>Evolução Orçamentária 2024–2026</h3>' +
-         '<p class="card-subtitle">Orçamento Atualizado, Liquidado (eixo esq.) e Taxa de Liquidação % (eixo dir.) · Fonte: Despesa 8050</p>' +
+         '<p class="card-subtitle">Orçamento Atualizado, Liquidado (eixo esq.) e Taxa de Liquidação % (eixo dir.) · Fonte: Relatório da Despesa 8050</p>' +
          '</div></div>' +
-         '<div style="margin:6px 0 10px;line-height:1.8">' + checkHtml + '</div>' +
+         '<div style="margin:6px 0 10px;line-height:1.8">' + checkHtml +
+         '<button onclick="window.limparOrcEvolucao()" style="margin-left:12px;padding:3px 12px;border-radius:14px;border:1px solid #94a3b8;background:transparent;color:var(--text-secondary,#666);font-size:0.80rem;cursor:pointer;vertical-align:middle;" title="Desselecionar todas as IES">Limpar</button></div>' +
          '<svg viewBox="0 0 ' + W + ' ' + H + '" width="100%" style="display:block;overflow:visible;font-family:DM Sans,sans-serif">' +
          grid + axes + axisTitles + xLab + yLabL + yLabR + linesHtml + legend +
          '</svg>' +
-         '<p class="card-subtitle" style="margin-top:4px;font-size:11px">2026 = dados parciais do exercício em curso · clique nos checkboxes para selecionar/deselecionar IES</p>' +
+         '<p class="card-subtitle" style="margin-top:4px;font-size:11px">2026 = Dados parciais do exercício em curso · Clique nos checkboxes para selecionar ou desselecionar IES</p>' +
          '</article>';
 }
 
@@ -10136,21 +10843,22 @@ function _buildComparadorInner(rows, sigla) {
   var cpsRef = cpsOf(ref);
   var cpsAvg = _compAvg(others.map(cpsOf));
   var liqAvg = _compAvg(others.map(function(u) { return u.liquidado; }));
-  var pesAvg = _compAvg(others.map(function(u) { return u.part_pessoal; }));
+  var empAvg = _compAvg(others.map(function(u) { return u.empenhado; }));
+  var pagAvg = _compAvg(others.map(function(u) { return u.pago; }));
 
   var ctxGrid = '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:16px">'+
-    ctxBox("Custo por aluno",
-      cpsRef != null ? formatCurrency(cpsRef) : "—",
-      cpsAvg != null ? formatCurrency(cpsAvg) : "—",
-      diffRow(cpsRef, cpsAvg, true))+
+    ctxBox("Empenhado (R$ M)",
+      ref.empenhado != null ? _fmtM(ref.empenhado) : "—",
+      empAvg != null ? _fmtM(empAvg) : "—",
+      diffRow(ref.empenhado, empAvg, false))+
     ctxBox("Liquidado (R$ M)",
       ref.liquidado != null ? _fmtM(ref.liquidado) : "—",
       liqAvg != null ? _fmtM(liqAvg) : "—",
       diffRow(ref.liquidado, liqAvg, false))+
-    ctxBox("% Pessoal",
-      ref.part_pessoal != null ? _fmtP(ref.part_pessoal) : "—",
-      pesAvg != null ? _fmtP(pesAvg) : "—",
-      diffRow(ref.part_pessoal, pesAvg, false))+
+    ctxBox("Pago (R$ M)",
+      ref.pago != null ? _fmtM(ref.pago) : "—",
+      pagAvg != null ? _fmtM(pagAvg) : "—",
+      diffRow(ref.pago, pagAvg, false))+
     '</div>';
 
   // ── Componente 3 — tabela de indicadores ─────────────────────────────────
@@ -10163,14 +10871,22 @@ function _buildComparadorInner(rows, sigla) {
     return out;
   }
 
+  var _lbl = '<span style="display:block;font-size:0.73rem;font-weight:700;letter-spacing:.04em;">';
+  var _sub = '<span style="display:block;font-size:0.68rem;font-weight:400;color:var(--text-secondary,#888);text-transform:none;letter-spacing:0;margin-top:1px;">';
   var thead = '<thead><tr>'+
-    '<th style="text-align:left;min-width:170px">Indicador</th>'+
-    '<th style="text-align:right">'+sigla+'</th>'+
-    '<th style="text-align:right">Melhor das 7</th>'+
-    '<th style="text-align:right">Média das 7</th>'+
-    '<th style="text-align:right">Pior das 7</th>'+
-    '<th style="text-align:right">Posição</th>'+
-    '<th style="text-align:left;min-width:130px">Status</th>'+
+    '<th style="text-align:left;min-width:170px">'+_lbl+'INDICADOR</span></th>'+
+    '<th style="text-align:right" title="Valor do indicador para a IES selecionada no filtro acima.">'+
+      _lbl+sigla+'</span>'+_sub+'valor da IES</span></th>'+
+    '<th style="text-align:right" title="Melhor valor registrado entre as 7 universidades estaduais do Paraná (UEL, UEM, UEPG, UNIOESTE, UNICENTRO, UENP e UNESPAR) para este indicador, no ano selecionado.&#10;Em indicadores onde maior é melhor (ex: taxa de conclusão), é o maior valor.&#10;Em indicadores onde menor é melhor (ex: custo por aluno), é o menor valor.">'+
+      _lbl+'MELHOR — PR</span>'+_sub+'entre as 7 IEES ⓘ</span></th>'+
+    '<th style="text-align:right" title="Média aritmética do indicador entre as 7 universidades estaduais do Paraná.&#10;Use como referência para saber se a IES selecionada está acima ou abaixo do sistema estadual.">'+
+      _lbl+'MÉDIA — PR</span>'+_sub+'das 7 IEES ⓘ</span></th>'+
+    '<th style="text-align:right" title="Pior valor registrado entre as 7 universidades estaduais do Paraná para este indicador, no ano selecionado.&#10;Indica o limite inferior do sistema estadual — útil para contextualizar o quanto a IES selecionada se distancia do pior desempenho.">'+
+      _lbl+'PIOR — PR</span>'+_sub+'entre as 7 IEES ⓘ</span></th>'+
+    '<th style="text-align:right" title="Posição da IES selecionada no ranking das 7 IEES paranaenses para este indicador.&#10;1º de 7 = melhor posição no grupo. A posição considera a direção do indicador (maior ou menor é melhor).">'+
+      _lbl+'POSIÇÃO</span>'+_sub+'no ranking PR ⓘ</span></th>'+
+    '<th style="text-align:left;min-width:130px" title="Avaliação qualitativa em relação à média das 7 IEES paranaenses:&#10;✅ Acima da média — valor melhor que a média do grupo (diferença > 5%)&#10;⚠️ Na média — valor próximo à média (diferença ≤ 5%)&#10;❌ Abaixo da média — valor pior que a média do grupo (diferença > 5%)">'+
+      _lbl+'STATUS</span>'+_sub+'vs. média PR ⓘ</span></th>'+
     '</tr></thead>';
 
   var refIdx = rows.indexOf(ref);
@@ -10226,7 +10942,8 @@ function _buildComparadorInner(rows, sigla) {
       '</tr>';
   }).join('')+'</tbody>';
 
-  var table = '<div style="overflow-x:auto"><table class="data-table">'+thead+tbody+'</table></div>';
+  var explainer = '<p style="font-size:0.82rem;color:var(--text-secondary,#666);margin:0 0 10px 0;line-height:1.6;">A tabela abaixo compara a IES selecionada com as outras 6 universidades estaduais do Paraná. Cada linha mostra um indicador: o valor da IES escolhida, o melhor e o pior valor registrado entre as 7, a média do grupo e a posição no ranking. <strong>Universo de comparação: apenas as 7 IEES paranaenses (UEL, UEM, UEPG, UNIOESTE, UNICENTRO, UENP e UNESPAR).</strong></p>';
+  var table = explainer+'<div style="overflow-x:auto"><table class="data-table">'+thead+tbody+'</table></div>';
 
   // ── Componente 4 — resumo textual ─────────────────────────────────────────
   var aboveNames = [], belowNames = [];
@@ -10319,13 +11036,13 @@ function renderTab8ExecutionCards(rows) {
 
   return `<div class="score-grid" style="margin-bottom:16px">
 ${execCard("Execução orçamentária", avg(u => u.execution), "% empenho / orçamento atualizado — média do recorte · ref.: ≥ 90%", 90, 80)}
-${execCard("Taxa de liquidação", avg(u => u.liquidation), "% liquidado / empenhado — média do recorte · ref.: ≥ 90%", 90, 80)}
+${execCard("Taxa de liquidação", avg(u => u.liquidation), "% liquidado / orçamento atualizado — média do recorte · ref.: ≥ 90%", 90, 80)}
 ${execCard("Participação de pessoal", avg(u => u.personnel), "% despesa pessoal / total liquidado — média do recorte", 100, 75)}
 ${execCard("Suplementação", avg(u => u.supplementation), "% crédito adicional / dotação inicial — média do recorte", 100, 50)}
 </div>
 <div class="chart-grid">
 <article class="visual-card"><h3>Execução orçamentária por IEES</h3><p class="card-subtitle">% empenho / orçamento atualizado · referência: acima de 90% indica boa absorção</p>${bars(rows, u => u.execution, formatPercent)}</article>
-<article class="visual-card"><h3>Taxa de liquidação por IEES</h3><p class="card-subtitle">% liquidado / empenhado · referência: ≥ 90%</p>${bars(rows, u => u.liquidation, formatPercent)}</article>
+<article class="visual-card"><h3>Taxa de liquidação por IEES</h3><p class="card-subtitle">% liquidado / orçamento atualizado · referência: ≥ 90%</p>${bars(rows, u => u.liquidation, formatPercent)}</article>
 </div>
 <div class="chart-grid mt-14">
 <article class="visual-card"><h3>Participação de pessoal por IEES</h3><p class="card-subtitle">% despesa com pessoal no total do orçamento liquidado</p>${bars(rows, u => u.personnel, formatPercent)}</article>
@@ -10357,6 +11074,34 @@ var _SCATTER_Y_OPTS = {
   costGrad:   { label: "Custo por graduado (R$)",       get: function(u) { return (u.liquidado > 0 && u.graduates > 0) ? u.liquidado * 1e6 / u.graduates : null; }, fmt: function(v) { return (v != null && isFinite(v)) ? formatCurrency(v) : "—"; } },
 };
 
+// Metadados de base de cálculo e fonte por indicador do eixo Y
+var _SCATTER_Y_META = {
+  occupancy:  {
+    formula: "Ingressantes ÷ Vagas ofertadas × 100",
+    fonte: "INEP — Censo da Educação Superior / Base Cursos - Brasil.xlsx / QT_ING ÷ QT_VG_TOTAL",
+  },
+  completion: {
+    formula: "Concluintes ÷ Matrículas × 100",
+    fonte: "INEP — Censo da Educação Superior / Base Cursos - Brasil.xlsx / QT_CONC ÷ QT_MAT",
+  },
+  employment: {
+    formula: "Egressos com vínculo formal no PR ÷ Total de egressos da coorte × 100",
+    fonte: "RAIS cruzada com registros de egressos das IEES / CBO2 _ RAIS 2023 e 2024 - Paraná.xlsx",
+  },
+  capes: {
+    formula: "Média dos conceitos CAPES dos programas de pós-graduação stricto sensu",
+    fonte: "CAPES / Plataforma Sucupira — Base CAPES Pós-Graduação - Brasil.xlsx / CD_CONCEITO_CURSO",
+  },
+  doctors: {
+    formula: "Docentes com doutorado ÷ Total de docentes × 100",
+    fonte: "INEP — Censo da Educação Superior / Base IES - Brasil.xlsx / Proporção de docentes com doutorado",
+  },
+  costGrad: {
+    formula: "Orçamento liquidado (R$) ÷ Concluintes",
+    fonte: "SETI/PR 2024 (Despesa 8050) × INEP 2024 / QT_CONC",
+  },
+};
+
 var _SCATTER_IES_COLORS = {
   UEL:"#1f72b8", UEM:"#16875d", UEPG:"#c07000",
   UNIOESTE:"#9b3dc8", UNICENTRO:"#c43f3a", UENP:"#2e6da4", UNESPAR:"#0e7490"
@@ -10376,6 +11121,17 @@ window.setOrcScatterY = function(key) {
     svgEl.innerHTML = _buildOrcScatterInner(_orcScatterRows, key);
   } else {
     render();
+  }
+  // Atualiza bloco de base de cálculo e fonte
+  var meta = _SCATTER_Y_META[key] || {};
+  var opt  = _SCATTER_Y_OPTS[key] || {};
+  var infoEl = document.getElementById("scatterYInfoText");
+  if (infoEl) {
+    infoEl.innerHTML = opt.label
+      ? '<strong>' + opt.label + '</strong><br>' +
+        '<span><em>Base de cálculo:</em> ' + (meta.formula || '—') + '</span><br>' +
+        '<span><em>Fonte:</em> ' + (meta.fonte || '—') + '</span>'
+      : '';
   }
 };
 
@@ -10538,6 +11294,14 @@ function renderOrcScatter(c) {
       ' por dados insuficientes (' + omitted.map(function(u) { return u.sigla; }).join(", ") + ')</p>'
     : "";
 
+  var meta0 = _SCATTER_Y_META[yKey] || {};
+  var opt0  = _SCATTER_Y_OPTS[yKey] || {};
+  var yInfoInitial = opt0.label
+    ? '<strong>' + opt0.label + '</strong><br>' +
+      '<span><em>Base de cálculo:</em> ' + (meta0.formula || '—') + '</span><br>' +
+      '<span><em>Fonte:</em> ' + (meta0.fonte || '—') + '</span>'
+    : '';
+
   return '<article class="visual-card">' +
     '<div class="visual-card-header">' +
     '<div><h3>Orçamento × Desempenho</h3>' +
@@ -10545,17 +11309,31 @@ function renderOrcScatter(c) {
     '<div style="display:flex;align-items:center;gap:8px">' +
     '<span style="font-size:12px;color:var(--gray-500)">Eixo Y:</span>' + selHtml +
     '</div></div>' +
+    '<div class="chart-explainer" style="margin-bottom:12px;padding:12px 16px;background:var(--surface-2,#f5f5f5);border-radius:8px;font-size:0.85rem;color:var(--text-secondary,#555);line-height:1.6;">' +
+    '<strong style="display:block;margin-bottom:6px;color:var(--text-primary,#222);">O que este gráfico analisa?</strong>' +
+    '<p style="margin:0 0 6px 0;">Este gráfico de dispersão relaciona o <strong>esforço orçamentário</strong> de cada IEES paranaense ' +
+    '(eixo X — orçamento por aluno, em R$) com um <strong>indicador de desempenho ou eficiência</strong> ' +
+    'selecionável (eixo Y). Cada ponto representa uma universidade; o tamanho do ponto é proporcional ' +
+    'ao número de alunos matriculados. A linha tracejada indica a tendência linear entre as duas variáveis.</p>' +
+    '<p style="margin:0;"><strong>Como interpretar:</strong> universidades no quadrante superior direito combinam alto orçamento ' +
+    'por aluno com bom desempenho no indicador selecionado; no quadrante superior esquerdo, bom desempenho ' +
+    'com menor gasto relativo.</p>' +
+    '</div>' +
     '<svg id="orcScatterSvg" viewBox="0 0 640 420" width="100%" style="display:block;overflow:visible;font-family:DM Sans,sans-serif">' +
     _buildOrcScatterInner(rows, yKey) +
-    '</svg>' + omitNote + '</article>';
+    '</svg>' + omitNote +
+    '<div id="scatterYInfo" style="margin-top:10px;padding:10px 14px;background:var(--surface-2,#f0f4fa);border-left:3px solid var(--accent,#4A6FA5);border-radius:4px;font-size:0.82rem;color:var(--text-secondary,#555);line-height:1.55;">' +
+    '<span id="scatterYInfoText">' + yInfoInitial + '</span>' +
+    '</div>' +
+    '</article>';
 }
 
 // ── Registra o bloco 11 e despacha pelo mesmo padrão dos blocos 8-10 ────────
-tabBlocks.performance.unshift("Scatter Orçamento × Desempenho");
+tabBlocks.performance.unshift("Orçamento × Desempenho");
 
 var _prevEffBlockSct = efficiencyBlock;
 efficiencyBlock = function(title, c) {
-  if (title === "Scatter Orçamento × Desempenho") return renderOrcScatter(c);
+  if (title === "Orçamento × Desempenho") return renderOrcScatter(c);
   return _prevEffBlockSct(title, c);
 };
 window.efficiencyBlock = efficiencyBlock;
@@ -10618,7 +11396,7 @@ window.efficiencyBlock = efficiencyBlock;
 
     [/IND-82|taxa.*liquid/i,
       "SETI/PR 2024 (Relatório da Despesa 8050)",
-      "Taxa de liquidação: valor liquidado ÷ valor empenhado × 100. Indica a proporção do empenho efetivamente reconhecida como despesa incorrida."],
+      "Taxa de liquidação: liquidado ÷ orçamento atualizado × 100. Mede a proporção do orçamento atualizado efetivamente reconhecida como despesa incorrida."],
 
     [/orçamento.*liquid|liquidado|orçamento.*result|orçamento.*grupo/i,
       "SETI/PR 2024 (Relatório da Despesa 8050)",

@@ -875,6 +875,8 @@ async function loadRaisBase() {
       divOcup:       ci["diversidade_ocupacional_dos_egressos_por_curso"],
       munDestino:    ci["municipios_de_destino_profissional_dos_egressos_por_curso"],
       dispersao:     ci["indice_de_dispersao_territorial_dos_egressos_por_curso"],
+      campus:        ci["campus"],
+      egressosMun:   ci["egressos_inseridos_no_mercado_formal_por_municipio_de_vinculo"],
     };
 
     const pn = function(v){ return (v != null && v !== "") ? parseLocaleNumber(v, null) : null; };
@@ -896,6 +898,7 @@ async function loadRaisBase() {
           munis: new Set(), cursos: new Set(), graus: new Set(), cbo2s: new Set(),
           divOcupByCurso: new Map(), munDestByCurso: new Map(), dispersaoByCurso: new Map(),
           partMunMax: 0, partCursoMax: 0, partCbo2Max: 0,
+          munEgressos: new Map(), cursoDetails: new Map(),
         });
       }
       var a = agg.get(key);
@@ -930,6 +933,19 @@ async function loadRaisBase() {
       if (pc != null && pc > a.partCursoMax) a.partCursoMax = pc;
       var pcbo = pn(row[COL.partCbo2]);
       if (pcbo != null && pcbo > a.partCbo2Max) a.partCbo2Max = pcbo;
+      // Per-municipality egressos and per-course details
+      var campusVal = String(row[COL.campus] == null ? "" : row[COL.campus]).trim();
+      var egressosMunNum = pn(row[COL.egressosMun]);
+      if (muni && egressosMunNum != null && egressosMunNum > 0) {
+        a.munEgressos.set(muni, (a.munEgressos.get(muni) || 0) + egressosMunNum);
+      }
+      if (curso) {
+        if (!a.cursoDetails.has(curso)) a.cursoDetails.set(curso, { grau: grau, campus: campusVal, munDestino: null, dispersao: null, divOcup: null });
+        var cd = a.cursoDetails.get(curso);
+        if (!cd.munDestino) { var vm2 = pn(row[COL.munDestino]); if (vm2 != null && vm2 > 0) cd.munDestino = vm2; }
+        if (!cd.dispersao)  { var vs2 = pn(row[COL.dispersao]);  if (vs2 != null && vs2 > 0) cd.dispersao  = vs2; }
+        if (!cd.divOcup)    { var vd2 = pn(row[COL.divOcup]);    if (vd2 != null && vd2 > 0) cd.divOcup    = vd2; }
+      }
     }
 
     var stored = 0;
@@ -956,6 +972,38 @@ async function loadRaisBase() {
       });
       stored++;
     }
+
+    // Build global per-IES municipality ranking and course details (most recent coorte per IES)
+    var latestCoorteMap = {};
+    agg.forEach(function(ae) {
+      var crt = parseInt(ae.coorte) || 0;
+      if (!latestCoorteMap[ae.sigla] || crt > latestCoorteMap[ae.sigla]) latestCoorteMap[ae.sigla] = crt;
+    });
+    window.RAIS_MUN_DATA = {};
+    window.RAIS_CURSO_DATA = {};
+    agg.forEach(function(ae) {
+      if ((parseInt(ae.coorte) || 0) !== latestCoorteMap[ae.sigla]) return;
+      if (ae.munEgressos.size) {
+        var totalEg = 0;
+        ae.munEgressos.forEach(function(v) { totalEg += v; });
+        if (totalEg > 0) {
+          var munList = [];
+          ae.munEgressos.forEach(function(count, nome) {
+            munList.push({ nome: nome, count: count, part: Math.round(count / totalEg * 1000) / 10 });
+          });
+          munList.sort(function(a, b) { return b.count - a.count; });
+          window.RAIS_MUN_DATA[ae.sigla] = munList.slice(0, 20);
+        }
+      }
+      if (ae.cursoDetails.size) {
+        var cursoList = [];
+        ae.cursoDetails.forEach(function(det, curso) {
+          cursoList.push({ curso: curso, grau: det.grau, campus: det.campus, munDestino: det.munDestino, dispersao: det.dispersao, divOcup: det.divOcup });
+        });
+        cursoList.sort(function(a, b) { return a.curso.localeCompare(b.curso); });
+        window.RAIS_CURSO_DATA[ae.sigla] = cursoList;
+      }
+    });
 
     registerBase(NOME_BASE, "real", stored);
   } catch(err) {

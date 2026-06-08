@@ -922,6 +922,7 @@ input:focus-visible {
   overflow-y: auto;
   overflow-x: hidden;
   max-height: calc(100vh - 120px);
+  margin-left: 8px;
 }
 
 .side-card {
@@ -4263,15 +4264,18 @@ body {
 }
 
 .employment-rate-bars .bar-fill.rate-high {
-  background: linear-gradient(90deg, #0f6e56, #2fb47c);
+  background: #16a34a !important;
+  opacity: 0.82;
 }
 
 .employment-rate-bars .bar-fill.rate-mid {
-  background: linear-gradient(90deg, #b86b00, #f4b04f);
+  background: #ca8a04 !important;
+  opacity: 0.82;
 }
 
 .employment-rate-bars .bar-fill.rate-low {
-  background: linear-gradient(90deg, #c43f3a, #e46a62);
+  background: #dc2626 !important;
+  opacity: 0.82;
 }
 
 .local-talent-grid,
