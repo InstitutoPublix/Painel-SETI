@@ -1375,9 +1375,11 @@ async function loadGenericDataset(datasetKey) {
 async function loadPrecomputedJson() {
   const NOME_BASE = "Indicadores Pré-processados (JSON)";
   try {
-    const response = await fetch("../data/seti_precomputed.json");
-    if (!response.ok) throw new Error("HTTP " + response.status);
-    const data = await response.json();
+    const data = window.SETI_PRECOMPUTED_DATA || await (async function() {
+      const response = await fetch("../data/seti_precomputed.json");
+      if (!response.ok) throw new Error("HTTP " + response.status);
+      return response.json();
+    })();
     const indicators = data.indicators || {};
     const year = String(data.year || "2024");
     DATA_STATUS.precomputedGenerated = data.generated || null;
@@ -1453,9 +1455,10 @@ async function loadPrecomputedJson() {
 
 async function loadAllData() {
   try {
-    const loaders = [
-      loadPrecomputedJson(),   // bases pesadas/agregadas via JSON pré-processado
-      ...Object.values(SETI_DATASETS)
+    const useEmbeddedJson = Boolean(window.SETI_STANDALONE || window.SETI_PRECOMPUTED_DATA);
+    const workbookLoaders = useEmbeddedJson
+      ? []
+      : Object.values(SETI_DATASETS)
         .filter(function(dataset) { return dataset.enabled; })
         .map(function(dataset) {
           if (dataset.key === "egressos") return loadEgressosBase();
@@ -1464,7 +1467,10 @@ async function loadAllData() {
           if (dataset.key === "rais")     return loadRaisBase();
           if (dataset.key === "cbo2")     return loadCbo2Base();
           return loadGenericDataset(dataset.key);
-        }),
+        });
+    const loaders = [
+      loadPrecomputedJson(),   // bases pesadas/agregadas via JSON pré-processado
+      ...workbookLoaders,
     ];
     await Promise.all(loaders);
   } catch (err) {
