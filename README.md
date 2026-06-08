@@ -35,7 +35,6 @@ Bases XLSX (data/)  →  pipeline/assemble_final.py  →  data/seti_precomputed.
 │   ├── Base RAIS - 2023 e 2024 - Paraná.xlsx   # Empregos formais (PR)
 │   ├── CBO2 _ RAIS 2023 e 2024 - Paraná.xlsx   # Inserção profissional CBO2 (PR)
 │   ├── Dados de Suplementação das Universidades - Paraná.xlsx
-│   ├── Base Fundo Paraná - Paraná.xlsx
 │   ├── Estratificação_IES_Estaduais_BR.xlsx
 │   ├── 5. Relação de Indicadores das Universidades.xlsx  # Catálogo de referência já embutido em painel.js
 │   └── Base de dados para clusterização.xlsx    # Legado: loader existe, mas o pipeline atual não usa
@@ -119,8 +118,7 @@ IEES = IEES_PR + IEES_BR  # 40 IES total (7 PR + 33 BR)
 | **7. Suplementação** | `Dados de Suplementação das Universidades - Paraná.xlsx` / `matriz_cluster` | `supplementation` | 7 PR |
 | **8. CBO2/RAIS** | `CBO2 _ RAIS 2023 e 2024 - Paraná.xlsx` / `Análise Quantitativa` | `employment`, `salary` | 7 PR |
 | **9. Egressos** | `Base Egressos - Paraná.xlsx` / `Base_Egressos_PR` | `insertionRatePR` | 7 PR |
-| **10. Fundo Paraná** | `Base Fundo Paraná - Paraná.xlsx` / `Fundo_Parana_IES_Ano` | `fundoParana`, `fundoExec` | 7 PR |
-| **11. RAIS Municípios** | `Base RAIS - 2023 e 2024 - Paraná.xlsx` / `Base_RAIS_2023_2024` | `egressosMunicipios` | 7 PR |
+| **10. RAIS Municípios** | `Base RAIS - 2023 e 2024 - Paraná.xlsx` / `Base_RAIS_2023_2024` | `egressosMunicipios` | 7 PR |
 | **12. Estratificação** | `Estratificação_IES_Estaduais_BR.xlsx` | `clusters`, `quartiRefs` | 40 IES |
 
 ### Lógica de cada Seção
@@ -190,7 +188,7 @@ IEES = IEES_PR + IEES_BR  # 40 IES total (7 PR + 33 BR)
 }
 ```
 
-**Indicadores disponíveis:** `students`, `entrants`, `graduates`, `courses`, `vacancies`, `occupancy`, `dropout`, `completion`, `doctors`, `cnpq`, `capes`, `pg`, `pgTop`, `budget`, `execution`, `liquidation`, `personnel`, `supplementation`, `employment`, `salary`, `insertionRatePR`, `facultyOcc`, `cres`, `tide`, `fundoParana`, `fundoExec`, `egressosMunicipios`
+**Indicadores disponíveis:** `students`, `entrants`, `graduates`, `courses`, `vacancies`, `occupancy`, `dropout`, `completion`, `doctors`, `cnpq`, `capes`, `pg`, `pgTop`, `budget`, `execution`, `liquidation`, `personnel`, `supplementation`, `employment`, `salary`, `insertionRatePR`, `facultyOcc`, `cres`, `tide`, `egressosMunicipios`
 
 ---
 
@@ -249,7 +247,6 @@ Catálogo de todas as bases disponíveis. Cada entrada define:
 - `docentes` — Base Docentes PR
 - `rais` — Base RAIS 2023-2024 PR
 - `cbo2` — CBO2/RAIS PR
-- `fundoParana` — Base Fundo Paraná PR
 
 **Bases desabilitadas (enabled: false):**
 - `cursos`, `cnpq`, `capes`, `despesa8050` e `suplementacao` entram pelo `seti_precomputed.json`
@@ -287,7 +284,6 @@ loadAllData()
     → loadDocentesBase()         — XLSX leve
     → loadRaisBase()             — XLSX leve
     → loadCbo2Base()             — XLSX leve
-    → loadFundoParanaBase()      — XLSX leve
     → (finally) refreshPanelFromData() — atualiza painel com dados reais
     → reportDashboardStatus() — terminal exibe status, fontes inferidas e carregamentos
 ```

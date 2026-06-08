@@ -93,7 +93,6 @@ INDICATORS = [
     "docVagasCond", "docPctCond", "docTideAtrib", "docTidePartic",
     "docTidePctNaoAtrib", "docChMedia", "docCresAut", "docCresUtil",
     "docCresSaldo", "docCresOciosidade", "docCresPartic",
-    "fundoParana", "fundoExec",
     "egressosMunicipios",
 ]
 
@@ -821,59 +820,6 @@ for iees in IEES_PR:
         f" / Taxa de inserção de egressos (Sul — SC+PR+RS)"
         f" / coorte={best[0]} RAIS={best[1]}"
     )
-
-
-# ── 10. Fundo Paraná — fundoParana, fundoExec ─────────────────────────────────
-# Fonte: Base Fundo Paraná - Paraná.xlsx / Fundo_Parana_IES_Ano
-# Colunas: [1] CO_IES, [0] NU_ANO_REF, [5] PCT_EXECUCAO_CONTRATOS,
-#          [8] VL_TOTAL_REPASSADO
-# fundoParana = VL_TOTAL_REPASSADO ÷ 1_000_000 (R$ milhões)
-# fundoExec   = PCT_EXECUCAO_CONTRATOS × 100 (%)
-# Ano preferido: mais recente com VL_TOTAL_REPASSADO > 0.
-
-wb = openpyxl.load_workbook(DATA_DIR / "Base Fundo Paraná - Paraná.xlsx", read_only=True, data_only=True)
-ws = wb["Fundo_Parana_IES_Ano"]
-next(ws.iter_rows(min_row=1, max_row=1))  # skip header
-
-fundo_data = {}  # {(iees, ano): {"repassado": float, "exec": float}}
-for row in ws.iter_rows(min_row=2, values_only=True):
-    co = row[1]
-    try:
-        co_int = int(co)
-    except (TypeError, ValueError):
-        continue
-    iees = CO_IES_MAP.get(co_int)
-    if iees not in IEES_PR:
-        continue
-    try:
-        ano = int(row[0])
-    except (TypeError, ValueError):
-        continue
-    try:
-        repassado = float(row[8]) if row[8] not in (None, "") else 0.0
-    except (TypeError, ValueError):
-        repassado = 0.0
-    try:
-        exec_pct = float(row[5]) if row[5] not in (None, "") else None
-    except (TypeError, ValueError):
-        exec_pct = None
-    fundo_data[(iees, ano)] = {"repassado": repassado, "exec": exec_pct}
-wb.close()
-
-for iees in IEES_PR:
-    key = iees.lower()
-    anos = sorted({a for (i, a) in fundo_data if i == iees}, reverse=True)
-    for ano in anos:
-        d = fundo_data.get((iees, ano), {})
-        if d.get("repassado", 0) > 0:
-            results[key]["fundoParana"] = round(d["repassado"] / 1_000_000, 3)
-            results[key]["fundoExec"]   = (
-                round(d["exec"] * 100, 2) if d["exec"] is not None else None
-            )
-            src = f"Base Fundo Paraná - Paraná.xlsx / Fundo_Parana_IES_Ano / ano={ano}"
-            sources[key]["fundoParana"] = src + " / VL_TOTAL_REPASSADO (R$ milhões)"
-            sources[key]["fundoExec"]   = src + " / PCT_EXECUCAO_CONTRATOS ×100"
-            break
 
 
 # ── 11. Base RAIS — egressosMunicipios ────────────────────────────────────────

@@ -47,7 +47,6 @@ const SETI_DATASETS = {
   rais:          { key: "rais",          name: "Base RAIS 2023-2024 - Paraná", file: "../data/Base RAIS - 2023 e 2024 - Paraná.xlsx",        enabled: true  },
   cbo2:          { key: "cbo2",          name: "CBO2 _ RAIS 2023-2024",        file: "../data/CBO2 _ RAIS 2023 e 2024 - Paraná.xlsx",        enabled: true  },
   suplementacao: { key: "suplementacao", name: "Suplementação - Paraná",       file: "../data/Dados de Suplementação das Universidades - Paraná.xlsx", enabled: false }, // 23MB → JSON
-  fundoParana:   { key: "fundoParana",   name: "Base Fundo Paraná",            file: "../data/Base Fundo Paraná - Paraná.xlsx",              enabled: true  },
 };
 
 const RUNTIME_SOURCE_BASES = {};
@@ -319,13 +318,13 @@ function friendlyError(err) {
   if (msg.includes("no_valid_rows"))
     return "Nenhuma linha válida encontrada na planilha. Verifique o formato do arquivo.";
   if (msg.includes("missing_sheet"))
-    return "Aba esperada não encontrada. O painel usará a primeira aba disponível ou fallback sintético.";
+    return "Aba esperada não encontrada. A base será marcada como indisponível.";
   if (msg.includes("missing_columns"))
     return "Planilha sem as colunas esperadas. Verifique o layout do arquivo xlsx.";
   return `Erro inesperado: ${msg || "motivo desconhecido"}.`;
 }
 
-// ── Registrar base carregada (real ou sintética) ───────────────────
+// ── Registrar base carregada ───────────────────────────────────────
 function registerBase(name, type, rowCount, sourceBases) {
   const ts = new Date().toISOString();
   const inferredSources = sourceBases || (RUNTIME_SOURCE_BASES[name] ? [RUNTIME_SOURCE_BASES[name]] : [name]);
@@ -374,51 +373,6 @@ function updateDataStatusUI() {
     const ts    = DATA_STATUS.lastUpdated
       ? new Date(DATA_STATUS.lastUpdated).toLocaleString("pt-BR") : "—";
     footerDetail.textContent = "Última carga · " + ts;
-  }
-}
-
-// ── Fallback sintético — Base Egressos ─────────────────────────────
-function loadEgressosSintetico() {
-  const iesMock = [
-    ["UEL",       2110, 0.452, 3933],
-    ["UEM",       1803, 0.485, 4209],
-    ["UEPG",      1348, 0.468, 4477],
-    ["UNIOESTE",  2289, 0.538, 4179],
-    ["UNICENTRO", 1160, 0.520, 4338],
-    ["UENP",       607, 0.421, 3364],
-    ["UNESPAR",   1203, 0.542, 3475],
-    ["UTFPR",     2800, 0.610, 5200],
-  ];
-  const coortes = ["2018", "2019", "2020", "2021", "2022"];
-  for (var _i = 0; _i < iesMock.length; _i++) {
-    var _m = iesMock[_i];
-    var sigla = _m[0], grads = _m[1], emplPct = _m[2], salary = _m[3];
-    ensureData(sigla);
-    for (var _c = 0; _c < coortes.length; _c++) {
-      var coorte = coortes[_c];
-      var adj = 1 + (parseInt(coorte, 10) - 2021) * 0.025;
-      var totalEgressos         = Math.max(1, Math.round(grads * Math.abs(adj)));
-      var encontradosSul        = Math.round(totalEgressos * (emplPct + 0.11));
-      var encontradosPR         = Math.round(totalEgressos * emplPct);
-      var encontradosPRCBO2     = Math.round(encontradosPR * 0.65);
-      var encontradosCidadeSede = Math.round(encontradosPR * 0.38);
-      var salarioMedioCBO2      = Math.round(salary * adj);
-      DATA[sigla].byYear[coorte] = Object.assign(
-        {}, DATA[sigla].byYear[coorte] || {},
-        {
-          ind33: totalEgressos,
-          ind34: encontradosSul,
-          ind35: encontradosSul / totalEgressos,
-          ind36: encontradosPR,
-          ind37: encontradosPR / totalEgressos,
-          ind38: encontradosPRCBO2,
-          ind39: encontradosPR > 0 ? encontradosPRCBO2 / encontradosPR : null,
-          ind40: salarioMedioCBO2,
-          ind41: encontradosCidadeSede > 0 ? encontradosCidadeSede : null,
-          ind42: encontradosCidadeSede > 0 ? encontradosCidadeSede / totalEgressos : null,
-        }
-      );
-    }
   }
 }
 
@@ -485,13 +439,7 @@ async function loadEgressosBase() {
   } catch (err) {
     const reason = friendlyError(err);
     console.warn("[" + NOME_BASE + "] " + reason, err && err.message ? err.message : "");
-    try {
-      loadEgressosSintetico();
-      registerBase(NOME_BASE, "sintético", 0);
-    } catch (fallbackErr) {
-      console.error("[" + NOME_BASE + "] Falha no fallback sintético.", fallbackErr);
-      registerFailedBase(NOME_BASE, reason);
-    }
+    registerFailedBase(NOME_BASE, reason);
   }
 }
 
@@ -1121,72 +1069,6 @@ async function loadCnpqBase() {
   }
 }
 
-// ── Loader — Base Fundo Paraná ───────────────────────────────────────
-async function loadFundoParanaBase() {
-  const NOME_BASE = SETI_DATASETS.fundoParana.name;
-  try {
-    if (!window.XLSX) throw new Error("xlsx_missing");
-    const response = await fetch(encodeURI(SETI_DATASETS.fundoParana.file));
-    if (!response.ok) throw new Error("HTTP " + response.status);
-    const buffer = await response.arrayBuffer();
-    const workbook = XLSX.read(buffer, { type: "array" });
-    const sheetName = workbook.SheetNames.find(function(n) { return /fundo/i.test(n); }) || workbook.SheetNames[0];
-    const ws = workbook.Sheets[sheetName];
-    const rows = XLSX.utils.sheet_to_json(ws, { header: 1, defval: null, raw: true });
-    if (rows.length < 2) throw new Error("no_valid_rows");
-
-    const hdr = rows[0].map(function(h) { return normalizeColumnName(h); });
-    const ci = {};
-    hdr.forEach(function(h, i) { if (h && ci[h] == null) ci[h] = i; });
-
-    const COL = {
-      ano:      ci["nu_ano_ref"],
-      coIes:    ci["co_ies"],
-      sigla:    ci["sigla_ies"],
-      pctExec:  ci["pct_execucao_contratos"],
-      vlAcord:  ci["vl_total_acordado"],
-      vlRepass: ci["vl_total_repassado"],
-      vlEmp:    ci["vl_total_empenhado"],
-    };
-    const absent = Object.keys(COL).filter(function(k) { return COL[k] == null; });
-    if (absent.length) console.warn("[" + NOME_BASE + "] Colunas ausentes:", absent.join(", "));
-
-    const pn = function(v) { return (v != null && v !== "") ? parseLocaleNumber(v, null) : null; };
-    var stored = 0;
-
-    for (var i = 1; i < rows.length; i++) {
-      var row = rows[i];
-      if (!row || !row.length) continue;
-      var coIes = pn(row[COL.coIes]) || 0;
-      var sigla = coIes ? (CURSOS_IES_MAP[coIes] || "") : "";
-      if (!sigla && COL.sigla != null) sigla = String(row[COL.sigla] == null ? "" : row[COL.sigla]).trim().toUpperCase();
-      if (!sigla) continue;
-      var ano = String(pn(row[COL.ano]) || "").trim();
-      if (!ano || ano === "0" || ano === "null") continue;
-
-      var vlAcord  = pn(row[COL.vlAcord]);
-      var vlRepass = pn(row[COL.vlRepass]);
-      var vlEmp    = pn(row[COL.vlEmp]);
-      var pctExec  = pn(row[COL.pctExec]);
-
-      upsertYearIndicators(sigla, ano, {
-        fundoVlAcordado:  vlAcord  != null ? Math.round(vlAcord  / 1e6 * 100) / 100 : null,
-        fundoVlRepassado: vlRepass != null ? Math.round(vlRepass / 1e6 * 100) / 100 : null,
-        fundoVlEmpenhado: vlEmp    != null ? Math.round(vlEmp    / 1e6 * 100) / 100 : null,
-        fundoPctExecucao: pctExec  != null ? Math.round(pctExec  * 10000) / 100 : null,
-      });
-      stored++;
-    }
-
-    if (!stored) throw new Error("no_valid_rows");
-    registerBase(NOME_BASE, "real", stored);
-  } catch (err) {
-    var reason = friendlyError(err);
-    console.warn("[" + NOME_BASE + "] " + reason, err && err.message ? err.message : "");
-    registerFailedBase(NOME_BASE, reason);
-  }
-}
-
 // ── Loader — Dados de Suplementação ─────────────────────────────────
 async function loadSupplementacaoBase() {
   const NOME_BASE = SETI_DATASETS.suplementacao.name;
@@ -1441,7 +1323,7 @@ async function loadGenericDataset(datasetKey) {
 // Gerado por: python pipeline/assemble_final.py
 // Contém os indicadores agregados por IES, extraídos de:
 //   Cursos, IES, CAPES, CNPq, Despesa 8050, Docentes, Suplementação,
-//   CBO2/RAIS, Egressos, Fundo Paraná, RAIS e Estratificação.
+//   CBO2/RAIS, Egressos, RAIS e Estratificação.
 async function loadPrecomputedJson() {
   const NOME_BASE = "Indicadores Pré-processados (JSON)";
   try {
@@ -1533,7 +1415,6 @@ async function loadAllData() {
           if (dataset.key === "docentes") return loadDocentesBase();
           if (dataset.key === "rais")     return loadRaisBase();
           if (dataset.key === "cbo2")     return loadCbo2Base();
-          if (dataset.key === "fundoParana") return loadFundoParanaBase();
           return loadGenericDataset(dataset.key);
         }),
     ];

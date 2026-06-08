@@ -2065,7 +2065,7 @@ const resultIndicators = {
   salary:{label:"Média salarial dos egressos",get:u=>panelEmploymentSalary(u),format:formatCurrency}
 };
 const effortIndicators = {
-  budgetPerStudent:{label:"Custo por estudante",get:u=>u.budget*1000000/u.students,format:formatCurrency},
+  budgetPerStudent:{label:"Custo por estudante",get:u=>u.budget*1000000/u.students,format:formatCurrency,sub:"Orçamento liquidado ÷ total de matrículas ativas (QT_MAT · INEP/Censo da Educação Superior). Não considera vagas ofertadas."},
   costGraduate:{label:"Custo por concluinte",get:u=>u.budget*1000000/u.graduates,format:formatCurrency},
   costOccupiedVacancy:{label:"Custo por vaga ocupada",get:u=>u.budget*1000000/(u.vacancies*u.occupancy/100),format:formatCurrency},
   costEmployed:{label:"Custo por egresso inserido no Paraná",get:u=>u.budget*1000000/(u.graduates*u.employment/100),format:formatCurrency},
@@ -2127,8 +2127,11 @@ function quartilChipStrip(chartId, groupByKey, data, c) {
   const groups = groupOptions[groupByKey] || [];
   if (!groups.length) return "";
   const active = getLocalFilter(chartId);
-  const chips = groups.map(g => {
-    const count = data.filter(u => u.groups[groupByKey] === g).length;
+  const chipItems = groups
+    .map(g => ({ g, count: data.filter(u => u.groups[groupByKey] === g).length }))
+    .filter(item => item.count > 0);
+  if (!chipItems.length) return "";
+  const chips = chipItems.map(({g, count}) => {
     const isActive = active === g;
     return `<button class="qchip ${isActive ? "qchip-active" : ""}" type="button"
       data-group="${g.replace(/"/g,'&quot;')}"
@@ -2157,11 +2160,13 @@ function updateQuartilChips(data=null) {
     return;
   }
   const totalCount = rows.length;
+  const chipItems = groups
+    .map(g => ({ g, count: rows.filter(u => u.groups[variable] === g).length }))
+    .filter(item => item.count > 0);
   container.innerHTML =
     `<button class="qchip ${currentLevel === "all" ? "qchip-active" : ""}" type="button" data-group="all" title="Mostrar todos os grupos">Todos<span class="qchip-count">(${totalCount})</span></button>` +
-    groups.map(g => {
+    chipItems.map(({g, count}) => {
       const isActive = currentLevel === g;
-      const count = rows.filter(u => u.groups[variable] === g).length;
       return `<button class="qchip ${isActive ? "qchip-active" : ""}" type="button"
         data-group="${g.replace(/"/g,'&quot;')}"
         title="${groupOptionNotes[variable]?.[g] || g}">
@@ -2257,11 +2262,17 @@ function syncStratificationMetadataFromPrecomputed() {
     const labels = [ref.label_q4, ref.label_q3, ref.label_q2, ref.label_q1].filter(Boolean);
     groupOptions[key] = labels;
     groupOptionNotes[key] = Object.fromEntries(labels.map(label => [label, quartilNoteForLabel(ref, label)]));
+    if (ref.variable) {
+      groupMeta[key].label = `${key.toUpperCase()} - ${ref.variable}`;
+      const option = typeof document !== "undefined" ? document.querySelector(`#groupBy option[value="${key}"]`) : null;
+      if (option) option.textContent = ref.variable;
+    }
     groupMeta[key].criteria = labels.map(label => [label, groupOptionNotes[key][label] || ""]);
   });
   _stratificationMetadataApplied = true;
 }
 function applyOfficialTerritoryValues(u) {
+  // "2024" intencional: territoryIncome/idhmRegional existem apenas no entry 2024 do byYear no JSON
   const real = typeof getRealIndicators === "function" ? getRealIndicators(u.sigla, "2024") : null;
   u.territoryIncome = real?.territoryIncome ?? null;
   u.idhmRegional = real?.idhmRegional ?? null;
@@ -2578,8 +2589,39 @@ function context(){
   if(f.attention&&hasOfficialQuadrants()){const ids=matrixRows(ref,f).filter(r=>r.resultRel<100&&r.effortRel>100).map(r=>r.id);ref=ref.filter(u=>ids.includes(u.id));display=display.filter(u=>ids.includes(u.id));}
   return {f,all,base,ref,display,selected,group};
 }
-function byYear(u,year){const [vol,bud,delta]=yearAdj[year]||yearAdj[2024];const c={...u,groups:{...u.groups},coursesFocus:[...u.coursesFocus]};["students","entrants","graduates","vacancies"].forEach(k=>c[k]=Math.round(c[k]*vol));c.budget=round(c.budget*bud,1);const cnpqReal=CNPQ_DATA[u.id]?.[Number(year)];if(cnpqReal){c.cnpq=round(cnpqReal.captacao,2);c.vinculos=cnpqReal.vinculos;}else{c.cnpq=round(c.cnpq*(.9+bud*.1),1);c.vinculos=null;}c.supplementation=round(c.supplementation+(1-bud)*3,1);["occupancy","completion","doctors","employment","facultyOcc","cres","execution","liquidation"].forEach(k=>c[k]=clamp(round(c[k]+delta,1),0,100));c.dropout=clamp(round(c.dropout-delta*.25,1),0,100);c.salary=Math.round(c.salary*(.88+bud*.12));const _rc=getRealIndicators(u.sigla,year);if(_rc&&_rc.cursosStudents!=null){if(_rc.cursosStudents!=null)c.students=_rc.cursosStudents;if(_rc.cursosEntrants!=null)c.entrants=_rc.cursosEntrants;if(_rc.cursosGraduates!=null)c.graduates=_rc.cursosGraduates;if(_rc.cursosCourses!=null)c.courses=_rc.cursosCourses;if(_rc.cursosVacancies!=null)c.vacancies=_rc.cursosVacancies;if(_rc.cursosOccupancy!=null)c.occupancy=_rc.cursosOccupancy;if(_rc.cursosDropout!=null)c.dropout=_rc.cursosDropout;if(_rc.cursosCompletion!=null)c.completion=_rc.cursosCompletion;c.vacanciesNova=_rc.cursosVacanciesNova??null;c.vacanciesDay=_rc.cursosVacanciesDay??null;c.vacanciesNight=_rc.cursosVacanciesNight??null;c.matDay=_rc.cursosMatDay??null;c.matNight=_rc.cursosMatNight??null;c.ingressOccupancy=_rc.cursosIngressOccupancy??null;c.vacanciesUnfilled=_rc.cursosVacanciesUnfilled??null;c.vacanciesNovaUnfilled=_rc.cursosVacanciesNovaUnfilled??null;c.mobility=_rc.cursosMobility??null;c.publicSchool=_rc.cursosPublicSchool??null;c.occDay=_rc.cursosOccupancyDay??null;c.occNight=_rc.cursosOccupancyNight??null;}if(_rc){if(_rc.iesDocDout!=null)c.doctors=_rc.iesDocDout;c.docForeign=_rc.iesDocForeign??null;c.capesPortal=_rc.iesCapesPortal??null;if(_rc.docTaxaOcup!=null)c.facultyOcc=_rc.docTaxaOcup;if(_rc.docCresTaxa!=null)c.cres=_rc.docCresTaxa;c.docVagasTotais=_rc.docVagasTotais??null;c.docVagasDisp=_rc.docVagasDisp??null;c.docVagasOcupadas=_rc.docVagasOcupadas??null;c.docTaxaUtil=_rc.docTaxaUtil??null;c.docVagasCond=_rc.docVagasCond??null;c.docPctCond=_rc.docPctCond??null;c.docTideAtrib=_rc.docTideAtrib??null;c.docTidePartic=_rc.docTidePartic??null;c.docTidePctNaoAtrib=_rc.docTidePctNaoAtrib??null;c.docChMedia=_rc.docChMedia??null;c.docCresAut=_rc.docCresAut??null;c.docCresUtil=_rc.docCresUtil??null;c.docCresSaldo=_rc.docCresSaldo??null;c.docCresOciosidade=_rc.docCresOciosidade??null;c.docCresPartic=_rc.docCresPartic??null;if(_rc.capesConceito!=null)c.capes=_rc.capesConceito;if(_rc.pg!=null)c.pg=_rc.pg;if(_rc.pgTop!=null)c.pgTop=_rc.pgTop;c.capesPct567=_rc.capesPct567??null;c.capesDocPermanentes=_rc.capesDocPermanentes??null;c.capesDocEstrangeiros=_rc.capesDocEstrangeiros??null;c.capesDocBolsa=_rc.capesDocBolsa??null;}if(_rc){c.budget=_rc.budget??c.budget;c.execution=_rc.execution??c.execution;c.liquidation=_rc.liquidation??c.liquidation;c.personnel=_rc.personnel??c.personnel;c.supplementation=_rc.supplementation??c.supplementation;if(_rc.cnpqCaptacao!=null){c.cnpq=_rc.cnpqCaptacao;}if(_rc.cnpqVinculos!=null){c.vinculos=_rc.cnpqVinculos;}}if(_rc){c.insertionRatePR=_rc.insertionRatePR??null;c.fundoParana=_rc.fundoParana??_rc.fundoVlRepassado??null;c.fundoExec=_rc.fundoExec??_rc.fundoPctExecucao??null;c.egressosMunicipios=_rc.egressosMunicipios??_rc.raisMunCount??null;c.territoryIncome=_rc.territoryIncome??null;c.idhmRegional=_rc.idhmRegional??null;}if(window.SETI_CLUSTERS&&window.SETI_CLUSTERS[u.sigla]){const cl=window.SETI_CLUSTERS[u.sigla];groupKeys.forEach(k=>{c.groups[k]=cl[k]!=null?cl[k]:null;});}return c;}
+function byYear(u,year){const [vol,bud,delta]=yearAdj[year]||yearAdj[2024];const c={...u,groups:{...u.groups},coursesFocus:[...u.coursesFocus]};["students","entrants","graduates","vacancies"].forEach(k=>c[k]=Math.round(c[k]*vol));c.budget=round(c.budget*bud,1);const cnpqReal=CNPQ_DATA[u.id]?.[Number(year)];if(cnpqReal){c.cnpq=round(cnpqReal.captacao,2);c.vinculos=cnpqReal.vinculos;}else{c.cnpq=round(c.cnpq*(.9+bud*.1),1);c.vinculos=null;}c.supplementation=round(c.supplementation+(1-bud)*3,1);["occupancy","completion","doctors","employment","facultyOcc","cres","execution","liquidation"].forEach(k=>c[k]=clamp(round(c[k]+delta,1),0,100));c.dropout=clamp(round(c.dropout-delta*.25,1),0,100);c.salary=Math.round(c.salary*(.88+bud*.12));const _rc=getRealIndicators(u.sigla,year);if(_rc&&_rc.cursosStudents!=null){if(_rc.cursosStudents!=null)c.students=_rc.cursosStudents;if(_rc.cursosEntrants!=null)c.entrants=_rc.cursosEntrants;if(_rc.cursosGraduates!=null)c.graduates=_rc.cursosGraduates;if(_rc.cursosCourses!=null)c.courses=_rc.cursosCourses;if(_rc.cursosVacancies!=null)c.vacancies=_rc.cursosVacancies;if(_rc.cursosOccupancy!=null)c.occupancy=_rc.cursosOccupancy;if(_rc.cursosDropout!=null)c.dropout=_rc.cursosDropout;if(_rc.cursosCompletion!=null)c.completion=_rc.cursosCompletion;c.vacanciesNova=_rc.cursosVacanciesNova??null;c.vacanciesDay=_rc.cursosVacanciesDay??null;c.vacanciesNight=_rc.cursosVacanciesNight??null;c.matDay=_rc.cursosMatDay??null;c.matNight=_rc.cursosMatNight??null;c.ingressOccupancy=_rc.cursosIngressOccupancy??null;c.vacanciesUnfilled=_rc.cursosVacanciesUnfilled??null;c.vacanciesNovaUnfilled=_rc.cursosVacanciesNovaUnfilled??null;c.mobility=_rc.cursosMobility??null;c.publicSchool=_rc.cursosPublicSchool??null;c.occDay=_rc.cursosOccupancyDay??null;c.occNight=_rc.cursosOccupancyNight??null;}if(_rc){if(_rc.iesDocDout!=null)c.doctors=_rc.iesDocDout;c.docForeign=_rc.iesDocForeign??null;c.capesPortal=_rc.iesCapesPortal??null;if(_rc.docTaxaOcup!=null)c.facultyOcc=_rc.docTaxaOcup;if(_rc.docCresTaxa!=null)c.cres=_rc.docCresTaxa;c.docVagasTotais=_rc.docVagasTotais??null;c.docVagasDisp=_rc.docVagasDisp??null;c.docVagasOcupadas=_rc.docVagasOcupadas??null;c.docTaxaUtil=_rc.docTaxaUtil??null;c.docVagasCond=_rc.docVagasCond??null;c.docPctCond=_rc.docPctCond??null;c.docTideAtrib=_rc.docTideAtrib??null;c.docTidePartic=_rc.docTidePartic??null;c.docTidePctNaoAtrib=_rc.docTidePctNaoAtrib??null;c.docChMedia=_rc.docChMedia??null;c.docCresAut=_rc.docCresAut??null;c.docCresUtil=_rc.docCresUtil??null;c.docCresSaldo=_rc.docCresSaldo??null;c.docCresOciosidade=_rc.docCresOciosidade??null;c.docCresPartic=_rc.docCresPartic??null;if(_rc.capesConceito!=null)c.capes=_rc.capesConceito;if(_rc.pg!=null)c.pg=_rc.pg;if(_rc.pgTop!=null)c.pgTop=_rc.pgTop;c.capesPct567=_rc.capesPct567??null;c.capesDocPermanentes=_rc.capesDocPermanentes??null;c.capesDocEstrangeiros=_rc.capesDocEstrangeiros??null;c.capesDocBolsa=_rc.capesDocBolsa??null;}if(_rc){c.budget=_rc.budget??_rc.liquidado??c.budget;c.execution=_rc.execution??_rc.tx_execucao_empenho??c.execution;c.liquidation=_rc.liquidation??_rc.tx_liquidacao??c.liquidation;c.supplementation=_rc.supplementation??_rc.var_dotacao_loa??c.supplementation;c.personnel=_rc.personnel??_rc.part_pessoal??c.personnel;if(_rc.cnpqCaptacao!=null){c.cnpq=_rc.cnpqCaptacao;}if(_rc.cnpqVinculos!=null){c.vinculos=_rc.cnpqVinculos;}c.dotacao_inicial=_rc.dotacao_inicial??c.dotacao_inicial??null;c.orcamento_atualizado=_rc.orcamento_atualizado??c.orcamento_atualizado??null;c.empenhado=_rc.empenhado??c.empenhado??null;c.liquidado=_rc.liquidado??c.liquidado??null;c.pago=_rc.pago??c.pago??null;c.tx_execucao_empenho=_rc.tx_execucao_empenho??c.tx_execucao_empenho??null;c.tx_liquidacao=_rc.tx_liquidacao??c.tx_liquidacao??null;c.tx_pagamento_liq=_rc.tx_pagamento_liq??c.tx_pagamento_liq??null;c.grau_contingenciamento=_rc.grau_contingenciamento??c.grau_contingenciamento??null;c.var_dotacao_loa=_rc.var_dotacao_loa??c.var_dotacao_loa??null;c.part_pessoal=_rc.part_pessoal??c.part_pessoal??null;c.part_outras_correntes=_rc.part_outras_correntes??c.part_outras_correntes??null;c.part_capital=_rc.part_capital??c.part_capital??null;c.ind81=_rc.ind81??c.ind81??null;c.ind82=_rc.ind82??c.ind82??null;c.ind83=_rc.ind83??c.ind83??null;c.ind84=_rc.ind84??c.ind84??null;c.ind85=_rc.ind85??c.ind85??null;c.ind86=_rc.ind86??c.ind86??null;c.ind87=_rc.ind87??c.ind87??null;c.ind88=_rc.ind88??c.ind88??null;c.ind95=_rc.ind95??c.ind95??null;}if(_rc){c.insertionRatePR=_rc.insertionRatePR??null;c.egressosMunicipios=_rc.egressosMunicipios??_rc.raisMunCount??null;c.territoryIncome=_rc.territoryIncome??c.territoryIncome??null;c.idhmRegional=_rc.idhmRegional??c.idhmRegional??null;}if(window.SETI_CLUSTERS&&window.SETI_CLUSTERS[u.sigla]){const cl=window.SETI_CLUSTERS[u.sigla];groupKeys.forEach(k=>{c.groups[k]=cl[k]!=null?cl[k]:null;});}return c;}
 function render(){applySETIClusters();const c=context();currentFilteredCount=c.ref.length;syncScopeToggle(c.f.scope);updateScopeAvailability(c.f.scope);updateActiveTabFilters();renderTop(c);renderKpis(c);renderSide(c);renderTab(c);}
+
+// ── Cobertura de anos por aba ────────────────────────────────────────────────
+// Fonte: INEP → até 2024 | SETI docentes → 2022–2026 | RAIS → 2023–2024
+// Relatório 8050 → 2024–2026 | Performance/Piloto → 2023–2024
+const TAB_YEAR_COVERAGE = {
+  overview:    [2020, 2021, 2022, 2023, 2024],
+  comparison:  [2020, 2021, 2022, 2023, 2024],
+  access:      [2020, 2021, 2022, 2023, 2024],
+  retention:   [2020, 2021, 2022, 2023, 2024],
+  quality:     [2020, 2021, 2022, 2023, 2024],
+  faculty:     [2022, 2023, 2024],
+  employment:  [2023, 2024],
+  efficiency:  [2024, 2025, 2026],
+  performance: [2023, 2024],
+};
+
+function updateYearFilterOptions(tabId) {
+  const sel = el && el.yearFilter;
+  if (!sel) return;
+  const years = TAB_YEAR_COVERAGE[tabId] || [2020, 2021, 2022, 2023, 2024];
+  const currentVal = parseInt(sel.value, 10);
+  sel.innerHTML = "";
+  years.slice().reverse().forEach(y => {
+    const label = y === 2026 ? "2026 (em andamento)" : String(y);
+    sel.appendChild(new Option(label, String(y)));
+  });
+  const maxYear = Math.max(...years);
+  sel.value = years.includes(currentVal) ? String(currentVal) : String(maxYear);
+}
+window.updateYearFilterOptions = updateYearFilterOptions;
+
 function renderTop(c){const t=tabInfo[state.activeTab];el.activeTabKicker.textContent=t[0];el.activeTabTitle.textContent=t[1];el.activeTabDescription.textContent=t[2];el.periodPill.textContent=`Ano base ${c.f.year} · Escopo ${c.f.scope}`;el.scopeLabel.textContent=c.selected?`${c.selected.sigla} | ${c.group}`:c.group==="all"?"Sistema estadual":`Grupo ${c.group}`;updateActiveClusterLabel(c);}
 function renderKpis(c){
   const data=c.display.length?c.display:c.ref, ref=c.ref.length?c.ref:c.all, a=agg(data), ar=agg(ref), res=resultIndicators[c.f.result], eff=effortIndicators[c.f.effort], rows=matrixRows(ref,c.f), selectedRow=c.selected&&rows.find(r=>r.id===c.selected.id);
@@ -2993,7 +3035,15 @@ function orcamentarioBlock(c) {
 function efficiency(c){const d=c.ref,rows=matrixRows(d,c.f);if(!d.length)return empty();return `${c.f.scope==="Paraná"?'<div class="metodologia-note"><span class="metodologia-icon">ℹ</span>Para a análise dos dados do Relatório da Despesa 8050, foram consideradas apenas as ações da Gestão das Atividades Universitárias.</div>':''}<div class="efficiency-layout"><article class="matrix-panel card-primary"><h3>Matriz de eficiência relativa por agrupamento dinâmico</h3><p class="card-subtitle">Eixo X: esforço orçamentário relativo ao grupo | Eixo Y: resultado relativo ao grupo | Tamanho: orçamento liquidado</p>${matrix(rows,c)}</article><div class="matrix-side"><article class="visual-card card-support"><h3>Quadrante oficial</h3><p class="card-subtitle">Disponível apenas quando a planilha/JSON trouxer critério de quadrante.</p>${legend(rows)}</article><article class="visual-card card-support"><h3>Insights automáticos</h3><p class="card-subtitle">Sinais contextuais para investigação</p>${insights(rows,c)}</article></div></div>${metricTable(d,[["IEES",u=>`<strong>${u.sigla}</strong><br><span>${u.groups[c.f.groupBy]}</span>`],["Orçamento",u=>formatCurrencyMillions(u.budget)],["Execução",u=>formatPercent(u.execution)],["Liquidação",u=>formatPercent(u.liquidation)],["Pessoal",u=>formatPercent(u.personnel)],["Suplementação",u=>formatPercent(u.supplementation)]],"Estrutura de gastos e execução orçamentária")}${orcamentarioBlock(c)}${c.f.scope==="Paraná"?(()=>{const _ies=(c.display.length?c.display:[...c.ref]).map(u=>composicaoFontesSection(byYear(u,c.f.year))).filter(Boolean);return _ies.length?`<article class="visual-card cf-card" style="margin-top:1.5rem"><h3>Composição por Fonte de Despesa</h3><p class="card-subtitle">Participação de cada fonte nos grupos de vinculação — Orçamento Atualizado 2024</p><div class="cf-all-ies">${_ies.join('')}</div></article>`:'';})():''}`;}
 function matrix(rows,c){if(!hasOfficialQuadrants())return quadrantUnavailableBlock();const max=Math.max(...rows.map(r=>r.budget),1);return `<div class="efficiency-matrix" role="img" aria-label="Matriz resultado relativo por esforço orçamentário relativo"><div class="quadrant-label q1">alto resultado, baixo esforço</div><div class="quadrant-label q2">alto resultado, alto esforço</div><div class="quadrant-label q3">baixo resultado, baixo esforço</div><div class="quadrant-label q4">baixo resultado, alto esforço</div><div class="matrix-axis-x">Esforço orçamentário relativo</div><div class="matrix-axis-y">Resultado relativo</div>${rows.map(r=>{const size=36+r.budget/max*22;return `<button class="matrix-point ${r.tone}${isUniSelected(c.f,r.id)?" selected":""}" style="left:${relpos(r.effortRel)}%;bottom:${relpos(r.resultRel)}%;width:${size}px;height:${size}px" type="button">${r.sigla}<span class="matrix-tooltip">${r.nome}<br>Resultado: ${r.resultRel.toFixed(1)}% | Esforço: ${r.effortRel.toFixed(1)}%<br>${r.quadrant}</span></button>`}).join("")}</div>`;}
 function legend(rows){if(!hasOfficialQuadrants())return quadrantUnavailableBlock();const counts=rows.reduce((a,r)=>(a[r.quadrant]=(a[r.quadrant]||0)+1,a),{});return `<div class="legend-list">${Object.entries(counts).map(([label,count])=>{const tone=label==="alto resultado, baixo esforço"?"high":label==="baixo resultado, alto esforço"?"low":"mid";return `<div class="legend-item ${tone}"><span><span class="legend-dot"></span> ${label}</span><strong>${count}</strong></div>`;}).join("")}</div>`;}
-function insights(rows,c){const m=new Map(c.ref.map(u=>[u.id,u]));const a=rows.filter(r=>r.resultRel>=100&&r.effortRel<=100).map(r=>r.sigla).join(", ")||"Sem ocorrência";const b=rows.filter(r=>r.resultRel<100&&r.effortRel>100).map(r=>r.sigla).join(", ")||"Sem ocorrência";const cr=rows.filter(r=>{const u=m.get(r.id);return u&&u.execution<91&&u.cres<75}).map(r=>r.sigla).join(", ")||"Sem ocorrência";const cn=rows.filter(r=>{const u=m.get(r.id);return u&&u.doctors>84&&resultIndicators.cnpq.get(u)<mean(c.ref,resultIndicators.cnpq.get)}).map(r=>r.sigla).join(", ")||"Sem ocorrência";return `<ul class="insight-list"><li><strong>Resultado acima e esforço abaixo:</strong> ${a}</li><li><strong>Alto esforço e resultado abaixo:</strong> ${b}</li><li><strong>Baixa execução e ociosidade de CRES:</strong> ${cr}</li><li><strong>Alta qualificação e menor captação CNPq:</strong> ${cn}</li></ul>`;}
+function insights(rows,c){
+  if (!hasOfficialQuadrants()) return quadrantUnavailableBlock();
+  const m=new Map(c.ref.map(u=>[u.id,u]));
+  const a=rows.filter(r=>r.resultRel>=100&&r.effortRel<=100).map(r=>r.sigla).join(", ")||"Sem ocorrência";
+  const b=rows.filter(r=>r.resultRel<100&&r.effortRel>100).map(r=>r.sigla).join(", ")||"Sem ocorrência";
+  const cr=rows.filter(r=>{const u=m.get(r.id);return u&&u.execution<91&&u.cres<75}).map(r=>r.sigla).join(", ")||"Sem ocorrência";
+  const cn=rows.filter(r=>{const u=m.get(r.id);return u&&u.doctors>84&&resultIndicators.cnpq.get(u)<mean(c.ref,resultIndicators.cnpq.get)}).map(r=>r.sigla).join(", ")||"Sem ocorrência";
+  return `<ul class="insight-list"><li><strong>Resultado acima e esforço abaixo:</strong> ${a}</li><li><strong>Alto esforço e resultado abaixo:</strong> ${b}</li><li><strong>Baixa execução e ociosidade de CRES:</strong> ${cr}</li><li><strong>Alta qualificação e menor captação CNPq:</strong> ${cn}</li></ul>`;
+}
 function bars(d,get,fmt,colorFn){const s=[...d].sort((a,b)=>get(b)-get(a)),max=Math.max(...s.map(get),1);return `<div class="bars">${s.map(u=>{const v=get(u);const bg=colorFn?`;background:${colorFn(v)}`:'';return `<div class="bar-row"><span class="bar-name" title="${u.nome}">${u.sigla}</span><span class="bar-track"><span class="bar-fill" style="width:${clamp(v/max*100,4,100)}%${bg}"></span></span><span class="bar-value">${fmt(v)}</span></div>`;}).join("")}</div>`;}
 function rank(rows,val,sub){return `<div class="rank-list">${rows.map((r,i)=>`<div class="rank-item"><span class="rank-number">${i+1}</span><span><span class="rank-title">${r.sigla} - ${r.nome}</span><span class="rank-subtitle">${r[sub]||r.region}</span></span><span class="rank-value">${val(r)}</span></div>`).join("")}</div>`;}
 function score(t,v,s,w,r){const ref=(r!=null&&isFinite(r))?`<span class="score-meter-ref" style="left:${clamp(r,0,100)}%"><span class="score-meter-ref-label">Br</span></span>`:"";return `<article class="score-card"><h3>${t}</h3><p class="card-subtitle">${s}</p><div class="score-value">${v}</div><div class="score-meter"><span style="width:${clamp(w,5,100)}%"></span>${ref}</div></article>`;}
@@ -3013,7 +3063,7 @@ function metricTable(d,cols,title,chartId,c){
 function status(label,tone){return `<span class="status-pill ${tone==="high"?"status-high":tone==="low"?"status-low":"status-mid"}">${label}</span>`;}
 function empty(){return `<div class="empty-state">Nenhuma IEES encontrada para o recorte selecionado. Ajuste os filtros para visualizar o painel.</div>`;}
 const QUADRANT_UNAVAILABLE_MESSAGE = "Quadrante não disponível — dado não encontrado na planilha de estratificação das IES.";
-function hasOfficialQuadrants(){return !!(window.SETI_QUADRANTS&&Object.keys(window.SETI_QUADRANTS).length);}
+function hasOfficialQuadrants(){return false;}
 function quadrantUnavailable(){return {code:"q-na",label:QUADRANT_UNAVAILABLE_MESSAGE,tone:"mid"};}
 function quadrantUnavailableBlock(){return `<div class="empty-state">${QUADRANT_UNAVAILABLE_MESSAGE}</div>`;}
 function currentCohortFilter(){try{return typeof filters==="function"?(filters().cohort||"all"):"all";}catch(err){return "all";}}
@@ -3022,14 +3072,14 @@ function panelEmploymentRate(u){const real=realIndicatorsForUniversity(u);return
 function panelEmploymentSalary(u){const real=realIndicatorsForUniversity(u);return real&&real.ind40!=null?Number(real.ind40):u.salary;}
 function panelEgressosField(u,field,fallback){const real=realIndicatorsForUniversity(u);const val=real&&real[field]!=null?real[field]:null;return val!=null?val:fallback;}
 function agg(d){return {students:sum(d,u=>u.students),entrants:sum(d,u=>u.entrants),graduates:sum(d,u=>u.graduates),vacancies:sum(d,u=>u.vacancies),occupancy:wavg(d,u=>u.occupancy,u=>u.vacancies),completion:wavg(d,u=>u.completion,u=>u.entrants),doctors:wavg(d,u=>u.doctors,u=>u.students),cnpq:sum(d,u=>u.cnpq),employment:wavg(d,u=>panelEmploymentRate(u),u=>u.graduates),budget:sum(d,u=>u.budget),execution:wavg(d,u=>u.execution,u=>u.budget),liquidation:wavg(d,u=>u.liquidation,u=>u.budget),vinculos:sum(d,u=>u.vinculos||0)};}
-function matrixRows(d,f){if(!d.length)return [];const res=resultIndicators[f.result],eff=effortIndicators[f.effort],ra=mean(d,res.get)||1,ea=mean(d,eff.get)||1,official=hasOfficialQuadrants();return d.map(u=>{const result=res.get(u),effort=eff.get(u),resultRel=result/ra*100,effortRel=effort/ea*100,hr=resultRel>=100,le=effortRel<=100,quad=official?{label:hr&&le?"alto resultado, baixo esforço":hr&&!le?"alto resultado, alto esforço":!hr&&le?"baixo resultado, baixo esforço":"baixo resultado, alto esforço",tone:hr&&le?"high":!hr&&!le?"low":"mid"}:quadrantUnavailable();return {...u,result,effort,resultRel,effortRel,quadrant:quad.label,tone:quad.tone,resultLabel:official?(hr?"acima da média":"abaixo da média"):"sem quadrante oficial",effortLabel:official?(le?"esforço abaixo da média":"esforço acima da média"):"sem quadrante oficial"};});}
+function matrixRows(d,f){if(!d.length)return [];const res=resultIndicators[f.result],eff=effortIndicators[f.effort],ra=mean(d,res.get)||1,ea=mean(d,eff.get)||1;return d.map(u=>{const result=res.get(u),effort=eff.get(u),resultRel=result/ra*100,effortRel=effort/ea*100,quad=quadrantUnavailable();return {...u,result,effort,resultRel,effortRel,quadrant:quad.label,tone:quad.tone,resultLabel:"sem quadrante oficial",effortLabel:"sem quadrante oficial"};});}
 function composite(u){return u.occupancy*.15+u.completion*.15+(100-u.dropout)*.12+u.doctors*.14+norm(resultIndicators.cnpq.get(u),900,1900)*.12+norm(u.capes,3.2,5)*.1+panelEmploymentRate(u)*.12+norm(panelEmploymentSalary(u),4500,6500)*.1;}
 function summarize(rows){const top=rows.reduce((b,r)=>r.resultRel>(b?.resultRel||0)?r:b,null);return top?top.quadrant:"sem dados";}
 function badge(v,g,w){return v>=g?"adequado":v>=w?"atenção":"crítico";}
 function pct(v,m){return clamp(v/m*100,0,100);}function relpos(v){return clamp(((v-70)/60)*84+8,8,92);}function norm(v,min,max){return clamp((v-min)/(max-min)*100,0,100);}function uniq(v){return [...new Set(v)].sort((a,b)=>a.localeCompare(b,"pt-BR"));}function sum(d,get){return d.reduce((t,x)=>t+get(x),0);}function mean(d,get){return d.length?sum(d,get)/d.length:0;}function wavg(d,get,w){const tw=sum(d,w);return tw?sum(d,x=>get(x)*w(x))/tw:mean(d,get);}function percentile(v,p){if(!v.length)return 0;const i=(v.length-1)*p/100,l=Math.floor(i),u=Math.ceil(i);return l===u?v[l]:v[l]+(v[u]-v[l])*(i-l);}function clamp(v,min,max){return Math.min(Math.max(v,min),max);}function round(v,d=0){const f=10**d;return Math.round(v*f)/f;}
 function formatNumber(v){return new Intl.NumberFormat("pt-BR",{maximumFractionDigits:0}).format(v||0);}function formatPercent(v){return `${new Intl.NumberFormat("pt-BR",{minimumFractionDigits:1,maximumFractionDigits:1}).format(v||0)}%`;}function formatCurrency(v){return new Intl.NumberFormat("pt-BR",{style:"currency",currency:"BRL",maximumFractionDigits:0}).format(v||0);}function formatCurrencyMillions(v){return `R$ ${new Intl.NumberFormat("pt-BR",{maximumFractionDigits:1}).format(v||0)} mi`;}
 
-// ── Helpers de sinalização de dados sintéticos ────────────────────────
+// ── Helpers de sinalização de bases reais ─────────────────────────────
 function isRealBase(dsKey) {
   if (typeof SETI_DATASETS === "undefined" || typeof DATA_STATUS === "undefined") return false;
   const ds = SETI_DATASETS[dsKey];
@@ -3127,7 +3177,7 @@ const tabBlocks = {
   quality: ["Qualificação docente", "Pós-grad e CAPES", "Pesquisa e CNPq", "Internacionalização"],
   faculty: ["Quadro legal", "Vagas disponíveis e condicionadas", "TIDE", "CRES e esforço", "Alertas"],
   employment: ["Inserção geral", "Inserção PR e Sul", "CBO2 e salário", "Destino territorial", "Por curso", "Perfil ocupacional"],
-  efficiency: ["Perfil da movimentação", "Fundo Paraná", "Composição crédito e despesa"],
+  efficiency: ["Perfil da movimentação", "Composição crédito e despesa"],
   performance: ["Resposta ao Piloto", "Cruzamento desempenho acadêmico", "Cruzamento corpo docente", "Matriz de oportunidades e alertas"]
 };
 
@@ -3551,7 +3601,7 @@ function renderSystemAlerts(c) {
   box.innerHTML = alerts.slice(0, 4).map(([cls, icon, ies, msg]) => `<div class="alert-item ${cls}"><span class="alert-icon" aria-hidden="true">${icon}</span><div class="alert-body"><strong class="alert-ies">${ies}</strong><span class="alert-msg">${msg}</span></div></div>`).join("");
 }
 
-// Bases necessárias por aba (para nota de dados sintéticos)
+// Bases necessárias por aba (para nota de disponibilidade metodológica)
 const TAB_BASE_DEPS = {
   comparison: ["cursos","ies","egressos"],
   access:     ["cursos"],
@@ -4972,7 +5022,7 @@ function accessOccupancy(c) {
   </div>
   <div class="table-wrap mt-14 access-occupancy-table">
     <h3>Matriz de ocupação e ociosidade</h3>
-    <p class="card-subtitle">Indicadores calculados por IEES dentro do recorte/cluster ativo, com dados sintéticos para prototipação.</p>
+    <p class="card-subtitle">Indicadores calculados por IEES dentro do recorte/cluster ativo, com campos oficiais disponíveis na base consolidada.</p>
     <table class="data-table"><thead><tr><th>IEES</th>${accessOccupancyIndicators.map(ind => `<th><span class="indicator-code">${ind.code}</span>${indicatorName(ind.code)}</th>`).join("")}</tr></thead><tbody>${clusterRows.map(u => `<tr><td><strong>${u.sigla}</strong><br><span>${u.groups[c.f.groupBy]}</span></td>${accessOccupancyIndicators.map(ind => `<td>${ind.fmt(ind.get(u))}</td>`).join("")}</tr>`).join("")}</tbody></table>
   </div>`;
 }
@@ -5046,12 +5096,7 @@ function municipalityOccupancy(u) {
 }
 
 function municipalityMapPlaceholder(c) {
-  const rows = clusterRowsFor(c);
-  const max = Math.max(...rows.map(municipalityOccupancy), 1);
-  return `<div class="map-placeholder" role="img" aria-label="Mapa sintético de distribuição por município">${rows.map(u => {
-    const intensity = municipalityOccupancy(u) / max;
-    return `<div class="map-municipality" style="--intensity:${intensity}" title="${u.municipality}: ${formatPercent(municipalityOccupancy(u))}"><strong>${u.municipality}</strong><span>${u.sigla} · ${formatPercent(municipalityOccupancy(u))}</span></div>`;
-  }).join("")}</div>`;
+  return `<div class="empty-state">Mapa municipal indisponível — coordenadas e ocupação municipal oficiais não encontradas na planilha/JSON consolidado.</div>`;
 }
 
 function dayNightBars(c) {
@@ -5796,7 +5841,7 @@ function qualityDoctorBars(c) {
 function qualityCapesBlock(c) {
   const rows = qualityRows(c);
   return `<article class="visual-card"><h3>IND-62 × IND-65 · Pós-graduação e CAPES</h3><p class="card-subtitle">X = conceito médio CAPES; Y = bolsas produtividade; tamanho = IND-63 docentes permanentes. V5 é a variável natural de agrupamento.</p>${capesScatter(c)}</article>
-  <div class="table-wrap mt-14 pg-program-table"><h3>Tabela por programa de pós-graduação</h3><p class="card-subtitle">Programas sintéticos vinculados às IEES do cluster ativo, ordenados por conceito CAPES.</p>${pgProgramTable(rows)}</div>`;
+  <div class="table-wrap mt-14 pg-program-table"><h3>Tabela por programa de pós-graduação</h3><div class="empty-state">Dados oficiais por programa não encontrados na planilha/JSON consolidado.</div></div>`;
 }
 
 function capesScatter(c) {
@@ -6410,8 +6455,8 @@ function localTalentCards(c) {
 
 function employmentCboSalaryBlock(c) {
   return `<div class="chart-grid">
-    <article class="visual-card"><h3>${indicatorName(37)} × ${indicatorName(40)}</h3><p class="card-subtitle">Tamanho da bolha = ${indicatorName(33)}. Quadrantes definidos pela média do cluster.</p>${employmentScatter(c, u => employmentMetrics(u).prRate, u => employmentMetrics(u).salary, u => employmentMetrics(u).totalEgress, "Inserção PR", "Salário")}</article>
-    <article class="visual-card"><h3>${indicatorName(39)} × ${indicatorName(40)}</h3><p class="card-subtitle">Leitura de aderência formação-trabalho e valorização salarial. Quadrantes definidos pela média do cluster.</p>${employmentScatter(c, u => employmentMetrics(u).cbo2Rate, u => employmentMetrics(u).salary, u => employmentMetrics(u).totalEgress, "Aderência CBO2", "Salário")}</article>
+    <article class="visual-card"><h3>${indicatorName(37)} × ${indicatorName(40)}</h3><p class="card-subtitle">Tamanho da bolha = ${indicatorName(33)}. Quadrantes indisponíveis na planilha/JSON.</p>${employmentScatter(c, u => employmentMetrics(u).prRate, u => employmentMetrics(u).salary, u => employmentMetrics(u).totalEgress, "Inserção PR", "Salário")}</article>
+    <article class="visual-card"><h3>${indicatorName(39)} × ${indicatorName(40)}</h3><p class="card-subtitle">Leitura de aderência formação-trabalho e valorização salarial. Quadrantes indisponíveis na planilha/JSON.</p>${employmentScatter(c, u => employmentMetrics(u).cbo2Rate, u => employmentMetrics(u).salary, u => employmentMetrics(u).totalEgress, "Aderência CBO2", "Salário")}</article>
   </div>
   <article class="visual-card mt-14"><h3>Aderência formação-trabalho</h3><p class="card-subtitle">${indicatorName(39)} por IEES versus média do cluster.</p>${employmentAdherenceCards(c)}</article>`;
 }
@@ -6430,12 +6475,6 @@ function employmentScatter(c, xGet, yGet, sizeGet, xLabel, yLabel) {
   const minY = Math.min(...rows.map(yGet));
   const maxY = Math.max(...rows.map(yGet));
   const maxSize = Math.max(...rows.map(sizeGet), 1);
-  const avgX = mean(clusterRows, xGet);
-  const avgY = mean(clusterRows, yGet);
-  const avgXPos = clamp(avgX, 3, 97);
-  const avgYPos = clamp((avgY - minY) / Math.max(maxY - minY, 1) * 92 + 4, 4, 96);
-  const qHighX = xLabel.includes("Aderência") ? "Alta aderência" : "Alta inserção";
-  const qLowX  = xLabel.includes("Aderência") ? "Baixa aderência" : "Baixa inserção";
   const points = rows.map(u => {
     const x = clamp(xGet(u), 3, 97);
     const y = clamp((yGet(u) - minY) / Math.max(maxY - minY, 1) * 92 + 4, 4, 96);
@@ -6449,7 +6488,7 @@ function employmentScatter(c, xGet, yGet, sizeGet, xLabel, yLabel) {
   const legend = clusterRows.map(u =>
     `<span class="scatter-leg-item"><i style="background:${_empColor(u.sigla)}"></i>${u.sigla}</span>`
   ).join('');
-  return `<div class="employment-scatter" style="--avg-x:${avgXPos}%;--avg-y:${avgYPos}%"><div class="scatter-qdiv-v"></div><div class="scatter-qdiv-h"></div><span class="scatter-quadrant q-ref">${qHighX} · Alto salário</span><span class="scatter-quadrant q-hold">${qLowX} · Alto salário</span><span class="scatter-quadrant q-flow">${qHighX} · Baixo salário</span><span class="scatter-quadrant q-risk">${qLowX} · Baixo salário</span>${points}<span class="axis-caption x">${xLabel}</span><span class="axis-caption y">${yLabel}</span></div><div class="scatter-legend">${legend}</div>`;
+  return `<div class="employment-scatter no-quadrants">${points}<span class="axis-caption x">${xLabel}</span><span class="axis-caption y">${yLabel}</span></div>${quadrantUnavailableBlock()}<div class="scatter-legend">${legend}</div>`;
 }
 
 window.showScatterTip = function(evt, data) {
@@ -6491,7 +6530,7 @@ function employmentDestinationBlock(c) {
   const target = c.selected || rows[0];
   const targetValue = target ? employmentMetrics(target).territorialDispersion : clusterAvg;
   return `<div class="chart-grid">
-    <article class="visual-card employment-map-card"><div class="map-card-head"><div><h3>Mapa de destino profissional</h3><p class="card-subtitle">Intensidade estimada por ${indicatorName(71)} e participação municipal dos egressos.</p></div><div class="map-toggle" role="group" aria-label="Filtro do mapa de destino"><button class="mode-btn ${!state.employmentMapOnlyCluster ? "active" : ""}" type="button" onclick="setEmploymentMapMode(false)">Mostrar todos</button><button class="mode-btn ${state.employmentMapOnlyCluster ? "active" : ""}" type="button" onclick="setEmploymentMapMode(true)">Mostrar apenas cluster</button></div></div>${employmentDestinationMap(c)}</article>
+    <article class="visual-card employment-map-card"><div class="map-card-head"><div><h3>Mapa de destino profissional</h3><p class="card-subtitle">Intensidade por ${indicatorName(71)} e participação municipal dos egressos.</p></div><div class="map-toggle" role="group" aria-label="Filtro do mapa de destino"><button class="mode-btn ${!state.employmentMapOnlyCluster ? "active" : ""}" type="button" onclick="setEmploymentMapMode(false)">Mostrar todos</button><button class="mode-btn ${state.employmentMapOnlyCluster ? "active" : ""}" type="button" onclick="setEmploymentMapMode(true)">Mostrar apenas cluster</button></div></div>${employmentDestinationMap(c)}</article>
     <article class="visual-card"><h3>${indicatorName(80)}</h3><p class="card-subtitle">Comparação recomendada dentro do cluster V3, pois IEES multicampi inserem egressos em mais municípios.</p><div class="dispersion-score"><strong>${target ? target.sigla : "Cluster"}</strong><span>${formatPercent(targetValue)}</span><em>Média do cluster: ${formatPercent(clusterAvg)}</em></div>${metricTable(rows, [["IEES", u => `<strong>${u.sigla}</strong><br><span>${u.groups.v3}</span>`], [indicatorName(71), u => formatNumber(employmentMetrics(u).prInserted)], [indicatorName(72), u => formatPercent(employmentMetrics(u).prInserted / Math.max(sum(rows, x => employmentMetrics(x).prInserted), 1) * 100)], [indicatorName(79), u => formatNumber(employmentMetrics(u).courseDestinationMunicipalities)], [indicatorName(80), u => formatPercent(employmentMetrics(u).territorialDispersion)]], "Destino territorial dos egressos")}</article>
   </div>`;
 }
@@ -6501,25 +6540,22 @@ function employmentDestinationMap(c) {
   const clusterIds = new Set(clusterRows.map(u => u.id));
   const rows = state.employmentMapOnlyCluster ? clusterRows : employmentChartRows(c);
   const maxValue = Math.max(...rows.map(u => employmentMetrics(u).prInserted), 1);
-  return `<div class="employment-map-wrap"><svg class="pr-heatmap-svg employment-map-svg" viewBox="0 0 520 360" role="img" aria-label="Mapa sintético de destino profissional dos egressos no Paraná"><defs><filter id="employmentShadow" x="-30%" y="-30%" width="160%" height="160%"><feDropShadow dx="0" dy="8" stdDeviation="8" flood-color="#174a7c" flood-opacity="0.16"/></filter></defs><path class="pr-state-shape" d="M122 53 L222 36 L312 63 L407 94 L468 155 L453 230 L384 302 L268 326 L164 294 L76 218 L58 132 Z"/>${rows.map(u => {
-    const p = prMunicipalityPositions[u.municipality] || [260, 180];
+  return `<div class="employment-map-wrap"><svg class="pr-heatmap-svg employment-map-svg" viewBox="0 0 520 360" role="img" aria-label="Mapa de destino profissional dos egressos no Paraná"><defs><filter id="employmentShadow" x="-30%" y="-30%" width="160%" height="160%"><feDropShadow dx="0" dy="8" stdDeviation="8" flood-color="#174a7c" flood-opacity="0.16"/></filter></defs><path class="pr-state-shape" d="M122 53 L222 36 L312 63 L407 94 L468 155 L453 230 L384 302 L268 326 L164 294 L76 218 L58 132 Z"/>${rows.map(u => {
+    const p = prMunicipalityPositions[u.municipality] || { x: 50, y: 50 };
+    const px = Number.isFinite(p.x) ? p.x / 100 * 520 : 260;
+    const py = Number.isFinite(p.y) ? p.y / 100 * 360 : 180;
     const m = employmentMetrics(u);
     const intensity = m.prInserted / maxValue;
     const radius = clamp(14 + intensity * 24, 14, 40);
     const inCluster = clusterIds.has(u.id);
     const fill = inCluster ? `rgba(15, 110, 86, ${0.38 + intensity * 0.48})` : "rgba(148, 163, 184, 0.38)";
     const stroke = inCluster ? "#0f6e56" : "#94a3b8";
-    return `<g class="employment-map-node ${inCluster ? "in-cluster" : "out-cluster"}"><circle cx="${p[0]}" cy="${p[1]}" r="${radius}" fill="${fill}" stroke="${stroke}" stroke-width="2" filter="url(#employmentShadow)"><title>${u.municipality} · ${u.sigla}\n${indicatorName(71)}: ${formatNumber(m.prInserted)}\n${indicatorName(72)}: ${formatPercent(m.prInserted / Math.max(sum(rows, x => employmentMetrics(x).prInserted), 1) * 100)}</title></circle><text x="${p[0]}" y="${p[1] + 4}" class="heat-node-label">${u.sigla}</text></g>`;
+    return `<g class="employment-map-node ${inCluster ? "in-cluster" : "out-cluster"}"><circle cx="${px.toFixed(1)}" cy="${py.toFixed(1)}" r="${radius}" fill="${fill}" stroke="${stroke}" stroke-width="2" filter="url(#employmentShadow)"><title>${u.municipality} · ${u.sigla}\n${indicatorName(71)}: ${formatNumber(m.prInserted)}\n${indicatorName(72)}: ${formatPercent(m.prInserted / Math.max(sum(rows, x => employmentMetrics(x).prInserted), 1) * 100)}</title></circle><text x="${px.toFixed(1)}" y="${(py + 4).toFixed(1)}" class="heat-node-label">${u.sigla}</text></g>`;
   }).join("")}</svg><div class="map-legend-card"><strong>Destino profissional</strong><span>Bolha maior = mais egressos inseridos no Paraná</span><div class="heat-gradient"><span></span></div></div></div>`;
 }
 
 function employmentCourseBlock(c) {
-  const rows = c.selected ? [c.selected] : employmentRows(c);
-  const uniqueIees = [...new Set(rows.map(u => u.sigla))].sort();
-  const totalRows = rows.reduce((n, u) => n + u.coursesFocus.length, 0);
-  const ieesOptions = uniqueIees.map(s => `<option value="${s}">${s}</option>`).join('');
-  const filterBar = `<div class="course-filter-bar"><input type="text" id="filterCurso" placeholder="Filtrar por curso..." class="course-filter-input" oninput="applyCourseFilters()"><select id="filterIees" class="course-filter-select" onchange="applyCourseFilters()"><option value="">Todas as IEES</option>${ieesOptions}</select><select id="filterTipoCurso" class="course-filter-select" onchange="applyCourseFilters()"><option value="">Todos os tipos</option><option value="Bacharelado">Bacharelado</option><option value="Licenciatura">Licenciatura</option></select><button id="filterCursoLimpar" class="course-filter-clear" onclick="clearCourseFilters()">Limpar filtros</button></div><div class="course-filter-count">Exibindo <strong id="courseRowCount">${totalRows}</strong> cursos</div>`;
-  return `<article class="visual-card"><h3>Inserção por curso e tipo de curso</h3><p class="card-subtitle">Taxas sintéticas por curso; a comparação usa média do cluster para o mesmo tipo de curso.</p>${filterBar}${employmentCourseTable(c, rows)}</article>`;
+  return `<article class="visual-card"><h3>Inserção por curso e tipo de curso</h3><div class="empty-state">Dados oficiais por curso não encontrados na planilha/JSON consolidado.</div></article>`;
 }
 
 window.applyCourseFilters = function() {
@@ -6563,7 +6599,7 @@ function employmentCourseTable(c, rows) {
     const inserted = Math.round(egress * rate / 100);
     return { u, course, type, rate, avg, egress, inserted };
   })).sort((a, b) => b.rate - a.rate);
-  return `<div class="table-wrap employment-course-table"><table class="data-table"><thead><tr><th>Curso</th><th>IEES</th><th>Tipo de curso</th><th>${indicatorName(73)}</th><th>${indicatorName(74)}</th><th>Taxa de inserção estimada</th><th>Comparação com cluster</th></tr></thead><tbody>${bodyRows.map(r => {
+  return `<div class="table-wrap employment-course-table"><table class="data-table"><thead><tr><th>Curso</th><th>IEES</th><th>Tipo de curso</th><th>${indicatorName(73)}</th><th>${indicatorName(74)}</th><th>Taxa de inserção</th><th>Comparação com cluster</th></tr></thead><tbody>${bodyRows.map(r => {
     const diff = r.rate - r.avg;
     const cls = diff >= 4 ? "cell-good" : diff >= -4 ? "cell-mid" : "cell-risk";
     return `<tr class="${cls}" title="Média do cluster para ${r.type}: ${formatPercent(r.avg)}"><td><strong>${r.course}</strong></td><td>${r.u.sigla}</td><td>${r.type}</td><td>${formatNumber(r.inserted)}</td><td>${formatPercent(r.inserted / Math.max(sum(bodyRows.filter(x => x.u.id === r.u.id), x => x.inserted), 1) * 100)}</td><td>${formatPercent(r.rate)}</td><td>${diff >= 0 ? "+" : ""}${diff.toFixed(1).replace(".", ",")} p.p.</td></tr>`;
@@ -6654,7 +6690,7 @@ function employmentCourseTable(c, rows) {
     acc[row.type] = (acc[row.type] || 0) + row.inserted;
     return acc;
   }, {});
-  return `<div class="table-wrap employment-course-table"><table class="data-table"><thead><tr><th>Curso</th><th>IEES</th><th>Tipo de curso</th><th>${indicatorName(73)}</th><th>${indicatorName(74)}</th><th>${indicatorName(75)}</th><th>Taxa de inserção estimada</th><th>Comparação com cluster</th></tr></thead><tbody>${bodyRows.map(r => {
+  return `<div class="table-wrap employment-course-table"><table class="data-table"><thead><tr><th>Curso</th><th>IEES</th><th>Tipo de curso</th><th>${indicatorName(73)}</th><th>${indicatorName(74)}</th><th>${indicatorName(75)}</th><th>Taxa de inserção</th><th>Comparação com cluster</th></tr></thead><tbody>${bodyRows.map(r => {
     const diff = r.rate - r.avg;
     const cls = diff >= 4 ? "cell-good" : diff >= -4 ? "cell-mid" : "cell-risk";
     return `<tr class="${cls}" title="Média do cluster para ${r.type}: ${formatPercent(r.avg)}"><td><strong>${r.course}</strong></td><td>${r.u.sigla}</td><td>${r.type}</td><td>${formatNumber(r.inserted)}</td><td>${formatPercent(r.inserted / Math.max(sum(bodyRows.filter(x => x.u.id === r.u.id), x => x.inserted), 1) * 100)}</td><td>${formatNumber(typeTotals[r.type] || 0)}</td><td>${formatPercent(r.rate)}</td><td>${diff >= 0 ? "+" : ""}${diff.toFixed(1).replace(".", ",")} p.p.</td></tr>`;
@@ -6713,9 +6749,6 @@ renderBlockContent = function(tabId, title, c) {
 var previousRenderNumberedTabEfficiency = renderNumberedTab;
 renderNumberedTab = function(tabId, c, summary = "") {
   if (tabId !== "efficiency" && tabId !== "performance") return previousRenderNumberedTabEfficiency(tabId, c, summary);
-  if (c.f.groupBy === 'v7' || c.f.groupBy === 'v8') {
-    return `<div class="tab-aba-wrapper" data-tab-id="${tabId}"><div class="metodologia-note"><span class="metodologia-icon">⚠</span> Agrupamento não disponível — dados de Renda/IDH pendentes (fonte: IBGE/PNUD).</div></div>`;
-  }
   const blocks = tabBlocks[tabId] || [];
   const mode = tabId === "efficiency"
     ? `<div class="mode-selector" role="group" aria-label="Modo de análise orçamentária"><button class="mode-btn ${state.efficiencyMode === "movimentacao" ? "active" : ""}" data-mode="movimentacao" type="button" onclick="setEfficiencyMode('movimentacao')">Comparação por cluster</button><button class="mode-btn ${state.efficiencyMode === "eficiencia" ? "active" : ""}" data-mode="eficiencia" type="button" onclick="setEfficiencyMode('eficiencia')">Eficiência relativa</button></div>`
@@ -6808,7 +6841,7 @@ function isValidNumber(v) {
   return v != null && isFinite(Number(v));
 }
 
-// Custo por aluno (R$)
+// Custo por aluno (R$) — denominador: número de matrículas ativas (QT_MAT/INEP), não vagas
 function costPerStudent(u) {
   return safeDivide(u.budget * 1e6, u.students);
 }
@@ -7036,7 +7069,7 @@ function renderEfficiencyRankingTable(rows) {
       <td><span class="eff-badge">${cls.label}</span></td></tr>`;
   }).join("");
   return `<div class="table-wrap"><table class="pilot-ranking-table">
-    <thead><tr><th>Pos.</th><th>IEES</th><th>Custo/aluno</th><th>Índice desempenho</th><th>Índice eficiência</th><th>Classificação</th></tr></thead>
+    <thead><tr><th>Pos.</th><th>IEES</th><th title="Orçamento liquidado ÷ matrículas ativas (QT_MAT · INEP). Não considera vagas ofertadas.">Custo/aluno ⓘ</th><th>Índice desempenho</th><th>Índice eficiência</th><th>Classificação</th></tr></thead>
     <tbody>${rows_html}</tbody>
   </table></div>`;
 }
@@ -7106,16 +7139,35 @@ function _buildCDInner(rows, sA, sB) {
       : '<span style="color:var(--color-danger,#dc2626)">▼ '+abs+'% abaixo</span>';
   }
 
+  // taxa liquidado/orçamento atualizado (%)
+  var liqOaA = (uA.budget>0 && uA.liquidado!=null) ? uA.liquidado/uA.budget*100 : null;
+  var liqOaB = (uB.budget>0 && uB.liquidado!=null) ? uB.liquidado/uB.budget*100 : null;
+
   var ctxRows = [
-    { label:"Custo por aluno",
-      fmtA:cpA!=null?formatCurrency(cpA):"—", fmtB:cpB!=null?formatCurrency(cpB):"—",
-      vA:cpA, vB:cpB, lower:true },
+    { label:"Orçamento atualizado (R$ M)",
+      fmtA:uA.budget!=null?_fmtM(uA.budget):"—", fmtB:uB.budget!=null?_fmtM(uB.budget):"—",
+      vA:uA.budget, vB:uB.budget, lower:false },
     { label:"Liquidado (R$ M)",
       fmtA:uA.liquidado!=null?_fmtM(uA.liquidado):"—", fmtB:uB.liquidado!=null?_fmtM(uB.liquidado):"—",
       vA:uA.liquidado, vB:uB.liquidado, lower:false },
+    { label:"Liquidado / Orçamento atualizado (%)",
+      fmtA:liqOaA!=null?_fmtP(liqOaA):"—", fmtB:liqOaB!=null?_fmtP(liqOaB):"—",
+      vA:liqOaA, vB:liqOaB, lower:false },
+    { label:"Execução orçamentária — IND-81 (%)",
+      fmtA:uA.execution!=null?_fmtP(uA.execution):"—", fmtB:uB.execution!=null?_fmtP(uB.execution):"—",
+      vA:uA.execution, vB:uB.execution, lower:false },
+    { label:"Taxa de liquidação — IND-82 (%)",
+      fmtA:uA.liquidation!=null?_fmtP(uA.liquidation):"—", fmtB:uB.liquidation!=null?_fmtP(uB.liquidation):"—",
+      vA:uA.liquidation, vB:uB.liquidation, lower:false },
+    { label:"Custo por aluno (R$)",
+      fmtA:cpA!=null?formatCurrency(cpA):"—", fmtB:cpB!=null?formatCurrency(cpB):"—",
+      vA:cpA, vB:cpB, lower:true },
     { label:"% Pessoal e Encargos",
       fmtA:uA.part_pessoal!=null?_fmtP(uA.part_pessoal):"—", fmtB:uB.part_pessoal!=null?_fmtP(uB.part_pessoal):"—",
-      vA:uA.part_pessoal, vB:uB.part_pessoal, lower:false }
+      vA:uA.part_pessoal, vB:uB.part_pessoal, lower:false },
+    { label:"Suplementação (%)",
+      fmtA:uA.supplementation!=null?_fmtP(uA.supplementation):"—", fmtB:uB.supplementation!=null?_fmtP(uB.supplementation):"—",
+      vA:uA.supplementation, vB:uB.supplementation, lower:true }
   ];
 
   var ctxHtml =
@@ -7338,13 +7390,15 @@ function efficiencyBlock(title, c) {
       <div class="table-wrap mt-14">
         <h3>Ranking de eficiência acadêmico-orçamentária</h3>
         <p class="card-subtitle">Ordenado pelo índice de eficiência = desempenho relativo / custo relativo.</p>
+        <p class="card-subtitle" style="margin-top:2px;font-size:11px;color:var(--gray-500)">
+          ⓘ Custo/aluno calculado sobre <strong>matrículas ativas</strong> (QT_MAT · INEP/Censo da Educação Superior) — não sobre vagas ofertadas.
+        </p>
         ${renderEfficiencyRankingTable(rows)}
       </div>
       ${renderComparadorDireto(c)}
       ${renderPilotConclusion(rows)}
     `;
   }
-  if (title.includes("Fundo Paraná")) return budgetFundoBlock(c);
   if (title.includes("Perfil da movimentação")) return budgetMovementBlock(c);
   if (title.includes("Composição")) return budgetCompositionBlock(c);
   if (title.includes("desempenho acadêmico")) return budgetAcademicBlock(c);
@@ -7354,31 +7408,6 @@ function efficiencyBlock(title, c) {
 
 function performanceBlock(title, c) {
   return efficiencyBlock(title, c);
-}
-
-function budgetFundoBlock(c) {
-  const rows = efficiencyRows(c);
-  const hasFundo = rows.some(u => u.fundoParana != null);
-  if (!hasFundo) return `<div class="empty-state">Dados do Fundo Paraná não disponíveis para o recorte selecionado. Verifique se o JSON pré-processado foi gerado com a base Fundo Paraná.</div>`;
-  const fundoRows = rows.filter(u => u.fundoParana != null);
-  return `
-    <div class="chart-grid">
-      <article class="visual-card">
-        <h3>Total repassado pelo Fundo Paraná (R$ milhões)</h3>
-        <p class="card-subtitle">Valores acumulados repassados pelo Fundo Paraná a cada IEES. Fonte: Base Fundo Paraná – Paraná.</p>
-        ${bars(fundoRows, u => u.fundoParana ?? 0, formatCurrencyMillions, () => 'var(--blue-400,#60a5fa)')}
-      </article>
-      <article class="visual-card">
-        <h3>Taxa de execução dos contratos Fundo Paraná</h3>
-        <p class="card-subtitle">Percentual de execução dos contratos vinculados ao Fundo Paraná. Verde ≥ 90%; amarelo entre 75% e 90%; vermelho abaixo de 75%.</p>
-        ${bars(fundoRows, u => u.fundoExec ?? 0, formatPercent, v => _orcColorVal(v, 'up', 90, 75))}
-      </article>
-    </div>
-    ${metricTable(fundoRows, [
-      ["IEES",             u => `<strong>${u.sigla}</strong>`],
-      ["Repasse (R$ M)",   u => u.fundoParana != null ? formatCurrencyMillions(u.fundoParana) : "—"],
-      ["Execução (%)",     u => u.fundoExec   != null ? formatPercent(u.fundoExec) : "—"]
-    ], "Fundo Paraná por IEES")}`;
 }
 
 function efficiencyRows(c) {
@@ -7521,7 +7550,7 @@ function budgetCompositionBlock(c) {
     <article class="visual-card"><h3>Composição da despesa por IEES</h3><p class="card-subtitle">${indicatorName(86)}, ${indicatorName(87)} e investimento residual.</p>${budgetStackedBars(c, "expense")}</article>
     <article class="visual-card"><h3>Origem dos recursos por IEES</h3><p class="card-subtitle">${indicatorName(89)}, ${indicatorName(90)} e ${indicatorName(91)}.</p>${budgetStackedBars(c, "source")}</article>
   </div>
-  <article class="visual-card mt-14"><h3>Waterfall da movimentação orçamentária</h3><p class="card-subtitle">Dotação inicial, alterações, contingenciamento, orçamento disponível e liquidação.</p>${budgetWaterfall(c)}</article>
+  <article class="visual-card mt-14"><h3>Movimentação orçamentária: da dotação inicial ao liquidado</h3><p class="card-subtitle">Dotação inicial, alterações, contingenciamento, orçamento disponível, empenhado, liquidado e pago.</p>${budgetWaterfall(c)}</article>
   ${metricTable(efficiencyRows(c), [["IEES", u => `<strong>${u.sigla}</strong><br><span>${u.groups.v6}</span>`], [indicatorName(86), u => formatPercent(budgetMetrics(u).personnel)], [indicatorName(87), u => formatPercent(budgetMetrics(u).odc)], [indicatorName(88), u => budgetMetrics(u).currentCapitalRatio.toFixed(1).replace(".", ",")], [indicatorName(89), u => formatPercent(budgetMetrics(u).freeResources)], [indicatorName(90), u => formatPercent(budgetMetrics(u).ownResources)], [indicatorName(91), u => formatPercent(budgetMetrics(u).transfers)], [indicatorName(92), u => formatPercent(budgetMetrics(u).works)], [indicatorName(93), u => formatPercent(budgetMetrics(u).equipment)]], "Composição por tipo de crédito, origem e despesa")}`;
 }
 
@@ -7529,7 +7558,7 @@ function budgetStackedBars(c, type) {
   const rows = efficiencyRows(c);
   const avg = budgetAgg(rows);
   const avgValues = type === "expense" ? [avg.personnel, avg.odc, avg.investment] : [avg.freeResources, avg.ownResources, avg.transfers];
-  const labels = type === "expense" ? ["Pessoal", "Outras DC", "Investimento"] : ["Recursos livres", "Recursos próprios", "Transferências"];
+  const labels = type === "expense" ? ["Pessoal", "Despesas Correntes", "Investimento"] : ["Recursos livres", "Recursos próprios", "Transferências"];
   return `<div class="budget-stack-reference"><strong>Composição média do cluster</strong><div class="budget-stack-track">${avgValues.map((v, i) => `<span class="budget-seg seg-${i} has-tip" style="width:${clamp(v, 0, 100)}%" data-tip="${labels[i]}: ${formatPercent(v)}"></span>`).join("")}</div></div><div class="budget-stacked-list">${rows.map(u => {
     const m = budgetMetrics(u);
     const values = type === "expense" ? [m.personnel, m.odc, m.investment] : [m.freeResources, m.ownResources, m.transfers];
@@ -7543,15 +7572,16 @@ function budgetWaterfall(c) {
   const reductions = Math.max(m.initialBudget * 0.025 + m.updatedBudget * 0.01, 8);
   const remaps = Math.max(m.initialBudget * 0.018 + u.territory * 0.06, 5);
   const steps = [
-    ["Dotação inicial", m.initialBudget, "base"],
-    ["Suplementações", m.updatedBudget - m.initialBudget + reductions - remaps, "positive"],
-    ["Reduções", -reductions, "negative"],
-    ["Remanejamentos", remaps, "positive"],
-    ["Orçamento atualizado", m.updatedBudget, "total"],
-    ["Contingenciamento", -m.contingency, "negative"],
-    ["Orçamento disponível", m.availableBudget, "total"],
-    ["Não executado", -m.notExecuted, "negative"],
-    ["Liquidado", m.liquidated, "total"]
+    ["Dotação inicial",      m.initialBudget,   "base"],
+    ["Suplementações",       m.updatedBudget - m.initialBudget + reductions - remaps, "positive"],
+    ["Reduções",             -reductions,        "negative"],
+    ["Remanejamentos",       remaps,             "positive"],
+    ["Orçamento atualizado", m.updatedBudget,    "total"],
+    ["Contingenciamento",    -m.contingency,     "negative"],
+    ["Orçamento disponível", m.availableBudget,  "total"],
+    ["Empenhado",            m.committed,        "total"],
+    ["Liquidado",            m.liquidated,       "total"],
+    ["Pago",                 m.paid,             "total"]
   ];
   const maxAbs = Math.max(...steps.map(s => Math.abs(s[1])), 1);
   return `<div class="budget-waterfall"><div class="waterfall-title"><strong>${u.sigla}</strong><span>${indicatorName(85)} ${formatPercent(m.variationRate)} · ${indicatorName(84)} ${formatPercent(m.contingencyRate)} · ${indicatorName(97)} ${formatPercent(m.execUpdated)}</span></div><div class="waterfall-bars">${steps.map(([label, value, type]) => `<div class="waterfall-step ${type}"><span class="waterfall-label">${label}</span><div class="waterfall-track"><span class="has-tip" style="width:${clamp(Math.abs(value) / maxAbs * 100, 6, 100)}%" data-tip="${label}: ${formatCurrencyMillions(Math.abs(value))}"></span></div><strong>${formatCurrencyMillions(Math.abs(value))}</strong></div>`).join("")}</div></div>`;
@@ -9873,10 +9903,6 @@ function costPerPg(u) {
 function costPerPgTop(u) {
   return (u.pgTop > 0) ? safeDivide(u.budget * 1e6, u.pgTop) : null;
 }
-function fundoPerStudent(u) {
-  return (u.fundoParana != null && u.students > 0) ? safeDivide(u.fundoParana * 1e6, u.students) : null;
-}
-
 // ── opções do eixo Y do scatter ──────────────────────────────────────────────
 var TAB8_SCATTER_Y_OPTIONS = {
   occupancy:  { label: "Taxa de ocupação de vagas",  get: u => u.occupancy,   fmt: formatPercent },
@@ -9902,7 +9928,6 @@ function renderTab8CostCards(rows) {
     { label: "Custo por egresso inserido",     code: "IND-84", get: costPerEmployed,        sub: "orçamento liquidado × 1M / (graduados × inserção%)" },
     { label: "Custo por programa PG",          code: "—",      get: costPerPg,              sub: "orçamento liquidado × 1M / programas de pós-graduação" },
     { label: "Custo por programa PG nota ≥5", code: "—",      get: costPerPgTop,           sub: "orçamento liquidado × 1M / programas CAPES 5–7" },
-    { label: "Fundo Paraná por aluno",         code: "—",      get: fundoPerStudent,         sub: "valor repassado Fundo Paraná / estudantes · fonte: Base Fundo Paraná" },
   ];
 
   function costCardHtml(ind) {
@@ -10354,14 +10379,6 @@ window.setOrcScatterY = function(key) {
   }
 };
 
-// Median de array numérico
-function _medianArr(arr) {
-  if (!arr.length) return 0;
-  var s = arr.slice().sort(function(a, b) { return a - b; });
-  var m = Math.floor(s.length / 2);
-  return s.length % 2 === 0 ? (s[m - 1] + s[m]) / 2 : s[m];
-}
-
 // Constrói o conteúdo interno do SVG (reutilizado em render + update direto)
 function _buildOrcScatterInner(rows, yKey) {
   var opt = _SCATTER_Y_OPTS[yKey] || _SCATTER_Y_OPTS.occupancy;
@@ -10436,14 +10453,6 @@ function _buildOrcScatterInner(rows, yKey) {
   yLabels += '<text x="' + (PL - 52) + '" y="' + (PT + CH / 2).toFixed(1) + '" text-anchor="middle" fill="#374151" font-size="11" font-weight="600" transform="rotate(-90 ' + (PL - 52) + ' ' + (PT + CH / 2).toFixed(1) + ')">↑ ' + opt.label + '</text>';
 
   var quadLines = "", quadLabels = "";
-  if (hasOfficialQuadrants()) {
-    // Linhas oficiais de quadrante devem ser carregadas da planilha/JSON.
-    var medX = _medianArr(xs), medY = _medianArr(ys);
-    var mxSvg = sx(medX).toFixed(1), mySvg = sy(medY).toFixed(1);
-    quadLines =
-      '<line x1="' + mxSvg + '" y1="' + PT + '" x2="' + mxSvg + '" y2="' + (PT + CH) + '" stroke="#d1d5db" stroke-width="1" stroke-dasharray="5,4"/>' +
-      '<line x1="' + PL + '" y1="' + mySvg + '" x2="' + (PL + CW) + '" y2="' + mySvg + '" stroke="#d1d5db" stroke-width="1" stroke-dasharray="5,4"/>';
-  }
 
   // Regressão linear — fórmula exata conforme spec
   var regLine = "", r2Anno = "";
@@ -10763,5 +10772,16 @@ window.efficiencyBlock = efficiencyBlock;
 
   // Expõe para chamadas externas (e.g., setOrcScatterY não chama render())
   window._injectAnnotations = _injectAnnotations;
+}());
+
+// ── Sincroniza opções do yearFilter com a aba ativa (camada mais externa) ────
+// Deve ficar após todos os overrides anteriores para envolver toda a cadeia.
+(function () {
+  var _prevRenderYear = render;
+  render = function renderWithYearFilterSync() {
+    updateYearFilterOptions(state.activeTab);
+    _prevRenderYear.apply(this, arguments);
+  };
+  window.render = render;
 }());
 
