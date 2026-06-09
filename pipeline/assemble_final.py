@@ -1411,6 +1411,172 @@ for _sig in IEES_PR:
                 _yr_data[_ind] = _v
 
 
+# ── Seção 16 — Base SELO-PR: notas bimestrais por IES ────────────────────────
+#
+# O SELO Paraná (Sistema de Excelência em Liderança Orçamentária) é uma avaliação
+# institucional da qualidade da execução orçamentária e financeira das universidades
+# estaduais, conduzida pela Diretoria de Orçamento Estadual (DOE/SEFA-PR).
+#
+# A avaliação cobre três eixos temáticos:
+#   Eixo I   — Eficiência na Execução Orçamentária (máx. 60 pts)
+#              inds. 1.1 Empenho (12), 1.2 Liquidação (20),
+#                    1.3 Empenho Liquidado (16), 1.4 Foco em Ações Finalísticas (12)
+#   Eixo II  — Racionalidade na Gestão de Créditos Adicionais (máx. 20 pts)
+#              inds. 2.1 Aderência à Programação (6), 2.2 Execução do Superávit (6),
+#                    2.3 Priorização do Crédito do Exercício (8)
+#   Eixo III — Passivos de Exercícios Anteriores (máx. 20 pts)
+#              inds. 3.1 Inscrição em RAP (5), 3.2 Cancelamento de RAP (5),
+#                    3.3 Pagamento de RAP (5), 3.4 Impacto de DEA (5)
+#
+# A nota final (0–100) é obtida pela média ponderada dos resultados bimestrais:
+#   Índice Final = 0,10×B1 + 0,15×B2 + 0,15×B3 + 0,25×B4 + 0,25×B5 + 0,10×B6
+#   B1=jan-fev, B2=jan-abr, B3=jan-jun, B4=jan-ago, B5=jan-out, B6=jan-dez (acumulados)
+#
+# NOTA SOBRE 2025 x 2026:
+#   2025 = exercício finalizado com todos os 6 bimestres fechados. Dado mais confiável.
+#   2026 = exercício em andamento. B1, B2 e B3 são reais; B4, B5 e B6 são projeções
+#          lineares calculadas pelo próprio BI SELO a partir de B3:
+#          B4 = B5 = B3 × (25/15) e B6 = B3 × (10/15).
+#          A nota final de 2026 DEVE ser tratada como estimativa parcial no painel.
+#
+# Fonte: BI SELO-PR (SIAFIC/SEFA) — Sistema de Execução e Liquidação Orçamentária.
+# Arquivo: Base SELO - Paraná.xlsx
+# Abas lidas: Resumo (nota final e por bimestre por IES/ano)
+#             Base_Bimestral (nota por indicador em cada bimestre por IES/ano)
+
+_SELO_FILE = "Base SELO - Paraná.xlsx"
+_SELO_ANOS = {2025, 2026}
+
+# Metadados dos indicadores para exportação contextual ao painel
+_SELO_INDICADORES = {
+    1.1: {"nome": "Empenho",                         "eixo": "I",   "maximo": 12, "polaridade": "maior"},
+    1.2: {"nome": "Liquidação",                       "eixo": "I",   "maximo": 20, "polaridade": "maior"},
+    1.3: {"nome": "Empenho Liquidado",                "eixo": "I",   "maximo": 16, "polaridade": "maior"},
+    1.4: {"nome": "Foco em Ações Finalísticas",       "eixo": "I",   "maximo": 12, "polaridade": "maior"},
+    2.1: {"nome": "Aderência à Programação Orç.",     "eixo": "II",  "maximo":  6, "polaridade": "maior"},
+    2.2: {"nome": "Execução do Superávit Concedido",  "eixo": "II",  "maximo":  6, "polaridade": "maior"},
+    2.3: {"nome": "Priorização do Crédito do Exerc.", "eixo": "II",  "maximo":  8, "polaridade": "maior"},
+    3.1: {"nome": "Inscrição em Restos a Pagar",      "eixo": "III", "maximo":  5, "polaridade": "menor"},
+    3.2: {"nome": "Cancelamento de Restos a Pagar",   "eixo": "III", "maximo":  5, "polaridade": "menor"},
+    3.3: {"nome": "Pagamento de Restos a Pagar",      "eixo": "III", "maximo":  5, "polaridade": "maior"},
+    3.4: {"nome": "Impacto de Despesas de Ex. Ant.",  "eixo": "III", "maximo":  5, "polaridade": "menor"},
+}
+
+_PESOS_BIMESTRE = {"B1": 10, "B2": 15, "B3": 15, "B4": 25, "B5": 25, "B6": 10}
+
+# Flags de completude por ano — documentam a natureza dos dados para o painel
+_SELO_COMPLETUDE = {
+    2025: {
+        "completo": True,
+        "bimestres_reais": ["B1", "B2", "B3", "B4", "B5", "B6"],
+        "bimestres_projetados": [],
+        "nota": "Exercício finalizado. Todos os bimestres fechados. Dado mais confiável.",
+    },
+    2026: {
+        "completo": False,
+        "bimestres_reais": ["B1", "B2", "B3"],
+        "bimestres_projetados": ["B4", "B5", "B6"],
+        "nota": (
+            "Exercício em andamento. B1–B3 são dados reais extraídos do BI SELO. "
+            "B4, B5 e B6 são projeções lineares do próprio BI a partir de B3: "
+            "B4=B5=B3×(25/15) e B6=B3×(10/15). "
+            "A nota final de 2026 deve ser tratada como estimativa parcial."
+        ),
+    },
+}
+
+selo_resumo    = {}  # {(sigla, ano): {notaB1..B6, notaFinal}}
+selo_bimestral = {}  # {(sigla, ano): {bimestre: {ind: nota, notaBimestre}}}
+
+wb_selo = openpyxl.load_workbook(DATA_DIR / _SELO_FILE, read_only=True, data_only=True)
+
+# 16a. Aba Resumo — nota final e por bimestre por IES/ano
+ws_res = wb_selo["Resumo"]
+_res_hdr = list(next(ws_res.iter_rows(min_row=1, max_row=1, values_only=True)))
+_res_col = {h: i for i, h in enumerate(_res_hdr) if h is not None}
+for _row in ws_res.iter_rows(min_row=2, values_only=True):
+    try:
+        _ano = int(_row[_res_col["Ano"]])
+    except (TypeError, ValueError):
+        continue
+    if _ano not in _SELO_ANOS:
+        continue
+    _ies = str(_row[_res_col["Unidade Orçamentária"]]).strip().upper() if _row[_res_col["Unidade Orçamentária"]] else None
+    if _ies not in IEES_PR:
+        continue
+    _k = (_ies, _ano)
+    selo_resumo[_k] = {
+        "notaB1":    safe_float(_row[_res_col.get("Nota B1")]),
+        "notaB2":    safe_float(_row[_res_col.get("Nota B2")]),
+        "notaB3":    safe_float(_row[_res_col.get("Nota B3")]),
+        "notaB4":    safe_float(_row[_res_col.get("Nota B4")]),
+        "notaB5":    safe_float(_row[_res_col.get("Nota B5")]),
+        "notaB6":    safe_float(_row[_res_col.get("Nota B6")]),
+        "notaFinal": safe_float(_row[_res_col.get("Nota Final")]),
+    }
+
+# 16b. Aba Base_Bimestral — nota por indicador em cada bimestre
+_IND_CODES = [1.1, 1.2, 1.3, 1.4, 2.1, 2.2, 2.3, 3.1, 3.2, 3.3, 3.4]
+ws_bim = wb_selo["Base_Bimestral"]
+_bim_hdr = list(next(ws_bim.iter_rows(min_row=1, max_row=1, values_only=True)))
+_bim_col = {str(h): i for i, h in enumerate(_bim_hdr) if h is not None}
+for _row in ws_bim.iter_rows(min_row=2, values_only=True):
+    try:
+        _ano = int(_row[_bim_col["Ano"]])
+    except (TypeError, ValueError):
+        continue
+    if _ano not in _SELO_ANOS:
+        continue
+    _ies_raw = _row[_bim_col.get("Unidade Orçamentária", _bim_col.get("IES", 1))]
+    _ies = str(_ies_raw).strip().upper() if _ies_raw else None
+    if _ies not in IEES_PR:
+        continue
+    _bim = str(_row[_bim_col.get("Bimestre", 3)]).strip() if _row[_bim_col.get("Bimestre", 3)] else None
+    if not _bim:
+        continue
+    _k = (_ies, _ano)
+    if _k not in selo_bimestral:
+        selo_bimestral[_k] = {}
+    _bim_entry = {"notaBimestre": safe_float(_row[_bim_col.get("Nota do Bimestre")])}
+    for _ic in _IND_CODES:
+        _ci = _bim_col.get(str(_ic))
+        _bim_entry[str(_ic)] = safe_float(_row[_ci]) if _ci is not None else None
+    selo_bimestral[_k][_bim] = _bim_entry
+
+wb_selo.close()
+
+# 16c. Validação no stderr
+_SEP16 = "─" * 72
+print("", file=sys.stderr)
+print(_SEP16, file=sys.stderr)
+print("Seção 16 — SELO-PR | Notas por IES/Ano (0–100)", file=sys.stderr)
+print("Fonte: BI SELO-PR (SIAFIC/SEFA)", file=sys.stderr)
+print(_SEP16, file=sys.stderr)
+print(f"{'IES':<12} {'Ano':>5} {'B1':>5} {'B2':>6} {'B3':>6} {'B4':>6} {'B5':>6} {'B6':>5} {'Final':>6} {'Completo':>9}", file=sys.stderr)
+print(_SEP16, file=sys.stderr)
+for _ies in IEES_PR:
+    for _ano in sorted(_SELO_ANOS):
+        _kk = (_ies, _ano)
+        _r = selo_resumo.get(_kk)
+        _comp = "SIM" if _SELO_COMPLETUDE[_ano]["completo"] else "PARCIAL"
+        if not _r:
+            print(f"{_ies:<12} {_ano:>5} {'N/D':>5}", file=sys.stderr)
+        else:
+            print(
+                f"{_ies:<12} {_ano:>5}"
+                f" {(_r['notaB1'] or 0):>5.1f}"
+                f" {(_r['notaB2'] or 0):>6.1f}"
+                f" {(_r['notaB3'] or 0):>6.1f}"
+                f" {(_r['notaB4'] or 0):>6.1f}"
+                f" {(_r['notaB5'] or 0):>6.1f}"
+                f" {(_r['notaB6'] or 0):>5.1f}"
+                f" {(_r['notaFinal'] or 0):>6.1f}"
+                f" {_comp:>9}",
+                file=sys.stderr,
+            )
+print(_SEP16, file=sys.stderr)
+
+
 # ── Saída stdout (retrocompatível) ────────────────────────────────────────────
 
 print(json.dumps({"results": results, "sources": sources}, indent=2, ensure_ascii=False))
@@ -1443,6 +1609,25 @@ precomputed = {
         for iees in IEES
     },
 }
+# seloData: {SIGLA: {str(ano): {notaB1..B6, notaFinal, completude, bimestres: {B1..B6: {inds, notaBimestre}}}}}
+_selo_export = {}
+for _ies in IEES_PR:
+    _selo_export[_ies] = {}
+    for _ano in sorted(_SELO_ANOS):
+        _kk = (_ies, _ano)
+        _res = selo_resumo.get(_kk)
+        _bim = selo_bimestral.get(_kk, {})
+        if _res:
+            _selo_export[_ies][str(_ano)] = {
+                **_res,
+                "completude": _SELO_COMPLETUDE[_ano],
+                "bimestres": _bim,
+            }
+
+precomputed["seloData"]          = _selo_export
+precomputed["seloIndicadores"]   = {str(k): v for k, v in _SELO_INDICADORES.items()}
+precomputed["seloPesosBimestre"] = _PESOS_BIMESTRE
+
 json_path = DATA_DIR / "seti_precomputed.json"
 with open(json_path, "w", encoding="utf-8") as _f:
     json.dump(precomputed, _f, indent=2, ensure_ascii=False)

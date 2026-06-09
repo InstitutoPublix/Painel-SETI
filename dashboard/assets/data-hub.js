@@ -1445,6 +1445,11 @@ async function loadPrecomputedJson() {
     if (data.quartiRefs) window.SETI_QUARTIREFS  = data.quartiRefs;
     // Expõe byYear por IES para série histórica ind81-87 (2024/2025/2026)
     if (data.byYear)     window.SETI_BYEAR       = data.byYear;
+    // SELO-PR — notas bimestrais de qualidade da execução orçamentária por IES
+    // Fonte: BI SELO-PR (SIAFIC/SEFA-PR), extraído via pipeline/assemble_final.py
+    if (data.seloData)        window.SELO_DATA        = data.seloData;
+    if (data.seloIndicadores) window.SELO_INDICADORES = data.seloIndicadores;
+    if (data.seloPesosBimestre) window.SELO_PESOS_BIM = data.seloPesosBimestre;
     registerBase(NOME_BASE + " (ano=" + year + ")", "real", count, inferPrecomputedSourceBases(data));
   } catch (err) {
     const reason = friendlyError(err);
