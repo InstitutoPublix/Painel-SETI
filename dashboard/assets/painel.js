@@ -2620,7 +2620,7 @@ var TAB_YEAR_CONTEXT = {
     nota: "2023 = egressos coorte 2020 cruzados com RAIS 2023 · 2024 = egressos coorte 2021 cruzados com RAIS 2024"
   },
   efficiency: {
-    fonte: "SEFA · Relatório da Despesa 8050",
+    fonte: "SEFA · Relatório da Despesa 8050 · Base SELO-PR",
     nota: "2026 = exercício em andamento — dados parciais até a data de extração"
   },
   performance: {
@@ -2642,7 +2642,17 @@ function updateYearFilterOptions(tabId) {
     sel.appendChild(new Option(label, String(y)));
   });
   const maxYear = Math.max(...years);
-  sel.value = years.includes(currentVal) ? String(currentVal) : String(maxYear);
+
+  // ── default por aba: ao entrar na efficiency, forçar 2026 ─────────────────
+  const TAB_YEAR_DEFAULTS = { efficiency: "2026" };
+  const isTabSwitch = tabId !== updateYearFilterOptions._prevTab;
+  updateYearFilterOptions._prevTab = tabId;
+  const tabDefault = TAB_YEAR_DEFAULTS[tabId];
+  if (isTabSwitch && tabDefault && years.includes(parseInt(tabDefault, 10))) {
+    sel.value = tabDefault;
+  } else {
+    sel.value = years.includes(currentVal) ? String(currentVal) : String(maxYear);
+  }
 
   // ── nota contextual abaixo do select ─────────────────────────────────────
   const ctx = TAB_YEAR_CONTEXT[tabId];
@@ -4083,7 +4093,7 @@ function renderKpis(c) {
   el.kpiGrid.style.display = "";
   el.kpiGrid.innerHTML = overviewKpiDefinitions.map(def => {
     const value = def.get(current);
-    const brTag = showBr ? brBenchmarkTag(def) : "";
+    const brTag = "";
     return `<article class="kpi-card overview-kpi">
       <div class="kpi-head">
         <div class="kpi-label">${def.title}</div>
@@ -7181,15 +7191,15 @@ state.efficiencyDefaultApplied = state.efficiencyDefaultApplied || false;
 state.seloAno = state.seloAno || "2025";
 
 // ── SELO-PR: painel de qualidade da execução orçamentária ────────────────────
-// Fonte: BI SELO-PR (SIAFIC/SEFA) | Manual Metodológico SELO Paraná 2025/2026
-// Avalia 3 eixos, 11 indicadores, nota 0–100, apuração bimestral
+// Fonte: Base SELO - Paraná.xlsx | Nota final pré-calculada pela DOE/SEFA-PR
+// Avalia 3 eixos, 11 indicadores, nota 0–100, apuração anual
 function renderSeloBlock(c) {
   const IES_ORDER = ["UEL","UEM","UENP","UEPG","UNESPAR","UNICENTRO","UNIOESTE"];
-  const BIMS      = ["B1","B2","B3","B4","B5","B6"];
-  const PESOS     = window.SELO_PESOS_BIM || {B1:10,B2:15,B3:15,B4:25,B5:25,B6:10};
   const seloData  = window.SELO_DATA || {};
   const seloInds  = window.SELO_INDICADORES || {};
-  const anoAtivo  = state.seloAno || "2025";
+  const anos = Array.from(new Set(IES_ORDER.flatMap(ies => Object.keys(seloData[ies] || {})))).sort();
+  const anoAtivo  = anos.includes(state.seloAno) ? state.seloAno : (anos[anos.length - 1] || state.seloAno || "2025");
+  state.seloAno = anoAtivo;
 
   // ── helpers de cor ──────────────────────────────────────────────────────────
   function corPct(pct) {
@@ -7206,10 +7216,6 @@ function renderSeloBlock(c) {
   }
 
   // ── seletor de ano — dinâmico; mostra apenas anos presentes no JSON ──────────
-  // Atualmente: somente 2025 (exercício finalizado).
-  // 2026 será reativado automaticamente quando o pipeline o exportar
-  // (remover o filtro `if not _SELO_COMPLETUDE[2026]["completo"]` em assemble_final.py).
-  const anos = Object.keys(seloData[IES_ORDER[0]] || {}).sort();
   const selectorHtml = anos.length <= 1 ? '' : `
     <div style="display:flex;gap:8px;align-items:center;margin-bottom:14px;">
       <span style="font-size:0.80rem;color:var(--text-secondary);font-weight:500;">Exercício:</span>
@@ -7217,21 +7223,61 @@ function renderSeloBlock(c) {
           onclick="state.seloAno='${a}';render();">${a}</button>`).join("")}
     </div>`;
 
-  // banner de aviso: não necessário — somente 2025 (exercício completo) é exposto
-  const notaAviso = '';
+  function esc(v) {
+    return String(v == null ? "" : v).replace(/[&<>"']/g, ch => ({
+      "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"
+    }[ch]));
+  }
+  function diagList(values) {
+    return (values && values.length) ? values.map(esc).join(", ") : "—";
+  }
+  function renderSeloDiagnostico() {
+    const diag = window.SELO_DIAGNOSTICO || {};
+    const preview = Array.isArray(diag.preview) ? diag.preview : [];
+    const previewCols = preview.length ? Object.keys(preview[0]).filter(k => k !== "_raw") : [];
+    const alerts = Array.isArray(diag.alertas) ? diag.alertas : [];
+    const alertHtml = alerts.length
+      ? `<div style="margin:10px 0 0;display:grid;gap:6px;">${alerts.map(a => `<div style="font-size:0.78rem;color:#92400e;background:#fff7ed;border:1px solid #fed7aa;border-radius:6px;padding:6px 8px;">${esc(a)}</div>`).join("")}</div>`
+      : "";
+    const tableHtml = preview.length
+      ? `<div class="table-wrap" style="overflow-x:auto;margin-top:12px;"><table class="data-table" style="font-size:0.74rem;min-width:900px;"><thead><tr>${previewCols.map(col => `<th>${esc(col)}</th>`).join("")}</tr></thead><tbody>${preview.map(row => `<tr>${previewCols.map(col => `<td>${esc(row[col])}</td>`).join("")}</tr>`).join("")}</tbody></table></div>`
+      : `<p class="card-subtitle" style="margin-top:10px;">Prévia indisponível.</p>`;
+    return `<details class="visual-card" style="margin:0 0 1.5rem 0;">
+      <summary style="cursor:pointer;font-weight:700;color:var(--text-primary);">Diagnóstico da Base SELO-PR</summary>
+      <div style="margin-top:12px;">
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px;">
+          <div><strong>Total de linhas</strong><br><span>${esc(diag.linhas)}</span></div>
+          <div><strong>Total de colunas</strong><br><span>${esc(diag.colunas)}</span></div>
+          <div><strong>Anos disponíveis</strong><br><span>${diagList(diag.anos)}</span></div>
+          <div><strong>Unidades disponíveis</strong><br><span>${diagList(diag.unidades)}</span></div>
+          <div><strong>Bimestres disponíveis</strong><br><span>${diagList(diag.bimestres)}</span></div>
+          <div><strong>Indicadores disponíveis</strong><br><span>${diagList(diag.indicadores)}</span></div>
+        </div>
+        ${alertHtml}
+        ${tableHtml}
+      </div>
+    </details>`;
+  }
 
-  // ── tabela de notas por bimestre ────────────────────────────────────────────
-  const bimRows = IES_ORDER.map(ies => {
+  // ── definição dos eixos ─────────────────────────────────────────────────────
+  const EIXOS_DEF = [
+    {id:"I",   pts:60, inds:["1.1","1.2","1.3","1.4"]},
+    {id:"II",  pts:20, inds:["2.1","2.2","2.3"]},
+    {id:"III", pts:20, inds:["3.1","3.2","3.3","3.4"]},
+  ];
+
+  // ── tabela anual por eixo ───────────────────────────────────────────────────
+  const eixoRows = IES_ORDER.map(ies => {
     const d = (seloData[ies] || {})[anoAtivo];
-    if (!d) return `<tr><td><strong>${ies}</strong></td>${BIMS.map(()=>`<td style="text-align:center;color:var(--text-secondary)">—</td>`).join("")}<td>—</td></tr>`;
-    const bimCells = BIMS.map(b => {
-      const nota = d[`nota${b}`];
-      const max  = PESOS[b];
-      const pct  = nota != null ? nota/max*100 : null;
-      const cor  = corPct(pct);
-      return `<td style="text-align:center;padding:6px 4px;">
-        <div style="font-weight:600;font-size:0.88rem;">${nota!=null?nota.toFixed(1).replace(".",","):"—"}</div>
-        <div style="font-size:0.68rem;color:var(--text-secondary);margin-top:1px;">${pct!=null?Math.round(pct)+'%':''}</div>
+    if (!d) return `<tr><td><strong>${ies}</strong></td>${EIXOS_DEF.map(()=>`<td style="text-align:center;color:var(--text-secondary)">—</td>`).join("")}<td>—</td></tr>`;
+    const inds = d.indicadores || {};
+    const eixoCells = EIXOS_DEF.map(e => {
+      const obtido = e.inds.reduce((s, k) => s + (inds[k] || 0), 0);
+      const pct    = obtido / e.pts * 100;
+      const cor    = corPct(pct);
+      return `<td style="text-align:center;padding:6px 8px;">
+        <div style="font-weight:600;font-size:0.88rem;">${obtido.toFixed(1).replace(".",",")}
+          <span style="font-size:0.70rem;font-weight:400;color:var(--text-secondary);">/${e.pts}</span></div>
         <div style="height:3px;border-radius:2px;background:${cor};margin-top:3px;"></div>
       </td>`;
     }).join("");
@@ -7239,7 +7285,7 @@ function renderSeloBlock(c) {
     const corFinal = corNota(nf);
     return `<tr>
       <td style="font-weight:600;white-space:nowrap;">${ies}</td>
-      ${bimCells}
+      ${eixoCells}
       <td style="text-align:center;padding:6px 8px;">
         <span style="font-size:1.05rem;font-weight:700;color:${corFinal};">${nf!=null?Math.round(nf):"—"}</span>
         <span style="font-size:0.70rem;color:var(--text-secondary);display:block;">/&nbsp;100</span>
@@ -7280,38 +7326,35 @@ function renderSeloBlock(c) {
       ${mediaGrupo?`<span style="border-left:2px solid var(--gray-400);padding-left:8px;">linha vertical = m&#xe9;dia (${Math.round(mediaGrupo)})</span>`:''}
     </div>`;
 
-  // tabela de variação removida — 2026 não exposto no painel (exercício incompleto)
-
-  // ── aproveitamento por eixo (2025 — dado completo) ─────────────────────────
+  // ── diagnóstico por eixo ────────────────────────────────────────────────────
   const EIXOS_META = [
     {
-      id: "I", nome: "Eficiência na Execução Orçamentária", pts: 60,
+      id: "I", nome: "Efici&#xea;ncia na Execu&#xe7;&#xe3;o Or&#xe7;ament&#xe1;ria", pts: 60,
       inds: ["1.1","1.2","1.3","1.4"],
-      descricao: "Mede se a universidade converteu sua dotação orçamentária em despesas empenhadas e liquidadas ao longo do exercício. É o eixo de maior peso (60 pts) e onde todas as universidades têm maior dificuldade — especialmente nos primeiros bimestres, quando contratações e licitações ainda estão em andamento.",
-      destaque: "O indicador 1.4 (Foco em Ações Finalísticas) atingiu quase 100% em todas as IES em 2025 — evidenciando que o gasto universitário está estruturalmente direcionado à missão acadêmica (ensino, pesquisa e extensão)."
+      descricao: "Mede se a universidade converteu sua dota&#xe7;&#xe3;o or&#xe7;ament&#xe1;ria em despesas empenhadas e liquidadas ao longo do exerc&#xed;cio. &#xc9; o eixo de maior peso (60 pts) — avalia empenho, liquida&#xe7;&#xe3;o, empenho liquidado e foco em a&#xe7;&#xf5;es final&#xed;sticas.",
+      destaque: "O indicador 1.4 (Foco em A&#xe7;&#xf5;es Final&#xed;sticas) atingiu quase 100% em todas as IES em 2025 — evidenciando que o gasto universit&#xe1;rio est&#xe1; estruturalmente direcionado &#xe0; miss&#xe3;o acad&#xea;mica (ensino, pesquisa e extens&#xe3;o)."
     },
     {
-      id: "II", nome: "Racionalidade na Gestão de Créditos Adicionais", pts: 20,
+      id: "II", nome: "Racionalidade na Gest&#xe3;o de Cr&#xe9;ditos Adicionais", pts: 20,
       inds: ["2.1","2.2","2.3"],
-      descricao: "Avalia a qualidade do planejamento orçamentário inicial e o uso responsável de créditos suplementares ao longo do exercício. Um planejamento mais preciso reduz a necessidade de suplementações e de dependência de superávit financeiro de anos anteriores.",
-      destaque: "Em 2025, a maior parte das IES obteve pontuação máxima no indicador 2.3 (Priorização do Crédito do Exercício), refletindo uso prioritário de dotação própria antes de recorrer a créditos adicionais."
+      descricao: "Avalia a qualidade do planejamento or&#xe7;ament&#xe1;rio inicial e o uso respons&#xe1;vel de cr&#xe9;ditos suplementares ao longo do exerc&#xed;cio. Um planejamento mais preciso reduz a necessidade de suplementa&#xe7;&#xf5;es e de depend&#xea;ncia de super&#xe1;vit financeiro de anos anteriores.",
+      destaque: "Em 2025, a maior parte das IES obteve pontua&#xe7;&#xe3;o m&#xe1;xima no indicador 2.3 (Prioriza&#xe7;&#xe3;o do Cr&#xe9;dito do Exerc&#xed;cio), refletindo uso priorit&#xe1;rio de dota&#xe7;&#xe3;o pr&#xf3;pria antes de recorrer a cr&#xe9;ditos adicionais."
     },
     {
-      id: "III", nome: "Passivos de Exercícios Anteriores", pts: 20,
+      id: "III", nome: "Passivos de Exerc&#xed;cios Anteriores", pts: 20,
       inds: ["3.1","3.2","3.3","3.4"],
-      descricao: "Analisa a gestão dos Restos a Pagar — despesas empenhadas mas não pagas até 31 de dezembro. Volume elevado de RAP indica que compromissos são transferidos para o exercício seguinte, pressionando o orçamento futuro. Este é o eixo com melhor desempenho médio das universidades.",
-      destaque: "Em 2025, as IES apresentaram bom desempenho no indicador 3.3 (Pagamento de RAP), indicando comprometimento com a liquidação de passivos inscritos em exercícios anteriores."
+      descricao: "Analisa a gest&#xe3;o dos Restos a Pagar — despesas empenhadas mas n&#xe3;o pagas at&#xe9; 31 de dezembro. Volume elevado de RAP indica que compromissos s&#xe3;o transferidos para o exerc&#xed;cio seguinte, pressionando o or&#xe7;amento futuro.",
+      destaque: "Em 2025, as IES apresentaram bom desempenho no indicador 3.3 (Pagamento de RAP), indicando comprometimento com a liquida&#xe7;&#xe3;o de passivos inscritos em exerc&#xed;cios anteriores."
     }
   ];
 
   const eixoCards = EIXOS_META.map(eixo => {
     let totalObt = 0, totalMax = 0;
     IES_ORDER.forEach(ies => {
-      const d25 = (seloData[ies]||{})["2025"];
-      if (!d25?.bimestres) return;
-      const b6 = d25.bimestres["B6"] || {};
+      const dAnual = (seloData[ies]||{})[anoAtivo];
+      if (!dAnual?.indicadores) return;
       eixo.inds.forEach(ind => {
-        const notaInd = b6[ind];
+        const notaInd = dAnual.indicadores[ind];
         const metaInd = seloInds[ind];
         if (notaInd!=null && metaInd) { totalObt += notaInd; totalMax += metaInd.maximo; }
       });
@@ -7326,7 +7369,7 @@ function renderSeloBlock(c) {
         </div>
         ${aprov!=null?`<div style="text-align:center;min-width:64px;">
           <div style="font-size:1.4rem;font-weight:800;color:${corAprov};">${aprov}%</div>
-          <div style="font-size:0.65rem;color:var(--text-secondary);">aproveit.<br>m&#xe9;dio 2025</div>
+          <div style="font-size:0.65rem;color:var(--text-secondary);">aproveit.<br>m&#xe9;dio ${anoAtivo}</div>
         </div>`:''}
       </div>
       <div style="font-size:0.78rem;color:var(--text-secondary);line-height:1.6;margin-bottom:8px;">${eixo.descricao}</div>
@@ -7344,40 +7387,39 @@ function renderSeloBlock(c) {
       <strong style="display:block;color:var(--text-primary);margin-bottom:4px;">O que &#xe9; o SELO Paran&#xe1;?</strong>
       O SELO Paran&#xe1; (Sistema de Excel&#xea;ncia em Lideran&#xe7;a Or&#xe7;ament&#xe1;ria) &#xe9; uma avalia&#xe7;&#xe3;o da
       <strong>qualidade da execu&#xe7;&#xe3;o or&#xe7;ament&#xe1;ria</strong> das universidades estaduais, conduzida pela
-      Diretoria de Or&#xe7;amento Estadual (DOE/SELO-PR). A nota final (escala 0&ndash;100) combina
-      11 indicadores organizados em 3 eixos tem&#xe1;ticos, apurados bimestralmente com dados do
+      Diretoria de Or&#xe7;amento Estadual (DOE/SEFA-PR). A nota final (escala 0&ndash;100) &#xe9; calculada
+      pela DOE/SEFA com base em 11 indicadores organizados em 3 eixos tem&#xe1;ticos, com dados do
       SIAFIC &mdash; o sistema oficial de execu&#xe7;&#xe3;o or&#xe7;ament&#xe1;ria do Estado.<br><br>
       <strong>Como interpretar a nota:</strong> O SELO mede o <em>ritmo e a qualidade</em> da execu&#xe7;&#xe3;o &mdash;
       diferente do Relat&#xf3;rio 8050, que mede o <em>volume</em>. Uma universidade pode ter or&#xe7;amento
       elevado (8050) e nota SELO baixa se executa de forma concentrada no final do ano ou gera
       muitos Restos a Pagar. A leitura combinada das duas fontes oferece diagn&#xf3;stico mais completo.
       <br><br>
-      <strong>Fonte:</strong> BI SELO-PR (SIAFIC/SELO-PR) &middot;
-      Manual Metodol&#xf3;gico SELO Paran&#xe1; 2025 &middot; Extra&#xed;do via pipeline SETI/Instituto Publix.
-      Painel exibe o exerc&#xed;cio 2025 (completo). O exerc&#xed;cio 2026 ser&#xe1; incorporado quando finalizado.
+      <strong>Fonte:</strong> Base SELO &mdash; Paran&#xe1; (DOE/SEFA-PR) &middot;
+      Extra&#xed;do via pipeline SETI/Instituto Publix. Exerc&#xed;cio ${anoAtivo}.
     </div>`;
 
   // ── montagem final ──────────────────────────────────────────────────────────
   return `
     ${notaMetodologica}
     ${selectorHtml}
-    ${notaAviso}
+    ${renderSeloDiagnostico()}
 
     <div style="display:grid;grid-template-columns:1fr 300px;gap:1.5rem;align-items:start;margin-bottom:1.5rem;">
       <article class="visual-card">
-        <h3>Notas bimestrais por IEES</h3>
+        <h3>Pontuação por Eixo Temático — ${anoAtivo}</h3>
         <p class="card-subtitle">
-          Nota obtida em cada bimestre e percentual em rela&#xe7;&#xe3;o ao m&#xe1;ximo do bimestre
-          (B1=10 pts, B2/B3=15 pts, B4/B5=25 pts, B6=10 pts). Exerc&#xed;cio 2025 &mdash; completo.
+          Pontua&#xe7;&#xe3;o obtida por cada IEES em cada eixo (pts obtidos / pts m&#xe1;ximos).
+          Nota final pr&#xe9;-calculada pela DOE/SEFA-PR.
         </p>
         <div class="table-wrap" style="overflow-x:auto;">
-          <table class="data-table" style="min-width:560px;font-size:0.82rem;">
+          <table class="data-table" style="font-size:0.82rem;">
             <thead><tr>
               <th>IEES</th>
-              ${BIMS.map(b=>`<th style="text-align:center;">${b}<br><span style="font-weight:400;font-size:0.68rem;color:var(--text-secondary);">m&#xe1;x ${PESOS[b]}</span></th>`).join("")}
+              ${EIXOS_DEF.map(e=>`<th style="text-align:center;">Eixo ${e.id}<br><span style="font-weight:400;font-size:0.68rem;color:var(--text-secondary);">m&#xe1;x ${e.pts}</span></th>`).join("")}
               <th style="text-align:center;">Nota<br>Final</th>
             </tr></thead>
-            <tbody>${bimRows}</tbody>
+            <tbody>${eixoRows}</tbody>
           </table>
         </div>
       </article>
@@ -7386,21 +7428,20 @@ function renderSeloBlock(c) {
         <article class="visual-card">
           <h3>Ranking &mdash; Nota Final</h3>
           <p class="card-subtitle">
-            Posi&#xe7;&#xe3;o relativa das IEES no exerc&#xed;cio 2025. Escala 0&ndash;100.
-            ${mediaGrupo?'A linha vertical indica a m&#xe9;dia do grupo ('+Math.round(mediaGrupo)+' pts). Fonte: BI SELO-PR (SIAFIC/SEFA).':''}
+            Posi&#xe7;&#xe3;o relativa das IEES no exerc&#xed;cio ${anoAtivo}. Escala 0&ndash;100.
+            ${mediaGrupo?'A linha vertical indica a m&#xe9;dia do grupo ('+Math.round(mediaGrupo)+' pts).':''}
           </p>
           <div style="margin-top:12px;">${barRows||'<p class="card-subtitle">Sem dados.</p>'}</div>
           ${legendaCor}
         </article>
-
       </div>
     </div>
 
     <article class="visual-card" style="margin-top:0;">
       <h3>Diagn&#xf3;stico por Eixo Tem&#xe1;tico</h3>
       <p class="card-subtitle">
-        Aproveitamento m&#xe9;dio das 7 IEES-PR em cada eixo, calculado sobre o exerc&#xed;cio finalizado
-        de 2025. Cada eixo mede uma dimens&#xe3;o distinta da qualidade or&#xe7;ament&#xe1;ria.
+        Aproveitamento m&#xe9;dio das 7 IEES-PR em cada eixo. Cada eixo mede uma
+        dimens&#xe3;o distinta da qualidade or&#xe7;ament&#xe1;ria.
       </p>
       <div style="margin-top:14px;">${eixoCards}</div>
     </article>`;
@@ -7815,13 +7856,51 @@ function renderEfficiencyRankingTable(rows) {
   })).filter(x => isValidNumber(x.idx)).sort((a, b) => b.idx - a.idx);
   if (!data.length) return `<p class="card-subtitle">Índice de eficiência não calculável para o recorte selecionado.</p>`;
   const maxIdx = Math.max(...data.map(x => x.idx));
+
+  // SELO: lê notaFinal do window.SELO_DATA (já carregado pelo data-hub)
+  // Usa o ano ativo quando existir; caso contrário, usa o ano mais recente disponível.
+  const _seloD = window.SELO_DATA || {};
+  const _todosAnosSelo = Array.from(new Set(Object.values(_seloD).flatMap(entry => Object.keys(entry || {})))).sort();
+  const _seloAnoTabela = _todosAnosSelo.includes(state.seloAno)
+    ? state.seloAno
+    : (_todosAnosSelo[_todosAnosSelo.length - 1] || "2025");
+  function _seloNota(sigla) {
+    const entry = _seloD[sigla];
+    if (!entry) return null;
+    const v = entry[_seloAnoTabela]?.notaFinal;
+    return v != null ? v : null;
+  }
+
+  // ranking SELO por posição relativa entre as IES do recorte com nota disponível
+  const seloRanking = [...data.map(x => x.u)]
+    .filter(u => _seloNota(u.sigla) != null)
+    .sort((a, b) => _seloNota(b.sigla) - _seloNota(a.sigla));
+  const seloTotal = seloRanking.length;
+  const seloPos = {};
+  seloRanking.forEach((u, i) => { seloPos[u.sigla] = i + 1; });
+
   const rows_html = data.map((item, i) => {
     const cls = classifyEfficiency(item.idx);
     const barW = clamp(item.idx / Math.max(maxIdx, 0.01) * 100, 4, 100);
+    const seloNota = _seloNota(item.u.sigla);
+    const pos = seloPos[item.u.sigla] ?? null;
+    const seloColor = pos === null ? "var(--gray-300,#d1d5db)"
+      : pos <= 2                ? "#2e7d32"
+      : pos <= seloTotal - 2    ? "#5c7a9e"
+      : "#e65100";
+    const seloCell = seloNota != null
+      ? `<div title="Posição ${pos}º de ${seloTotal} no ranking SELO-PR ${_seloAnoTabela}. Nota Final da Unidade calculada pela SEFA com base na execução orçamentária acumulada do exercício." style="display:flex;flex-direction:column;align-items:center;gap:3px;">
+          <span style="font-weight:700;font-size:0.90rem;color:${seloColor};">${Math.round(seloNota)}</span>
+          <div style="width:52px;height:4px;background:var(--gray-100,#f3f4f6);border-radius:2px;overflow:hidden;">
+            <div style="width:${seloNota}%;height:100%;background:${seloColor};border-radius:2px;"></div>
+          </div>
+        </div>`
+      : `<span style="color:var(--text-secondary)">—</span>`;
     return `<tr class="${cls.cls}"><td>${i + 1}º</td><td><strong>${item.u.sigla}</strong></td>
       <td>${item.cps != null ? formatCurrency(item.cps) : "—"}</td>
       <td>${item.api != null ? item.api.toFixed(1).replace(".", ",") : "—"}</td>
       <td><div class="eff-bar-wrap ${cls.cls}"><div class="eff-bar-track"><div class="eff-bar-fill" style="width:${barW}%"></div></div><span>${item.idx.toFixed(2).replace(".", ",")}</span></div></td>
+      <td style="text-align:center;">${seloCell}</td>
       <td><span class="eff-badge">${cls.label}</span></td></tr>`;
   }).join("");
   return `<div class="table-wrap"><table class="pilot-ranking-table">
@@ -7829,6 +7908,7 @@ function renderEfficiencyRankingTable(rows) {
       <th><span class="eff-th-info" tabindex="0">Custo/aluno ⓘ<span class="eff-th-tooltip"><strong>Custo por aluno</strong><br>Orçamento total liquidado pela universidade no ano dividido pelo número de alunos com matrícula ativa. Reflete o investimento médio por estudante efetivamente matriculado — não considera vagas ofertadas.<br><br><em>Fontes: Despesa liquidada — Relatório da Despesa 8050 (SETI/SEFA, 2024); Matrículas ativas (QT_MAT) — INEP/Censo da Educação Superior (2024).</em></span></span></th>
       <th><span class="eff-th-info" tabindex="0">Índice desempenho ⓘ<span class="eff-th-tooltip"><strong>Índice de Desempenho Acadêmico</strong><br>Score composto (0–100) calculado por média ponderada de seis indicadores:<br>• Conclusão: 25% &nbsp;• Permanência (1 − evasão): 20%<br>• Ocupação de vagas: 15% &nbsp;• % Docentes doutores: 15%<br>• Inserção profissional: 15% &nbsp;• Conceito CAPES médio: 10%<br>Quando um indicador está ausente, o peso é redistribuído entre os demais.<br><br><em>Fontes: INEP/Censo da Educação Superior, CAPES/Sucupira, bases administrativas SETI/PR.</em></span></span></th>
       <th><span class="eff-th-info" tabindex="0">Índice eficiência ⓘ<span class="eff-th-tooltip"><strong>Índice de Eficiência Acadêmico-Orçamentária</strong><br>Razão entre o desempenho relativo e o custo relativo da universidade em relação à média do conjunto: <em>desempenho da IES ÷ média do grupo</em> dividido por <em>custo da IES ÷ média do grupo</em>.<br>Valores acima de 1,0 indicam que a universidade entrega desempenho proporcionalmente superior ao seu custo.<br>• Acima de 1,10 → Alta eficiência<br>• Entre 0,90 e 1,10 → Eficiência proporcional<br>• Abaixo de 0,90 → Baixa eficiência<br><br><em>Fontes: calculado internamente a partir do Índice de Desempenho e do Custo/Aluno normalizados pela média das IEES-PR do recorte.</em></span></span></th>
+      <th style="text-align:center;"><span class="eff-th-info" tabindex="0">SELO ${_seloAnoTabela} ⓘ<span class="eff-th-tooltip"><strong>Nota Final SELO-PR</strong><br>Nota final SELO-PR — Sistema de Excelência em Liderança Orçamentária (DOE/SEFA). Escala 0–100.<br><br>Composta por 11 indicadores em 3 eixos: Eficiência na Execução Orçamentária (60 pts), Racionalidade na Gestão de Créditos Adicionais (20 pts) e Passivos de Exercícios Anteriores (20 pts).<br><br>A cor indica posição relativa entre as IES do recorte: verde = 1º–2º &nbsp; azul-acinzentado = posições intermediárias &nbsp; laranja = últimas posições.<br><br><em>Fonte: Base SELO — Paraná (DOE/SEFA-PR), exercício ${_seloAnoTabela}.</em></span></span></th>
       <th>Classificação</th></tr></thead>
     <tbody>${rows_html}</tbody>
   </table></div>`;
@@ -8153,6 +8233,21 @@ function efficiencyBlock(title, c) {
         <p class="card-subtitle" style="margin-top:2px;font-size:11px;color:var(--gray-500)">
           ⓘ Custo/aluno calculado sobre <strong>matrículas ativas</strong> (QT_MAT · INEP/Censo da Educação Superior) — não sobre vagas ofertadas.
         </p>
+        <div class="ranking-note">
+          <p><strong>Como ler esta tabela:</strong></p>
+          <ul>
+            <li><strong>Custo/Aluno:</strong> orçamento liquidado da IES no ano (R$) dividido pelo total de matrículas de graduação presencial — reflete o investimento médio por estudante efetivamente matriculado (fontes: Relatório da Despesa 8050 · Base SEFA-PR; matrículas QT_MAT · INEP/Censo da Educação Superior).</li>
+            <li><strong>Índice de Desempenho:</strong> pontuação sintética de resultado acadêmico, calculada como média ponderada: ocupação de vagas (15%) + taxa de concluintes (15%) + permanência — 100 menos evasão — (12%) + docentes com doutorado (14%) + captação CNPq normalizada entre 900 e 1.900 (12%) + conceito CAPES normalizado entre 3,2 e 5 (10%) + taxa de inserção profissional (12%) + salário dos egressos normalizado entre R$&nbsp;4.500 e R$&nbsp;6.500 (10%). Reúne indicadores de oferta, permanência, qualificação docente, pesquisa e inserção profissional.</li>
+            <li><strong>Índice de Eficiência:</strong> razão entre o desempenho relativo e o custo relativo da IES em relação à média do grupo — <em>(desempenho IES ÷ média grupo) ÷ (custo IES ÷ média grupo)</em>. Valor acima de 1,0 indica que a IES entrega resultado acima da média com custo igual ou inferior; valor abaixo de 1,0 indica o oposto.</li>
+            <li><strong>Classificação:</strong>
+              <ul>
+                <li><em>Alta eficiência</em> — Índice de Eficiência &gt; 1,10 (desempenho claramente acima do esperado dado o custo).</li>
+                <li><em>Eficiência proporcional</em> — Índice entre 0,90 e 1,10 (desempenho compatível com o investimento realizado).</li>
+                <li><em>Baixa eficiência</em> — Índice &lt; 0,90 (desempenho abaixo do esperado para o nível de custo).</li>
+              </ul>
+            </li>
+          </ul>
+        </div>
         ${renderEfficiencyRankingTable(rows)}
       </div>
       ${renderComparadorDireto(c)}
@@ -8559,8 +8654,8 @@ function budgetContextAlerts(c, resultOption) {
   rows.forEach(row => {
     const quad = budgetQuadrant(row);
     const profile = row.u.groups.v6 || "";
-    if (quad.code === "q4" && (profile.includes("Expansivo") || profile.includes("Autônomo"))) alerts.push(["alert-danger", "⚠", row.u.sigla, "Alto orçamento com resultado abaixo do cluster — atenção."]);
-    if (quad.code === "q3" && profile.includes("Restritivo")) alerts.push(["alert-info", "i", row.u.sigla, "Restrição orçamentária estrutural pode explicar o posicionamento — analisar junto com corpo docente."]);
+    if (quad.code === "q4" && (profile.includes("Expansivo") || profile.includes("Autônomo"))) alerts.push(["alert-danger", "⚠", row.u.sigla, "Perfil orçamentário expansivo (V6): orçamento atualizado significativamente superior à dotação inicial, indicando uso intenso de suplementações. Verificar sustentabilidade e recorrência das fontes que financiam as suplementações."]);
+    if (quad.code === "q3" && profile.includes("Restritivo")) alerts.push(["alert-info", "i", row.u.sigla, profile.includes("Moderado-Restritivo") ? "Perfil orçamentário moderado-restritivo (V6): execução dentro dos limites, mas com margem reduzida de flexibilidade. Monitorar evolução da dotação atualizada e do grau de contingenciamento nos próximos ciclos." : "Perfil orçamentário restritivo (V6): orçamento atualizado sistematicamente inferior à dotação inicial, com baixa margem para suplementações. Isso tende a comprimir investimentos em pessoal, infraestrutura e custeio — o que pode justificar resultados abaixo da média em indicadores que dependem de capacidade instalada, como ocupação docente e oferta de vagas."]);
     if (budgetMetrics(row.u).executionRate < 80) alerts.push(["alert-warn", "⚠", row.u.sigla, `${indicatorName(81)} abaixo do esperado (${formatPercent(budgetMetrics(row.u).executionRate)}).`]);
   });
   if (!alerts.length) alerts.push(["alert-ok", "✓", "Sistema", "Nenhum alerta crítico no recorte orçamentário ativo."]);
@@ -9370,7 +9465,7 @@ function resetAllFilters(options = {}) {
 }
 window.resetAllFilters = resetAllFilters;
 
-const TABS_WITH_BRASIL = new Set(["overview","comparison","access","retention","quality","employment"]);
+const TABS_WITH_BRASIL = new Set(["overview","comparison","access","retention","quality"]);
 
 function activateTab(tabId, options = {}) {
   const nextTab = tabInfo[tabId] ? tabId : "overview";

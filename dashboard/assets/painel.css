@@ -2401,12 +2401,22 @@ body {
 
 /* Aba 1 - Visão geral por indicadores e cluster */
 .overview-kpi-grid {
-  grid-template-columns: repeat(4, minmax(210px, 1fr));
+  grid-template-columns: repeat(4, minmax(168px, 1fr));
   align-items: stretch;
 }
 
 .overview-kpi {
-  min-height: 176px;
+  min-height: 140px;
+  padding: 12px;
+}
+
+.overview-kpi .kpi-value {
+  font-size: 22px;
+  margin-bottom: 6px;
+}
+
+.overview-kpi .kpi-label {
+  font-size: 10px;
 }
 
 .overview-kpi .kpi-head {
@@ -7182,3 +7192,19 @@ details.ind-detail-accordion .catalog-card { border: none; border-radius: 0; mar
   font-style: italic;
   opacity: 0.85;
 }
+
+/* ── Ranking Note ──────────────────────────────────────────────────────────── */
+.ranking-note {
+  font-size: 0.78rem;
+  color: var(--color-text-secondary, #555);
+  background: var(--color-bg-subtle, #f8f9fa);
+  border-left: 3px solid var(--color-accent, #4a90d9);
+  border-radius: 4px;
+  padding: 10px 14px;
+  margin: 6px 0 16px 0;
+  line-height: 1.6;
+}
+.ranking-note p { margin: 0 0 6px 0; }
+.ranking-note ul { margin: 0 0 0 16px; padding: 0; }
+.ranking-note li { margin-bottom: 4px; }
+.ranking-note ul ul { margin-top: 4px; }

@@ -12,6 +12,7 @@ Saída:
 import json
 import sys
 import datetime
+import unicodedata
 import openpyxl
 from pathlib import Path
 
@@ -94,6 +95,7 @@ INDICATORS = [
     "docTidePctNaoAtrib", "docChMedia", "docCresAut", "docCresUtil",
     "docCresSaldo", "docCresOciosidade", "docCresPartic",
     "egressosMunicipios",
+    "seloNotaFinal",
 ]
 
 
@@ -1411,11 +1413,11 @@ for _sig in IEES_PR:
                 _yr_data[_ind] = _v
 
 
-# ── Seção 16 — Base SELO-PR: notas bimestrais por IES ────────────────────────
+# ── Seção 16 — Base SELO-PR: avaliação anual da execução orçamentária ────────
 #
 # O SELO Paraná (Sistema de Excelência em Liderança Orçamentária) é uma avaliação
 # institucional da qualidade da execução orçamentária e financeira das universidades
-# estaduais, conduzida pela Diretoria de Orçamento Estadual (DOE/SELO-PR).
+# estaduais, conduzida pela Diretoria de Orçamento Estadual (DOE/SEFA-PR).
 #
 # A avaliação cobre três eixos temáticos:
 #   Eixo I   — Eficiência na Execução Orçamentária (máx. 60 pts)
@@ -1428,150 +1430,407 @@ for _sig in IEES_PR:
 #              inds. 3.1 Inscrição em RAP (5), 3.2 Cancelamento de RAP (5),
 #                    3.3 Pagamento de RAP (5), 3.4 Impacto de DEA (5)
 #
-# A nota final (0–100) é obtida pela média ponderada dos resultados bimestrais:
-#   Índice Final = 0,10×B1 + 0,15×B2 + 0,15×B3 + 0,25×B4 + 0,25×B5 + 0,10×B6
-#   B1=jan-fev, B2=jan-abr, B3=jan-jun, B4=jan-ago, B5=jan-out, B6=jan-dez (acumulados)
+# Nota final (0–100): pré-calculada pela DOE/SEFA e disponível na aba
+# Nota_Final_Unidade. Cada indicador tem nota individual na aba Base_Indicadores.
 #
-# NOTA SOBRE 2025 x 2026:
-#   2025 = exercício finalizado com todos os 6 bimestres fechados. Dado mais confiável.
-#   2026 = exercício em andamento. B1, B2 e B3 são reais; B4, B5 e B6 são projeções
-#          lineares calculadas pelo próprio BI SELO a partir de B3:
-#          B4 = B5 = B3 × (25/15) e B6 = B3 × (10/15).
-#          A nota final de 2026 DEVE ser tratada como estimativa parcial no painel.
-#
-# Fonte: BI SELO-PR (SIAFIC/SEFA) — Sistema de Execução e Liquidação Orçamentária.
-# Arquivo: Base SELO - Paraná.xlsx
-# Abas lidas: Resumo (nota final e por bimestre por IES/ano)
-#             Base_Bimestral (nota por indicador em cada bimestre por IES/ano)
+# Fonte: Base SELO - Paraná.xlsx
+# Abas lidas: Base_Indicadores, Nota_Final_Unidade
 
-_SELO_FILE = "Base SELO - Paraná.xlsx"
-_SELO_ANOS = {2025, 2026}
+_SELO_FILE_CANDIDATES = [
+    "SELO_PR_Base_Indicadores_Consolidada_uma_aba.xlsx",
+    "SELO_PR_Base_Indicadores_Consolidada.xlsx",
+    "Base SELO - Paraná.xlsx",
+]
 
-# Metadados dos indicadores para exportação contextual ao painel
 _SELO_INDICADORES = {
-    1.1: {"nome": "Empenho",                         "eixo": "I",   "maximo": 12, "polaridade": "maior"},
-    1.2: {"nome": "Liquidação",                       "eixo": "I",   "maximo": 20, "polaridade": "maior"},
-    1.3: {"nome": "Empenho Liquidado",                "eixo": "I",   "maximo": 16, "polaridade": "maior"},
-    1.4: {"nome": "Foco em Ações Finalísticas",       "eixo": "I",   "maximo": 12, "polaridade": "maior"},
-    2.1: {"nome": "Aderência à Programação Orç.",     "eixo": "II",  "maximo":  6, "polaridade": "maior"},
-    2.2: {"nome": "Execução do Superávit Concedido",  "eixo": "II",  "maximo":  6, "polaridade": "maior"},
-    2.3: {"nome": "Priorização do Crédito do Exerc.", "eixo": "II",  "maximo":  8, "polaridade": "maior"},
-    3.1: {"nome": "Inscrição em Restos a Pagar",      "eixo": "III", "maximo":  5, "polaridade": "menor"},
-    3.2: {"nome": "Cancelamento de Restos a Pagar",   "eixo": "III", "maximo":  5, "polaridade": "menor"},
-    3.3: {"nome": "Pagamento de Restos a Pagar",      "eixo": "III", "maximo":  5, "polaridade": "maior"},
-    3.4: {"nome": "Impacto de Despesas de Ex. Ant.",  "eixo": "III", "maximo":  5, "polaridade": "menor"},
+    "1.1": {"nome": "Empenho",                         "eixo": "I",   "maximo": 12, "polaridade": "maior"},
+    "1.2": {"nome": "Liquidação",                       "eixo": "I",   "maximo": 20, "polaridade": "maior"},
+    "1.3": {"nome": "Empenho Liquidado",                "eixo": "I",   "maximo": 16, "polaridade": "maior"},
+    "1.4": {"nome": "Foco em Ações Finalísticas",       "eixo": "I",   "maximo": 12, "polaridade": "maior"},
+    "2.1": {"nome": "Aderência à Programação Orç.",     "eixo": "II",  "maximo":  6, "polaridade": "maior"},
+    "2.2": {"nome": "Execução do Superávit Concedido",  "eixo": "II",  "maximo":  6, "polaridade": "maior"},
+    "2.3": {"nome": "Priorização do Crédito do Exerc.", "eixo": "II",  "maximo":  8, "polaridade": "maior"},
+    "3.1": {"nome": "Inscrição em Restos a Pagar",      "eixo": "III", "maximo":  5, "polaridade": "menor"},
+    "3.2": {"nome": "Cancelamento de Restos a Pagar",   "eixo": "III", "maximo":  5, "polaridade": "menor"},
+    "3.3": {"nome": "Pagamento de Restos a Pagar",      "eixo": "III", "maximo":  5, "polaridade": "maior"},
+    "3.4": {"nome": "Impacto de Despesas de Ex. Ant.",  "eixo": "III", "maximo":  5, "polaridade": "menor"},
 }
 
-_PESOS_BIMESTRE = {"B1": 10, "B2": 15, "B3": 15, "B4": 25, "B5": 25, "B6": 10}
+_SELO_UNIDADES_ESPERADAS = set(IEES_PR)
+_SELO_ANOS_ESPERADOS = {2025, 2026}
+_SELO_BIMESTRES_ESPERADOS = {"B1", "B2", "B3", "B4", "B5", "B6"}
+_SELO_INDICADORES_ESPERADOS = set(_SELO_INDICADORES)
 
-# Flags de completude por ano — documentam a natureza dos dados para o painel
-_SELO_COMPLETUDE = {
-    2025: {
-        "completo": True,
-        "bimestres_reais": ["B1", "B2", "B3", "B4", "B5", "B6"],
-        "bimestres_projetados": [],
-        "nota": "Exercício finalizado. Todos os bimestres fechados. Dado mais confiável.",
-    },
-    2026: {
-        "completo": False,
-        "bimestres_reais": ["B1", "B2", "B3"],
-        "bimestres_projetados": ["B4", "B5", "B6"],
-        "nota": (
-            "Exercício em andamento. B1–B3 são dados reais extraídos do BI SELO. "
-            "B4, B5 e B6 são projeções lineares do próprio BI a partir de B3: "
-            "B4=B5=B3×(25/15) e B6=B3×(10/15). "
-            "A nota final de 2026 deve ser tratada como estimativa parcial."
-        ),
-    },
-}
 
-selo_resumo    = {}  # {(sigla, ano): {notaB1..B6, notaFinal}}
-selo_bimestral = {}  # {(sigla, ano): {bimestre: {ind: nota, notaBimestre}}}
+def _selo_norm(value):
+    text = unicodedata.normalize("NFD", str(value or ""))
+    text = "".join(ch for ch in text if not unicodedata.combining(ch))
+    text = text.lower()
+    return "".join(ch if ch.isalnum() else "_" for ch in text).strip("_")
 
-wb_selo = openpyxl.load_workbook(DATA_DIR / _SELO_FILE, read_only=True, data_only=True)
 
-# 16a. Aba Resumo — nota final e por bimestre por IES/ano
-ws_res = wb_selo["Resumo"]
-_res_hdr = list(next(ws_res.iter_rows(min_row=1, max_row=1, values_only=True)))
-_res_col = {h: i for i, h in enumerate(_res_hdr) if h is not None}
-for _row in ws_res.iter_rows(min_row=2, values_only=True):
+def _selo_find_file():
+    for name in _SELO_FILE_CANDIDATES:
+        path = DATA_DIR / name
+        if path.exists():
+            return path
+    for path in sorted(DATA_DIR.glob("*.xlsx")):
+        norm = _selo_norm(path.name)
+        if "selo" in norm and ("pr" in norm or "parana" in norm):
+            return path
+    return None
+
+
+def _selo_headers(row):
+    return [
+        str(v).strip() if v not in (None, "") else f"Coluna {idx + 1}"
+        for idx, v in enumerate(row or [])
+    ]
+
+
+def _selo_header_index(headers):
+    index = {}
+    for idx, header in enumerate(headers):
+        key = _selo_norm(header)
+        if key and key not in index:
+            index[key] = idx
+    return index
+
+
+def _selo_col(header_idx, aliases, fallback=None):
+    for alias in aliases:
+        idx = header_idx.get(_selo_norm(alias))
+        if idx is not None:
+            return idx
+    return fallback
+
+
+def _selo_cell(row, idx):
+    if idx is None or idx >= len(row):
+        return None
+    return row[idx]
+
+
+def _selo_json_value(value):
+    if isinstance(value, (datetime.datetime, datetime.date)):
+        return value.isoformat()
+    return value
+
+
+def _selo_text(value):
+    if value is None:
+        return None
+    text = str(value).strip()
+    return text or None
+
+
+def _selo_year(value):
     try:
-        _ano = int(_row[_res_col["Ano"]])
+        return int(float(value))
     except (TypeError, ValueError):
-        continue
-    if _ano not in _SELO_ANOS:
-        continue
-    _ies = str(_row[_res_col["Unidade Orçamentária"]]).strip().upper() if _row[_res_col["Unidade Orçamentária"]] else None
-    if _ies not in IEES_PR:
-        continue
-    _k = (_ies, _ano)
-    selo_resumo[_k] = {
-        "notaB1":    safe_float(_row[_res_col.get("Nota B1")]),
-        "notaB2":    safe_float(_row[_res_col.get("Nota B2")]),
-        "notaB3":    safe_float(_row[_res_col.get("Nota B3")]),
-        "notaB4":    safe_float(_row[_res_col.get("Nota B4")]),
-        "notaB5":    safe_float(_row[_res_col.get("Nota B5")]),
-        "notaB6":    safe_float(_row[_res_col.get("Nota B6")]),
-        "notaFinal": safe_float(_row[_res_col.get("Nota Final")]),
+        return None
+
+
+def _selo_code(value):
+    if value is None or value == "":
+        return None
+    text = str(value).strip().replace(",", ".")
+    if text.endswith(".0"):
+        text = text[:-2]
+    return text
+
+
+def _selo_bimestre(value):
+    text = _selo_text(value)
+    if not text:
+        return None
+    norm = _selo_norm(text).upper()
+    if norm.startswith("B") and norm[1:].isdigit():
+        return f"B{int(norm[1:])}"
+    digits = "".join(ch for ch in norm if ch.isdigit())
+    return f"B{int(digits)}" if digits else text.upper()
+
+
+def _selo_sigla(value):
+    if value is None or value == "":
+        return None
+    try:
+        uo = int(float(value))
+        if uo in _UO_IES_MAP:
+            return _UO_IES_MAP[uo]
+    except (TypeError, ValueError):
+        pass
+    text = str(value).strip().upper()
+    if text in IEES_PR:
+        return text
+    norm = _selo_norm(text)
+    if "londrina" in norm:
+        return "UEL"
+    if "maringa" in norm:
+        return "UEM"
+    if "ponta_grossa" in norm:
+        return "UEPG"
+    if "centro_oeste" in norm or "unicentro" in norm:
+        return "UNICENTRO"
+    if "norte_do_parana" in norm or "uenp" in norm:
+        return "UENP"
+    if "oeste_do_parana" in norm or "unioeste" in norm:
+        return "UNIOESTE"
+    if "unespar" in norm or "estadual_do_parana" in norm:
+        return "UNESPAR"
+    return None
+
+
+def _selo_record_from_row(row, headers, cols):
+    unidade_raw = _selo_cell(row, cols["unidade"])
+    ente_raw = _selo_cell(row, cols["ente"])
+    sigla = _selo_sigla(unidade_raw) or _selo_sigla(ente_raw)
+    return {
+        "Ano": _selo_year(_selo_cell(row, cols["ano"])),
+        "Ente Avaliado": _selo_text(ente_raw),
+        "Unidade Orçamentária": sigla or _selo_text(unidade_raw),
+        "Bimestre": _selo_bimestre(_selo_cell(row, cols["bimestre"])),
+        "Peso do Bimestre": safe_float(_selo_cell(row, cols["peso_bimestre"]), 6),
+        "Eixo": _selo_text(_selo_cell(row, cols["eixo"])),
+        "Código Indicador": _selo_code(_selo_cell(row, cols["codigo"])),
+        "Nome Indicador": _selo_text(_selo_cell(row, cols["nome_indicador"])),
+        "Nota do Indicador no Bimestre": safe_float(_selo_cell(row, cols["nota_indicador"]), 6),
+        "Percentual": safe_float(_selo_cell(row, cols["percentual"]), 6),
+        "Nota do Bimestre": safe_float(_selo_cell(row, cols["nota_bimestre"]), 6),
+        "Nota Final da Unidade": safe_float(_selo_cell(row, cols["nota_final"]), 6),
+        "Nota Máxima do Indicador": safe_float(_selo_cell(row, cols["nota_maxima"]), 6),
+        "Fonte": _selo_text(_selo_cell(row, cols["fonte"])),
+        "Data de Extração": _selo_json_value(_selo_cell(row, cols["data_extracao"])),
+        "_raw": {
+            headers[idx]: _selo_json_value(row[idx] if idx < len(row) else None)
+            for idx in range(len(headers))
+        },
     }
 
-# 16b. Aba Base_Bimestral — nota por indicador em cada bimestre
-_IND_CODES = [1.1, 1.2, 1.3, 1.4, 2.1, 2.2, 2.3, 3.1, 3.2, 3.3, 3.4]
-ws_bim = wb_selo["Base_Bimestral"]
-_bim_hdr = list(next(ws_bim.iter_rows(min_row=1, max_row=1, values_only=True)))
-_bim_col = {str(h): i for i, h in enumerate(_bim_hdr) if h is not None}
-for _row in ws_bim.iter_rows(min_row=2, values_only=True):
-    try:
-        _ano = int(_row[_bim_col["Ano"]])
-    except (TypeError, ValueError):
+
+def _selo_warn_missing(label, expected, found, alerts):
+    missing = sorted(expected - found)
+    if missing:
+        alerts.append(f"{label} ausentes: {', '.join(map(str, missing))}")
+
+
+caminho_selo = _selo_find_file()
+if caminho_selo is None:
+    raise FileNotFoundError("Base SELO-PR não encontrada em data/")
+_SELO_FILE = caminho_selo.name
+
+# Variáveis padronizadas da base SELO-PR (listas de registros do pipeline).
+df_selo = []
+df_selo_resumo = []
+df_selo_bimestres = []
+df_selo_indicadores = []
+
+# {(sigla, ano): {"notaFinal": float, "indicadores": {"1.1": float, ...}}}
+selo_data = {}
+_selo_indicator_acc = {}
+_selo_bimestre_acc = {}
+
+wb_selo = openpyxl.load_workbook(caminho_selo, read_only=True, data_only=True)
+_selo_sheet = "Base_Indicadores" if "Base_Indicadores" in wb_selo.sheetnames else wb_selo.sheetnames[0]
+ws_ind = wb_selo[_selo_sheet]
+_selo_header_row = next(ws_ind.iter_rows(min_row=1, max_row=1, values_only=True), ())
+_selo_headers_list = _selo_headers(_selo_header_row)
+_selo_hidx = _selo_header_index(_selo_headers_list)
+_selo_cols = {
+    "ano": _selo_col(_selo_hidx, ["Ano"], 0),
+    "ente": _selo_col(_selo_hidx, ["Ente Avaliado", "Ente", "Instituição", "Instituicao"], None),
+    "unidade": _selo_col(_selo_hidx, ["Unidade Orçamentária", "Unidade Orcamentaria", "IEES", "Sigla"], 2),
+    "bimestre": _selo_col(_selo_hidx, ["Bimestre"], None),
+    "peso_bimestre": _selo_col(_selo_hidx, ["Peso do Bimestre", "Peso Bimestre"], None),
+    "eixo": _selo_col(_selo_hidx, ["Eixo"], None),
+    "codigo": _selo_col(_selo_hidx, ["Código Indicador", "Codigo Indicador", "Cod Indicador"], 4),
+    "nome_indicador": _selo_col(_selo_hidx, ["Nome Indicador", "Indicador"], None),
+    "nota_indicador": _selo_col(
+        _selo_hidx,
+        ["Nota do Indicador no Bimestre", "Nota Indicador no Bimestre", "Nota do Indicador", "Nota Indicador"],
+        6,
+    ),
+    "percentual": _selo_col(_selo_hidx, ["Percentual", "%"], None),
+    "nota_bimestre": _selo_col(_selo_hidx, ["Nota do Bimestre", "Nota Bimestre"], None),
+    "nota_final": _selo_col(_selo_hidx, ["Nota Final da Unidade", "Nota Final Unidade", "Nota Final"], None),
+    "nota_maxima": _selo_col(_selo_hidx, ["Nota Máxima do Indicador", "Nota Maxima do Indicador", "Nota Máxima"], None),
+    "fonte": _selo_col(_selo_hidx, ["Fonte"], None),
+    "data_extracao": _selo_col(_selo_hidx, ["Data de Extração", "Data de Extracao"], None),
+}
+
+for _row in ws_ind.iter_rows(min_row=2, values_only=True):
+    if not any(v not in (None, "") for v in _row):
         continue
-    if _ano not in _SELO_ANOS:
-        continue
-    _ies_raw = _row[_bim_col.get("Unidade Orçamentária", _bim_col.get("IES", 1))]
-    _ies = str(_ies_raw).strip().upper() if _ies_raw else None
-    if _ies not in IEES_PR:
-        continue
-    _bim = str(_row[_bim_col.get("Bimestre", 3)]).strip() if _row[_bim_col.get("Bimestre", 3)] else None
-    if not _bim:
+    _rec = _selo_record_from_row(_row, _selo_headers_list, _selo_cols)
+    df_selo.append(_rec)
+
+    _ano = _rec["Ano"]
+    _ies = _selo_sigla(_rec["Unidade Orçamentária"])
+    _cod = _rec["Código Indicador"]
+    if _ies not in IEES_PR or _ano is None:
         continue
     _k = (_ies, _ano)
-    if _k not in selo_bimestral:
-        selo_bimestral[_k] = {}
-    _bim_entry = {"notaBimestre": safe_float(_row[_bim_col.get("Nota do Bimestre")])}
-    for _ic in _IND_CODES:
-        _ci = _bim_col.get(str(_ic))
-        _bim_entry[str(_ic)] = safe_float(_row[_ci]) if _ci is not None else None
-    selo_bimestral[_k][_bim] = _bim_entry
+    if _k not in selo_data:
+        selo_data[_k] = {"notaFinal": None, "indicadores": {}}
+    if _rec["Nota Final da Unidade"] is not None:
+        selo_data[_k]["notaFinal"] = safe_float(_rec["Nota Final da Unidade"])
+    if _rec["Nota do Bimestre"] is not None and _rec["Bimestre"]:
+        _selo_bimestre_acc.setdefault((_ies, _ano, _rec["Bimestre"]), []).append(_rec["Nota do Bimestre"])
+    if _cod:
+        _acc = _selo_indicator_acc.setdefault(
+            (_ies, _ano, _cod),
+            {"weighted": 0.0, "weight": 0.0, "values": [], "eixo": None, "nome": None, "maximo": None},
+        )
+        _acc["eixo"] = _rec["Eixo"] or _acc["eixo"]
+        _acc["nome"] = _rec["Nome Indicador"] or _acc["nome"]
+        _acc["maximo"] = _rec["Nota Máxima do Indicador"] or _acc["maximo"]
+        _nota_ind = _rec["Nota do Indicador no Bimestre"]
+        if _nota_ind is not None:
+            _peso = _rec["Peso do Bimestre"]
+            if _rec["Bimestre"] and _peso is not None:
+                _w = _peso if abs(_peso) <= 1 else _peso / 100
+                _acc["weighted"] += _nota_ind * _w
+                _acc["weight"] += _w
+            else:
+                _acc["values"].append(_nota_ind)
+
+# Compatibilidade com a versão anterior do arquivo, que trazia a nota final em aba separada.
+if "Nota_Final_Unidade" in wb_selo.sheetnames:
+    ws_nf = wb_selo["Nota_Final_Unidade"]
+    _nf_header_row = next(ws_nf.iter_rows(min_row=1, max_row=1, values_only=True), ())
+    _nf_headers = _selo_headers(_nf_header_row)
+    _nf_hidx = _selo_header_index(_nf_headers)
+    _nf_cols = {
+        "ano": _selo_col(_nf_hidx, ["Ano"], 0),
+        "unidade": _selo_col(_nf_hidx, ["Unidade Orçamentária", "Unidade Orcamentaria", "IEES", "Sigla"], 2),
+        "nota_final": _selo_col(_nf_hidx, ["Nota Final da Unidade", "Nota Final Unidade", "Nota Final"], 3),
+    }
+    for _row in ws_nf.iter_rows(min_row=2, values_only=True):
+        _ano = _selo_year(_selo_cell(_row, _nf_cols["ano"]))
+        _ies = _selo_sigla(_selo_cell(_row, _nf_cols["unidade"]))
+        if _ies not in IEES_PR or _ano is None:
+            continue
+        _k = (_ies, _ano)
+        if _k not in selo_data:
+            selo_data[_k] = {"notaFinal": None, "indicadores": {}}
+        _nota_final = safe_float(_selo_cell(_row, _nf_cols["nota_final"]))
+        selo_data[_k]["notaFinal"] = _nota_final
 
 wb_selo.close()
 
+for (_ies, _ano, _cod), _acc in _selo_indicator_acc.items():
+    if _acc["weight"] > 0:
+        _nota = safe_float(_acc["weighted"], 2)
+    elif _acc["values"]:
+        _nota = safe_float(sum(_acc["values"]) / len(_acc["values"]), 2)
+    else:
+        _nota = None
+    if _nota is None:
+        continue
+    selo_data.setdefault((_ies, _ano), {"notaFinal": None, "indicadores": {}})
+    selo_data[(_ies, _ano)]["indicadores"][_cod] = _nota
+    df_selo_indicadores.append({
+        "Unidade Orçamentária": _ies,
+        "Ano": _ano,
+        "Código Indicador": _cod,
+        "Nome Indicador": _acc["nome"] or _SELO_INDICADORES.get(_cod, {}).get("nome"),
+        "Eixo": _acc["eixo"] or _SELO_INDICADORES.get(_cod, {}).get("eixo"),
+        "Nota do Indicador": _nota,
+        "Nota Máxima do Indicador": _acc["maximo"] or _SELO_INDICADORES.get(_cod, {}).get("maximo"),
+    })
+
+for (_ies, _ano, _bim), _vals in sorted(_selo_bimestre_acc.items()):
+    if not _vals:
+        continue
+    df_selo_bimestres.append({
+        "Unidade Orçamentária": _ies,
+        "Ano": _ano,
+        "Bimestre": _bim,
+        "Nota do Bimestre": safe_float(sum(_vals) / len(_vals), 2),
+    })
+
+for (_ies, _ano), _rec in sorted(selo_data.items()):
+    df_selo_resumo.append({
+        "Unidade Orçamentária": _ies,
+        "Ano": _ano,
+        "Nota Final da Unidade": _rec.get("notaFinal"),
+    })
+
+_selo_anos = sorted({r["Ano"] for r in df_selo if r["Ano"] is not None} | {r["Ano"] for r in df_selo_resumo if r["Ano"] is not None})
+_selo_unidades = sorted({_selo_sigla(r["Unidade Orçamentária"]) for r in df_selo if _selo_sigla(r["Unidade Orçamentária"])})
+_selo_bimestres = sorted({r["Bimestre"] for r in df_selo if r["Bimestre"]})
+_selo_codigos = sorted({r["Código Indicador"] for r in df_selo if r["Código Indicador"]})
+_selo_alertas = []
+_selo_warn_missing("Unidades SELO-PR", _SELO_UNIDADES_ESPERADAS, set(_selo_unidades), _selo_alertas)
+_selo_warn_missing("Anos SELO-PR", _SELO_ANOS_ESPERADOS, set(_selo_anos), _selo_alertas)
+_selo_warn_missing("Bimestres SELO-PR", _SELO_BIMESTRES_ESPERADOS, set(_selo_bimestres), _selo_alertas)
+_selo_warn_missing("Indicadores SELO-PR", _SELO_INDICADORES_ESPERADOS, set(_selo_codigos), _selo_alertas)
+if not 880 <= len(df_selo) <= 970:
+    _selo_alertas.append(f"Total de linhas fora do esperado para base longa (~924): {len(df_selo)}")
+
+selo_diagnostico = {
+    "arquivo": _SELO_FILE,
+    "caminho": str(caminho_selo),
+    "aba": _selo_sheet,
+    "linhas": len(df_selo),
+    "colunas": len(_selo_headers_list),
+    "anos": _selo_anos,
+    "unidades": _selo_unidades,
+    "bimestres": _selo_bimestres,
+    "indicadores": _selo_codigos,
+    "alertas": _selo_alertas,
+    "preview": [{k: v for k, v in row.items() if k != "_raw"} for row in df_selo[:20]],
+}
+
+for _ies in IEES_PR:
+    _anos_ies = sorted(ano for (sigla, ano) in selo_data if sigla == _ies)
+    if not _anos_ies:
+        continue
+    _ano_ref = _anos_ies[-1]
+    _nota_ref = selo_data.get((_ies, _ano_ref), {}).get("notaFinal")
+    _key = _ies.lower()
+    if _key in results:
+        results[_key]["seloNotaFinal"] = _nota_ref
+        sources[_key]["seloNotaFinal"] = (
+            f"{_SELO_FILE} / {_selo_sheet}"
+            f" / Nota Final da Unidade / ano={_ano_ref}"
+        )
+
 # 16c. Validação no stderr
-_SEP16 = "─" * 72
+_SEP16 = "─" * 88
 print("", file=sys.stderr)
+print("====================================", file=sys.stderr)
+print("✅ Base SELO-PR carregada com sucesso", file=sys.stderr)
+print(f"Arquivo SELO-PR: {caminho_selo}", file=sys.stderr)
+print(f"Linhas SELO-PR: {len(df_selo)}", file=sys.stderr)
+print(f"Colunas SELO-PR: {len(_selo_headers_list)}", file=sys.stderr)
+print(f"Anos SELO-PR: {_selo_anos}", file=sys.stderr)
+print(f"Unidades SELO-PR: {_selo_unidades}", file=sys.stderr)
+print(f"Bimestres SELO-PR: {_selo_bimestres}", file=sys.stderr)
+print(f"Indicadores SELO-PR: {_selo_codigos}", file=sys.stderr)
+for _alerta in _selo_alertas:
+    print(f"⚠️ ALERTA SELO-PR: {_alerta}", file=sys.stderr)
+print("====================================", file=sys.stderr)
 print(_SEP16, file=sys.stderr)
-print("Seção 16 — SELO-PR | Notas por IES/Ano (0–100)", file=sys.stderr)
-print("Fonte: BI SELO-PR (SIAFIC/SEFA)", file=sys.stderr)
+print("Seção 16 — SELO-PR | Notas anuais por IES (0–100)", file=sys.stderr)
+print(f"Fonte: {_SELO_FILE} / {_selo_sheet}", file=sys.stderr)
 print(_SEP16, file=sys.stderr)
-print(f"{'IES':<12} {'Ano':>5} {'B1':>5} {'B2':>6} {'B3':>6} {'B4':>6} {'B5':>6} {'B6':>5} {'Final':>6} {'Completo':>9}", file=sys.stderr)
+print(f"{'IES':<12} {'Ano':>5} {'Final':>6}  {'1.1':>4} {'1.2':>4} {'1.3':>4} {'1.4':>4} | {'2.1':>4} {'2.2':>4} {'2.3':>4} | {'3.1':>4} {'3.2':>4} {'3.3':>4} {'3.4':>4}", file=sys.stderr)
 print(_SEP16, file=sys.stderr)
 for _ies in IEES_PR:
-    for _ano in sorted(_SELO_ANOS):
+    for _ano in _selo_anos:
         _kk = (_ies, _ano)
-        _r = selo_resumo.get(_kk)
-        _comp = "SIM" if _SELO_COMPLETUDE[_ano]["completo"] else "PARCIAL"
+        _r = selo_data.get(_kk)
         if not _r:
-            print(f"{_ies:<12} {_ano:>5} {'N/D':>5}", file=sys.stderr)
+            print(f"{_ies:<12} {_ano:>5} {'N/D':>6}", file=sys.stderr)
         else:
+            _inds = _r["indicadores"]
+            def _gi(cod): return _inds.get(cod) or 0
             print(
-                f"{_ies:<12} {_ano:>5}"
-                f" {(_r['notaB1'] or 0):>5.1f}"
-                f" {(_r['notaB2'] or 0):>6.1f}"
-                f" {(_r['notaB3'] or 0):>6.1f}"
-                f" {(_r['notaB4'] or 0):>6.1f}"
-                f" {(_r['notaB5'] or 0):>6.1f}"
-                f" {(_r['notaB6'] or 0):>5.1f}"
-                f" {(_r['notaFinal'] or 0):>6.1f}"
-                f" {_comp:>9}",
+                f"{_ies:<12} {_ano:>5} {(_r['notaFinal'] or 0):>6.1f}"
+                f"  {_gi('1.1'):>4.1f} {_gi('1.2'):>4.1f} {_gi('1.3'):>4.1f} {_gi('1.4'):>4.1f}"
+                f" | {_gi('2.1'):>4.1f} {_gi('2.2'):>4.1f} {_gi('2.3'):>4.1f}"
+                f" | {_gi('3.1'):>4.1f} {_gi('3.2'):>4.1f} {_gi('3.3'):>4.1f} {_gi('3.4'):>4.1f}",
                 file=sys.stderr,
             )
 print(_SEP16, file=sys.stderr)
@@ -1609,31 +1868,22 @@ precomputed = {
         for iees in IEES
     },
 }
-# seloData: {SIGLA: {str(ano): {notaB1..B6, notaFinal, completude, bimestres: {B1..B6: {inds, notaBimestre}}}}}
-# Exporta para o painel apenas anos com exercício finalizado (completo=True).
-# 2026 permanece lido da planilha mas não é exposto — exercício em andamento com
-# B4/B5/B6 projetados mecanicamente pelo BI SELO a partir de B3.
-# Para reativar 2026: remover o `if not ... continue` abaixo quando
-# _SELO_COMPLETUDE[2026]["completo"] for True.
+# seloData: {SIGLA: {str(ano): {"notaFinal": float, "indicadores": {"1.1": float, ...}}}}
 _selo_export = {}
 for _ies in IEES_PR:
     _selo_export[_ies] = {}
-    for _ano in sorted(_SELO_ANOS):
-        if not _SELO_COMPLETUDE[_ano]["completo"]:
-            continue  # pula anos incompletos — não exportar ao painel
+    for _ano in _selo_anos:
         _kk = (_ies, _ano)
-        _res = selo_resumo.get(_kk)
-        _bim = selo_bimestral.get(_kk, {})
-        if _res:
-            _selo_export[_ies][str(_ano)] = {
-                **_res,
-                "completude": _SELO_COMPLETUDE[_ano],
-                "bimestres": _bim,
-            }
+        _r = selo_data.get(_kk)
+        if _r:
+            _selo_export[_ies][str(_ano)] = _r
 
-precomputed["seloData"]          = _selo_export
-precomputed["seloIndicadores"]   = {str(k): v for k, v in _SELO_INDICADORES.items()}
-precomputed["seloPesosBimestre"] = _PESOS_BIMESTRE
+precomputed["seloData"]           = _selo_export
+precomputed["seloIndicadores"]    = _SELO_INDICADORES
+precomputed["seloDiagnostico"]    = selo_diagnostico
+precomputed["seloResumo"]         = df_selo_resumo
+precomputed["seloBimestres"]      = df_selo_bimestres
+precomputed["seloIndicadorNotas"] = df_selo_indicadores
 
 json_path = DATA_DIR / "seti_precomputed.json"
 with open(json_path, "w", encoding="utf-8") as _f:
