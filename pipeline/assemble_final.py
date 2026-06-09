@@ -1415,7 +1415,7 @@ for _sig in IEES_PR:
 #
 # O SELO Paraná (Sistema de Excelência em Liderança Orçamentária) é uma avaliação
 # institucional da qualidade da execução orçamentária e financeira das universidades
-# estaduais, conduzida pela Diretoria de Orçamento Estadual (DOE/SEFA-PR).
+# estaduais, conduzida pela Diretoria de Orçamento Estadual (DOE/SELO-PR).
 #
 # A avaliação cobre três eixos temáticos:
 #   Eixo I   — Eficiência na Execução Orçamentária (máx. 60 pts)
@@ -1610,10 +1610,17 @@ precomputed = {
     },
 }
 # seloData: {SIGLA: {str(ano): {notaB1..B6, notaFinal, completude, bimestres: {B1..B6: {inds, notaBimestre}}}}}
+# Exporta para o painel apenas anos com exercício finalizado (completo=True).
+# 2026 permanece lido da planilha mas não é exposto — exercício em andamento com
+# B4/B5/B6 projetados mecanicamente pelo BI SELO a partir de B3.
+# Para reativar 2026: remover o `if not ... continue` abaixo quando
+# _SELO_COMPLETUDE[2026]["completo"] for True.
 _selo_export = {}
 for _ies in IEES_PR:
     _selo_export[_ies] = {}
     for _ano in sorted(_SELO_ANOS):
+        if not _SELO_COMPLETUDE[_ano]["completo"]:
+            continue  # pula anos incompletos — não exportar ao painel
         _kk = (_ies, _ano)
         _res = selo_resumo.get(_kk)
         _bim = selo_bimestral.get(_kk, {})

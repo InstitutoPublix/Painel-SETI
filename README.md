@@ -37,7 +37,8 @@ Bases XLSX (data/)  →  pipeline/assemble_final.py  →  data/seti_precomputed.
 │   ├── Dados de Suplementação das Universidades - Paraná.xlsx
 │   ├── Estratificação_IES_Estaduais_BR.xlsx
 │   ├── 5. Relação de Indicadores das Universidades.xlsx  # Catálogo de referência já embutido em painel.js
-│   └── Base de dados para clusterização.xlsx    # Legado: loader existe, mas o pipeline atual não usa
+│   ├── Base de dados para clusterização.xlsx    # Legado: loader existe, mas o pipeline atual não usa
+│   └── Base SELO - Paraná.xlsx                  # BI SELO-PR (SIAFIC/SEFA) — notas bimestrais de execução orçamentária (PR)
 ├── pipeline/
 │   └── assemble_final.py             # Extração e pré-processamento dos indicadores
 ├── dashboard/
@@ -120,6 +121,7 @@ IEES = IEES_PR + IEES_BR  # 40 IES total (7 PR + 33 BR)
 | **9. Egressos** | `Base Egressos - Paraná.xlsx` / `Base_Egressos_PR` | `insertionRatePR` | 7 PR |
 | **10. RAIS Municípios** | `Base RAIS - 2023 e 2024 - Paraná.xlsx` / `Base_RAIS_2023_2024` | `egressosMunicipios` | 7 PR |
 | **12. Estratificação** | `Estratificação_IES_Estaduais_BR.xlsx` | `clusters`, `quartiRefs` | 40 IES |
+| **16. SELO-PR** | `Base SELO - Paraná.xlsx` / abas `Resumo` + `Base_Bimestral` | `seloData` (notas B1–B6 e Nota Final por IES/ano), `seloIndicadores`, `seloPesosBimestre` | 7 PR |
 
 ### Lógica de cada Seção
 
@@ -162,6 +164,16 @@ IEES = IEES_PR + IEES_BR  # 40 IES total (7 PR + 33 BR)
 - Lê `Análise Quantitativa (BI e Cons` até row 15
 - `employment = enc_PR_2024 / egressos_2021 × 100` (fallback: coorte 2020/RAIS2023)
 - `salary` = salário médio direto da coluna (valor já em reais)
+
+**Seção 16 — SELO-PR (Qualidade da Execução Orçamentária):**
+- Lê `Base SELO - Paraná.xlsx` / abas `Resumo` (nota por bimestre e nota final) e `Base_Bimestral` (nota por indicador)
+- Exporta para o JSON apenas anos com exercício finalizado (`_SELO_COMPLETUDE[ano]["completo"] == True`)
+- `seloData` = notas B1–B6 e Nota Final por IES/ano, com metadados de completude por exercício
+- `seloIndicadores` = catálogo dos 11 indicadores (nome, eixo, nota máxima, polaridade)
+- `seloPesosBimestre` = pesos bimestrais (B1=10%, B2=15%, B3=15%, B4=25%, B5=25%, B6=10%)
+- Eixos avaliados: I = Eficiência na Execução Orçamentária (60 pts), II = Racionalidade na Gestão de Créditos Adicionais (20 pts), III = Passivos de Exercícios Anteriores (20 pts)
+- Nota Final = 0,10×B1 + 0,15×B2 + 0,15×B3 + 0,25×B4 + 0,25×B5 + 0,10×B6
+- Fonte: BI SELO-PR (SIAFIC/SELO-PR)
 
 ### Funções Auxiliares
 
@@ -445,3 +457,5 @@ openpyxl>=3.1          # Leitura de .xlsx
 - **Catálogo de indicadores:** `5. Relação de Indicadores das Universidades.xlsx` não é carregado em runtime. O conteúdo relevante está embutido em `dashboard/assets/painel.js` como `INDICATOR_CATALOG`; mantenha a planilha como fonte editorial ou crie uma etapa de geração se quiser que alterações nela sejam refletidas automaticamente.
 - **Agrupamentos V1–V8:** a fonte oficial é exclusivamente `Estratificação_IES_Estaduais_BR.xlsx`, exportada para `data/seti_precomputed.json` pelo pipeline. O `painel.js` apenas renderiza os grupos recebidos em `SETI_CLUSTERS` e os rótulos/limiares recebidos em `SETI_QUARTIREFS`.
 - **Quadrantes:** se não houver critério oficial de quadrante na planilha/JSON, o painel exibe indisponibilidade metodológica em vez de calcular cortes por média, mediana ou fallback visual.
+- **Reativar 2026 no SELO:** quando o exercício 2026 for concluído, altere `_SELO_COMPLETUDE[2026]["completo"]` de `False` para `True` em `pipeline/assemble_final.py` e regenere o JSON. O seletor de ano no painel e todos os visuais do bloco SELO-PR se atualizam automaticamente.
+- **Atualizar Base SELO:** solicitar nova extração do BI SELO-PR à SETI/SEFA, substituir `data/Base SELO - Paraná.xlsx` e regenerar com `python pipeline/assemble_final.py`.

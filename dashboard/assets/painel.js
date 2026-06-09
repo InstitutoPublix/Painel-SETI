@@ -2607,9 +2607,33 @@ const TAB_YEAR_COVERAGE = {
   performance: [2023, 2024],
 };
 
+// Metadados de cobertura por aba — fonte e nota explicativa para o usuário
+var TAB_YEAR_CONTEXT = {
+  overview:   { fonte: "INEP · Censo da Educação Superior",                    nota: null },
+  comparison: { fonte: "INEP · Censo da Educação Superior",                    nota: null },
+  access:     { fonte: "INEP · Censo da Educação Superior",                    nota: null },
+  retention:  { fonte: "INEP · Censo da Educação Superior",                    nota: null },
+  quality:    { fonte: "INEP · Censo da Educação Superior + CAPES/Sucupira",   nota: null },
+  faculty:    { fonte: "SETI · Base Docentes PR",                              nota: null },
+  employment: {
+    fonte: "SETI/RAIS · Cruzamento egressos × mercado formal",
+    nota: "2023 = egressos coorte 2020 cruzados com RAIS 2023 · 2024 = egressos coorte 2021 cruzados com RAIS 2024"
+  },
+  efficiency: {
+    fonte: "SEFA · Relatório da Despesa 8050",
+    nota: "2026 = exercício em andamento — dados parciais até a data de extração"
+  },
+  performance: {
+    fonte: "SETI/RAIS · Cruzamento egressos × mercado formal + INEP",
+    nota: "2023 = egressos coorte 2020 cruzados com RAIS 2023 · 2024 = egressos coorte 2021 cruzados com RAIS 2024"
+  },
+};
+
 function updateYearFilterOptions(tabId) {
   const sel = el && el.yearFilter;
   if (!sel) return;
+
+  // ── atualizar options (comportamento original) ────────────────────────────
   const years = TAB_YEAR_COVERAGE[tabId] || [2020, 2021, 2022, 2023, 2024];
   const currentVal = parseInt(sel.value, 10);
   sel.innerHTML = "";
@@ -2619,10 +2643,41 @@ function updateYearFilterOptions(tabId) {
   });
   const maxYear = Math.max(...years);
   sel.value = years.includes(currentVal) ? String(currentVal) : String(maxYear);
+
+  // ── nota contextual abaixo do select ─────────────────────────────────────
+  const ctx = TAB_YEAR_CONTEXT[tabId];
+  const container = sel.closest(".filter-bar-left") || sel.parentElement;
+  if (!container) return;
+
+  let note = document.getElementById("yearContextNote");
+  if (!note) {
+    note = document.createElement("div");
+    note.id = "yearContextNote";
+    container.appendChild(note);
+  }
+
+  if (!ctx) { note.innerHTML = ""; return; }
+
+  const minYear = Math.min(...years);
+  const cobertura = minYear === maxYear ? String(maxYear) : minYear + "–" + maxYear;
+
+  var html = "<span>Cobertura: <strong>" + cobertura + "</strong></span>"
+           + " &middot; <span>Fonte: <strong>" + ctx.fonte + "</strong></span>";
+  if (ctx.nota) {
+    html += "<br><em>" + ctx.nota + "</em>";
+  }
+  note.innerHTML = html;
 }
 window.updateYearFilterOptions = updateYearFilterOptions;
 
-function renderTop(c){const t=tabInfo[state.activeTab];el.activeTabKicker.textContent=t[0];el.activeTabTitle.textContent=t[1];el.activeTabDescription.textContent=t[2];el.periodPill.textContent=`Ano base ${c.f.year} · Escopo ${c.f.scope}`;el.scopeLabel.textContent=c.selected?`${c.selected.sigla} | ${c.group}`:c.group==="all"?"Sistema estadual":`Grupo ${c.group}`;updateActiveClusterLabel(c);}
+// Helper: gera o HTML do period-pill com fonte da aba ativa
+function _periodPillHTML(year, scope) {
+  var ctx = TAB_YEAR_CONTEXT[state.activeTab];
+  var fonte = ctx ? ' <span style="font-weight:400;opacity:0.75;">· ' + ctx.fonte + '</span>' : '';
+  return 'Ano base ' + year + ' · Escopo ' + scope + fonte;
+}
+
+function renderTop(c){const t=tabInfo[state.activeTab];el.activeTabKicker.textContent=t[0];el.activeTabTitle.textContent=t[1];el.activeTabDescription.textContent=t[2];el.periodPill.innerHTML=_periodPillHTML(c.f.year, c.f.scope);el.scopeLabel.textContent=c.selected?`${c.selected.sigla} | ${c.group}`:c.group==="all"?"Sistema estadual":`Grupo ${c.group}`;updateActiveClusterLabel(c);}
 function renderKpis(c){
   const data=c.display.length?c.display:c.ref, ref=c.ref.length?c.ref:c.all, a=agg(data), ar=agg(ref), res=resultIndicators[c.f.result], eff=effortIndicators[c.f.effort], rows=matrixRows(ref,c.f), selectedRow=c.selected&&rows.find(r=>r.id===c.selected.id);
   const year=parseInt(c.f.year), prevYear=year-1, hasPrev=!!yearAdj[prevYear];
@@ -3512,7 +3567,7 @@ function renderTop(c) {
   el.activeTabKicker.textContent = t[0];
   el.activeTabTitle.textContent = t[1];
   el.activeTabDescription.textContent = t[2];
-  el.periodPill.textContent = `Ano base ${c.f.year} · Escopo ${c.f.scope}`;
+  el.periodPill.innerHTML = _periodPillHTML(c.f.year, c.f.scope);
   el.scopeLabel.textContent = c.selected ? `${c.selected.sigla} | ${c.group}` : c.group === "all" ? "Sistema estadual" : `Grupo ${c.group}`;
   updateActiveClusterLabel(c);
   updateContextBar(c);
@@ -3793,7 +3848,7 @@ function renderTop(c) {
   el.activeTabKicker.textContent = t[0];
   el.activeTabTitle.textContent = t[1];
   el.activeTabDescription.textContent = t[2];
-  el.periodPill.textContent = `Ano base ${c.f.year} · Escopo ${c.f.scope}`;
+  el.periodPill.innerHTML = _periodPillHTML(c.f.year, c.f.scope);
   el.scopeLabel.textContent = c.selected ? `${c.selected.sigla} | ${c.group}` : c.group === "all" ? "Sistema estadual" : `Grupo ${c.group}`;
   updateActiveClusterLabel(c);
   updateContextBar(c);
@@ -6463,7 +6518,7 @@ function renderTop(c) {
   el.activeTabTitle.textContent = t[1];
   el.activeTabDescription.textContent = t[2];
   const scopeText = state.activeTab === "faculty" ? "Paraná · SETI/LGU" : c.f.scope;
-  el.periodPill.textContent = `Ano base ${c.f.year} · Escopo ${scopeText}`;
+  el.periodPill.innerHTML = _periodPillHTML(c.f.year, scopeText);
   el.scopeLabel.textContent = c.selected ? `${c.selected.sigla} | ${c.group}` : c.group === "all" ? "Sistema estadual" : `Grupo ${c.group}`;
   updateActiveClusterLabel(c);
   updateContextBar(c);
@@ -7150,53 +7205,34 @@ function renderSeloBlock(c) {
     return "var(--red-500,#ef4444)";
   }
 
-  // ── seletor de ano ──────────────────────────────────────────────────────────
-  const anos = ["2025","2026"];
-  const selectorHtml = `
+  // ── seletor de ano — dinâmico; mostra apenas anos presentes no JSON ──────────
+  // Atualmente: somente 2025 (exercício finalizado).
+  // 2026 será reativado automaticamente quando o pipeline o exportar
+  // (remover o filtro `if not _SELO_COMPLETUDE[2026]["completo"]` em assemble_final.py).
+  const anos = Object.keys(seloData[IES_ORDER[0]] || {}).sort();
+  const selectorHtml = anos.length <= 1 ? '' : `
     <div style="display:flex;gap:8px;align-items:center;margin-bottom:14px;">
       <span style="font-size:0.80rem;color:var(--text-secondary);font-weight:500;">Exercício:</span>
-      ${anos.map(a => {
-        const dadosRef = seloData[IES_ORDER[0]]?.[a];
-        const completo = dadosRef?.completude?.completo;
-        const badge = completo === false
-          ? `<span style="font-size:0.65rem;background:var(--yellow-100,#fef9c3);color:var(--yellow-700,#a16207);border-radius:4px;padding:1px 5px;margin-left:4px;">parcial</span>`
-          : '';
-        return `<button class="mode-btn${a===anoAtivo?' active':''}" type="button"
-          onclick="state.seloAno='${a}';render();">${a}${badge}</button>`;
-      }).join("")}
+      ${anos.map(a => `<button class="mode-btn${a===anoAtivo?' active':''}" type="button"
+          onclick="state.seloAno='${a}';render();">${a}</button>`).join("")}
     </div>`;
 
-  // ── banner de dados parciais 2026 ───────────────────────────────────────────
-  const dadosRef2026 = seloData[IES_ORDER[0]]?.["2026"];
-  const notaAviso = anoAtivo === "2026" && dadosRef2026?.completude?.completo === false
-    ? `<div class="data-source-banner warning visible" style="margin-bottom:14px;">
-        <span class="dsb-icon" aria-hidden="true">&#x26A0;</span>
-        <div class="dsb-body">
-          <strong>Dados parciais — 2026</strong>
-          <span>Bimestres B1, B2 e B3 são dados reais extraídos do BI SELO-PR.
-          B4, B5 e B6 são projeções lineares calculadas automaticamente pelo BI a partir de B3,
-          assumindo ritmo constante de execução até dezembro. A nota final de 2026 é uma estimativa
-          e não deve ser comparada diretamente com 2025.</span>
-        </div>
-      </div>`
-    : '';
+  // banner de aviso: não necessário — somente 2025 (exercício completo) é exposto
+  const notaAviso = '';
 
   // ── tabela de notas por bimestre ────────────────────────────────────────────
   const bimRows = IES_ORDER.map(ies => {
     const d = (seloData[ies] || {})[anoAtivo];
     if (!d) return `<tr><td><strong>${ies}</strong></td>${BIMS.map(()=>`<td style="text-align:center;color:var(--text-secondary)">—</td>`).join("")}<td>—</td></tr>`;
-    const isProj = anoAtivo === "2026" && !d.completude?.completo;
     const bimCells = BIMS.map(b => {
       const nota = d[`nota${b}`];
       const max  = PESOS[b];
       const pct  = nota != null ? nota/max*100 : null;
       const cor  = corPct(pct);
-      const proj = isProj && ["B4","B5","B6"].includes(b);
       return `<td style="text-align:center;padding:6px 4px;">
-        <div style="font-weight:${proj?'400':'600'};font-size:0.88rem;color:${proj?'var(--text-secondary)':'inherit'};${proj?'font-style:italic;':''}">${nota!=null?nota.toFixed(1).replace(".",","):"—"}</div>
+        <div style="font-weight:600;font-size:0.88rem;">${nota!=null?nota.toFixed(1).replace(".",","):"—"}</div>
         <div style="font-size:0.68rem;color:var(--text-secondary);margin-top:1px;">${pct!=null?Math.round(pct)+'%':''}</div>
-        <div style="height:3px;border-radius:2px;background:${cor};margin-top:3px;${proj?'opacity:0.4;':''}"></div>
-        ${proj?'<div style="font-size:0.60rem;color:var(--text-secondary);margin-top:1px;">proj.</div>':''}
+        <div style="height:3px;border-radius:2px;background:${cor};margin-top:3px;"></div>
       </td>`;
     }).join("");
     const nf = d.notaFinal;
@@ -7244,21 +7280,7 @@ function renderSeloBlock(c) {
       ${mediaGrupo?`<span style="border-left:2px solid var(--gray-400);padding-left:8px;">linha vertical = m&#xe9;dia (${Math.round(mediaGrupo)})</span>`:''}
     </div>`;
 
-  // ── tabela de variação 2025→2026 ────────────────────────────────────────────
-  const evoRows = IES_ORDER.map(ies => {
-    const d25 = (seloData[ies]||{})["2025"]?.notaFinal;
-    const d26 = (seloData[ies]||{})["2026"]?.notaFinal;
-    if (d25==null && d26==null) return "";
-    const delta = (d25!=null && d26!=null) ? d26-d25 : null;
-    const sinal = delta!=null ? (delta>=0?`&#x25B2; +${delta.toFixed(1)}`:`&#x25BC; ${delta.toFixed(1)}`) : "—";
-    const corDelta = delta!=null ? (delta>=0?"var(--green-600,#16a34a)":"var(--red-500,#ef4444)") : "inherit";
-    return `<tr>
-      <td style="font-weight:600;">${ies}</td>
-      <td style="text-align:center;">${d25!=null?Math.round(d25):"—"}</td>
-      <td style="text-align:center;font-style:italic;color:var(--text-secondary);">${d26!=null?Math.round(d26):"—"} <span style="font-size:0.68rem;">(est.)</span></td>
-      <td style="text-align:center;font-weight:700;color:${corDelta};">${sinal}</td>
-    </tr>`;
-  }).join("");
+  // tabela de variação removida — 2026 não exposto no painel (exercício incompleto)
 
   // ── aproveitamento por eixo (2025 — dado completo) ─────────────────────────
   const EIXOS_META = [
@@ -7266,19 +7288,19 @@ function renderSeloBlock(c) {
       id: "I", nome: "Eficiência na Execução Orçamentária", pts: 60,
       inds: ["1.1","1.2","1.3","1.4"],
       descricao: "Mede se a universidade converteu sua dotação orçamentária em despesas empenhadas e liquidadas ao longo do exercício. É o eixo de maior peso (60 pts) e onde todas as universidades têm maior dificuldade — especialmente nos primeiros bimestres, quando contratações e licitações ainda estão em andamento.",
-      destaque: "O indicador 1.4 (Foco em Ações Finalísticas) atingiu quase 100% em todas as IES nos dois anos — evidenciando que o gasto universitário está estruturalmente direcionado à missão acadêmica (ensino, pesquisa e extensão)."
+      destaque: "O indicador 1.4 (Foco em Ações Finalísticas) atingiu quase 100% em todas as IES em 2025 — evidenciando que o gasto universitário está estruturalmente direcionado à missão acadêmica (ensino, pesquisa e extensão)."
     },
     {
       id: "II", nome: "Racionalidade na Gestão de Créditos Adicionais", pts: 20,
       inds: ["2.1","2.2","2.3"],
       descricao: "Avalia a qualidade do planejamento orçamentário inicial e o uso responsável de créditos suplementares ao longo do exercício. Um planejamento mais preciso reduz a necessidade de suplementações e de dependência de superávit financeiro de anos anteriores.",
-      destaque: "Em 2026, UEM, UENP e UNICENTRO atingiram nota máxima nos indicadores 2.2 e 2.3 — sinal de menor dependência de recursos de superávit e melhor planejamento inicial."
+      destaque: "Em 2025, a maior parte das IES obteve pontuação máxima no indicador 2.3 (Priorização do Crédito do Exercício), refletindo uso prioritário de dotação própria antes de recorrer a créditos adicionais."
     },
     {
       id: "III", nome: "Passivos de Exercícios Anteriores", pts: 20,
       inds: ["3.1","3.2","3.3","3.4"],
       descricao: "Analisa a gestão dos Restos a Pagar — despesas empenhadas mas não pagas até 31 de dezembro. Volume elevado de RAP indica que compromissos são transferidos para o exercício seguinte, pressionando o orçamento futuro. Este é o eixo com melhor desempenho médio das universidades.",
-      destaque: "O indicador 3.2 (Cancelamento de RAP) melhorou em quase todas as IES de 2025 para 2026, sugerindo inscrições de Restos a Pagar mais criteriosas e menos empenhos de reserva."
+      destaque: "Em 2025, as IES apresentaram bom desempenho no indicador 3.3 (Pagamento de RAP), indicando comprometimento com a liquidação de passivos inscritos em exercícios anteriores."
     }
   ];
 
@@ -7322,7 +7344,7 @@ function renderSeloBlock(c) {
       <strong style="display:block;color:var(--text-primary);margin-bottom:4px;">O que &#xe9; o SELO Paran&#xe1;?</strong>
       O SELO Paran&#xe1; (Sistema de Excel&#xea;ncia em Lideran&#xe7;a Or&#xe7;ament&#xe1;ria) &#xe9; uma avalia&#xe7;&#xe3;o da
       <strong>qualidade da execu&#xe7;&#xe3;o or&#xe7;ament&#xe1;ria</strong> das universidades estaduais, conduzida pela
-      Diretoria de Or&#xe7;amento Estadual (DOE/SEFA-PR). A nota final (escala 0&ndash;100) combina
+      Diretoria de Or&#xe7;amento Estadual (DOE/SELO-PR). A nota final (escala 0&ndash;100) combina
       11 indicadores organizados em 3 eixos tem&#xe1;ticos, apurados bimestralmente com dados do
       SIAFIC &mdash; o sistema oficial de execu&#xe7;&#xe3;o or&#xe7;ament&#xe1;ria do Estado.<br><br>
       <strong>Como interpretar a nota:</strong> O SELO mede o <em>ritmo e a qualidade</em> da execu&#xe7;&#xe3;o &mdash;
@@ -7330,8 +7352,9 @@ function renderSeloBlock(c) {
       elevado (8050) e nota SELO baixa se executa de forma concentrada no final do ano ou gera
       muitos Restos a Pagar. A leitura combinada das duas fontes oferece diagn&#xf3;stico mais completo.
       <br><br>
-      <strong>Fonte:</strong> BI SELO-PR (SIAFIC/SEFA-PR) &middot;
-      Manual Metodol&#xf3;gico SELO Paran&#xe1; 2025/2026 &middot; Extra&#xed;do via pipeline SETI/Instituto Publix.
+      <strong>Fonte:</strong> BI SELO-PR (SIAFIC/SELO-PR) &middot;
+      Manual Metodol&#xf3;gico SELO Paran&#xe1; 2025 &middot; Extra&#xed;do via pipeline SETI/Instituto Publix.
+      Painel exibe o exerc&#xed;cio 2025 (completo). O exerc&#xed;cio 2026 ser&#xe1; incorporado quando finalizado.
     </div>`;
 
   // ── montagem final ──────────────────────────────────────────────────────────
@@ -7345,8 +7368,7 @@ function renderSeloBlock(c) {
         <h3>Notas bimestrais por IEES</h3>
         <p class="card-subtitle">
           Nota obtida em cada bimestre e percentual em rela&#xe7;&#xe3;o ao m&#xe1;ximo do bimestre
-          (B1=10 pts, B2/B3=15 pts, B4/B5=25 pts, B6=10 pts). Exerc&#xed;cio: ${anoAtivo}.
-          ${anoAtivo==="2026"?'Valores em <em>it&#xe1;lico</em> com marca&#xe7;&#xe3;o &ldquo;proj.&rdquo; s&#xe3;o bimestres projetados linearmente pelo BI SELO.':''}
+          (B1=10 pts, B2/B3=15 pts, B4/B5=25 pts, B6=10 pts). Exerc&#xed;cio 2025 &mdash; completo.
         </p>
         <div class="table-wrap" style="overflow-x:auto;">
           <table class="data-table" style="min-width:560px;font-size:0.82rem;">
@@ -7364,30 +7386,13 @@ function renderSeloBlock(c) {
         <article class="visual-card">
           <h3>Ranking &mdash; Nota Final</h3>
           <p class="card-subtitle">
-            Posi&#xe7;&#xe3;o relativa das IEES no exerc&#xed;cio ${anoAtivo}. Escala 0&ndash;100.
-            ${anoAtivo==="2025"&&mediaGrupo?'A linha vertical indica a m&#xe9;dia do grupo ('+Math.round(mediaGrupo)+' pts).':'Nota de 2026 estimada &mdash; exerc&#xed;cio em curso.'}
+            Posi&#xe7;&#xe3;o relativa das IEES no exerc&#xed;cio 2025. Escala 0&ndash;100.
+            ${mediaGrupo?'A linha vertical indica a m&#xe9;dia do grupo ('+Math.round(mediaGrupo)+' pts). Fonte: BI SELO-PR (SIAFIC/SEFA).':''}
           </p>
           <div style="margin-top:12px;">${barRows||'<p class="card-subtitle">Sem dados.</p>'}</div>
           ${legendaCor}
         </article>
 
-        <article class="visual-card">
-          <h3>Varia&#xe7;&#xe3;o 2025 &rarr; 2026</h3>
-          <p class="card-subtitle">
-            Compara&#xe7;&#xe3;o entre o exerc&#xed;cio finalizado (2025) e a proje&#xe7;&#xe3;o parcial (2026).
-            A queda generalizada reflete dados ainda incompletos &mdash; n&#xe3;o indica necessariamente
-            piora real de desempenho.
-          </p>
-          <table class="data-table" style="font-size:0.80rem;margin-top:8px;">
-            <thead><tr>
-              <th>IEES</th>
-              <th style="text-align:center;">2025</th>
-              <th style="text-align:center;">2026 <span style="font-size:0.65rem;font-weight:400;">(est.)</span></th>
-              <th style="text-align:center;">&#x394;</th>
-            </tr></thead>
-            <tbody>${evoRows||'<tr><td colspan="4" style="text-align:center;color:var(--text-secondary);">Sem dados comparativos.</td></tr>'}</tbody>
-          </table>
-        </article>
       </div>
     </div>
 
@@ -7521,7 +7526,7 @@ renderTop = function(c) {
   el.activeTabTitle.textContent = t[1];
   el.activeTabDescription.textContent = t[2];
   const scopeText = state.activeTab === "faculty" ? "Paraná · SETI/LGU" : (state.activeTab === "efficiency" || state.activeTab === "performance") ? "Paraná · Despesa 8050" : c.f.scope;
-  el.periodPill.textContent = `Ano base ${c.f.year} · Escopo ${scopeText}`;
+  el.periodPill.innerHTML = _periodPillHTML(c.f.year, scopeText);
   el.scopeLabel.textContent = c.selected ? `${c.selected.sigla} | ${c.group}` : c.group === "all" ? "Sistema estadual" : `Grupo ${c.group}`;
   updateActiveClusterLabel(c);
   updateContextBar(c);
@@ -9521,7 +9526,7 @@ renderTop = function renderTop(c) {
   if (el.activeTabKicker) el.activeTabKicker.textContent = t[0];
   if (el.activeTabTitle) el.activeTabTitle.textContent = t[1];
   if (el.activeTabDescription) el.activeTabDescription.textContent = t[2];
-  if (el.periodPill) el.periodPill.textContent = `Ano base ${c.f.year} · Escopo ${scopeDisplayName(c.f.scope)}`;
+  if (el.periodPill) el.periodPill.innerHTML = _periodPillHTML(c.f.year, scopeDisplayName(c.f.scope));
   if (el.scopeLabel) el.scopeLabel.textContent = activeScopeLabel(c);
   updateActiveClusterLabel(c);
   updateContextBar(c);
@@ -9878,7 +9883,7 @@ renderTop = function renderTopWithoutBrasilClusters(c) {
     // sem cálculo de cluster no escopo Brasil
     setBrasilClusterControlsState(true);
     renderTopBeforeBrasilScope(c);
-    if (el.periodPill) el.periodPill.textContent = `Ano base ${c.f.year} · Escopo Brasil`;
+    if (el.periodPill) el.periodPill.innerHTML = _periodPillHTML(c.f.year, 'Brasil');
     if (el.scopeLabel) el.scopeLabel.textContent = activeScopeLabel(c);
     updateActiveClusterLabel(c);
     updateContextBar(c);

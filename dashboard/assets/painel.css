@@ -7161,3 +7161,24 @@ details.ind-detail-accordion .catalog-card { border: none; border-radius: 0; mar
   opacity: 1;
   transform: translateX(-50%) translateY(0);
 }
+
+/* ── Nota de cobertura e fonte abaixo do filtro de ano ── */
+#yearContextNote {
+  flex: 0 0 100%;
+  font-size: 11px;
+  color: var(--text-secondary, #6b7280);
+  line-height: 1.5;
+  margin-top: 2px;
+  padding: 0 2px;
+  transition: opacity 0.15s ease;
+}
+
+#yearContextNote strong {
+  color: var(--text-primary, #1a1a2e);
+  font-weight: 600;
+}
+
+#yearContextNote em {
+  font-style: italic;
+  opacity: 0.85;
+}
