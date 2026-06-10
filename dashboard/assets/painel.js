@@ -5979,7 +5979,7 @@ function qualityFacultyBlock(c) {
     ${score("Portal CAPES", formatPercent(mean(allRows, capesPortalAccess)), "IND-9 · acesso institucional", mean(allRows, capesPortalAccess))}
   </div>
   <article class="visual-card mt-14"><h3>IND-6 · Proporção de docentes com doutorado</h3><p class="card-subtitle">V4 é a variável natural de agrupamento. Linha laranja = média do cluster; linha azul tracejada = média PR.</p>${quartilChipStrip("qualityDoctorBars", c.f.groupBy, c.base, c)}${qualityDoctorBars(c)}</article>
-  ${metricTable(rows, [["IEES", u => `<strong>${u.sigla}</strong><br><span>${u.groups[c.f.groupBy]}</span>`], ["IND-6 Doutores", u => formatPercent(u.doctors)], ["IND-8 Docentes estrangeiros", u => formatPercent(foreignFacultyRate(u))], ["IND-7 Mobilidade acadêmica", u => formatPercent(mobilityRate(u))], ["IND-9 Portal CAPES", u => capesPortalAccess(u) ? "Sim" : "Não"]], "Indicadores de qualificação docente")}`;
+  ${metricTable(rows, [["IEES", u => `<strong>${u.sigla}</strong><br><span>${u.groups[c.f.groupBy] ?? '—'}</span>`], ["IND-6 Doutores", u => formatPercent(u.doctors)], ["IND-8 Docentes estrangeiros", u => formatPercent(foreignFacultyRate(u))], ["IND-7 Mobilidade acadêmica", u => formatPercent(mobilityRate(u))], ["IND-9 Portal CAPES", u => capesPortalAccess(u) ? "Sim" : "Não"]], "Indicadores de qualificação docente")}`;
 }
 
 function qualityDoctorBars(c) {
@@ -6006,9 +6006,11 @@ function capesScatter(c) {
   const allRows = c.base.length ? c.base : c.all;
   const clusterIds = new Set(rows.map(u => u.id));
   const chartRows = explicitClusterActive(c) ? allRows : rows;
-  const avgX = mean(rows, u => u.capes);
-  const avgY = mean(rows, pgProductivityShare);
-  return `<div class="quality-scatter capes-scatter" style="--avg-x:${clamp((avgX - 3) / 2.2 * 100, 0, 100)}%;--avg-y:${clamp(avgY,0,100)}%"><span class="scatter-ref-v"></span><span class="scatter-ref-h"></span>${chartRows.map(u => { const x = clamp((u.capes - 3) / 2.2 * 100, 3, 97); const y = clamp(pgProductivityShare(u), 3, 97); const size = 18 + pgPermanentShare(u) / 100 * 32; return `<button class="scatter-point ${clusterIds.has(u.id) ? "in-cluster" : "out-cluster"} ${isUniSelected(c.f, u.id) ? "selected" : ""}" style="left:${x}%;bottom:${y}%;width:${size}px;height:${size}px" type="button" title="${u.sigla}: CAPES ${u.capes.toFixed(1)}; bolsas ${formatPercent(pgProductivityShare(u))}; permanentes ${formatPercent(pgPermanentShare(u))}">${u.sigla}</button>`; }).join("")}<span class="axis-caption x">Conceito CAPES</span><span class="axis-caption y">% bolsas produtividade</span></div>`;
+  const validRows = rows.filter(u => u.capes != null);
+  const avgX = mean(validRows.length ? validRows : rows, u => u.capes);
+  const avgY = mean(validRows.length ? validRows : rows, pgProductivityShare);
+  const plotRows = chartRows.filter(u => u.capes != null);
+  return `<div class="quality-scatter capes-scatter" style="--avg-x:${clamp((avgX - 3) / 2.2 * 100, 0, 100)}%;--avg-y:${clamp(avgY,0,100)}%"><span class="scatter-ref-v"></span><span class="scatter-ref-h"></span>${plotRows.map(u => { const x = clamp((u.capes - 3) / 2.2 * 100, 3, 97); const y = clamp(pgProductivityShare(u), 3, 97); const size = 18 + pgPermanentShare(u) / 100 * 32; return `<button class="scatter-point ${clusterIds.has(u.id) ? "in-cluster" : "out-cluster"} ${isUniSelected(c.f, u.id) ? "selected" : ""}" style="left:${x}%;bottom:${y}%;width:${size}px;height:${size}px" type="button" title="${u.sigla}: CAPES ${u.capes.toFixed(1)}; bolsas ${formatPercent(pgProductivityShare(u))}; permanentes ${formatPercent(pgPermanentShare(u))}">${u.sigla}</button>`; }).join("")}<span class="axis-caption x">Conceito CAPES</span><span class="axis-caption y">% bolsas produtividade</span></div>`;
 }
 
 function pgProgramTable(rows) {
@@ -7250,7 +7252,7 @@ function renderSeloBlock(c) {
           <div><strong>Total de colunas</strong><br><span>${esc(diag.colunas)}</span></div>
           <div><strong>Anos disponíveis</strong><br><span>${diagList(diag.anos)}</span></div>
           <div><strong>Unidades disponíveis</strong><br><span>${diagList(diag.unidades)}</span></div>
-          <div><strong>Bimestres disponíveis</strong><br><span>${diagList(diag.bimestres)}</span></div>
+          <div><strong>Periodicidade</strong><br><span>Consolidado anual &mdash; sem desagrega&#xe7;&#xe3;o bimestral</span></div>
           <div><strong>Indicadores disponíveis</strong><br><span>${diagList(diag.indicadores)}</span></div>
         </div>
         ${alertHtml}
@@ -7349,31 +7351,32 @@ function renderSeloBlock(c) {
   ];
 
   const eixoCards = EIXOS_META.map(eixo => {
-    let totalObt = 0, totalMax = 0;
+    let totalObt = 0, count = 0;
     IES_ORDER.forEach(ies => {
       const dAnual = (seloData[ies]||{})[anoAtivo];
       if (!dAnual?.indicadores) return;
-      eixo.inds.forEach(ind => {
-        const notaInd = dAnual.indicadores[ind];
-        const metaInd = seloInds[ind];
-        if (notaInd!=null && metaInd) { totalObt += notaInd; totalMax += metaInd.maximo; }
-      });
+      const somaIes = eixo.inds.reduce((s, k) => s + (dAnual.indicadores[k] || 0), 0);
+      totalObt += somaIes;
+      count++;
     });
-    const aprov = totalMax > 0 ? Math.round(totalObt/totalMax*100) : null;
+    const mediaObt = count > 0 ? totalObt / count : 0;
+    const aprov = count > 0 ? Math.round(mediaObt / eixo.pts * 100) : null;
     const corAprov = aprov!=null ? corPct(aprov) : "var(--gray-300,#d1d5db)";
+    const tooltipAprov = `Média das 7 IEES-PR neste eixo, expressa como percentual da pontuação máxima possível (Eixo I: máx. 60 pts · Eixo II: máx. 20 pts · Eixo III: máx. 20 pts). Fonte: Base SELO – Paraná / SEFA · Exercício ${anoAtivo}.`;
     return `<div style="padding:14px 16px;border-radius:10px;border:1px solid var(--gray-200,#e5e7eb);margin-bottom:10px;background:var(--surface-1,#fff);">
       <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:8px;">
         <div>
           <div style="font-size:0.70rem;font-weight:600;color:var(--text-secondary);text-transform:uppercase;letter-spacing:0.05em;">Eixo ${eixo.id} &middot; ${eixo.pts} pontos</div>
           <div style="font-size:0.92rem;font-weight:700;margin-top:2px;">${eixo.nome}</div>
         </div>
-        ${aprov!=null?`<div style="text-align:center;min-width:64px;">
+        ${aprov!=null?`<div style="text-align:center;min-width:64px;cursor:help;" title="${tooltipAprov}">
           <div style="font-size:1.4rem;font-weight:800;color:${corAprov};">${aprov}%</div>
           <div style="font-size:0.65rem;color:var(--text-secondary);">aproveit.<br>m&#xe9;dio ${anoAtivo}</div>
         </div>`:''}
       </div>
       <div style="font-size:0.78rem;color:var(--text-secondary);line-height:1.6;margin-bottom:8px;">${eixo.descricao}</div>
-      <div style="font-size:0.75rem;background:var(--surface-2,#f8fafc);border-radius:6px;padding:8px 10px;border-left:3px solid ${corAprov};line-height:1.5;">
+      <div style="font-size:0.75rem;background:var(--surface-2,#f8fafc);border-radius:6px;padding:8px 10px;border-left:3px solid ${corAprov};line-height:1.5;"
+           title="Fonte: Base SELO – Paraná / SEFA · Exercício ${anoAtivo}. A nota de cada indicador é calculada pelo SEFA/SETI com base nos dados de execução orçamentária registrados no Sistema SELO.">
         <strong>An&#xe1;lise:</strong> ${eixo.destaque}
       </div>
     </div>`;
@@ -7440,10 +7443,17 @@ function renderSeloBlock(c) {
     <article class="visual-card" style="margin-top:0;">
       <h3>Diagn&#xf3;stico por Eixo Tem&#xe1;tico</h3>
       <p class="card-subtitle">
-        Aproveitamento m&#xe9;dio das 7 IEES-PR em cada eixo. Cada eixo mede uma
-        dimens&#xe3;o distinta da qualidade or&#xe7;ament&#xe1;ria.
+        Aproveitamento m&#xe9;dio das 7 IEES-PR em cada eixo, expresso como percentual
+        da pontua&#xe7;&#xe3;o m&#xe1;xima poss&#xed;vel do eixo. Dados do exerc&#xed;cio ${anoAtivo} &mdash; consolidado anual.
       </p>
-      <div style="margin-top:14px;">${eixoCards}</div>
+      <div style="margin-top:14px;">${eixoCards}
+        <div class="chart-note metodologica" style="margin-top:16px;padding:14px 18px;background:var(--surface-2,#f5f7fa);border-left:3px solid var(--color-primary,#1a56a0);border-radius:6px;font-size:0.81rem;color:var(--text-secondary,#555);line-height:1.6;">
+          <strong style="display:block;margin-bottom:6px;color:var(--text-primary,#222);font-size:0.83rem;">Sobre o SELO e a metodologia de avalia&#xe7;&#xe3;o</strong>
+          <p style="margin:0 0 6px 0;">O <strong>SELO</strong> (Sistema de Excel&#xea;ncia em Lideran&#xe7;a Or&#xe7;ament&#xe1;ria) &#xe9; uma ferramenta da Secretaria de Estado da Fazenda do Paran&#xe1; (SEFA/SETI) que avalia anualmente a qualidade da gest&#xe3;o or&#xe7;ament&#xe1;ria das universidades estaduais paranaenses (IEES).</p>
+          <p style="margin:0 0 6px 0;">A avalia&#xe7;&#xe3;o &#xe9; organizada em <strong>tr&#xea;s eixos tem&#xe1;ticos</strong>, cada um com peso definido (Eixo I: 60 pts &middot; Eixo II: 20 pts &middot; Eixo III: 20 pts), totalizando <strong>100 pontos</strong>. A nota final de cada IEES &#xe9; a soma direta das notas obtidas em todos os indicadores.</p>
+          <p style="margin:0;">Os dados exibidos referem-se ao <strong>exerc&#xed;cio ${anoAtivo} &mdash; consolidado anual</strong>. N&#xe3;o h&#xe1; desagrega&#xe7;&#xe3;o por bimestre nesta base.</p>
+        </div>
+      </div>
     </article>`;
 }
 
@@ -7911,7 +7921,14 @@ function renderEfficiencyRankingTable(rows) {
       <th style="text-align:center;"><span class="eff-th-info" tabindex="0">SELO ${_seloAnoTabela} ⓘ<span class="eff-th-tooltip"><strong>Nota Final SELO-PR</strong><br>Nota final SELO-PR — Sistema de Excelência em Liderança Orçamentária (DOE/SEFA). Escala 0–100.<br><br>Composta por 11 indicadores em 3 eixos: Eficiência na Execução Orçamentária (60 pts), Racionalidade na Gestão de Créditos Adicionais (20 pts) e Passivos de Exercícios Anteriores (20 pts).<br><br>A cor indica posição relativa entre as IES do recorte: verde = 1º–2º &nbsp; azul-acinzentado = posições intermediárias &nbsp; laranja = últimas posições.<br><br><em>Fonte: Base SELO — Paraná (DOE/SEFA-PR), exercício ${_seloAnoTabela}.</em></span></span></th>
       <th>Classificação</th></tr></thead>
     <tbody>${rows_html}</tbody>
-  </table></div>`;
+  </table></div>
+  <div class="metodologia-ranking-note">
+    <strong>Como os índices são calculados</strong>
+    <p><strong>Custo/Aluno:</strong> orçamento total liquidado pela IEES no exercício (Relatório da Despesa 8050 · SEFA/SETI), dividido pelo número de estudantes com matrícula ativa (QT_MAT · INEP/Censo da Educação Superior). Expresso em reais por estudante. Não considera vagas ofertadas não preenchidas.</p>
+    <p><strong>Índice de Desempenho Acadêmico</strong> (escala 0–100): média ponderada de seis indicadores acadêmicos — taxa de conclusão (peso 25%), permanência, ou seja, 100 menos a taxa de evasão (20%), taxa de ocupação de vagas (15%), proporção de docentes com doutorado (15%), taxa de inserção profissional de egressos (15%) e conceito CAPES médio dos programas de pós-graduação (10%). Quando algum indicador não está disponível para a IEES, o peso é redistribuído proporcionalmente entre os demais; o índice exige pelo menos dois indicadores com dado válido.</p>
+    <p><strong>Índice de Eficiência Acadêmico-Orçamentária:</strong> razão entre o desempenho relativo e o custo relativo da IEES em relação à média do conjunto — isto é, (Índice de Desempenho da IEES ÷ média do grupo) dividido por (Custo/Aluno da IEES ÷ média do grupo). Um valor acima de 1,0 indica que a IEES entrega desempenho proporcionalmente superior ao que seu custo justificaria. Faixas de classificação: <em>Alta eficiência</em> (índice &gt; 1,10), <em>Eficiência proporcional</em> (0,90–1,10) e <em>Baixa eficiência</em> (&lt; 0,90).</p>
+    <p style="margin:0"><em>Os índices têm caráter analítico-comparativo e devem ser interpretados em conjunto com o contexto institucional de cada IEES — porte, missão territorial, perfil de cursos e condições orçamentárias estruturais.</em></p>
+  </div>`;
 }
 
 // ── Comparador Direto entre Duas IES ─────────────────────────────────────────

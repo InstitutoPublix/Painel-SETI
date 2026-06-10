@@ -7208,3 +7208,21 @@ details.ind-detail-accordion .catalog-card { border: none; border-radius: 0; mar
 .ranking-note ul { margin: 0 0 0 16px; padding: 0; }
 .ranking-note li { margin-bottom: 4px; }
 .ranking-note ul ul { margin-top: 4px; }
+/* ── Metodologia Ranking Note ──────────────────────────────────────────────── */
+.metodologia-ranking-note {
+  font-size: 0.78rem;
+  color: var(--color-text-secondary, #555);
+  background: var(--color-bg-subtle, #f8f9fa);
+  border-left: 3px solid var(--color-accent, #4a90d9);
+  border-radius: 4px;
+  padding: 10px 14px;
+  margin: 12px 0 16px 0;
+  line-height: 1.6;
+}
+.metodologia-ranking-note strong:first-child {
+  display: block;
+  font-size: 0.80rem;
+  margin-bottom: 6px;
+  color: var(--color-text, #333);
+}
+.metodologia-ranking-note p { margin: 0 0 6px 0; }

@@ -6467,6 +6467,83 @@ details.indicator-catalog[open] > summary {
 .eff-mid  .eff-badge  { background: var(--blue-100); color: var(--blue-800); }
 .eff-low  .eff-badge  { background: #fdecea; color: var(--red-600); }
 
+/* ── Tooltips dos cabeçalhos do ranking de eficiência ── */
+.eff-th-info {
+  position: relative;
+  display: inline-block;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.eff-th-tooltip {
+  visibility: hidden;
+  opacity: 0;
+  position: absolute;
+  bottom: calc(100% + 6px);
+  left: 50%;
+  transform: translateX(-50%) translateY(4px);
+  width: 280px;
+  background: var(--gray-950, #152033);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 400;
+  line-height: 1.55;
+  padding: 10px 12px;
+  border-radius: 6px;
+  text-transform: none;
+  letter-spacing: 0;
+  pointer-events: none;
+  z-index: 100;
+  transition: opacity 0.15s ease, transform 0.15s ease;
+}
+.eff-th-tooltip::after {
+  content: "";
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  border: 5px solid transparent;
+  border-top-color: var(--gray-950, #152033);
+}
+.eff-th-info:hover .eff-th-tooltip,
+.eff-th-info:focus .eff-th-tooltip {
+  visibility: visible;
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+
+/* ── Ranking Note ── */
+.ranking-note {
+  font-size: 0.78rem;
+  color: var(--color-text-secondary, #555);
+  background: var(--surface-2, #f5f5f5);
+  border-radius: 6px;
+  padding: 10px 14px;
+  margin-top: 12px;
+  line-height: 1.6;
+}
+.ranking-note p { margin: 0 0 6px 0; }
+.ranking-note ul { margin: 0 0 0 16px; padding: 0; }
+.ranking-note li { margin-bottom: 4px; }
+.ranking-note ul ul { margin-top: 4px; }
+/* ── Metodologia Ranking Note ── */
+.metodologia-ranking-note {
+  font-size: 0.78rem;
+  color: var(--color-text-secondary, #555);
+  background: var(--surface-2, #f5f5f5);
+  border-left: 3px solid var(--color-accent, #6b7fc4);
+  border-radius: 0 6px 6px 0;
+  padding: 10px 14px;
+  margin-top: 12px;
+  line-height: 1.6;
+}
+.metodologia-ranking-note strong:first-child {
+  display: block;
+  font-size: 0.80rem;
+  margin-bottom: 6px;
+  color: var(--color-text, #333);
+}
+.metodologia-ranking-note p { margin: 0 0 6px 0; }
+
 .pilot-outperf-table { width: 100%; border-collapse: collapse; }
 .pilot-outperf-table th, .pilot-outperf-table td {
   padding: 7px 10px; font-size: 13px; border-bottom: 1px solid var(--gray-200);
@@ -8582,10 +8659,13 @@ async function loadPrecomputedJson() {
         upsertYearIndicators(sigla, yr, { composicaoFontes: cf });
       }
     }
-    if (data.clusters)   window.SETI_CLUSTERS   = data.clusters;
-    if (data.quartiRefs) window.SETI_QUARTIREFS  = data.quartiRefs;
+    if (data.clusters)        window.SETI_CLUSTERS        = data.clusters;
+    if (data.quartiRefs)      window.SETI_QUARTIREFS      = data.quartiRefs;
     // Expõe byYear por IES para série histórica ind81-87 (2024/2025/2026)
-    if (data.byYear)     window.SETI_BYEAR       = data.byYear;
+    if (data.byYear)          window.SETI_BYEAR           = data.byYear;
+    // SELO-PR — avaliação anual da qualidade da execução orçamentária por IES
+    if (data.seloData)        window.SELO_DATA            = data.seloData;
+    if (data.seloIndicadores) window.SELO_INDICADORES     = data.seloIndicadores;
     registerBase(NOME_BASE + " (ano=" + year + ")", "real", count, inferPrecomputedSourceBases(data));
   } catch (err) {
     const reason = friendlyError(err);
@@ -14751,7 +14831,7 @@ function qualityFacultyBlock(c) {
     ${score("Portal CAPES", formatPercent(mean(allRows, capesPortalAccess)), "IND-9 · acesso institucional", mean(allRows, capesPortalAccess))}
   </div>
   <article class="visual-card mt-14"><h3>IND-6 · Proporção de docentes com doutorado</h3><p class="card-subtitle">V4 é a variável natural de agrupamento. Linha laranja = média do cluster; linha azul tracejada = média PR.</p>${quartilChipStrip("qualityDoctorBars", c.f.groupBy, c.base, c)}${qualityDoctorBars(c)}</article>
-  ${metricTable(rows, [["IEES", u => `<strong>${u.sigla}</strong><br><span>${u.groups[c.f.groupBy]}</span>`], ["IND-6 Doutores", u => formatPercent(u.doctors)], ["IND-8 Docentes estrangeiros", u => formatPercent(foreignFacultyRate(u))], ["IND-7 Mobilidade acadêmica", u => formatPercent(mobilityRate(u))], ["IND-9 Portal CAPES", u => capesPortalAccess(u) ? "Sim" : "Não"]], "Indicadores de qualificação docente")}`;
+  ${metricTable(rows, [["IEES", u => `<strong>${u.sigla}</strong><br><span>${u.groups[c.f.groupBy] ?? '—'}</span>`], ["IND-6 Doutores", u => formatPercent(u.doctors)], ["IND-8 Docentes estrangeiros", u => formatPercent(foreignFacultyRate(u))], ["IND-7 Mobilidade acadêmica", u => formatPercent(mobilityRate(u))], ["IND-9 Portal CAPES", u => capesPortalAccess(u) ? "Sim" : "Não"]], "Indicadores de qualificação docente")}`;
 }
 
 function qualityDoctorBars(c) {
@@ -14778,9 +14858,11 @@ function capesScatter(c) {
   const allRows = c.base.length ? c.base : c.all;
   const clusterIds = new Set(rows.map(u => u.id));
   const chartRows = explicitClusterActive(c) ? allRows : rows;
-  const avgX = mean(rows, u => u.capes);
-  const avgY = mean(rows, pgProductivityShare);
-  return `<div class="quality-scatter capes-scatter" style="--avg-x:${clamp((avgX - 3) / 2.2 * 100, 0, 100)}%;--avg-y:${clamp(avgY,0,100)}%"><span class="scatter-ref-v"></span><span class="scatter-ref-h"></span>${chartRows.map(u => { const x = clamp((u.capes - 3) / 2.2 * 100, 3, 97); const y = clamp(pgProductivityShare(u), 3, 97); const size = 18 + pgPermanentShare(u) / 100 * 32; return `<button class="scatter-point ${clusterIds.has(u.id) ? "in-cluster" : "out-cluster"} ${isUniSelected(c.f, u.id) ? "selected" : ""}" style="left:${x}%;bottom:${y}%;width:${size}px;height:${size}px" type="button" title="${u.sigla}: CAPES ${u.capes.toFixed(1)}; bolsas ${formatPercent(pgProductivityShare(u))}; permanentes ${formatPercent(pgPermanentShare(u))}">${u.sigla}</button>`; }).join("")}<span class="axis-caption x">Conceito CAPES</span><span class="axis-caption y">% bolsas produtividade</span></div>`;
+  const validRows = rows.filter(u => u.capes != null);
+  const avgX = mean(validRows.length ? validRows : rows, u => u.capes);
+  const avgY = mean(validRows.length ? validRows : rows, pgProductivityShare);
+  const plotRows = chartRows.filter(u => u.capes != null);
+  return `<div class="quality-scatter capes-scatter" style="--avg-x:${clamp((avgX - 3) / 2.2 * 100, 0, 100)}%;--avg-y:${clamp(avgY,0,100)}%"><span class="scatter-ref-v"></span><span class="scatter-ref-h"></span>${plotRows.map(u => { const x = clamp((u.capes - 3) / 2.2 * 100, 3, 97); const y = clamp(pgProductivityShare(u), 3, 97); const size = 18 + pgPermanentShare(u) / 100 * 32; return `<button class="scatter-point ${clusterIds.has(u.id) ? "in-cluster" : "out-cluster"} ${isUniSelected(c.f, u.id) ? "selected" : ""}" style="left:${x}%;bottom:${y}%;width:${size}px;height:${size}px" type="button" title="${u.sigla}: CAPES ${u.capes.toFixed(1)}; bolsas ${formatPercent(pgProductivityShare(u))}; permanentes ${formatPercent(pgPermanentShare(u))}">${u.sigla}</button>`; }).join("")}<span class="axis-caption x">Conceito CAPES</span><span class="axis-caption y">% bolsas produtividade</span></div>`;
 }
 
 function pgProgramTable(rows) {
@@ -16392,19 +16474,68 @@ function renderEfficiencyRankingTable(rows) {
   })).filter(x => isValidNumber(x.idx)).sort((a, b) => b.idx - a.idx);
   if (!data.length) return `<p class="card-subtitle">Índice de eficiência não calculável para o recorte selecionado.</p>`;
   const maxIdx = Math.max(...data.map(x => x.idx));
+
+  // SELO: lê notaFinal do window.SELO_DATA (carregado pelo loader do JSON pré-computado)
+  const _seloD = window.SELO_DATA || {};
+  const _todosAnosSelo = Array.from(new Set(Object.values(_seloD).flatMap(entry => Object.keys(entry || {})))).sort();
+  const _seloAnoTabela = _todosAnosSelo.includes(state.seloAno)
+    ? state.seloAno
+    : (_todosAnosSelo[_todosAnosSelo.length - 1] || "2025");
+  function _seloNota(sigla) {
+    const entry = _seloD[sigla];
+    if (!entry) return null;
+    const v = entry[_seloAnoTabela]?.notaFinal;
+    return v != null ? v : null;
+  }
+
+  // ranking SELO por posição relativa entre as IES do recorte com nota disponível
+  const seloRanking = [...data.map(x => x.u)]
+    .filter(u => _seloNota(u.sigla) != null)
+    .sort((a, b) => _seloNota(b.sigla) - _seloNota(a.sigla));
+  const seloTotal = seloRanking.length;
+  const seloPos = {};
+  seloRanking.forEach((u, i) => { seloPos[u.sigla] = i + 1; });
+
   const rows_html = data.map((item, i) => {
     const cls = classifyEfficiency(item.idx);
     const barW = clamp(item.idx / Math.max(maxIdx, 0.01) * 100, 4, 100);
+    const seloNota = _seloNota(item.u.sigla);
+    const pos = seloPos[item.u.sigla] ?? null;
+    const seloColor = pos === null ? "var(--gray-300,#d1d5db)"
+      : pos <= 2                ? "#2e7d32"
+      : pos <= seloTotal - 2    ? "#5c7a9e"
+      : "#e65100";
+    const seloCell = seloNota != null
+      ? `<div title="Posição ${pos}º de ${seloTotal} no ranking SELO-PR ${_seloAnoTabela}. Nota Final da Unidade calculada pela SEFA com base na execução orçamentária acumulada do exercício." style="display:flex;flex-direction:column;align-items:center;gap:3px;">
+          <span style="font-weight:700;font-size:0.90rem;color:${seloColor};">${Math.round(seloNota)}</span>
+          <div style="width:52px;height:4px;background:var(--gray-100,#f3f4f6);border-radius:2px;overflow:hidden;">
+            <div style="width:${seloNota}%;height:100%;background:${seloColor};border-radius:2px;"></div>
+          </div>
+        </div>`
+      : `<span style="color:var(--text-secondary)">—</span>`;
     return `<tr class="${cls.cls}"><td>${i + 1}º</td><td><strong>${item.u.sigla}</strong></td>
       <td>${item.cps != null ? formatCurrency(item.cps) : "—"}</td>
       <td>${item.api != null ? item.api.toFixed(1).replace(".", ",") : "—"}</td>
       <td><div class="eff-bar-wrap ${cls.cls}"><div class="eff-bar-track"><div class="eff-bar-fill" style="width:${barW}%"></div></div><span>${item.idx.toFixed(2).replace(".", ",")}</span></div></td>
+      <td style="text-align:center;">${seloCell}</td>
       <td><span class="eff-badge">${cls.label}</span></td></tr>`;
   }).join("");
   return `<div class="table-wrap"><table class="pilot-ranking-table">
-    <thead><tr><th>Pos.</th><th>IEES</th><th title="Orçamento liquidado ÷ matrículas ativas (QT_MAT · INEP). Não considera vagas ofertadas.">Custo/aluno ⓘ</th><th>Índice desempenho</th><th>Índice eficiência</th><th>Classificação</th></tr></thead>
+    <thead><tr><th>Pos.</th><th>IEES</th>
+      <th><span class="eff-th-info" tabindex="0">Custo/aluno ⓘ<span class="eff-th-tooltip"><strong>Custo por aluno</strong><br>Orçamento total liquidado pela universidade no ano dividido pelo número de alunos com matrícula ativa. Reflete o investimento médio por estudante efetivamente matriculado — não considera vagas ofertadas.<br><br><em>Fontes: Despesa liquidada — Relatório da Despesa 8050 (SETI/SEFA, 2024); Matrículas ativas (QT_MAT) — INEP/Censo da Educação Superior (2024).</em></span></span></th>
+      <th><span class="eff-th-info" tabindex="0">Índice desempenho ⓘ<span class="eff-th-tooltip"><strong>Índice de Desempenho Acadêmico</strong><br>Score composto (0–100) calculado por média ponderada de seis indicadores:<br>• Conclusão: 25% &nbsp;• Permanência (1 − evasão): 20%<br>• Ocupação de vagas: 15% &nbsp;• % Docentes doutores: 15%<br>• Inserção profissional: 15% &nbsp;• Conceito CAPES médio: 10%<br>Quando um indicador está ausente, o peso é redistribuído entre os demais.<br><br><em>Fontes: INEP/Censo da Educação Superior, CAPES/Sucupira, bases administrativas SETI/PR.</em></span></span></th>
+      <th><span class="eff-th-info" tabindex="0">Índice eficiência ⓘ<span class="eff-th-tooltip"><strong>Índice de Eficiência Acadêmico-Orçamentária</strong><br>Razão entre o desempenho relativo e o custo relativo da universidade em relação à média do conjunto: <em>desempenho da IES ÷ média do grupo</em> dividido por <em>custo da IES ÷ média do grupo</em>.<br>Valores acima de 1,0 indicam que a universidade entrega desempenho proporcionalmente superior ao seu custo.<br>• Acima de 1,10 → Alta eficiência<br>• Entre 0,90 e 1,10 → Eficiência proporcional<br>• Abaixo de 0,90 → Baixa eficiência<br><br><em>Fontes: calculado internamente a partir do Índice de Desempenho e do Custo/Aluno normalizados pela média das IEES-PR do recorte.</em></span></span></th>
+      <th style="text-align:center;"><span class="eff-th-info" tabindex="0">SELO ${_seloAnoTabela} ⓘ<span class="eff-th-tooltip"><strong>Nota Final SELO-PR</strong><br>Nota final SELO-PR — Sistema de Excelência em Liderança Orçamentária (DOE/SEFA). Escala 0–100.<br><br>Composta por 11 indicadores em 3 eixos: Eficiência na Execução Orçamentária (60 pts), Racionalidade na Gestão de Créditos Adicionais (20 pts) e Passivos de Exercícios Anteriores (20 pts).<br><br>A cor indica posição relativa entre as IES do recorte: verde = 1º–2º &nbsp; azul-acinzentado = posições intermediárias &nbsp; laranja = últimas posições.<br><br><em>Fonte: Base SELO — Paraná (DOE/SEFA-PR), exercício ${_seloAnoTabela}.</em></span></span></th>
+      <th>Classificação</th></tr></thead>
     <tbody>${rows_html}</tbody>
-  </table></div>`;
+  </table></div>
+  <div class="metodologia-ranking-note">
+    <strong>Como os índices são calculados</strong>
+    <p><strong>Custo/Aluno:</strong> orçamento total liquidado pela IEES no exercício (Relatório da Despesa 8050 · SEFA/SETI), dividido pelo número de estudantes com matrícula ativa (QT_MAT · INEP/Censo da Educação Superior). Expresso em reais por estudante. Não considera vagas ofertadas não preenchidas.</p>
+    <p><strong>Índice de Desempenho Acadêmico</strong> (escala 0–100): média ponderada de seis indicadores acadêmicos — taxa de conclusão (peso 25%), permanência, ou seja, 100 menos a taxa de evasão (20%), taxa de ocupação de vagas (15%), proporção de docentes com doutorado (15%), taxa de inserção profissional de egressos (15%) e conceito CAPES médio dos programas de pós-graduação (10%). Quando algum indicador não está disponível para a IEES, o peso é redistribuído proporcionalmente entre os demais; o índice exige pelo menos dois indicadores com dado válido.</p>
+    <p><strong>Índice de Eficiência Acadêmico-Orçamentária:</strong> razão entre o desempenho relativo e o custo relativo da IEES em relação à média do conjunto — isto é, (Índice de Desempenho da IEES ÷ média do grupo) dividido por (Custo/Aluno da IEES ÷ média do grupo). Um valor acima de 1,0 indica que a IEES entrega desempenho proporcionalmente superior ao que seu custo justificaria. Faixas de classificação: <em>Alta eficiência</em> (índice &gt; 1,10), <em>Eficiência proporcional</em> (0,90–1,10) e <em>Baixa eficiência</em> (&lt; 0,90).</p>
+    <p style="margin:0"><em>Os índices têm caráter analítico-comparativo e devem ser interpretados em conjunto com o contexto institucional de cada IEES — porte, missão territorial, perfil de cursos e condições orçamentárias estruturais.</em></p>
+  </div>`;
 }
 
 // ── Comparador Direto entre Duas IES ─────────────────────────────────────────
@@ -16727,6 +16858,16 @@ function efficiencyBlock(title, c) {
           ⓘ Custo/aluno calculado sobre <strong>matrículas ativas</strong> (QT_MAT · INEP/Censo da Educação Superior) — não sobre vagas ofertadas.
         </p>
         ${renderEfficiencyRankingTable(rows)}
+        <div class="ranking-note">
+          <strong>Sobre o SELO-PR:</strong> o Sistema de Excelência em Liderança Orçamentária
+          é uma avaliação da qualidade da execução orçamentária conduzida pela Diretoria de
+          Orçamento Estadual (DOE/SEFA-PR). A nota final (0–100) é obtida pela ponderação
+          bimestral de 11 indicadores organizados em 3 eixos: Eficiência na Execução
+          Orçamentária (máx. 60 pts), Racionalidade na Gestão de Créditos Adicionais
+          (máx. 20 pts) e Passivos de Exercícios Anteriores (máx. 20 pts). Os resultados
+          têm caráter técnico-informacional e não implicam automaticamente repasses ou
+          penalidades orçamentárias. Fonte: SEFA/DOE-PR · exercício 2025.
+        </div>
       </div>
       ${renderComparadorDireto(c)}
       ${renderPilotConclusion(rows)}
@@ -17132,8 +17273,8 @@ function budgetContextAlerts(c, resultOption) {
   rows.forEach(row => {
     const quad = budgetQuadrant(row);
     const profile = row.u.groups.v6 || "";
-    if (quad.code === "q4" && (profile.includes("Expansivo") || profile.includes("Autônomo"))) alerts.push(["alert-danger", "⚠", row.u.sigla, "Alto orçamento com resultado abaixo do cluster — atenção."]);
-    if (quad.code === "q3" && profile.includes("Restritivo")) alerts.push(["alert-info", "i", row.u.sigla, "Restrição orçamentária estrutural pode explicar o posicionamento — analisar junto com corpo docente."]);
+    if (quad.code === "q4" && (profile.includes("Expansivo") || profile.includes("Autônomo"))) alerts.push(["alert-danger", "⚠", row.u.sigla, "Perfil orçamentário expansivo (V6): orçamento atualizado significativamente superior à dotação inicial, indicando uso intenso de suplementações. Verificar sustentabilidade e recorrência das fontes que financiam as suplementações."]);
+    if (quad.code === "q3" && profile.includes("Restritivo")) alerts.push(["alert-info", "i", row.u.sigla, profile.includes("Moderado-Restritivo") ? "Perfil orçamentário moderado-restritivo (V6): execução dentro dos limites, mas com margem reduzida de flexibilidade. Monitorar evolução da dotação atualizada e do grau de contingenciamento nos próximos ciclos." : "Perfil orçamentário restritivo (V6): orçamento atualizado sistematicamente inferior à dotação inicial, com baixa margem para suplementações. Isso tende a comprimir investimentos em pessoal, infraestrutura e custeio — o que pode justificar resultados abaixo da média em indicadores que dependem de capacidade instalada, como ocupação docente e oferta de vagas."]);
     if (budgetMetrics(row.u).executionRate < 80) alerts.push(["alert-warn", "⚠", row.u.sigla, `${indicatorName(81)} abaixo do esperado (${formatPercent(budgetMetrics(row.u).executionRate)}).`]);
   });
   if (!alerts.length) alerts.push(["alert-ok", "✓", "Sistema", "Nenhum alerta crítico no recorte orçamentário ativo."]);
