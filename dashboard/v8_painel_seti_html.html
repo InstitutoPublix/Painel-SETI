@@ -10,6 +10,76 @@
     <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,300&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet" />
     <link rel="stylesheet" href="assets/painel.css" />
 
+    <style>
+      /* ── Cabeçalho institucional — overrides de layout ───────────────── */
+      .institutional-header {
+        position: relative;
+        overflow: hidden;
+      }
+
+      .header-content {
+        position: relative;
+        z-index: 2;
+      }
+
+      .header-brand {
+        display: flex;
+        align-items: center;
+      }
+
+      .header-arc {
+        position: absolute;
+        right: 220px;
+        top: 0;
+        bottom: 0;
+        width: 260px;
+        opacity: 0.7;
+        pointer-events: none;
+        z-index: 1;
+      }
+
+      .brand-text .eyebrow {
+        margin: 0 0 4px 0;
+        font-size: 11px;
+        font-weight: 600;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: #4cdf8e;
+      }
+
+      .institutional-header h1 {
+        margin: 0 0 4px 0;
+        font-size: 28px;
+        font-weight: 700;
+        color: #ffffff;
+        line-height: 1.15;
+      }
+
+      .header-subtitle {
+        margin: 0;
+        font-size: 13px;
+        color: #a8c8f0;
+        font-weight: 400;
+      }
+
+      .header-logos {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        flex-shrink: 0;
+      }
+
+      .header-logo {
+        height: 52px;
+        width: auto;
+        object-fit: contain;
+      }
+
+      .header-logo-seti {
+        height: 44px;
+      }
+    </style>
+
     <!-- SheetJS — bundled localmente para funcionar sem internet -->
     <script src="assets/xlsx.full.min.js"></script>
 
@@ -19,34 +89,78 @@
   </head>
 
   <body class="dashboard-body">
-    <header class="institutional-header">
+    <!-- ═══════════════════════════════════════════════════════════
+         CABEÇALHO INSTITUCIONAL — Painel SETI
+         Fundo: azul-marinho #0b2545 | Curvas decorativas SVG inline
+         ═══════════════════════════════════════════════════════════ -->
+    <header class="institutional-header" id="institutionalHeader">
+
+      <!-- Faixa superior decorativa (linha fina esmeralda + azul) -->
       <div class="header-topline"></div>
+
+      <!-- Corpo principal do cabeçalho -->
       <div class="header-content">
+
+        <!-- ESQUERDA: logo OpR + divisor vertical + textos da marca -->
         <div class="header-brand">
-          <img class="brand-mark brand-logo" src="assets/logo OpR.jpeg" alt="Orçamento para Resultados – Estado do Paraná" />
-          <div>
-            <p class="eyebrow">SETI Paraná | Orçamento para Resultados</p>
+          <img
+            src="assets/img/logo_opr_transparent.png"
+            alt="Orçamento para Resultados — Estado do Paraná"
+            class="brand-logo"
+          />
+          <div style="width:1px; height:52px; background:rgba(255,255,255,0.25); margin:0 4px;"></div>
+          <div class="brand-text">
+            <p class="eyebrow">SETI PARANÁ | ORÇAMENTO PARA RESULTADOS</p>
             <h1>Painel de Desempenho da Gestão Universitária</h1>
             <p class="header-subtitle">Monitoramento executivo das universidades estaduais do Paraná</p>
           </div>
         </div>
-        <div class="header-status" aria-label="Informações do painel">
-          <div class="header-logos">
-            <img
-              src="assets/logo Governo do Paraná.jpg"
-              alt="Governo do Paraná"
-              class="header-logo"
-            />
-            <img
-              src="assets/logo SETI.png"
-              alt="SETI Paraná"
-              class="header-logo"
-            />
-          </div>
-          <span id="dataStatusChip" style="display:none;" aria-live="polite"></span>
+
+        <!-- Arco decorativo SVG posicionado absolutamente entre texto e logos -->
+        <div class="header-arc" aria-hidden="true">
+          <svg viewBox="0 0 300 120" fill="none" xmlns="http://www.w3.org/2000/svg" style="height:100%; width:auto;">
+            <path d="M300 0 Q180 0 120 60 Q60 120 0 120" stroke="#1a5fa8" stroke-width="2" fill="none" opacity="0.6"/>
+            <path d="M300 20 Q200 20 140 70 Q80 120 20 120" stroke="#2ecc71" stroke-width="1.5" fill="none" opacity="0.5"/>
+          </svg>
         </div>
+
+        <!-- DIREITA: logos Governo do Paraná + SETI -->
+        <div class="header-logos">
+          <img
+            src="assets/img/logo_gov_pr.jpg"
+            alt="Paraná — Governo do Estado"
+            class="header-logo"
+          />
+          <div style="width:1px; height:40px; background:rgba(255,255,255,0.3);"></div>
+          <img
+            src="assets/img/logo_SETI.png"
+            alt="Secretaria da Ciência, Tecnologia e Ensino Superior"
+            class="header-logo header-logo-seti"
+          />
+        </div>
+
+      </div><!-- /.header-content -->
+
+      <!-- QUARTIL CHIPS — mantido para compatibilidade com painel.js -->
+      <div id="quartilChips" class="quartil-chips quartil-chips-strip" aria-label="Grupos da variável de agrupamento" style="display:none;"></div>
+
+      <!-- Elemento decorativo: curvas SVG (não interativo) -->
+      <div class="header-decoration" aria-hidden="true">
+        <svg viewBox="0 0 460 110" preserveAspectRatio="none"
+             xmlns="http://www.w3.org/2000/svg">
+          <path d="M460,8 Q340,4 230,52 Q130,92 0,88"
+                fill="none" stroke="#00b894" stroke-width="3.5"
+                stroke-linecap="round" opacity="0.9"/>
+          <path d="M460,28 Q350,20 240,66 Q140,102 0,106"
+                fill="none" stroke="#74b9ff" stroke-width="1.8"
+                stroke-linecap="round" opacity="0.55"/>
+        </svg>
       </div>
+
     </header>
+
+    <!-- STATUS CHIP — movido para fora do cabeçalho, mantido no DOM para compatibilidade com painel.js -->
+    <div class="header-status" id="dataStatusChip" style="display:none;" aria-live="polite"></div>
 
     <main class="app-shell">
       <div class="data-source-banner" id="dataSourceBanner" role="alert" aria-live="polite">
@@ -122,8 +236,6 @@
             </label>
 
             <div class="group-variable-buttons" id="groupVariableButtons" aria-label="Selecionar variável de agrupamento"></div>
-
-            <div class="quartil-chips" id="quartilChips" aria-label="Grupos da variável de agrupamento"></div>
           </div>
 
           <div class="filter-bar-right">

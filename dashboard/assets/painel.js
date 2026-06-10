@@ -4025,9 +4025,17 @@ function overviewActiveGroup(c) {
 
 function overviewDataSet(c) {
   const activeGroup = overviewActiveGroup(c);
-  const source = c.base.length ? c.base : c.all;
-  const data = activeGroup !== "all" ? source.filter(u => u.groups[c.f.groupBy] === activeGroup) : source;
-  return data.length ? data : c.base.length ? c.base : c.all;
+  let source = c.base.length ? c.base : c.all;
+  if (Array.isArray(c.f.university) && c.f.university.length > 0) {
+    const filtered = source.filter(u => c.f.university.includes(u.id));
+    if (filtered.length) source = filtered;
+  }
+  let groupFilter = activeGroup;
+  if (groupFilter === "all" && c.f.groupLevel && c.f.groupLevel !== "all") {
+    groupFilter = c.f.groupLevel;
+  }
+  const data = groupFilter !== "all" ? source.filter(u => u.groups[c.f.groupBy] === groupFilter) : source;
+  return data.length ? data : source.length ? source : c.all;
 }
 
 function overviewPreviousData(ids, year) {
@@ -4379,7 +4387,8 @@ function overviewClusterBars(c, metric) {
   const refLabel = clusterActive ? "Média do cluster" : "Média do sistema";
   const ieesColors = { UEL: "#1f72b8", UEM: "#e05c00", UEPG: "#14804a", UNIOESTE: "#8b2fc9", UNICENTRO: "#c43f3a", UENP: "#af7a00", UNESPAR: "#0f6e56" };
   return `<div class="bars-reference-note"><span>${refLabel}: <strong>${metric.fmt(ref)}</strong></span></div>
-  <div class="bars overview-cluster-bars" style="--ref-pos:${refPos}%">
+  <div class="bars overview-cluster-bars" style="--ref-pos:${refPos}%; position:relative;">
+    <div aria-hidden="true" style="position:absolute;top:0;bottom:0;left:${refPos}%;width:2px;background:#f28c28;box-shadow:0 0 0 3px rgba(242,140,40,0.18);border-radius:999px;pointer-events:none;z-index:2;"></div>
     ${sorted.map((u, i) => {
       const value = metric.get(u);
       const inCluster = clusterIds.has(u.id);
@@ -4388,7 +4397,7 @@ function overviewClusterBars(c, metric) {
       const isTop = i === 0;
       return `<div class="bar-row ${inCluster ? "in-cluster" : "out-cluster"} ${selected ? "selected" : ""} ${isTop ? "top-value" : ""}">
         <span class="bar-name" title="${u.nome}">${u.sigla}${isTop ? '<span class="top-value-badge">↑ maior</span>' : ""}</span>
-        <span class="bar-track"><span class="bar-fill" style="width:${clamp(value / max * 100, 4, 100)}%; background:${barColor}"></span><span class="bar-reference" aria-hidden="true"></span></span>
+        <span class="bar-track"><span class="bar-fill" style="width:${clamp(value / max * 100, 4, 100)}%; background:${barColor}"></span></span>
         <span class="bar-value">${metric.fmt(value)}</span>
       </div>`;
     }).join("")}
@@ -4631,9 +4640,17 @@ function renderComparisonDimensionBar() {
 
 function setComparisonDimension(key) {
   state.comparisonDimension = key;
+  // Sincroniza o filtro local do Ranking com o filtro global
+  state.rankingLocalDimension = key;
   render();
 }
 window.setComparisonDimension = setComparisonDimension;
+
+function setRankingLocalDimension(key) {
+  state.rankingLocalDimension = key;
+  render();
+}
+window.setRankingLocalDimension = setRankingLocalDimension;
 
 function comparisonBlock(title, c) {
   if (title.includes("Tabela")) return comparisonTable(c);
@@ -4652,8 +4669,8 @@ function comparisonTable(c) {
   const dimension = comparisonDimensionForKey(key);
   const isBR = isBrasilContext(c);
   const clusterRows = clusterRowsFor(c);
-  const showOnly = !explicitClusterActive(c) || state.comparisonShowOnlyCluster;
-  const rows = showOnly ? clusterRows : (c.base.length ? c.base : c.all);
+  // Sempre exibe todas as IES, removendo o toggle de cluster
+  const rows = c.base.length ? c.base : c.all;
   const clusterIds = new Set(clusterRows.map(u => u.id));
   const means = Object.fromEntries(dimension.indicators.map(ind => [ind.code, comparisonMean(clusterRows, ind)]));
   const prRows = c.base.length ? c.base : c.all;
@@ -4663,11 +4680,10 @@ function comparisonTable(c) {
   const clusterMeanLabel = isBR ? "Média nacional" : "Média do cluster";
   return `<div class="comparison-toolbar">
     <div><strong>Dimensão ${renderDimensionHelp()}</strong><span class="card-subtitle"> · ${dimension.label}</span></div>
-    ${!isBR ? `<button class="text-button comparison-toggle" id="comparisonClusterToggle" type="button">${state.comparisonShowOnlyCluster ? "Mostrar todas" : "Mostrar apenas cluster"}</button>` : ""}
   </div>
   <div class="table-wrap comparison-table-wrap">
     <table class="data-table comparison-table">
-      <thead><tr><th>Ranking</th><th>IEES</th>${dimension.indicators.map(ind => `<th><span class="indicator-code">${ind.code}</span>${indicatorName(ind.code)}</th>`).join("")}</tr></thead>
+      <thead><tr><th>Rank</th><th>IEES</th>${dimension.indicators.map(ind => `<th title="${indicatorName(ind.code)}"><span class="indicator-code">${ind.code}</span></th>`).join("")}</tr></thead>
       <tbody>${sortedRows.map(u => `<tr class="${clusterIds.has(u.id) ? "in-cluster" : "out-cluster"} ${isUniSelected(c.f, u.id) ? "selected-row" : ""}"><td><strong>${ranking.get(u.id) || "-"}º</strong></td><td><strong>${u.sigla}</strong><br><span>${u.groups[c.f.groupBy]}</span></td>${dimension.indicators.map(ind => indicatorCell(ind, u, means[ind.code])).join("")}</tr>`).join("")}</tbody>
       <tfoot>
         <tr><td colspan="2"><strong>${clusterMeanLabel}</strong></td>${dimension.indicators.map(ind => `<td>${comparisonFormat(ind, means[ind.code])}</td>`).join("")}</tr>
@@ -4739,8 +4755,13 @@ function comparisonRanking(c) {
   const clusterIds = new Set(clusterRows.map(u => u.id));
   const showAll = explicitClusterActive(c) && !state.comparisonShowOnlyCluster;
   const rows = showAll ? (c.base.length ? c.base : c.all) : clusterRows;
-  const dimKey = comparisonDimensionKey(c);
+  // Sincroniza dimensão local com a global quando a global muda externamente
+  if (!state.rankingLocalDimension || state.rankingLocalDimension === "_synced_") {
+    state.rankingLocalDimension = comparisonDimensionKey(c);
+  }
+  const dimKey = comparisonIndicatorSets[state.rankingLocalDimension] ? state.rankingLocalDimension : comparisonDimensionKey(c);
   const dimSet = comparisonDimensionForKey(dimKey);
+  const dim = state.rankingLocalDimension || "all";
   const indicator = dimSet.indicators.length
     ? { label: dimSet.label, format: v => `${(v * 100).toFixed(0)} pts`, get: u => dimensionScore(u, clusterRows, dimSet.indicators) }
     : (resultIndicators[c.f.result] || resultIndicators.composite);
@@ -4750,9 +4771,22 @@ function comparisonRanking(c) {
   const ref = mean(clusterRows, u => Number(indicator.get(u)) || 0);
   const refPos = clamp(ref / max * 100, 0, 100);
   const ieesColors = { UEL: "#1f72b8", UEM: "#e05c00", UEPG: "#14804a", UNIOESTE: "#8b2fc9", UNICENTRO: "#c43f3a", UENP: "#af7a00", UNESPAR: "#0f6e56" };
+  const dimOptions = comparisonDimensionOptions().map(([k,l]) => `<option value="${k}"${k===dim?" selected":""}>${l}</option>`).join("");
   return `<article class="visual-card comparison-ranking-card">
-    <h3>Ranking por Dimensão ${renderDimensionHelp()}</h3>
-    <p class="card-subtitle">${indicator.label}. Linha laranja = média do cluster (${indicator.format(ref)}).</p>
+    <div class="visual-card-header">
+      <div>
+        <h3>Ranking por Dimensão ${renderDimensionHelp()}</h3>
+        <p class="card-subtitle">${indicator.label}. Barras preenchidas conforme o total, linha laranja indica a média do cluster.</p>
+      </div>
+      <label class="metric-selector">
+        <span class="metric-selector-label">Dimensão</span>
+        <select onchange="setRankingLocalDimension(this.value)">
+          ${dimOptions}
+        </select>
+      </label>
+    </div>
+    <p class="card-subtitle" style="margin-bottom:8px"><span style="background:var(--blue-50,#eff4fb);border:1px solid var(--blue-200,#c7d9f5);border-radius:6px;padding:4px 10px;font-size:12px">ⓘ A dimensão selecionada no Tópico 1 atualiza este gráfico automaticamente. O filtro acima altera apenas esta visualização.</span></p>
+    <div class="bars-reference-note"><span>Média do cluster: <strong>${indicator.format(ref)}</strong></span></div>
     <div class="bars comparison-ranking-bars" style="--ref-pos:${refPos}%">
       ${[...rows].sort((a,b)=>indicator.get(b)-indicator.get(a)).map(u => {
         const value = indicator.get(u), inCluster = clusterIds.has(u.id), selected = isUniSelected(c.f, u.id);
@@ -10057,7 +10091,7 @@ comparisonTable = function comparisonTableWithoutBrasilClusters(c) {
   return `<div class="comparison-toolbar"><div><strong>Dimensão ${renderDimensionHelp()}</strong><span class="card-subtitle"> · ${dimension.label} · ${nationalReferenceLabel()}</span></div></div>
   <div class="table-wrap comparison-table-wrap">
     <table class="data-table comparison-table">
-      <thead><tr><th>Ranking</th><th>IEES</th>${dimension.indicators.map(ind => `<th><span class="indicator-code">${ind.code}</span>${indicatorName(ind.code)}</th>`).join("")}</tr></thead>
+      <thead><tr><th>Rank</th><th>IEES</th>${dimension.indicators.map(ind => `<th title="${indicatorName(ind.code)}"><span class="indicator-code">${ind.code}</span></th>`).join("")}</tr></thead>
       <tbody>${sortedRows.map(u => `<tr class="${isUniSelected(c.f, u.id) ? "selected-row" : ""}"><td><strong>${ranking.get(u.id) || "-"}º</strong></td><td><strong>${u.sigla}</strong><br><span>${u.region}</span></td>${dimension.indicators.map(ind => indicatorCell(ind, u, means[ind.code])).join("")}</tr>`).join("")}</tbody>
       <tfoot><tr><td colspan="2"><strong>${nationalMeanLabel()}</strong></td>${dimension.indicators.map(ind => `<td>${comparisonFormat(ind, means[ind.code])}</td>`).join("")}</tr></tfoot>
     </table>
@@ -10069,8 +10103,12 @@ var comparisonRankingBeforeBrasilScope = comparisonRanking;
 comparisonRanking = function comparisonRankingWithoutBrasilClusters(c) {
   if (!isBrasilContext(c)) return comparisonRankingBeforeBrasilScope(c);
   const rows = c.base.length ? c.base : c.all;
-  const dimKey = comparisonDimensionKey(c);
+  if (!state.rankingLocalDimension || state.rankingLocalDimension === "_synced_") {
+    state.rankingLocalDimension = comparisonDimensionKey(c);
+  }
+  const dimKey = comparisonIndicatorSets[state.rankingLocalDimension] ? state.rankingLocalDimension : comparisonDimensionKey(c);
   const dimSet = comparisonDimensionForKey(dimKey);
+  const dim = state.rankingLocalDimension || "all";
   const indicator = dimSet.indicators.length
     ? { label: dimSet.label, format: v => `${(v * 100).toFixed(0)} pts`, get: u => dimensionScore(u, rows, dimSet.indicators) }
     : (resultIndicators[c.f.result] || resultIndicators.composite);
@@ -10080,9 +10118,22 @@ comparisonRanking = function comparisonRankingWithoutBrasilClusters(c) {
   const ref = mean(rows, u => Number(indicator.get(u)) || 0);
   const refPos = clamp(ref / max * 100, 0, 100);
   const ieesColors = { UEL: "#1f72b8", UEM: "#e05c00", UEPG: "#14804a", UNIOESTE: "#8b2fc9", UNICENTRO: "#c43f3a", UENP: "#af7a00", UNESPAR: "#0f6e56" };
+  const dimOptions = comparisonDimensionOptions().map(([k,l]) => `<option value="${k}"${k===dim?" selected":""}>${l}</option>`).join("");
   return `<article class="visual-card comparison-ranking-card">
-    <h3>Ranking por Dimensão ${renderDimensionHelp()}</h3>
-    <p class="card-subtitle">${indicator.label}. Linha laranja = ${nationalMeanLabel()} (${indicator.format(ref)}).</p>
+    <div class="visual-card-header">
+      <div>
+        <h3>Ranking por Dimensão ${renderDimensionHelp()}</h3>
+        <p class="card-subtitle">${indicator.label}. Barras preenchidas conforme o total, linha laranja indica a média.</p>
+      </div>
+      <label class="metric-selector">
+        <span class="metric-selector-label">Dimensão</span>
+        <select onchange="setRankingLocalDimension(this.value)">
+          ${dimOptions}
+        </select>
+      </label>
+    </div>
+    <p class="card-subtitle" style="margin-bottom:8px"><span style="background:var(--blue-50,#eff4fb);border:1px solid var(--blue-200,#c7d9f5);border-radius:6px;padding:4px 10px;font-size:12px">ⓘ A dimensão selecionada no Tópico 1 atualiza este gráfico automaticamente. O filtro acima altera apenas esta visualização.</span></p>
+    <div class="bars-reference-note"><span>${nationalMeanLabel()}: <strong>${indicator.format(ref)}</strong></span></div>
     <div class="bars comparison-ranking-bars" style="--ref-pos:${refPos}%">
       ${[...rows].sort((a,b)=>indicator.get(b)-indicator.get(a)).map(u => {
         const value = Number(indicator.get(u)) || 0, selected = isUniSelected(c.f, u.id);
