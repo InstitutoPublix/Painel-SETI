@@ -262,6 +262,13 @@ function getRealIndicators(sigla, year) {
   return years.length ? row.byYear[years[years.length - 1]] : null;
 }
 
+function getRealIndicatorsExact(sigla, year) {
+  const row = DATA[String(sigla || "").trim().toUpperCase()];
+  if (!row || !row.byYear) return null;
+  const wanted = String(year || "").trim();
+  return wanted && wanted !== "all" ? (row.byYear[wanted] || null) : null;
+}
+
 function applyPanelFiltersToRows(rows, filterState) {
   const f = filterState || {};
   return (rows || []).filter(function(row) {

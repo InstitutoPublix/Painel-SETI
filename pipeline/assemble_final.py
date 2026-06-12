@@ -140,6 +140,9 @@ def _blank():
 results = {iees.lower(): _blank() for iees in IEES}
 sources = {iees.lower(): {} for iees in IEES}
 
+_pipeline_start = datetime.datetime.now()
+_pipeline_alerts: list[str] = []
+
 
 # ── 1. INEP — Proporção de docentes com doutorado ────────────────────────────
 # Fonte: Base IES - Brasil.xlsx / Base_ IES_BRASIL
@@ -319,24 +322,34 @@ for iees in IEES_PR:
     cres_ocios  = row[32] if len(row) > 32 else None
     cres_partic = row[33] if len(row) > 33 else None
 
+    # col[20-26,30,32,33] armazenados como decimais (0.0–1.0+) na base.
+    # safe_pct trata valores > 1 como "já são %", o que quebra casos como
+    # UNIOESTE (taxa CRES e utilização acima de 100%). A correção é forçar ×100
+    # para os campos que sabemos serem decimais, usando safe_float diretamente.
+    def _dec_to_pct(v):
+        try:
+            return round(float(v) * 100, 2) if v is not None else None
+        except Exception:
+            return None
+
     results[key]["docVagasTotais"] = safe_int(total_codes)
     results[key]["docVagasDisp"] = safe_int(vagas_disp)
     results[key]["docVagasOcupadas"] = safe_int(vagas_ocup)
-    results[key]["facultyOcc"] = safe_pct(occ)
-    results[key]["docTaxaUtil"] = safe_pct(taxa_util)
+    results[key]["facultyOcc"] = _dec_to_pct(occ)
+    results[key]["docTaxaUtil"] = _dec_to_pct(taxa_util)
     results[key]["docVagasCond"] = safe_int(vagas_cond)
-    results[key]["docPctCond"] = safe_pct(pct_cond)
+    results[key]["docPctCond"] = _dec_to_pct(pct_cond)
     results[key]["docTideAtrib"] = safe_int(tide_atrib)
-    results[key]["tide"] = safe_pct(tide)
-    results[key]["docTidePartic"] = safe_pct(tide)
-    results[key]["docTidePctNaoAtrib"] = safe_pct(tide_nao)
+    results[key]["tide"] = _dec_to_pct(tide)
+    results[key]["docTidePartic"] = _dec_to_pct(tide)
+    results[key]["docTidePctNaoAtrib"] = _dec_to_pct(tide_nao)
     results[key]["docChMedia"] = safe_float(ch_media, 2)
     results[key]["docCresAut"] = safe_int(cres_aut)
     results[key]["docCresUtil"] = safe_int(cres_util)
-    results[key]["cres"] = safe_pct(cres)
+    results[key]["cres"] = _dec_to_pct(cres)
     results[key]["docCresSaldo"] = safe_int(cres_saldo)
-    results[key]["docCresOciosidade"] = safe_pct(cres_ocios)
-    results[key]["docCresPartic"] = safe_pct(cres_partic)
+    results[key]["docCresOciosidade"] = _dec_to_pct(cres_ocios)
+    results[key]["docCresPartic"] = _dec_to_pct(cres_partic)
     src = f"Base Docentes - Paraná.xlsx / Base_Docentes_PR / ano={y}"
     sources[key]["facultyOcc"] = src + " / Taxa de ocupação do quadro docente (col 20)"
     sources[key]["cres"]       = src + " / Taxa de utilização da CRES (col 30)"
@@ -362,7 +375,13 @@ for iees in IEES_PR:
 # Fonte: Base CNPq - Brasil.xlsx / Base_CNPq_BR
 # Colunas: "01_Instituição", "Ano", "Captação de recursos para pesquisa"
 # Transformação: soma por IES no ano mais recente (R$ milhões)
-# Match por nome da instituição (busca substring); UNICENTRO/UNESPAR podem não ter match.
+# Match por nome da instituição (busca substring).
+# A base CNPq não usa acentos — normalizamos antes do match para evitar falsos
+# negativos. Lambdas usam strings sem acento. "ESTAD" captura tanto "ESTADO"
+# (ex: Univ. do Estado de X) quanto "ESTADUAL" (ex: Univ. Estadual de X).
+
+def _cnpq_norm(s: str) -> str:
+    return unicodedata.normalize("NFKD", s.upper()).encode("ascii", "ignore").decode("ascii")
 
 wb = openpyxl.load_workbook(DATA_DIR / "Base CNPq - Brasil.xlsx", read_only=True, data_only=True)
 ws = wb["Base_CNPq_BR"]
@@ -375,52 +394,48 @@ val_col  = col_idx.get("Captação de recursos para pesquisa")
 CNPQ_MATCH = {
     # ── IES-PR ──────────────────────────────────────────────────────────────
     "UEL":      lambda s: "LONDRINA" in s or "UEL" in s,
-    "UEM":      lambda s: "MARINGÁ" in s or "MARINGA" in s,
+    "UEM":      lambda s: "MARINGA" in s,
     "UEPG":     lambda s: "PONTA GROSSA" in s,
-    "UNIOESTE": lambda s: "OESTE DO PARANÁ" in s or "OESTE DO PARANA" in s or "UNIOESTE" in s,
-    # UNICENTRO não tem registros na base CNPq — null esperado
-    "UNICENTRO":lambda s: ("CENTRO-OESTE" in s or "CENTRO OESTE" in s) and "PARAN" in s,
-    "UENP":     lambda s: "NORTE DO PARANÁ" in s or "NORTE DO PARANA" in s,
-    # Arquivo CNPq usa "Universidade Estadual do Parana" (sem acento)
-    "UNESPAR":  lambda s: (
-        "ESTADUAL DO PARANÁ" in s or "ESTADUAL DO PARANA" in s
-    ) and "NORTE" not in s and "OESTE" not in s,
+    "UNIOESTE": lambda s: "OESTE DO PARANA" in s or "UNIOESTE" in s,
+    "UNICENTRO":lambda s: "ESTADUAL DO CENTRO-OESTE" in s,
+    "UENP":     lambda s: "NORTE DO PARANA" in s,
+    "UNESPAR":  lambda s: "ESTADUAL DO PARANA" in s and "NORTE" not in s and "OESTE" not in s,
     # ── IES-BR — 15 originais ────────────────────────────────────────────────
     # ⚠ Validar valores no stderr após rodar — ordem de grandeza esperada:
     #   USP ~R$100-200M; UNICAMP/UNESP ~R$50-100M; demais ~R$2-30M
-    "USP":      lambda s: ("UNIVERSIDADE DE SÃO PAULO" in s or "UNIVERSIDADE DE SAO PAULO" in s or " USP" in s) and "ESTADUAL" not in s,
+    "USP":      lambda s: ("UNIVERSIDADE DE SAO PAULO" in s or " USP" in s) and "ESTADUAL" not in s,
     "UNESP":    lambda s: "PAULISTA" in s and "ESTADUAL" in s,
     "UNICAMP":  lambda s: "CAMPINAS" in s and "ESTADUAL" in s,
-    "UERJ":     lambda s: "RIO DE JANEIRO" in s and "ESTADO" in s and "FEDERAL" not in s,
-    "UDESC":    lambda s: "SANTA CATARINA" in s and "ESTADO" in s and "FEDERAL" not in s,
-    "UERGS":    lambda s: "RIO GRANDE DO SUL" in s and "ESTADO" in s and "FEDERAL" not in s,
-    "UECE":     lambda s: "CEARÁ" in s and "ESTADO" in s and "FEDERAL" not in s,
-    "UNEB":     lambda s: "BAHIA" in s and "ESTADO" in s and "FEDERAL" not in s and "SUDOESTE" not in s and "FEIRA" not in s,
+    "UERJ":     lambda s: "RIO DE JANEIRO" in s and "ESTAD" in s and "FEDERAL" not in s,
+    "UDESC":    lambda s: "SANTA CATARINA" in s and "ESTAD" in s and "FEDERAL" not in s,
+    "UERGS":    lambda s: "RIO GRANDE DO SUL" in s and "ESTAD" in s and "FEDERAL" not in s,
+    "UECE":     lambda s: "CEARA" in s and "ESTAD" in s and "FEDERAL" not in s,
+    "UNEB":     lambda s: "BAHIA" in s and "ESTAD" in s and "FEDERAL" not in s and "SUDOESTE" not in s and "FEIRA" not in s,
     "UESB":     lambda s: "SUDOESTE" in s and "BAHIA" in s,
-    "UEG":      lambda s: "GOIÁS" in s and "ESTADO" in s and "FEDERAL" not in s,
-    "UEMA":     lambda s: "MARANHÃO" in s and "ESTADO" in s and "FEDERAL" not in s and "TOCANT" not in s,
-    "UEPB":     lambda s: "PARAÍBA" in s and "ESTADO" in s and "FEDERAL" not in s,
-    "UEPA":     lambda s: "PARÁ" in s and "ESTADO" in s and "FEDERAL" not in s and "OESTE" not in s,
-    "UEA":      lambda s: "AMAZONAS" in s and "ESTADO" in s and "FEDERAL" not in s,
-    "UERN":     lambda s: "RIO GRANDE DO NORTE" in s and "ESTADO" in s and "FEDERAL" not in s,
+    "UEG":      lambda s: "GOIAS" in s and "ESTAD" in s and "FEDERAL" not in s,
+    "UEMA":     lambda s: "MARANHAO" in s and "ESTAD" in s and "FEDERAL" not in s and "TOCANT" not in s,
+    "UEPB":     lambda s: "PARAIBA" in s and "ESTAD" in s and "FEDERAL" not in s,
+    "UEPA":     lambda s: "PARA" in s and "ESTAD" in s and "FEDERAL" not in s and "OESTE" not in s and "MARANHAO" not in s,
+    "UEA":      lambda s: "AMAZONAS" in s and "ESTAD" in s and "FEDERAL" not in s,
+    "UERN":     lambda s: "RIO GRANDE DO NORTE" in s and "ESTAD" in s and "FEDERAL" not in s,
     # ── IES-BR — 17 novas ───────────────────────────────────────────────────
-    "UESC":     lambda s: "SANTA CRUZ" in s and "BAHIA" in s,
-    "UNCISAL":  lambda s: "CIÊNCIAS DA SAÚDE" in s and "ALAGOAS" in s,
-    "UVA":      lambda s: "VALE DO ACARAÚ" in s or ("UVA" in s and "CEARÁ" in s),
+    "UESC":     lambda s: "SANTA CRUZ" in s and "ESTAD" in s,
+    "UNCISAL":  lambda s: "CIENCIAS DA SAUDE" in s and "ALAGOAS" in s,
+    "UVA":      lambda s: "VALE DO ACARAU" in s or ("UVA" in s and "CEARA" in s),
     "UNIMONTES":lambda s: "MONTES CLAROS" in s,
     "UPE":      lambda s: "PERNAMBUCO" in s and "UNIVERSIDADE DE" in s and "FEDERAL" not in s,
     "UEFS":     lambda s: "FEIRA DE SANTANA" in s,
-    "UNEMAT":   lambda s: "MATO GROSSO" in s and "ESTADO" in s and "SUL" not in s and "FEDERAL" not in s,
-    "UESPI":    lambda s: ("PIAUÍ" in s or "PIAUI" in s) and "ESTADO" in s,
+    "UNEMAT":   lambda s: "MATO GROSSO" in s and "ESTAD" in s and "SUL" not in s and "FEDERAL" not in s,
+    "UESPI":    lambda s: "PIAUI" in s and "ESTAD" in s,
     "UNITINS":  lambda s: "TOCANTINS" in s and "ESTADUAL" in s,
     "UENF":     lambda s: "NORTE FLUMINENSE" in s,
-    "UEMS":     lambda s: "MATO GROSSO DO SUL" in s and "ESTADO" in s and "FEDERAL" not in s,
-    "UEMG":     lambda s: "MINAS GERAIS" in s and "ESTADO" in s and "FEDERAL" not in s and "MONTES" not in s,
-    "UERR":     lambda s: "RORAIMA" in s and "ESTADO" in s,
-    "UNEAL":    lambda s: "ALAGOAS" in s and "ESTADUAL" in s and "SAÚDE" not in s and "SAUDE" not in s,
-    "UEAP":     lambda s: ("AMAPÁ" in s or "AMAPA" in s) and "ESTADO" in s,
+    "UEMS":     lambda s: "MATO GROSSO DO SUL" in s and "ESTAD" in s and "FEDERAL" not in s,
+    "UEMG":     lambda s: "MINAS GERAIS" in s and "ESTAD" in s and "FEDERAL" not in s and "MONTES" not in s,
+    "UERR":     lambda s: "RORAIMA" in s and "ESTAD" in s,
+    "UNEAL":    lambda s: "ALAGOAS" in s and "ESTADUAL" in s and "SAUDE" not in s,
+    "UEAP":     lambda s: "AMAPA" in s and "ESTAD" in s,
     "UEMASUL":  lambda s: "TOCANTINA" in s or "UEMASUL" in s,
-    "UnDF":     lambda s: "DISTRITO FEDERAL" in s and "ESTADO" in s,
+    "UnDF":     lambda s: "DISTRITO FEDERAL" in s and "UNIVERSIDADE" in s and "INDUSTRIA" not in s and "SENAI" not in s and "SAUDE" not in s and "SERVICO" not in s,
     "URCA":     lambda s: "CARIRI" in s and ("REGIONAL" in s or "URCA" in s),
 }
 
@@ -431,7 +446,7 @@ for row in ws.iter_rows(min_row=2, values_only=True):
     val  = row[val_col]  if val_col  is not None else None
     if not inst or not isinstance(inst, str):
         continue
-    inst_up = inst.upper()
+    inst_up = _cnpq_norm(inst)
     for iees in CNPQ_MATCH:
         if CNPQ_MATCH[iees](inst_up):
             try:
@@ -713,46 +728,57 @@ wb.close()
 
 # ── 8. CBO2/RAIS — taxa de inserção e salário médio ──────────────────────────
 # Fonte: CBO2 _ RAIS 2023 e 2024 - Paraná.xlsx / Análise Quantitativa (BI e Cons
-# Colunas (0-based): 1=IES, 7=egressos2021, 9=enc_PR_2024, 11=sal_2024,
-#                    2=egressos2020, 4=enc_PR_2023, 6=sal_2023
-# Transformação: employment = enc_PR ÷ egressos × 100 (coorte 2021/RAIS2024, fallback 2020/2023)
+# Colunas (0-based):
+#   0=IES, 1=egressos2020, 4=enc_PR_2023(CBO2), 5=sal_2023,
+#          6=egressos2021, 9=enc_PR_2024(CBO2), 10=sal_2024,
+#          11=egressos2022, 15=enc_PR_2025(CBO2), 16=sal_2025
+# Transformação: employment = enc_PR ÷ egressos × 100
+# Preferência: coorte 2022/RAIS2025 → 2021/RAIS2024 → 2020/RAIS2023
 
 wb = openpyxl.load_workbook(DATA_DIR / "CBO2 _ RAIS 2023 e 2024 - Paraná.xlsx", read_only=True, data_only=True)
 ws = wb["Análise Quantitativa (BI e Cons"]
 next(ws.iter_rows(min_row=1, max_row=1))  # skip header
 
 for row in ws.iter_rows(min_row=2, max_row=15, values_only=True):
-    if not row or row[1] is None:
+    if not row or row[0] is None:
         continue
-    iees = str(row[1]).strip().upper()
+    iees = str(row[0]).strip().upper()
     if iees not in IEES_PR:  # base Paraná
         continue
     key = iees.lower()
 
-    eg_2021    = row[7]
+    eg_2022    = row[11]
+    enc_pr_25  = row[15]
+    sal_2025   = row[16]
+    eg_2021    = row[6]
     enc_pr_24  = row[9]
-    sal_2024   = row[11]
-    eg_2020    = row[2]
+    sal_2024   = row[10]
+    eg_2020    = row[1]
     enc_pr_23  = row[4]
-    sal_2023   = row[6]
+    sal_2023   = row[5]
 
     emp_rate = None
     sal_src  = None
-    try:
-        if eg_2021 and enc_pr_24 and float(eg_2021) > 0:
-            emp_rate = float(enc_pr_24) / float(eg_2021)
-            sal_src  = "coorte 2021 / RAIS 2024"
-        elif eg_2020 and enc_pr_23 and float(eg_2020) > 0:
-            emp_rate = float(enc_pr_23) / float(eg_2020)
-            sal_src  = "coorte 2020 / RAIS 2023"
-    except Exception:
-        pass
+    sal_val  = None
+
+    def _try_coorte(eg, enc, sal, src):
+        try:
+            if eg and enc and isinstance(enc, (int, float)) and float(eg) > 0:
+                return float(enc) / float(eg), src, sal
+        except Exception:
+            pass
+        return None, None, None
+
+    emp_rate, sal_src, sal_val = _try_coorte(eg_2022, enc_pr_25, sal_2025, "coorte 2022 / RAIS 2025")
+    if emp_rate is None:
+        emp_rate, sal_src, sal_val = _try_coorte(eg_2021, enc_pr_24, sal_2024, "coorte 2021 / RAIS 2024")
+    if emp_rate is None:
+        emp_rate, sal_src, sal_val = _try_coorte(eg_2020, enc_pr_23, sal_2023, "coorte 2020 / RAIS 2023")
 
     salary = None
     try:
-        s = sal_2024 if (sal_2024 and isinstance(sal_2024, (int, float))) else sal_2023
-        if isinstance(s, (int, float)):
-            salary = safe_float(s, 0)
+        if isinstance(sal_val, (int, float)):
+            salary = safe_float(sal_val, 0)
     except Exception:
         pass
 
@@ -1457,8 +1483,11 @@ _SELO_INDICADORES = {
 }
 
 _SELO_UNIDADES_ESPERADAS = set(IEES_PR)
-_SELO_ANOS_ESPERADOS = {2025, 2026}
-_SELO_BIMESTRES_ESPERADOS = {"B1", "B2", "B3", "B4", "B5", "B6"}
+# A base SELO-PR disponível está consolidada por indicador anual para 2025.
+# Ela não traz desagregação bimestral; portanto a validação esperada é:
+# 7 IEES × 1 ano × 11 indicadores = 77 linhas.
+_SELO_ANOS_ESPERADOS = {2025}
+_SELO_BIMESTRES_ESPERADOS = set()
 _SELO_INDICADORES_ESPERADOS = set(_SELO_INDICADORES)
 
 
@@ -1763,10 +1792,18 @@ _selo_codigos = sorted({r["Código Indicador"] for r in df_selo if r["Código In
 _selo_alertas = []
 _selo_warn_missing("Unidades SELO-PR", _SELO_UNIDADES_ESPERADAS, set(_selo_unidades), _selo_alertas)
 _selo_warn_missing("Anos SELO-PR", _SELO_ANOS_ESPERADOS, set(_selo_anos), _selo_alertas)
-_selo_warn_missing("Bimestres SELO-PR", _SELO_BIMESTRES_ESPERADOS, set(_selo_bimestres), _selo_alertas)
+if _SELO_BIMESTRES_ESPERADOS:
+    _selo_warn_missing("Bimestres SELO-PR", _SELO_BIMESTRES_ESPERADOS, set(_selo_bimestres), _selo_alertas)
 _selo_warn_missing("Indicadores SELO-PR", _SELO_INDICADORES_ESPERADOS, set(_selo_codigos), _selo_alertas)
-if not 880 <= len(df_selo) <= 970:
-    _selo_alertas.append(f"Total de linhas fora do esperado para base longa (~924): {len(df_selo)}")
+_selo_linhas_esperadas = (
+    len(_SELO_UNIDADES_ESPERADAS)
+    * len(_SELO_ANOS_ESPERADOS)
+    * len(_SELO_INDICADORES_ESPERADOS)
+)
+if len(df_selo) != _selo_linhas_esperadas:
+    _selo_alertas.append(
+        f"Total de linhas fora do esperado para base anual ({_selo_linhas_esperadas}): {len(df_selo)}"
+    )
 
 selo_diagnostico = {
     "arquivo": _SELO_FILE,
@@ -1973,3 +2010,34 @@ for ind in INDICATORS:
         row_str += f"{str(v):<13}"
     print(row_str, file=sys.stderr)
 print("=" * (20 + 13 * len(IEES)), file=sys.stderr)
+
+# ── Relatório de rastreabilidade (pipeline_report.json) ──────────────────────
+_pipeline_end = datetime.datetime.now()
+_duration = round((_pipeline_end - _pipeline_start).total_seconds(), 1)
+
+_ind_summary = {}
+for ind in INDICATORS:
+    _ind_summary[ind] = {
+        "values": {iees: results[iees.lower()].get(ind) for iees in IEES},
+        "sources": {iees: sources[iees.lower()].get(ind) for iees in IEES_PR},
+        "null_count_pr":  sum(1 for iees in IEES_PR if results[iees.lower()].get(ind) is None),
+        "null_count_br":  sum(1 for iees in IEES_BR if results[iees.lower()].get(ind) is None),
+    }
+
+_report = {
+    "run_at":            _pipeline_start.isoformat(timespec="seconds"),
+    "finished_at":       _pipeline_end.isoformat(timespec="seconds"),
+    "duration_seconds":  _duration,
+    "output_json":       str(DATA_DIR / "seti_precomputed.json"),
+    "ies_pr":            IEES_PR,
+    "ies_br":            IEES_BR,
+    "total_indicators":  len(INDICATORS),
+    "alerts":            _pipeline_alerts + [f"SELO-PR: {a}" for a in _selo_alertas],
+    "indicators":        _ind_summary,
+}
+
+_report_path = DATA_DIR / "pipeline_report.json"
+with open(_report_path, "w", encoding="utf-8") as _rf:
+    json.dump(_report, _rf, ensure_ascii=False, indent=2, default=str)
+print(f"\n[OK] Relatório de rastreabilidade: {_report_path}", file=sys.stderr)
+print(f"     Duração total: {_duration}s | {len(INDICATORS)} indicadores | alertas: {len(_report['alerts'])}", file=sys.stderr)

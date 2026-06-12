@@ -530,11 +530,13 @@ input:focus-visible {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
-  gap: 18px;
+  flex-wrap: wrap;
+  gap: 12px 18px;
   padding-bottom: 16px;
   margin-bottom: 16px;
   border-bottom: 1px solid var(--gray-200);
 }
+.section-heading > div:first-child { min-width: 0; flex: 1 1 300px; }
 
 .section-heading h2 {
   margin-bottom: 6px;
@@ -632,6 +634,7 @@ input:focus-visible {
 }
 
 .bar-fill {
+  display: block;
   height: 100%;
   border-radius: inherit;
   background: linear-gradient(90deg, var(--blue-700), var(--orange-600));
@@ -2285,6 +2288,29 @@ body {
   border-radius: 1px;
   pointer-events: none;
 }
+
+.brasil-avg-card {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 14px;
+  margin-bottom: 12px;
+  background: #f0faf5;
+  border: 1px solid #a7f3d0;
+  border-radius: 8px;
+  font-size: 0.82rem;
+}
+
+.brasil-avg-card span {
+  color: var(--text-secondary, #555);
+  flex: 1;
+}
+
+.brasil-avg-card strong {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #14804a;
+}
 .data-table tfoot tr.pr-footer-row td,
 .data-table tfoot tr.br-footer-row td,
 .data-table tfoot tr.gap-footer-row td {
@@ -2891,7 +2917,7 @@ body {
 
 .access-context-grid {
   display: grid;
-  grid-template-columns: repeat(5, minmax(150px, 1fr));
+  grid-template-columns: repeat(5, 1fr);
   gap: 12px;
 }
 
@@ -2988,7 +3014,8 @@ body {
 
 .timeline-svg {
   width: 100%;
-  min-height: 240px;
+  min-height: 200px;
+  overflow: visible;
 }
 
 .timeline-axis {
@@ -3028,9 +3055,14 @@ body {
   stroke-dasharray: 7 5;
 }
 
-@media (max-width: 1180px) {
+@media (max-width: 1100px) {
   .access-context-grid {
-    grid-template-columns: repeat(2, minmax(180px, 1fr));
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+@media (max-width: 720px) {
+  .access-context-grid {
+    grid-template-columns: repeat(2, 1fr);
   }
 }
 
@@ -4085,6 +4117,20 @@ body {
 
 .faculty-seg {
   height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.faculty-seg-lbl {
+  font-style: normal;
+  font-size: 9px;
+  font-weight: 700;
+  color: rgba(255,255,255,0.9);
+  white-space: nowrap;
+  pointer-events: none;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.25);
 }
 
 .faculty-seg.occupied,
@@ -4120,14 +4166,80 @@ body {
   border-radius: 999px;
 }
 
+.tide-bars .bar-fill.rate-high,
+.employment-rate-bars .bar-fill.rate-high {
+  background: #16a34a !important;
+  opacity: 0.82;
+}
+
+.tide-bars .bar-fill.rate-mid,
+.employment-rate-bars .bar-fill.rate-mid {
+  background: #ca8a04 !important;
+  opacity: 0.82;
+}
+
+.tide-bars .bar-fill.rate-low,
+.employment-rate-bars .bar-fill.rate-low {
+  background: #dc2626 !important;
+  opacity: 0.82;
+}
+
+.tide-summary-cards {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 14px;
+  flex-wrap: wrap;
+}
+
+.tide-card {
+  flex: 1;
+  min-width: 110px;
+  padding: 10px 14px;
+  background: var(--surface-2, #f5f5f5);
+  border-radius: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.tide-card span {
+  font-size: 0.72rem;
+  color: var(--text-secondary, #777);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.tide-card strong {
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: var(--text-primary, #222);
+}
+
+.tide-card small {
+  font-size: 0.70rem;
+  color: var(--text-secondary, #999);
+}
+
+.tide-card.tide-card-max strong { color: #16a34a; }
+.tide-card.tide-card-min strong { color: #dc2626; }
+
+.tide-count {
+  font-size: 0.78rem;
+  color: var(--text-secondary, #666);
+}
+
 .tide-bars .bar-track,
-.cnpq-bars .bar-track {
+.cnpq-bars .bar-track,
+.employment-rate-bars .bar-track,
+.budget-execution-bars .bar-track {
   position: relative;
   overflow: visible;
 }
 
 .tide-bars .bar-reference,
-.cnpq-bars .bar-reference {
+.cnpq-bars .bar-reference,
+.employment-rate-bars .bar-reference,
+.budget-execution-bars .bar-reference {
   position: absolute;
   top: -5px;
   bottom: -5px;
@@ -4297,19 +4409,39 @@ body {
   left: var(--ref-pos, 0%);
 }
 
-.employment-rate-bars .bar-fill.rate-high {
+.employment-rate-bars .bar-fill.rate-high,
+.quality-doctor-bars .bar-fill.rate-high,
+.cnpq-bars .bar-fill.rate-high {
   background: #16a34a !important;
   opacity: 0.82;
 }
 
-.employment-rate-bars .bar-fill.rate-mid {
+.employment-rate-bars .bar-fill.rate-mid,
+.quality-doctor-bars .bar-fill.rate-mid,
+.cnpq-bars .bar-fill.rate-mid {
   background: #ca8a04 !important;
   opacity: 0.82;
 }
 
-.employment-rate-bars .bar-fill.rate-low {
+.employment-rate-bars .bar-fill.rate-low,
+.quality-doctor-bars .bar-fill.rate-low,
+.cnpq-bars .bar-fill.rate-low {
   background: #dc2626 !important;
   opacity: 0.82;
+}
+
+.bar-delta {
+  font-size: 0.72rem;
+  font-weight: 500;
+  margin-left: 4px;
+}
+
+.bar-delta.delta-pos {
+  color: #16a34a;
+}
+
+.bar-delta.delta-neg {
+  color: #dc2626;
 }
 
 .local-talent-grid,
@@ -4592,6 +4724,33 @@ body {
 .cbo-fill.cluster {
   background: rgba(242, 140, 40, 0.42);
   z-index: 1;
+}
+
+/* Média do cluster como marcador vertical — visível mesmo quando a barra da
+   IEES é maior que a média (a barra sobreposta anterior ficava escondida). */
+.cbo-track {
+  overflow: visible;
+}
+
+.cbo-cluster-marker {
+  position: absolute;
+  top: -4px;
+  bottom: -4px;
+  width: 3px;
+  border-radius: 999px;
+  background: #f28c28;
+  box-shadow: 0 0 0 2px rgba(242, 140, 40, 0.22);
+  z-index: 3;
+}
+
+.cbo-cluster-marker-legend {
+  display: inline-block;
+  width: 3px;
+  height: 12px;
+  border-radius: 999px;
+  background: #f28c28;
+  box-shadow: 0 0 0 2px rgba(242, 140, 40, 0.22);
+  vertical-align: middle;
 }
 
 .cbo-value {
@@ -4950,8 +5109,20 @@ body {
 }
 
 .budget-seg {
-  display: block;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   min-width: 3px;
+  overflow: hidden;
+}
+
+.seg-label {
+  font-size: 10px;
+  font-weight: 600;
+  color: rgba(255,255,255,0.92);
+  white-space: nowrap;
+  pointer-events: none;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.3);
 }
 
 .budget-seg.seg-0,
@@ -5801,6 +5972,11 @@ body {
   padding: 8px 12px;
   border-radius: var(--radius, 8px);
   font-size: 13px;
+  /* Rótulos longos de cluster quebravam fora do chip (nowrap herdado) e
+     cortavam a informação — permite quebra de linha dentro do chip. */
+  white-space: normal;
+  line-height: 1.35;
+  word-break: break-word;
 }
 .side-group-filter .qchip-active {
   background: #e0ecf7;
@@ -6231,6 +6407,7 @@ details.indicator-catalog[open] > summary {
   display: flex;
   align-items: center;
   gap: 8px;
+  flex-shrink: 0;
 }
 .export-btn {
   padding: 6px 14px;
@@ -6672,6 +6849,23 @@ details.indicator-catalog[open] > summary {
 .bar-row.top-value .bar-fill {
   background: var(--blue-900) !important;
 }
+
+/* Ranking bars: spans need block layout so inline width percentages render. */
+.overview-cluster-bars .bar-fill,
+.comparison-ranking-bars .bar-fill {
+  display: block;
+  height: 100%;
+  min-width: 4px;
+  position: relative;
+  z-index: 1;
+}
+
+.overview-cluster-bars > div[aria-hidden="true"],
+.overview-cluster-bars .bar-reference,
+.comparison-ranking-bars .bar-reference {
+  z-index: 2;
+}
+
 .top-value-badge {
   display: inline-block;
   margin-left: 5px;
@@ -7232,3 +7426,533 @@ details.ind-detail-accordion .catalog-card { border: none; border-radius: 0; mar
   color: var(--color-text, #333);
 }
 .metodologia-ranking-note p { margin: 0 0 6px 0; }
+
+
+.access-card {
+  min-height: 156px;
+  overflow: visible;
+}
+
+.access-card-title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-bottom: 8px;
+  line-height: 1.25;
+}
+
+.access-card .score-value {
+  line-height: 1.08;
+  word-break: normal;
+  white-space: normal;
+}
+
+.access-card .card-subtitle {
+  overflow: visible;
+  white-space: normal;
+}
+
+.timeline-legend-note {
+  margin-top: 6px;
+  color: var(--gray-600);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.timeline-hover-dot {
+  fill: transparent;
+  stroke: transparent;
+  cursor: pointer;
+}
+
+.timeline-hover-dot:hover,
+.timeline-hover-dot:focus {
+  fill: var(--orange-500);
+  stroke: #ffffff;
+  stroke-width: 2;
+}
+
+.timeline-line {
+  stroke-dasharray: 1000;
+  stroke-dashoffset: 1000;
+  animation: timelineDraw 900ms ease-out forwards;
+}
+
+.timeline-average {
+  animation: timelineFade 700ms ease-out 250ms both;
+}
+
+.signal-grid .signal-card {
+  animation: signalFadeUp 360ms ease both;
+}
+
+.signal-grid .signal-card:nth-child(2) { animation-delay: 40ms; }
+.signal-grid .signal-card:nth-child(3) { animation-delay: 80ms; }
+.signal-grid .signal-card:nth-child(4) { animation-delay: 120ms; }
+.signal-grid .signal-card:nth-child(5) { animation-delay: 160ms; }
+.signal-grid .signal-card:nth-child(6) { animation-delay: 200ms; }
+.signal-grid .signal-card:nth-child(7) { animation-delay: 240ms; }
+
+.offer-mix-table td {
+  vertical-align: middle;
+}
+
+.offer-stack {
+  display: flex;
+  width: 100%;
+  min-width: 260px;
+  height: 24px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: var(--gray-200);
+}
+
+.offer-seg {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 34px;
+  color: #fff;
+  font-size: 11px;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.offer-seg span {
+  padding: 0 4px;
+}
+
+.cluster-average-row {
+  background: var(--blue-50);
+}
+
+.cluster-average-row td:first-child strong {
+  color: var(--blue-900);
+}
+
+.turn-summary-cards {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(180px, 1fr));
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.turn-bar-cell {
+  position: relative;
+  height: 24px;
+  border-radius: 999px;
+  background: var(--gray-200);
+  overflow: hidden;
+}
+
+.turn-fill-cell {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  height: 100%;
+  min-width: 38px;
+  padding-right: 8px;
+  border-radius: 999px;
+  color: #fff;
+  font-size: 11px;
+  font-weight: 800;
+  animation: barGrow 520ms ease both;
+}
+
+.turn-fill-cell.day {
+  background: var(--blue-700);
+}
+
+.turn-fill-cell.night {
+  background: var(--green-600);
+}
+
+.turn-axis-ref {
+  position: absolute;
+  top: -2px;
+  bottom: -2px;
+  z-index: 2;
+  width: 2px;
+  border-left: 2px dashed var(--gray-800);
+  opacity: 0.65;
+}
+
+.turn-axis-ref.day-ref {
+  left: var(--day-ref);
+}
+
+.turn-axis-ref.night-ref {
+  left: var(--night-ref);
+}
+
+@keyframes timelineDraw {
+  to { stroke-dashoffset: 0; }
+}
+
+@keyframes timelineFade {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes signalFadeUp {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes barGrow {
+  from { transform: scaleX(0); transform-origin: left center; }
+  to { transform: scaleX(1); transform-origin: left center; }
+}
+
+/* ── Composição da oferta por tipo de curso (table format) ─────────────── */
+.cmix-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+.cmix-table th {
+  background: #f5f7fb;
+  color: var(--gray-700, #374151);
+  font-weight: 600;
+  padding: 7px 10px;
+  text-align: left;
+  font-size: 12px;
+  border-bottom: 2px solid #d9e1ec;
+}
+.cmix-table td {
+  padding: 7px 10px;
+  border-bottom: 1px solid #eef1f6;
+  vertical-align: middle;
+}
+.cmix-table tr.cmix-cluster-row td { background: #f0f4fa; }
+.cmix-table tr.cmix-cluster-row strong { color: var(--gray-800, #1e293b); }
+.cmix-table tr.selected td { background: var(--accent-faint, #eef4ff); }
+.cmix-bar {
+  display: flex;
+  height: 24px;
+  border-radius: 4px;
+  overflow: hidden;
+  min-width: 120px;
+}
+.cmix-seg {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  font-weight: 700;
+  color: rgba(255,255,255,0.92);
+  overflow: hidden;
+  white-space: nowrap;
+  transition: width 0.4s ease;
+}
+.cmix-bach { background: #185fa5; }
+.cmix-lic  { background: #0f6e56; }
+.cmix-tech { background: #f28c28; }
+.occ-badge {
+  display: inline-block;
+  padding: 3px 9px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+.occ-badge.occ-green  { background: #dcfce7; color: #14804a; }
+.occ-badge.occ-yellow { background: #fef9c3; color: #854d0e; }
+.occ-badge.occ-red    { background: #fee2e2; color: #991b1b; }
+.th-legend { font-weight: 400; font-size: 11px; margin-left: 6px; color: var(--gray-600, #4b5563); }
+.cmix-bach-dot, .cmix-lic-dot, .cmix-tech-dot {
+  display: inline-block;
+  width: 9px; height: 9px;
+  border-radius: 2px;
+  margin-right: 3px;
+  vertical-align: middle;
+}
+.cmix-bach-dot { background: #185fa5; }
+.cmix-lic-dot  { background: #0f6e56; }
+.cmix-tech-dot { background: #f28c28; }
+
+/* ── Taxa de ocupação diurno/noturno (table format) ───────────────────── */
+.daynight-ref-cards {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+.daynight-card {
+  flex: 1;
+  padding: 10px 14px;
+  border-radius: 8px;
+  font-size: 13px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+.daynight-card span { color: var(--gray-600, #4b5563); font-size: 12px; }
+.daynight-card strong { font-size: 16px; font-weight: 700; }
+.daynight-card.daynight-day   { background: #eff6ff; border: 1px solid #bfdbfe; }
+.daynight-card.daynight-day strong { color: #185fa5; }
+.daynight-card.daynight-night { background: #f0fdf4; border: 1px solid #bbf7d0; }
+.daynight-card.daynight-night strong { color: #0f6e56; }
+.daynight-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+.daynight-table th {
+  background: #f5f7fb;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 7px 10px;
+  text-align: left;
+  border-bottom: 2px solid #d9e1ec;
+  color: var(--gray-700, #374151);
+}
+.daynight-table td {
+  padding: 7px 10px;
+  border-bottom: 1px solid #eef1f6;
+  vertical-align: middle;
+}
+.daynight-table tr.selected td { background: var(--accent-faint, #eef4ff); }
+.daynight-bars-cell { min-width: 160px; }
+.daynight-track {
+  position: relative;
+  height: 20px;
+  background: #f1f5f9;
+  border-radius: 4px;
+  overflow: visible;
+  margin-bottom: 3px;
+}
+.daynight-track::after {
+  content: '';
+  position: absolute;
+  top: -2px; bottom: -2px;
+  left: var(--day-ref, 0%);
+  width: 0;
+  border-left: 2px dashed rgba(242,140,40,0.9);
+  pointer-events: none;
+  z-index: 1;
+}
+.daynight-track.night::after {
+  left: var(--night-ref, 0%);
+  border-left-color: rgba(242,140,40,0.9);
+}
+.daynight-bar {
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  padding-right: 5px;
+  font-size: 10.5px;
+  font-weight: 700;
+  color: rgba(255,255,255,0.95);
+  border-radius: 4px;
+  transition: width 0.45s ease;
+  position: relative;
+  overflow: hidden;
+}
+.day-bar   { background: #185fa5; }
+.night-bar { background: #0f6e56; }
+.daynight-vals { white-space: nowrap; }
+.daynight-val { display: block; font-size: 12px; font-weight: 600; }
+.daynight-val.day   { color: #185fa5; }
+.daynight-val.night { color: #0f6e56; }
+.th-day   { color: #185fa5; }
+.th-night { color: #0f6e56; }
+
+@media (max-width: 680px) {
+  .daynight-ref-cards { flex-direction: column; }
+  .cmix-table th, .cmix-table td,
+  .daynight-table th, .daynight-table td { padding: 5px 6px; font-size: 11px; }
+}
+
+/* ── Access card — clean single-heading design ────────────────────────── */
+.access-card-head {
+  margin-bottom: 3px;
+}
+.access-card-title {
+  font-size: 13px !important;
+  font-weight: 600;
+  color: var(--gray-800, #1e293b);
+  line-height: 1.3;
+  margin-bottom: 4px !important;
+}
+.access-card .score-value {
+  font-size: 22px;
+  line-height: 1.1;
+}
+.access-context-grid {
+  align-items: start;
+}
+
+/* ── occupancyTimeline legend ─────────────────────────────────────────── */
+.tl-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 12px;
+  margin-top: 6px;
+  padding-top: 6px;
+  border-top: 1px solid #eef1f6;
+}
+.tl-legend-item {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--gray-700, #374151);
+  white-space: nowrap;
+}
+.tl-legend-item i {
+  display: inline-block;
+  width: 18px;
+  height: 3px;
+  border-radius: 2px;
+  flex-shrink: 0;
+}
+.tl-legend-item.tl-avg i {
+  background: #f28c28;
+  border: none;
+  height: 3px;
+  background-image: repeating-linear-gradient(
+    90deg, #f28c28 0, #f28c28 5px, transparent 5px, transparent 9px
+  );
+}
+
+/* ── Timeline tooltip ─────────────────────────────────────────────────── */
+.tl-wrap {
+  position: relative;
+}
+.tl-tooltip {
+  position: absolute;
+  top: 4px;
+  left: 20%;
+  background: #1e2b3c;
+  color: #fff;
+  border-radius: 8px;
+  padding: 8px 12px;
+  font-size: 11px;
+  line-height: 1.6;
+  pointer-events: none;
+  z-index: 10;
+  box-shadow: 0 4px 14px rgba(0,0,0,0.22);
+  white-space: nowrap;
+  min-width: 130px;
+}
+.tl-tooltip strong { display: block; font-size: 13px; margin-bottom: 4px; color: #7dd3fc; }
+.tl-tip-avg { color: #f28c28; font-weight: 600; margin-bottom: 3px; }
+
+/* ── BR ranking bar colors ────────────────────────────────────────────── */
+.bar-fill.br-vagas-bar  { background: #185fa5; }
+.bar-fill.br-cursos-bar { background: #e07b10; }
+
+/* ── BR reference marker — laranja (média nacional) ──────────────────── */
+.br-ref-marker { background: #f28c28 !important; }
+
+/* ── BR escala legend ─────────────────────────────────────────────────── */
+.br-escala-legend {
+  display: flex; align-items: center; gap: 6px;
+  font-size: 11px; color: var(--gray-500);
+  margin-bottom: 8px;
+}
+.br-escala-leg-line {
+  display: inline-block; width: 18px; height: 0;
+  border-top: 2px dashed #f28c28; flex-shrink: 0;
+}
+
+/* ── BR Occupancy Ranking Table ──────────────────────────────────────── */
+.br-occ-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12.5px;
+  margin-top: 4px;
+}
+.br-occ-table th {
+  text-align: left;
+  padding: 6px 8px;
+  background: var(--gray-50, #f9fafb);
+  border-bottom: 2px solid var(--gray-200);
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--gray-500);
+  white-space: nowrap;
+}
+.br-occ-table td {
+  padding: 5px 8px;
+  border-bottom: 1px solid var(--gray-100, #f3f4f6);
+  vertical-align: middle;
+}
+.br-occ-table .br-occ-pos { width: 42px; font-size: 11px; font-weight: 700; color: var(--gray-500); text-align: right; padding-right: 4px; }
+.br-occ-table .br-occ-name { width: 72px; max-width: 72px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.br-occ-table .br-occ-diff { white-space: nowrap; font-size: 12px; }
+.br-occ-table .br-occ-cls  { white-space: nowrap; }
+
+/* Bar cell inside table */
+.br-occ-bar-wrap {
+  position: relative;
+  height: 20px;
+  background: #f1f5f9;
+  border-radius: 4px;
+  overflow: visible;
+  min-width: 80px;
+}
+.br-occ-bar-fill {
+  height: 100%;
+  border-radius: 4px;
+  transition: width 0.4s ease;
+}
+.br-occ-bar-fill.occ-green  { background: #14804a; }
+.br-occ-bar-fill.occ-yellow { background: #af7a00; }
+.br-occ-bar-fill.occ-red    { background: #c43f3a; }
+.br-occ-bar-fill.occ-ref    { background: #d1d5db; }
+.br-occ-bar-label {
+  position: absolute;
+  top: 50%; right: 5px;
+  transform: translateY(-50%);
+  font-size: 10.5px;
+  font-weight: 700;
+  color: #fff;
+  pointer-events: none;
+  white-space: nowrap;
+  mix-blend-mode: normal;
+}
+.br-occ-bar-fill.occ-ref + .br-occ-bar-label { color: #374151; }
+.br-occ-avg-marker {
+  position: absolute;
+  top: -3px; bottom: -3px;
+  width: 0;
+  border-left: 2px solid #f28c28;
+  pointer-events: none;
+  z-index: 1;
+}
+/* Reference row */
+.br-occ-table .br-occ-avg-tr td { background: #f8fafc; font-style: italic; }
+.br-occ-table tr.selected-row td { background: var(--accent-faint, #eef4ff); }
+.br-occ-table tr.out-cluster { opacity: 0.48; }
+/* Classification labels */
+.br-cls { font-size: 11px; font-weight: 600; }
+.br-cls-above { color: #14804a; }
+.br-cls-ref   { color: var(--gray-500); }
+.br-cls-below { color: #c43f3a; }
+
+/* ── Animations: timeline — keyframes defined near line 7547 ──────────── */
+
+/* ── Animations: signal / semáforo cards ─────────────────────────────── */
+@keyframes signal-pop {
+  from { opacity: 0; transform: scale(0.84); }
+  to   { opacity: 1; transform: scale(1); }
+}
+.signal-card {
+  animation: signal-pop 0.3s ease-out both;
+}
+.signal-grid .signal-card:nth-child(2)  { animation-delay: 0.05s; }
+.signal-grid .signal-card:nth-child(3)  { animation-delay: 0.10s; }
+.signal-grid .signal-card:nth-child(4)  { animation-delay: 0.15s; }
+.signal-grid .signal-card:nth-child(5)  { animation-delay: 0.20s; }
+.signal-grid .signal-card:nth-child(6)  { animation-delay: 0.25s; }
+.signal-grid .signal-card:nth-child(7)  { animation-delay: 0.30s; }
