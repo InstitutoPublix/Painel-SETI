@@ -1201,40 +1201,74 @@ function efficiencyChartRows(c) {
 }
 
 function estimatedFaculty(u) {
+  // Total real de docentes em exercício (Base IES INEP, via pipeline);
+  // proxy alunos÷15 apenas como fallback.
+  if (u.docExe) return u.docExe;
+  if (u.docTotal) return u.docTotal;
   return Math.max(80, Math.round(u.students / 15));
 }
 
 function budgetMetrics(u) {
-  const liquidated = u.budget;
-  const liquidationRate = clamp(u.liquidation, 70, 99.5);
-  const committed = liquidated / Math.max(liquidationRate / 100, 0.01);
-  const executionRate = clamp(u.execution, 65, 99.5);
-  const updatedBudget = committed / Math.max(executionRate / 100, 0.01);
+  // Prioriza os valores reais do Relatório da Despesa 8050 (pré-calculados no
+  // pipeline e copiados para o objeto por byYearWithD8050). As fórmulas
+  // estimadas abaixo ficam apenas como fallback quando a base não cobre a IES
+  // ou o ano — antes elas eram usadas sempre e divergiam da tabela 8050
+  // (ex.: clamp de 65% na execução mascarava o valor real de ~31% em 2026).
+  const liquidated = u.liquidado != null ? u.liquidado : u.budget;
+  const liquidationRate = u.tx_liquidacao != null
+    ? Number(u.tx_liquidacao)
+    : clamp(u.liquidation, 70, 99.5);
+  const committed = u.empenhado != null
+    ? u.empenhado
+    : liquidated / Math.max(liquidationRate / 100, 0.01);
+  const executionRate = u.tx_execucao_empenho != null
+    ? Number(u.tx_execucao_empenho)
+    : clamp(u.execution, 65, 99.5);
+  const updatedBudget = u.orcamento_atualizado != null
+    ? u.orcamento_atualizado
+    : committed / Math.max(executionRate / 100, 0.01);
   // Usa o valor real de variação da dotação quando disponível; o teto antigo de
   // 28% saturava todas as IES (valores reais 34–77%) e congelava o card
   // "Variação da Dotação" independentemente do filtro aplicado.
   const variationRate = u.var_dotacao_loa != null
     ? Number(u.var_dotacao_loa)
     : clamp(u.supplementation, -10, 150);
-  const initialBudget = updatedBudget / Math.max(1 + variationRate / 100, 0.72);
-  const paymentRate = clamp(88 + (u.execution - 88) * 0.35 + (u.liquidation - 88) * 0.18, 78, 99.2);
-  const paid = liquidated * paymentRate / 100;
-  const contingencyRate = clamp(3.2 + (94 - u.execution) * 0.42 + u.supplementation * 0.12, 1.5, 18);
+  const initialBudget = u.dotacao_inicial != null
+    ? u.dotacao_inicial
+    : updatedBudget / Math.max(1 + variationRate / 100, 0.72);
+  const paymentRate = u.tx_pagamento_liq != null
+    ? Number(u.tx_pagamento_liq)
+    : clamp(88 + (u.execution - 88) * 0.35 + (u.liquidation - 88) * 0.18, 78, 99.2);
+  const paid = u.pago != null ? u.pago : liquidated * paymentRate / 100;
+  const contingencyRate = u.grau_contingenciamento != null
+    ? Number(u.grau_contingenciamento)
+    : clamp(3.2 + (94 - u.execution) * 0.42 + u.supplementation * 0.12, 1.5, 18);
   const contingency = updatedBudget * contingencyRate / 100;
   const availableBudget = Math.max(updatedBudget - contingency, 1);
   const notExecuted = Math.max(availableBudget - liquidated, 0);
   const execInitial   = liquidated / Math.max(initialBudget,   1) * 100;
   const execAvailable = liquidated / Math.max(availableBudget, 1) * 100;
   const execUpdated   = liquidated / Math.max(updatedBudget,   1) * 100;
-  const personnel = clamp(u.personnel, 58, 92);
-  const odc       = clamp(13 + (100 - personnel) * 0.42 + u.supplementation * 0.08, 8, 30);
-  const investment = clamp(100 - personnel - odc, 2, 25);
-  const freeResources = clamp(100 - u.supplementation - u.cnpq * 0.45, 60, 96);
-  const ownResources  = clamp(4 + u.cnpq * 0.55 + u.pgTop * 0.12, 4, 24);
-  const transfers     = clamp(100 - freeResources - ownResources, 1, 30);
-  const currentCapitalRatio = (personnel + odc) / Math.max(investment, 1);
-  const works     = clamp(investment * 0.45 + u.territory * 0.02, 0.8, 12);
-  const equipment = clamp(investment * 0.55 + u.doctors * 0.01, 0.8, 12);
+  const personnel = u.part_pessoal != null ? Number(u.part_pessoal) : clamp(u.personnel, 58, 92);
+  const odc = u.part_outras_correntes != null
+    ? Number(u.part_outras_correntes)
+    : clamp(13 + (100 - personnel) * 0.42 + u.supplementation * 0.08, 8, 30);
+  const investment = u.part_capital != null
+    ? Number(u.part_capital)
+    : clamp(100 - personnel - odc, 2, 25);
+  const freeResources = u.part_recursos_livres != null
+    ? Number(u.part_recursos_livres)
+    : clamp(100 - u.supplementation - u.cnpq * 0.45, 60, 96);
+  const ownResources = u.part_fonte_501 != null
+    ? Number(u.part_fonte_501)
+    : clamp(4 + u.cnpq * 0.55 + u.pgTop * 0.12, 4, 24);
+  const transfers = (u.part_recursos_livres != null && u.part_fonte_501 != null)
+    ? clamp(100 - freeResources - ownResources, 0, 100)
+    : clamp(100 - freeResources - ownResources, 1, 30);
+  const currentCapitalRatio = u.ind88 != null ? Number(u.ind88) : (personnel + odc) / Math.max(investment, 1);
+  // ind92/93 reais do 8050 (Liquidado Elementos 51/52 ÷ Orç. Atualizado)
+  const works = u.ind92 != null ? Number(u.ind92) : clamp(investment * 0.45 + u.territory * 0.02, 0.8, 12);
+  const equipment = u.ind93 != null ? Number(u.ind93) : clamp(investment * 0.55 + u.doctors * 0.01, 0.8, 12);
   const equivalentStudents = Math.max(u.students * 0.82 + u.graduates * 1.7 + u.entrants * 0.42, 1);
   const costEquivalentStudent = liquidated * 1000000 / equivalentStudents;
   return { liquidated, committed, updatedBudget, initialBudget, paymentRate, paid, liquidationRate, executionRate, variationRate, contingencyRate, contingency, availableBudget, notExecuted, execInitial, execAvailable, execUpdated, personnel, odc, investment, freeResources, ownResources, transfers, currentCapitalRatio, works, equipment, costEquivalentStudent };
@@ -1258,7 +1292,8 @@ function budgetAgg(rows) {
     contingency,
     availableBudget,
     executionRate: committed / Math.max(updatedBudget, 1) * 100,
-    liquidationRate: liquidated / Math.max(committed, 1) * 100,
+    // tx_liquidacao do 8050 = liquidado ÷ orçamento atualizado (não ÷ empenhado)
+    liquidationRate: liquidated / Math.max(updatedBudget, 1) * 100,
     paymentRate: paid / Math.max(liquidated, 1) * 100,
     variationRate: (updatedBudget - initialBudget) / Math.max(initialBudget, 1) * 100,
     contingencyRate: contingency / Math.max(updatedBudget, 1) * 100,

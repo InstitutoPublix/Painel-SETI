@@ -27,15 +27,10 @@
         align-items: center;
       }
 
+      /* Arco secundário desativado: o sweep principal vem de .header-decoration,
+         deixando apenas as duas curvas (azul + verde) iguais à imagem. */
       .header-arc {
-        position: absolute;
-        right: 220px;
-        top: 0;
-        bottom: 0;
-        width: 260px;
-        opacity: 0.7;
-        pointer-events: none;
-        z-index: 1;
+        display: none;
       }
 
       .brand-text .eyebrow {
@@ -131,7 +126,7 @@
             alt="Paraná — Governo do Estado"
             class="header-logo"
           />
-          <div style="width:1px; height:40px; background:rgba(255,255,255,0.3);"></div>
+          <div style="width:1px; height:56px; background:rgba(255,255,255,0.3);"></div>
           <img
             src="assets/img/logo_SETI.png"
             alt="Secretaria da Ciência, Tecnologia e Ensino Superior"
@@ -144,18 +139,6 @@
       <!-- QUARTIL CHIPS — mantido para compatibilidade com painel.js -->
       <div id="quartilChips" class="quartil-chips quartil-chips-strip" aria-label="Grupos da variável de agrupamento" style="display:none;"></div>
 
-      <!-- Elemento decorativo: curvas SVG (não interativo) -->
-      <div class="header-decoration" aria-hidden="true">
-        <svg viewBox="0 0 460 110" preserveAspectRatio="none"
-             xmlns="http://www.w3.org/2000/svg">
-          <path d="M460,8 Q340,4 230,52 Q130,92 0,88"
-                fill="none" stroke="#00b894" stroke-width="3.5"
-                stroke-linecap="round" opacity="0.9"/>
-          <path d="M460,28 Q350,20 240,66 Q140,102 0,106"
-                fill="none" stroke="#74b9ff" stroke-width="1.8"
-                stroke-linecap="round" opacity="0.55"/>
-        </svg>
-      </div>
 
     </header>
 

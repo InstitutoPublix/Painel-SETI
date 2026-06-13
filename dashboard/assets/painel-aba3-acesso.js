@@ -13,9 +13,25 @@
 
 // ── Dispatcher principal da aba ─────────────────────────────────────────────
 function accessBlock(title, c) {
+  if (typeof isBrasilContext === "function" && isBrasilContext(c)) {
+    if (title.includes("Escala")) return brasilAccessEscalaBlock(c);
+    if (title.includes("Ocupação")) return brasilAccessOccupancyBlock(c);
+    return brasilClusterUnavailableState();
+  }
   if (title.includes("Escala")) return accessScale(c);
   if (title.includes("Ocupação")) return accessOccupancy(c);
   return accessTerritory(c);
+}
+
+// ── Filtro de indicadores da aba (barra "Visualizando:") ────────────────────
+// Retorna o código ativo quando ele pertence ao bloco; null = mostrar tudo.
+function accessIndFilter(blockCodes) {
+  const act = (state.activeIndicator && state.activeIndicator.access) || "all";
+  return act !== "all" && blockCodes.includes(act) ? act : null;
+}
+
+function accessIndShow(act, codes) {
+  return !act || codes.includes(act);
 }
 
 // ── Filtros de estado ───────────────────────────────────────────────────────
@@ -166,6 +182,14 @@ function occupancyTimeline(c) {
 }
 
 // ── Indicadores de ocupação (matriz) ────────────────────────────────────────
+// Ocupação real do grau acadêmico predominante da IES (grauMix vem agregado
+// da Base Cursos INEP pelo pipeline). null quando não há dado real.
+function grauOccupancy(u) {
+  const g = u.grauMix && u.grauMix[u.type];
+  if (g && g.vacancies > 0 && g.entrants != null) return clamp(g.entrants / g.vacancies * 100, 0, 100);
+  return null;
+}
+
 var accessOccupancyIndicators = [
   { code: "IND-26", name: "Ocupação vagas", get: u => u.occupancy, fmt: formatPercent },
   { code: "IND-1",  name: "Ocupação ES estadual", get: u => u.occupancy, fmt: formatPercent },
@@ -173,10 +197,10 @@ var accessOccupancyIndicators = [
   { code: "IND-24", name: "Ocupação ingresso", get: u => u.occupancy, fmt: formatPercent },
   { code: "IND-25", name: "Vagas ingresso não ocupadas", get: u => u.vacanciesNovaUnfilled != null ? u.vacanciesNovaUnfilled : Math.max(0, Math.round((u.vacanciesNova != null ? u.vacanciesNova : u.vacancies * 0.82) - u.entrants)), fmt: formatNumber },
   { code: "IND-28", name: "Vagas não ocupadas", get: u => u.vacanciesUnfilled != null ? u.vacanciesUnfilled : Math.max(0, Math.round(u.vacancies * (1 - u.occupancy / 100))), fmt: formatNumber },
-  { code: "IND-29", name: "Ocupação por grau", get: u => clamp(u.occupancy + (u.type === "Bacharelado" ? 2.4 : -1.6), 0, 100), fmt: formatPercent },
+  { code: "IND-29", name: "Ocupação por grau", get: u => grauOccupancy(u) ?? clamp(u.occupancy + (u.type === "Bacharelado" ? 2.4 : -1.6), 0, 100), fmt: formatPercent },
   { code: "IND-30", name: "Ocupação diurno", get: u => dayOccupancy(u), fmt: formatPercent },
   { code: "IND-31", name: "Ocupação noturno", get: u => nightOccupancy(u), fmt: formatPercent },
-  { code: "IND-67", name: "Ocupação por tipo", get: u => clamp(u.occupancy + (u.type === "Licenciatura" ? -3.5 : 1.8), 0, 100), fmt: formatPercent },
+  { code: "IND-67", name: "Ocupação por tipo", get: u => grauOccupancy(u) ?? clamp(u.occupancy + (u.type === "Licenciatura" ? -3.5 : 1.8), 0, 100), fmt: formatPercent },
   { code: "IND-23", name: "Estudantes por vaga", get: u => u.students / Math.max(u.vacancies, 1), fmt: v => v.toFixed(2).replace(".", ",") }
 ];
 
@@ -203,9 +227,15 @@ function accessOccupancy(c) {
     ${tlSelId !== "all" ? `<button type="button" style="font-size:11px;color:var(--gray-500);background:none;border:none;cursor:pointer;padding:0" onclick="setPrAccessTimelineFilter('all')">× Limpar</button>` : ""}
   </div>`;
 
-  return `<article class="visual-card"><h3>IND-26 · Taxa de ocupação por IEES</h3><p class="card-subtitle">Semáforo: verde ≥ 70%, amarelo 55–69%, vermelho &lt; 55%.</p>${quartilChipStrip("occupancyBars", c.f.groupBy, c.base, c)}${occupancyBars(c)}</article>
-  <div class="chart-grid mt-14">
-    <article class="visual-card"><h3>Evolução de IND-26 · 2020–2024</h3><p class="card-subtitle">Linha tracejada = média do cluster por ano.</p>${tlDropdown}${occupancyTimeline(tlCtx)}</article>
+  const act = accessIndFilter(["ind1", "ind3", "ind24", "ind26", "ind29", "ind67"]);
+  const matrixInds = act
+    ? accessOccupancyIndicators.filter(ind => ind.code.toLowerCase().replace("ind-", "ind") === act)
+    : accessOccupancyIndicators;
+  const matrixCols = matrixInds.length ? matrixInds : accessOccupancyIndicators;
+
+  return `${accessIndShow(act, ["ind1", "ind26"]) ? `<article class="visual-card"><h3>IND-26 · Taxa de ocupação por IEES</h3><p class="card-subtitle">Semáforo: verde ≥ 70%, amarelo 55–69%, vermelho &lt; 55%.</p>${quartilChipStrip("occupancyBars", c.f.groupBy, c.base, c)}${occupancyBars(c)}</article>` : ""}
+  ${accessIndShow(act, ["ind1", "ind26"]) ? `<div class="chart-grid mt-14">
+    <article class="visual-card"><h3>Evolução de IND-26 · 2020–2024</h3><p class="card-subtitle">Linha tracejada = média do cluster por ano. Passe o mouse sobre o gráfico para ver os valores e a média de cada ano.</p>${tlDropdown}${occupancyTimeline(tlCtx)}</article>
     <article class="visual-card">
       <h3>Semáforo de ocupação de vagas por IEES</h3>
       <p class="card-subtitle">Verde ≥ 70% · Amarelo 55–69% · Vermelho &lt; 55% | IND-26</p>
@@ -213,16 +243,25 @@ function accessOccupancy(c) {
       <div class="signal-year-note">Ano base: <strong>${semYear}</strong></div>
       <div class="signal-grid">${semRows.map(u => signalCard(u)).join("")}</div>
     </article>
-  </div>
+  </div>` : ""}
   <div class="table-wrap mt-14 access-occupancy-table">
     <h3>Matriz de ocupação e ociosidade</h3>
-    <p class="card-subtitle">Indicadores calculados por IEES dentro do recorte/cluster ativo.</p>
-    <table class="data-table"><thead><tr><th>IEES</th>${accessOccupancyIndicators.map(ind => `<th><span class="indicator-code">${ind.code}</span>${indicatorName(ind.code)}</th>`).join("")}</tr></thead><tbody>${clusterRows.map(u => `<tr><td><strong>${u.sigla}</strong><br><span>${u.groups[c.f.groupBy]}</span></td>${accessOccupancyIndicators.map(ind => `<td>${ind.fmt(ind.get(u))}</td>`).join("")}</tr>`).join("")}</tbody></table>
+    <p class="card-subtitle">Indicadores calculados por IEES dentro do recorte/cluster ativo.${act ? " Exibindo apenas o indicador selecionado no filtro acima." : ""}</p>
+    <table class="data-table"><thead><tr><th>IEES</th>${matrixCols.map(ind => `<th><span class="indicator-code">${ind.code}</span>${indicatorName(ind.code)}</th>`).join("")}</tr></thead><tbody>${clusterRows.map(u => `<tr><td><strong>${u.sigla}</strong><br><span>${u.groups[c.f.groupBy]}</span></td>${matrixCols.map(ind => `<td>${ind.fmt(ind.get(u))}</td>`).join("")}</tr>`).join("")}</tbody></table>
   </div>`;
 }
 
 // ── Composição de oferta por tipo de curso ──────────────────────────────────
+// Usa a composição REAL por grau acadêmico (grauMix, agregada da Base Cursos
+// INEP pelo pipeline) quando disponível; a fórmula abaixo fica só como
+// fallback para registros sem dado real.
 function courseMix(u) {
+  if (u.grauMix) {
+    const vac = key => (u.grauMix[key] && u.grauMix[key].vacancies) || 0;
+    const b = vac("Bacharelado"), l = vac("Licenciatura"), t = vac("Tecnólogo");
+    const total = b + l + t;
+    if (total > 0) return { bach: b / total, lic: l / total, tech: t / total };
+  }
   const licBase = u.type === "Licenciatura" ? 0.44 : 0.22;
   const techBase = clamp(0.08 + u.territory / 900, 0.09, 0.20);
   const lic = clamp(licBase + (100 - u.occupancy) / 900, 0.16, 0.52);
@@ -259,6 +298,9 @@ function publicSchoolShare(u) {
 }
 
 function municipalityOccupancy(u) {
+  // Real: média das ocupações municipais (ing÷vagas) da IES — Base Cursos via
+  // pipeline (muniOccupancy). Fórmula só como fallback.
+  if (u.muniOccupancy != null) return u.muniOccupancy;
   return clamp(u.occupancy + (u.territory - 72) * 0.08, 45, 100);
 }
 
@@ -357,26 +399,29 @@ function accessScale(c) {
     `<button class="rank-metric-btn${typeFilter === t ? " active" : ""}" type="button" onclick="setAccessCourseTypeFilter('${t}')">${t === "all" ? "Todos" : t}</button>`
   ).join("");
 
+  const act = accessIndFilter(["ind10", "ind11", "ind15", "ind16", "ind17"]);
+  const cards = [
+    accessIndShow(act, ["ind11"]) ? accessCard("IND-11", "Total de vagas" + typeLabel, formatNumber(vacDisp), `Média do cluster: ${formatNumber(clVacAvg)}`) : "",
+    accessIndShow(act, ["ind10"]) ? accessCard("IND-10", "Cursos ativos" + typeLabel, formatNumber(crsDisp), `Média do cluster: ${formatNumber(clCrsAvg)}`) : "",
+    accessIndShow(act, ["ind17"]) ? accessCard("IND-17", "Municípios com oferta", formatNumber(new Set(data.map(u => u.municipality)).size), `Cluster: ${formatNumber(new Set(clusterRows.map(u => u.municipality)).size)} municípios`) : "",
+    accessIndShow(act, ["ind16"]) ? accessCard("IND-16", "Participação nas vagas", formatPercent(participation), selected ? "sobre vagas do cluster" : "sobre Sistema PR completo") : "",
+    accessIndShow(act, ["ind15"]) ? accessCard("IND-15", "Vagas por curso" + typeLabel, formatNumber(avgVacCrs), `Média do cluster: ${formatNumber(clAvgVacCrs)}`) : ""
+  ].join("");
+
   return `<div class="rank-metric-selector" style="margin-bottom:14px">
     <span style="font-size:12px;font-weight:600;color:var(--gray-600);margin-right:4px">Tipo de curso:</span>${typeBtns}
   </div>
-  <div class="access-context-grid">
-    ${accessCard("IND-11", "Total de vagas" + typeLabel, formatNumber(vacDisp), `Média do cluster: ${formatNumber(clVacAvg)}`)}
-    ${accessCard("IND-10", "Cursos ativos" + typeLabel, formatNumber(crsDisp), `Média do cluster: ${formatNumber(clCrsAvg)}`)}
-    ${accessCard("IND-17", "Municípios com oferta", formatNumber(new Set(data.map(u => u.municipality)).size), `Cluster: ${formatNumber(new Set(clusterRows.map(u => u.municipality)).size)} municípios`)}
-    ${accessCard("IND-16", "Participação nas vagas", formatPercent(participation), selected ? "sobre vagas do cluster" : "sobre Sistema PR completo")}
-    ${accessCard("IND-15", "Vagas por curso" + typeLabel, formatNumber(avgVacCrs), `Média do cluster: ${formatNumber(clAvgVacCrs)}`)}
-  </div>
-  <article class="visual-card access-vacancy-map-card mt-14">
+  <div class="access-context-grid">${cards}</div>
+  ${accessIndShow(act, ["ind11", "ind16", "ind17"]) ? `<article class="visual-card access-vacancy-map-card mt-14">
     <div class="visual-card-header">
       <div><h3>Mapa de calor de vagas por município</h3><p class="card-subtitle">IND-11 · concentração de vagas ofertadas nas IEES estaduais. Bolhas maiores indicam maior total de vagas; municípios fora do cluster ficam em cinza.</p></div>
       <span class="indicator-code">IND-11</span>
     </div>
     ${vacancyHeatMap(c)}
-  </article>
+  </article>` : ""}
   <div class="chart-grid mt-14">
-    <article class="visual-card"><h3>IND-11 · Total de vagas por IEES${typeLabel}</h3><p class="card-subtitle">Barras do cluster destacadas; demais IEES em cinza.</p>${accessClusterBars(c, getVac, formatNumber)}</article>
-    <article class="visual-card"><h3>IND-10 · Total de cursos por IEES${typeLabel}</h3><p class="card-subtitle">Linha laranja indica média do cluster.</p>${accessClusterBars(c, getCrs, formatNumber)}</article>
+    ${accessIndShow(act, ["ind11", "ind16"]) ? `<article class="visual-card"><h3>IND-11 · Total de vagas por IEES${typeLabel}</h3><p class="card-subtitle">Barras do cluster destacadas; demais IEES em cinza.</p>${accessClusterBars(c, getVac, formatNumber)}</article>` : ""}
+    ${accessIndShow(act, ["ind10", "ind15"]) ? `<article class="visual-card"><h3>IND-10 · Total de cursos por IEES${typeLabel}</h3><p class="card-subtitle">Linha laranja indica média do cluster.</p>${accessClusterBars(c, getCrs, formatNumber)}</article>` : ""}
   </div>`;
 }
 
@@ -389,6 +434,30 @@ function vacancyHeatMap(c) {
   const maxVacancies = Math.max(...allRows.map(u => u.vacancies), 1);
   const activeRows = explicitClusterActive(c) ? allRows : clusterRows;
   const topRows = [...clusterRows].sort((a, b) => b.vacancies - a.vacancies).slice(0, 5);
+
+  // Distribuição municipal REAL (Base Cursos via pipeline): agrega as vagas
+  // de todos os municípios de oferta das IEES do cluster, em vez de atribuir
+  // tudo à cidade-sede.
+  const munData = window.SETI_VAGAS_MUNICIPIOS || null;
+  let munTop = null, munCount = null;
+  if (munData) {
+    const acc = {};
+    clusterRows.forEach(u => {
+      const entry = munData[u.sigla];
+      ((entry && entry.itens) || []).forEach(it => {
+        if (it.vagas > 0) acc[it.municipio] = (acc[it.municipio] || 0) + it.vagas;
+      });
+    });
+    const entries = Object.entries(acc);
+    if (entries.length) {
+      munCount = entries.length;
+      munTop = entries.sort((a, b) => b[1] - a[1]).slice(0, 5);
+    }
+  }
+  const sideList = munTop
+    ? munTop.map(([mun, vg], index) => `<div><span>${index + 1}. ${mun}</span><strong>${formatNumber(vg)}</strong></div>`).join("")
+    : topRows.map((u, index) => `<div><span>${index + 1}. ${u.municipality}</span><strong>${formatNumber(u.vacancies)}</strong></div>`).join("");
+  const avgPerMun = munCount ? totalVacancies / munCount : mean(clusterRows, u => u.vacancies);
   return `<div class="vacancy-map-layout">
     <div class="vacancy-map-frame">
       <svg class="pr-heatmap-svg" viewBox="0 0 760 430" role="img" aria-label="Mapa de calor do Paraná por total de vagas">
@@ -416,8 +485,8 @@ function vacancyHeatMap(c) {
     </div>
     <div class="vacancy-map-side">
       <div class="map-side-kpi"><span>Total de vagas no cluster</span><strong>${formatNumber(totalVacancies)}</strong></div>
-      <div class="map-side-kpi"><span>Média por município</span><strong>${formatNumber(mean(clusterRows, u => u.vacancies))}</strong></div>
-      <div class="map-side-list"><strong>Municípios com maior oferta</strong>${topRows.map((u, index) => `<div><span>${index + 1}. ${u.municipality}</span><strong>${formatNumber(u.vacancies)}</strong></div>`).join("")}</div>
+      <div class="map-side-kpi"><span>Média por município${munCount ? ` (${munCount} municípios com oferta)` : ""}</span><strong>${formatNumber(avgPerMun)}</strong></div>
+      <div class="map-side-list"><strong>Municípios com maior oferta${munTop ? "" : estBadge("Aproximação pela cidade-sede — dado municipal real indisponível")}</strong>${sideList}</div>
     </div>
   </div>`;
 }
@@ -487,11 +556,11 @@ function paranaIeesMap(c) {
 }
 
 // ── Tabela de indicadores territoriais ─────────────────────────────────────
-function accessTerritoryTable(rows) {
+function accessTerritoryTable(rows, activeInd) {
   if (!rows.length) return "";
   const totalVac = Math.max(sum(rows, x => x.vacancies), 1);
   const totalCrs = Math.max(sum(rows, x => x.courses), 1);
-  const cols = [
+  let cols = [
     { h: "IND-11 Vagas ↑",             pol: 1, fn: u => u.vacancies,                    fmt: formatNumber },
     { h: "IND-32 Ocupação município ↑", pol: 1, fn: u => municipalityOccupancy(u),       fmt: formatPercent },
     { h: "IND-17 Part. vagas ↑",        pol: 1, fn: u => u.vacancies / totalVac * 100,   fmt: formatPercent },
@@ -500,6 +569,11 @@ function accessTerritoryTable(rows) {
     { h: "IND-69 Licenciaturas ↑",      pol: 1, fn: u => courseMix(u).lic * 100,        fmt: formatPercent },
     { h: "IND-4 Escola pública ↑",      pol: 1, fn: u => publicSchoolShare(u),          fmt: formatPercent }
   ];
+  if (activeInd) {
+    const indTag = activeInd.replace("ind", "IND-") + " ";
+    cols = cols.filter(col => col.h.startsWith(indTag));
+    if (!cols.length) return "";
+  }
   const vals = rows.map(u => cols.map(col => col.fn(u)));
   const colMaxes = cols.map((_, ci) => Math.max(...vals.map(r => r[ci]), 0.0001));
   const colMeans = cols.map((_, ci) => {
@@ -552,15 +626,20 @@ window.exportAccessTerritoryCSV = function() {
 };
 
 // ── Bloco Distribuição Territorial (versão ativa — com mapa geográfico) ──────
+// Ordem: catálogo de indicadores primeiro; abaixo, os indicadores territoriais
+// e por tipo de curso. A seleção no catálogo filtra os gráficos/tabela
+// (ver applyAccessCatalogFilter).
 function accessTerritory(c) {
   const rows = clusterRowsFor(c);
   if (!rows.length) return empty();
-  return `<div class="chart-grid">
-    <article class="visual-card"><h3>Composição da oferta por tipo de curso</h3><p class="card-subtitle">IND-67, IND-68 e IND-69 · Barras 100% por IEES no cluster ativo.</p>${stackedCourseBars(c)}</article>
-    <article class="visual-card"><h3>Mapa das IEES estaduais — Ocupação de vagas</h3><p class="card-subtitle">IND-26 · Tamanho e cor dos círculos representam a taxa de ocupação de vagas por IEES no cluster ativo.</p>${paranaIeesMap(c)}</article>
+  const act = accessIndFilter(["ind4", "ind67", "ind68", "ind69"]);
+  return `${accessInteractiveCatalog()}
+  <div class="chart-grid mt-14">
+    ${accessIndShow(act, ["ind67", "ind68", "ind69"]) ? `<article class="visual-card" id="accessMixCard"><h3>Composição da oferta por tipo de curso</h3><p class="card-subtitle">IND-67, IND-68 e IND-69 · Barras 100% por IEES no cluster ativo.</p>${stackedCourseBars(c)}</article>` : ""}
+    ${!act ? `<article class="visual-card" id="accessIeesMapCard"><h3>Mapa das IEES estaduais — Ocupação de vagas</h3><p class="card-subtitle">IND-26 · Tamanho e cor dos círculos representam a taxa de ocupação de vagas por IEES no cluster ativo.</p>${paranaIeesMap(c)}</article>` : ""}
   </div>
-  <article class="visual-card mt-14"><h3>IND-30 e IND-31 · Ocupação diurno/noturno</h3><p class="card-subtitle">Barras agrupadas por IEES; linhas de referência calculadas no cluster.</p>${dayNightBars(c)}</article>
-  ${accessTerritoryTable(rows)}`;
+  ${!act ? `<article class="visual-card mt-14" id="accessDayNightCard"><h3>IND-30 e IND-31 · Ocupação diurno/noturno</h3><p class="card-subtitle">Barras agrupadas por IEES; linhas de referência calculadas no cluster.</p>${dayNightBars(c)}</article>` : ""}
+  ${accessTerritoryTable(rows, act)}`;
 }
 
 // ── Catálogo de indicadores ─────────────────────────────────────────────────
@@ -572,6 +651,185 @@ function bindAccessCatalogSelect() {
   bindCustomCatalog("access");
 }
 
+// ── Integração catálogo → gráficos (Distribuição territorial) ───────────────
+// Ao selecionar indicadores no catálogo, os visuais territoriais abaixo são
+// filtrados em tempo real para exibir apenas os indicadores escolhidos.
+function applyAccessCatalogFilter() {
+  const sel = state.accessCatalogSel || [];
+  const cardCodes = [
+    ["accessMixCard",      ["IND-67", "IND-68", "IND-69"]],
+    ["accessIeesMapCard",  ["IND-1", "IND-26"]],
+    ["accessDayNightCard", ["IND-30", "IND-31"]]
+  ];
+  cardCodes.forEach(([id, codes]) => {
+    const card = document.getElementById(id);
+    if (card) card.style.display = !sel.length || codes.some(code => sel.includes(code)) ? "" : "none";
+  });
+  const table = document.getElementById("accessTerritoryDataTable");
+  if (table) {
+    const headCells = [...table.querySelectorAll("thead th")];
+    headCells.forEach((th, i) => {
+      if (i === 0) return;
+      const m = th.textContent.match(/IND-\d+/);
+      const show = !sel.length || (m && sel.includes(m[0]));
+      [...table.rows].forEach(tr => { if (tr.cells[i]) tr.cells[i].style.display = show ? "" : "none"; });
+    });
+    const wrap = table.closest(".table-wrap");
+    if (wrap) {
+      const anyCol = !sel.length || headCells.some((th, i) => i > 0 && (th.textContent.match(/IND-\d+/) || [null])[0] && sel.includes(th.textContent.match(/IND-\d+/)[0]));
+      wrap.style.display = anyCol ? "" : "none";
+    }
+  }
+}
+window.applyAccessCatalogFilter = applyAccessCatalogFilter;
+
+// Hook chamado por bindCustomCatalog sempre que a seleção do catálogo muda.
+window.onCatalogSelectionChange = function (tabId, codes) {
+  if (tabId !== "access") return;
+  state.accessCatalogSel = codes;
+  applyAccessCatalogFilter();
+};
+
+// ── Tooltip interativo da evolução da taxa de ocupação ──────────────────────
+// Delegação global: cobre os gráficos do Paraná e do Brasil.
+(function bindOccupancyTimelineTooltip() {
+  if (window._tlTooltipBound) return;
+  window._tlTooltipBound = true;
+  document.addEventListener("mousemove", e => {
+    const target = e.target instanceof Element ? e.target : null;
+    const hit = target && target.closest ? target.closest(".tl-hit") : null;
+    document.querySelectorAll(".tl-tooltip:not([hidden])").forEach(tip => {
+      if (!hit || !tip.closest(".tl-wrap").contains(hit)) tip.hidden = true;
+    });
+    if (!hit) return;
+    const wrap = hit.closest(".tl-wrap");
+    const tip = wrap && wrap.querySelector(".tl-tooltip");
+    if (!tip) return;
+    const vals = decodeURIComponent(hit.dataset.vals || "").split("\n").filter(Boolean);
+    tip.innerHTML = `<strong>${hit.dataset.year}</strong><div class="tl-tip-avg">Média: ${hit.dataset.avg}</div>${vals.join("<br>")}`;
+    tip.hidden = false;
+    const wrapRect = wrap.getBoundingClientRect();
+    const tipRect = tip.getBoundingClientRect();
+    let x = e.clientX - wrapRect.left + 14;
+    let y = e.clientY - wrapRect.top + 12;
+    if (x + tipRect.width > wrapRect.width - 4) x = e.clientX - wrapRect.left - tipRect.width - 14;
+    if (y + tipRect.height > wrapRect.height - 4) y = wrapRect.height - tipRect.height - 4;
+    tip.style.left = `${Math.max(4, x)}px`;
+    tip.style.top = `${Math.max(4, y)}px`;
+  });
+})();
+
+// ── Brasil: mapa de calor de vagas ──────────────────────────────────────────
+// Posições aproximadas (projeção equiretangular) por município-sede em um
+// viewBox 760×560. Evita a sobreposição de bolhas que ocorria quando todas as
+// IEES sem coordenada caíam no mesmo ponto.
+var brMunicipalityPositions = {
+  "Boa Vista":             { x: 268, y: 53 },
+  "Macapá":                { x: 439, y: 90 },
+  "Belém":                 { x: 485, y: 110 },
+  "Manaus":                { x: 280, y: 132 },
+  "São Luís":              { x: 560, y: 124 },
+  "Fortaleza":             { x: 664, y: 140 },
+  "Sobral":                { x: 631, y: 144 },
+  "Teresina":              { x: 587, y: 158 },
+  "Mossoró":               { x: 690, y: 159 },
+  "Imperatriz":            { x: 503, y: 163 },
+  "Campina Grande":        { x: 706, y: 186 },
+  "Crato":                 { x: 648, y: 190 },
+  "Recife":                { x: 722, y: 200 },
+  "Arapiraca":             { x: 694, y: 222 },
+  "Maceió":                { x: 712, y: 240 },
+  "Palmas":                { x: 489, y: 226 },
+  "Feira de Santana":      { x: 650, y: 254 },
+  "Salvador":              { x: 668, y: 270 },
+  "Ilhéus":                { x: 654, y: 295 },
+  "Vitória da Conquista":  { x: 618, y: 285 },
+  "Cáceres":               { x: 321, y: 305 },
+  "Brasília":              { x: 496, y: 301 },
+  "Anápolis":              { x: 474, y: 312 },
+  "Montes Claros":         { x: 568, y: 313 },
+  "Belo Horizonte":        { x: 567, y: 356 },
+  "Campos dos Goytacazes": { x: 618, y: 378 },
+  "Rio de Janeiro":        { x: 580, y: 396 },
+  "São Paulo":             { x: 519, y: 404 },
+  "Campinas":              { x: 506, y: 392 },
+  "Dourados":              { x: 373, y: 386 },
+  "Londrina":              { x: 442, y: 400 },
+  "Maringá":               { x: 422, y: 406 },
+  "Ponta Grossa":          { x: 458, y: 424 },
+  "Cascavel":              { x: 393, y: 423 },
+  "Guarapuava":            { x: 434, y: 434 },
+  "Jacarezinho":           { x: 463, y: 396 },
+  "Paranavaí":             { x: 408, y: 393 },
+  "Florianópolis":         { x: 485, y: 458 },
+  "Porto Alegre":          { x: 437, y: 490 }
+};
+
+// Ajustes pontuais para IEES sediadas no mesmo município (ex.: USP e UNESP).
+var brMapSiglaNudge = {
+  USP:   { dx: -10, dy: 8 },
+  UNESP: { dx: 14, dy: -8 }
+};
+
+// Contorno estilizado do Brasil no mesmo sistema de coordenadas.
+var BR_MAP_OUTLINE = "M269 21 L430 31 L444 64 L489 97 L562 121 L666 139 L723 163 L729 198 L666 264 L655 309 L632 361 L584 397 L525 410 L487 458 L455 490 L398 539 L334 486 L376 430 L359 390 L321 344 L191 257 L34 190 L110 71 Z";
+
+function setBrMapIes(id) {
+  state.brMapSelIes = state.brMapSelIes === id ? null : id;
+  render();
+}
+window.setBrMapIes = setBrMapIes;
+
+function brasilVacancyHeatMap(c, rows) {
+  const maxVac = Math.max(...rows.map(u => u.vacancies || 0), 1);
+  const selId = state.brMapSelIes || null;
+  const selUni = selId ? rows.find(u => u.id === selId) : null;
+  const totalVac = sum(rows, u => u.vacancies || 0);
+  const municipalities = new Set(rows.map(u => u.municipality));
+  const avgPerMun = totalVac / Math.max(municipalities.size, 1);
+  const topRows = [...rows].sort((a, b) => (b.vacancies || 0) - (a.vacancies || 0)).slice(0, 5);
+
+  const bubbles = rows.map(u => {
+    const pos = brMunicipalityPositions[u.municipality];
+    if (!pos) return "";
+    const nudge = brMapSiglaNudge[u.sigla] || { dx: 0, dy: 0 };
+    const cx = pos.x + nudge.dx, cy = pos.y + nudge.dy;
+    const intensity = clamp((u.vacancies || 0) / maxVac, 0.1, 1);
+    const r = 7 + intensity * 18;
+    const isSel = selId === u.id;
+    const fill = `rgba(24, 95, 165, ${0.32 + intensity * 0.58})`;
+    return `<g class="heat-node br-heat-node${isSel ? " selected" : ""}" onclick="setBrMapIes('${u.id}')" style="cursor:pointer">
+      <circle cx="${cx}" cy="${cy}" r="${r.toFixed(1)}" fill="${fill}" stroke="${isSel ? "#f28c28" : "#ffffff"}" stroke-width="${isSel ? 4 : 1.5}"><title>${u.sigla} · ${u.municipality}\nIND-11 Total de vagas: ${formatNumber(u.vacancies || 0)}\nClique para detalhar no painel ao lado</title></circle>
+      <text x="${cx}" y="${(cy - r - 4).toFixed(1)}" class="br-heat-label${isSel ? " selected" : ""}">${u.sigla}</text>
+    </g>`;
+  }).join("");
+
+  const side = selUni
+    ? `<div class="map-side-kpi br-map-sel"><span>IEES selecionada</span><strong>${selUni.sigla}</strong></div>
+       <div class="map-side-kpi"><span>Total de vagas — ${selUni.sigla}</span><strong>${formatNumber(selUni.vacancies || 0)}</strong></div>
+       <div class="map-side-kpi"><span>Município-sede</span><strong>${selUni.municipality}</strong></div>
+       <div class="map-side-kpi"><span>Participação no total nacional</span><strong>${formatPercent((selUni.vacancies || 0) / Math.max(totalVac, 1) * 100)}</strong></div>
+       <button type="button" class="rank-metric-btn" onclick="setBrMapIes('${selUni.id}')">× Limpar seleção</button>`
+    : `<div class="map-side-kpi"><span>Total de vagas no recorte</span><strong>${formatNumber(totalVac)}</strong></div>
+       <div class="map-side-kpi"><span>Média por município</span><strong>${formatNumber(avgPerMun)}</strong></div>
+       <div class="map-side-list"><strong>IEES com maior oferta</strong>${topRows.map((u, i) => `<div><span>${i + 1}. ${u.sigla} · ${u.municipality}</span><strong>${formatNumber(u.vacancies || 0)}</strong></div>`).join("")}</div>`;
+
+  return `<div class="vacancy-map-layout">
+    <div class="vacancy-map-frame">
+      <svg class="br-heatmap-svg" viewBox="0 0 760 560" role="img" aria-label="Mapa de calor do Brasil por total de vagas das IEES estaduais">
+        <path class="br-map-shape" d="${BR_MAP_OUTLINE}" />
+        ${bubbles}
+      </svg>
+      <div class="map-legend-card">
+        <strong>Intensidade IND-11</strong>
+        <div class="heat-gradient"><span></span></div>
+        <div class="heat-scale"><span>menor oferta</span><span>maior oferta</span></div>
+      </div>
+    </div>
+    <div class="vacancy-map-side">${side}</div>
+  </div>`;
+}
+
 // ── Brasil: Escala da oferta ────────────────────────────────────────────────
 function brasilAccessEscalaBlock(c) {
   const rows = (c.display && c.display.length ? c.display : c.ref);
@@ -579,7 +837,22 @@ function brasilAccessEscalaBlock(c) {
   const avgVac = mean(allRows, u => u.vacancies) || 1;
   const avgCrs = mean(allRows, u => u.courses) || 1;
   const fmt = formatNumber;
-  const rankingBars = (getter, avgVal, label, colorClass) => {
+  const act = accessIndFilter(["ind10", "ind11", "ind15", "ind16", "ind17"]);
+
+  // Cards consolidados: somam/contam todas as IEES do recorte selecionado
+  // (uma ou várias), de modo que a seleção múltipla reflita a consolidação.
+  const vacDisp = sum(rows, u => u.vacancies || 0);
+  const crsDisp = sum(rows, u => u.courses || 0);
+  const cards = [
+    accessIndShow(act, ["ind11"]) ? accessCard("IND-11", "Total de vagas", formatNumber(vacDisp), `Média nacional por IEES: ${formatNumber(avgVac)}`) : "",
+    accessIndShow(act, ["ind10"]) ? accessCard("IND-10", "Cursos ativos", formatNumber(crsDisp), `Média nacional por IEES: ${formatNumber(avgCrs)}`) : "",
+    accessIndShow(act, ["ind17"]) ? accessCard("IND-17", "Municípios com oferta", formatNumber(new Set(rows.map(u => u.municipality)).size), `${rows.length} IEES no recorte`) : "",
+    accessIndShow(act, ["ind16"]) ? accessCard("IND-16", "Participação nas vagas", formatPercent(vacDisp / Math.max(sum(allRows, u => u.vacancies || 0), 1) * 100), "sobre o total nacional") : "",
+    accessIndShow(act, ["ind15"]) ? accessCard("IND-15", "Vagas por curso", formatNumber(vacDisp / Math.max(crsDisp, 1)), `Média nacional: ${formatNumber(sum(allRows, u => u.vacancies || 0) / Math.max(sum(allRows, u => u.courses || 0), 1))}`) : ""
+  ].join("");
+  // markerClass/markerName: cor da linha de média por gráfico — laranja some
+  // sobre as barras laranjas de cursos, então lá usamos a variante azul-escura.
+  const rankingBars = (getter, avgVal, label, colorClass, markerClass, markerName) => {
     const sorted = [...rows].sort((a, b) => getter(b) - getter(a));
     const max = Math.max(...sorted.map(getter), avgVal, 1);
     const refPct = clamp(avgVal / max * 100, 2, 98);
@@ -592,18 +865,26 @@ function brasilAccessEscalaBlock(c) {
         <span class="bar-name" title="${u.nome}"><strong>${i+1}º</strong> ${u.sigla}</span>
         <span class="bar-track" style="position:relative">
           <span class="bar-fill ${colorClass}" style="width:${pct.toFixed(1)}%"></span>
-          <span class="br-ref-marker" style="left:${refPct.toFixed(1)}%" title="Média nacional: ${fmt(Math.round(avgVal))}"></span>
+          <span class="br-ref-marker ${markerClass}" style="left:${refPct.toFixed(1)}%" title="Média nacional: ${fmt(Math.round(avgVal))}"></span>
         </span>
         <span class="bar-value">${fmt(v)} <span class="bar-delta ${diffCls}">(${sign}${fmt(Math.round(diff))})</span></span>
       </div>`;
     }).join("");
     return `<div class="brasil-avg-card"><span>Média nacional (${label})</span><strong>${fmt(Math.round(avgVal))}</strong></div>
-      <div class="br-escala-legend"><span class="br-escala-leg-line"></span>Linha laranja indica a média nacional</div>
+      <div class="br-escala-legend"><span class="br-escala-leg-line ${markerClass}"></span>Linha ${markerName} indica a média nacional</div>
       <div class="bars">${items}</div>`;
   };
-  return `<div class="chart-grid">
-    <article class="visual-card"><h3>IND-11 · Total de vagas — Ranking Brasil</h3><p class="card-subtitle">Número médio de vagas ofertadas por instituição.</p>${rankingBars(u => u.vacancies, avgVac, "vagas", "br-vagas-bar")}</article>
-    <article class="visual-card"><h3>IND-1 · Total de cursos — Ranking Brasil</h3><p class="card-subtitle">Número médio de cursos de graduação ofertados por instituição.</p>${rankingBars(u => u.courses, avgCrs, "cursos", "br-cursos-bar")}</article>
+  return `<div class="access-context-grid">${cards}</div>
+  ${accessIndShow(act, ["ind11", "ind16", "ind17"]) ? `<article class="visual-card access-vacancy-map-card mt-14">
+    <div class="visual-card-header">
+      <div><h3>Mapa de calor de vagas por município</h3><p class="card-subtitle">IND-11 · concentração de vagas das IEES estaduais brasileiras. Clique em uma IEES no mapa para detalhar os valores ao lado.</p></div>
+      <span class="indicator-code">IND-11</span>
+    </div>
+    ${brasilVacancyHeatMap(c, rows)}
+  </article>` : ""}
+  <div class="chart-grid mt-14">
+    ${accessIndShow(act, ["ind11", "ind16"]) ? `<article class="visual-card"><h3>IND-11 · Total de vagas — Ranking Brasil</h3><p class="card-subtitle">Barras preenchidas em azul; linha laranja = média nacional; coluna entre parênteses = diferença da média.</p>${rankingBars(u => u.vacancies, avgVac, "vagas", "br-vagas-bar", "", "laranja")}</article>` : ""}
+    ${accessIndShow(act, ["ind10", "ind15"]) ? `<article class="visual-card"><h3>IND-10 · Total de cursos — Ranking Brasil</h3><p class="card-subtitle">Barras em laranja com valores ao final; linha azul-escura = média nacional; verde/vermelho = diferença vs. média.</p>${rankingBars(u => u.courses, avgCrs, "cursos", "br-cursos-bar", "br-ref-navy", "azul-escura")}</article>` : ""}
   </div>`;
 }
 

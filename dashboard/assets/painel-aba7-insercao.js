@@ -49,10 +49,11 @@ function employmentMetrics(u) {
   const sedeBoost = String(u.groups.v3 || "").includes("Sede") ? 7 : 0;
   const localRate = hasRealEgress && real.ind42 != null ? clamp(Number(real.ind42) * 100, 0, 100) : clamp(prRate - 18 - u.territory * 0.055 + sedeBoost, 18, 64);
   const localInserted = hasRealEgress && real.ind41 != null ? Math.round(Number(real.ind41)) : Math.round(totalEgress * localRate / 100);
-  const destinationMunicipalities = u.egressosMunicipios!=null?u.egressosMunicipios:Math.max(5, Math.round(5 + u.territory / 4 + u.courses / 34));
+  const destinationMunicipalities = u.cbo2MunDestino!=null?u.cbo2MunDestino:(u.egressosMunicipios!=null?u.egressosMunicipios:Math.max(5, Math.round(5 + u.territory / 4 + u.courses / 34)));
   const territorialDispersion = clamp(16 + u.territory * 0.58, 16, 88);
   const courseDestinationMunicipalities = Math.max(3, Math.round(destinationMunicipalities / Math.max(u.courses / 95, 1.6)));
-  const occupationalDiversity = Math.max(8, Math.round(8 + u.courses / 24 + u.doctors / 13));
+  // IND-76: ocupações CBO distintas reais (RAIS via pipeline); fórmula é fallback
+  const occupationalDiversity = u.cbo2Diversity!=null?u.cbo2Diversity:Math.max(8, Math.round(8 + u.courses / 24 + u.doctors / 13));
   const salary = hasRealEgress && real.ind40 != null ? Number(real.ind40) : u.salary;
   return { totalEgress, southInserted, southRate, prInserted, prRate, cbo2Inserted, cbo2Rate, salary, localInserted, localRate, destinationMunicipalities, territorialDispersion, courseDestinationMunicipalities, occupationalDiversity };
 }
@@ -106,7 +107,7 @@ function employmentGeneralBlock(c) {
     ${employmentKpiCard(indicatorName(39), formatPercent(target.cbo2Rate), label, `Média do cluster: ${formatPercent(cluster.cbo2Rate)}`)}
     ${employmentKpiCard(indicatorName(40), formatCurrency(target.salary), label, `Média do cluster: ${formatCurrency(cluster.salary)}`)}
   </div>
-  ${metricTable(rows, [["IEES", u => `<strong>${u.sigla}</strong><br><span>${u.municipality}</span>`], [indicatorName(33), u => formatNumber(employmentMetrics(u).totalEgress)], [indicatorName(34), u => formatNumber(employmentMetrics(u).southInserted)], [indicatorName(35), u => formatPercent(employmentMetrics(u).southRate)], [indicatorName(36), u => formatNumber(employmentMetrics(u).prInserted)], [indicatorName(37), u => formatPercent(employmentMetrics(u).prRate)], [indicatorName(38), u => formatNumber(employmentMetrics(u).cbo2Inserted)], [indicatorName(39), u => formatPercent(employmentMetrics(u).cbo2Rate)], [indicatorName(40), u => formatCurrency(employmentMetrics(u).salary)], [indicatorName(41), u => formatNumber(employmentMetrics(u).localInserted)], [indicatorName(42), u => formatPercent(employmentMetrics(u).localRate)], [indicatorName(80), u => formatPercent(employmentMetrics(u).territorialDispersion)]], "Inserção geral dos egressos")}`;
+  ${metricTable(rows, [["IEES", u => `<strong>${u.sigla}</strong><br><span>${u.municipality}</span>`], [indicatorName(33), u => formatNumber(employmentMetrics(u).totalEgress)], [indicatorName(34), u => formatNumber(employmentMetrics(u).southInserted)], [indicatorName(35), u => formatPercent(employmentMetrics(u).southRate)], [indicatorName(36), u => formatNumber(employmentMetrics(u).prInserted)], [indicatorName(37), u => formatPercent(employmentMetrics(u).prRate)], [indicatorName(38), u => formatNumber(employmentMetrics(u).cbo2Inserted)], [indicatorName(39), u => formatPercent(employmentMetrics(u).cbo2Rate)], [indicatorName(40), u => formatCurrency(employmentMetrics(u).salary)], [indicatorName(41), u => formatNumber(employmentMetrics(u).localInserted)], [indicatorName(42), u => formatPercent(employmentMetrics(u).localRate)], [indicatorName(80) + estBadge("Índice institucional de dispersão (semente legada) — sem fonte rastreável nas bases atuais; a dispersão real de egressos (RAIS) é o card \"Índice de dispersão territorial\"") , u => formatPercent(employmentMetrics(u).territorialDispersion)]], "Inserção geral dos egressos")}`;
 }
 
 function employmentKpiCard(title, value, contextLabel, sub) {
@@ -350,7 +351,7 @@ function employmentDestinationBlock(c) {
       [indicatorName(71), u => formatNumber(employmentMetrics(u).prInserted)],
       [indicatorName(72), u => formatPercent(employmentMetrics(u).prInserted / Math.max(sum(rows, x => employmentMetrics(x).prInserted), 1) * 100)],
       [indicatorName(79), u => formatNumber(employmentMetrics(u).courseDestinationMunicipalities)],
-      [indicatorName(80), u => formatPercent(employmentMetrics(u).territorialDispersion)]
+      [indicatorName(80) + estBadge("Índice institucional de dispersão (semente legada) — sem fonte rastreável nas bases atuais; a dispersão real de egressos (RAIS) é o card \"Índice de dispersão territorial\"") , u => formatPercent(employmentMetrics(u).territorialDispersion)]
     ], "Destino territorial dos egressos");
   }
 
@@ -423,16 +424,27 @@ function employmentCourseTable(c, rows) {
 }
 
 function employmentOccupationBlock(c) {
-  return `<div class="chart-grid"><article class="visual-card"><h3>Perfil ocupacional CBO2</h3><p class="card-subtitle">${indicatorName(77)} e ${indicatorName(78)}: comparação entre IEES selecionada e média do cluster.</p>${cboDistributionBars(c)}</article><article class="visual-card"><h3>${indicatorName(76)}</h3><p class="card-subtitle">Diversidade ocupacional por curso, maior valor indica maior variedade de destinos profissionais.</p>${occupationalDiversityCards(c)}</article></div>`;
+  const rows = employmentRows(c);
+  const sel = c.selected || rows[0];
+  const cboEst = sel && !hasRealCbo(sel) ? estBadge("Distribuição ocupacional estimada — sem microdado de egressos RAIS para esta IES") : "";
+  const divEst = sel && sel.cbo2Diversity == null ? estBadge("Diversidade ocupacional estimada — sem microdado de egressos RAIS para esta IES") : "";
+  return `<div class="chart-grid"><article class="visual-card"><h3>Perfil ocupacional CBO2${cboEst}</h3><p class="card-subtitle">${indicatorName(77)} e ${indicatorName(78)}: comparação entre IEES selecionada e média do cluster.</p>${cboDistributionBars(c)}</article><article class="visual-card"><h3>${indicatorName(76)}${divEst}</h3><p class="card-subtitle">Diversidade ocupacional por curso, maior valor indica maior variedade de destinos profissionais.</p>${occupationalDiversityCards(c)}</article></div>`;
 }
 
 function cboDistribution(u) {
+  // Real: distribuição de egressos por grande grupo CBO2 (RAIS via pipeline),
+  // já em % e alinhada aos 7 rótulos do gráfico. Fórmula é só fallback (ex.:
+  // IES sem microdado de egressos).
+  if (Array.isArray(u.cbo2Profile) && u.cbo2Profile.length === 7) return u.cbo2Profile;
   const base = [18, 34, 15, 10, 9, 5, 9];
   const tech = u.type === "Bacharelado" ? 4 : -2;
   const publicSector = String(u.groups.v3 || "").includes("Dispersão") ? 4 : 0;
   const values = [base[0] + publicSector, base[1] + tech + (u.doctors - 80) * 0.04, base[2] + (100 - u.doctors) * 0.03, base[3], base[4] + (100 - u.employment) * 0.04, base[5], base[6] + u.territory * 0.015];
   const total = values.reduce((a, b) => a + Math.max(b, 1), 0);
   return values.map(v => Math.max(v, 1) / total * 100);
+}
+function hasRealCbo(u) {
+  return Array.isArray(u.cbo2Profile) && u.cbo2Profile.length === 7;
 }
 
 function cboDistributionBars(c) {

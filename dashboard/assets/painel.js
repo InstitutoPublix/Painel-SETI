@@ -2589,8 +2589,39 @@ function context(){
   if(f.attention&&hasOfficialQuadrants()){const ids=matrixRows(ref,f).filter(r=>r.resultRel<100&&r.effortRel>100).map(r=>r.id);ref=ref.filter(u=>ids.includes(u.id));display=display.filter(u=>ids.includes(u.id));}
   return {f,all,base,ref,display,selected,group};
 }
-function byYear(u,year){const [vol,bud,delta]=yearAdj[year]||yearAdj[2024];const c={...u,groups:{...u.groups},coursesFocus:[...u.coursesFocus]};["students","entrants","graduates","vacancies"].forEach(k=>c[k]=Math.round(c[k]*vol));c.budget=round(c.budget*bud,1);const cnpqReal=CNPQ_DATA[u.id]?.[Number(year)];if(cnpqReal){c.cnpq=round(cnpqReal.captacao,2);c.vinculos=cnpqReal.vinculos;}else{c.cnpq=round(c.cnpq*(.9+bud*.1),1);c.vinculos=null;}c.supplementation=round(c.supplementation+(1-bud)*3,1);["occupancy","completion","doctors","employment","facultyOcc","cres","execution","liquidation"].forEach(k=>c[k]=clamp(round(c[k]+delta,1),0,100));c.dropout=clamp(round(c.dropout-delta*.25,1),0,100);c.salary=Math.round(c.salary*(.88+bud*.12));const _rc=getRealIndicators(u.sigla,year);if(_rc&&_rc.cursosStudents!=null){if(_rc.cursosStudents!=null)c.students=_rc.cursosStudents;if(_rc.cursosEntrants!=null)c.entrants=_rc.cursosEntrants;if(_rc.cursosGraduates!=null)c.graduates=_rc.cursosGraduates;if(_rc.cursosCourses!=null)c.courses=_rc.cursosCourses;if(_rc.cursosVacancies!=null)c.vacancies=_rc.cursosVacancies;if(_rc.cursosOccupancy!=null)c.occupancy=_rc.cursosOccupancy;if(_rc.cursosDropout!=null)c.dropout=_rc.cursosDropout;if(_rc.cursosCompletion!=null)c.completion=_rc.cursosCompletion;c.vacanciesNova=_rc.cursosVacanciesNova??null;c.vacanciesDay=_rc.cursosVacanciesDay??null;c.vacanciesNight=_rc.cursosVacanciesNight??null;c.matDay=_rc.cursosMatDay??null;c.matNight=_rc.cursosMatNight??null;c.ingressOccupancy=_rc.cursosIngressOccupancy??null;c.vacanciesUnfilled=_rc.cursosVacanciesUnfilled??null;c.vacanciesNovaUnfilled=_rc.cursosVacanciesNovaUnfilled??null;c.mobility=_rc.cursosMobility??null;c.publicSchool=_rc.cursosPublicSchool??null;c.occDay=_rc.cursosOccupancyDay??null;c.occNight=_rc.cursosOccupancyNight??null;}if(_rc){if(_rc.iesDocDout!=null)c.doctors=_rc.iesDocDout;c.docForeign=_rc.iesDocForeign??null;c.capesPortal=_rc.iesCapesPortal??null;if(_rc.docTaxaOcup!=null)c.facultyOcc=_rc.docTaxaOcup;if(_rc.docCresTaxa!=null)c.cres=_rc.docCresTaxa;c.docVagasTotais=_rc.docVagasTotais??null;c.docVagasDisp=_rc.docVagasDisp??null;c.docVagasOcupadas=_rc.docVagasOcupadas??null;c.docTaxaUtil=_rc.docTaxaUtil??null;c.docVagasCond=_rc.docVagasCond??null;c.docPctCond=_rc.docPctCond??null;c.docTideAtrib=_rc.docTideAtrib??null;c.docTidePartic=_rc.docTidePartic??null;c.docTidePctNaoAtrib=_rc.docTidePctNaoAtrib??null;c.docChMedia=_rc.docChMedia??null;c.docCresAut=_rc.docCresAut??null;c.docCresUtil=_rc.docCresUtil??null;c.docCresSaldo=_rc.docCresSaldo??null;c.docCresOciosidade=_rc.docCresOciosidade??null;c.docCresPartic=_rc.docCresPartic??null;if(_rc.capesConceito!=null)c.capes=_rc.capesConceito;if(_rc.pg!=null)c.pg=_rc.pg;if(_rc.pgTop!=null)c.pgTop=_rc.pgTop;c.capesPct567=_rc.capesPct567??null;c.capesDocPermanentes=_rc.capesDocPermanentes??null;c.capesDocEstrangeiros=_rc.capesDocEstrangeiros??null;c.capesDocBolsa=_rc.capesDocBolsa??null;}if(_rc){c.budget=_rc.budget??_rc.liquidado??c.budget;c.execution=_rc.execution??_rc.tx_execucao_empenho??c.execution;c.liquidation=_rc.liquidation??_rc.tx_liquidacao??c.liquidation;c.supplementation=_rc.supplementation??_rc.var_dotacao_loa??c.supplementation;c.personnel=_rc.personnel??_rc.part_pessoal??c.personnel;if(_rc.cnpqCaptacao!=null){c.cnpq=_rc.cnpqCaptacao;}if(_rc.cnpqVinculos!=null){c.vinculos=_rc.cnpqVinculos;}c.dotacao_inicial=_rc.dotacao_inicial??c.dotacao_inicial??null;c.orcamento_atualizado=_rc.orcamento_atualizado??c.orcamento_atualizado??null;c.empenhado=_rc.empenhado??c.empenhado??null;c.liquidado=_rc.liquidado??c.liquidado??null;c.pago=_rc.pago??c.pago??null;c.tx_execucao_empenho=_rc.tx_execucao_empenho??c.tx_execucao_empenho??null;c.tx_liquidacao=_rc.tx_liquidacao??c.tx_liquidacao??null;c.tx_pagamento_liq=_rc.tx_pagamento_liq??c.tx_pagamento_liq??null;c.grau_contingenciamento=_rc.grau_contingenciamento??c.grau_contingenciamento??null;c.var_dotacao_loa=_rc.var_dotacao_loa??c.var_dotacao_loa??null;c.part_pessoal=_rc.part_pessoal??c.part_pessoal??null;c.part_outras_correntes=_rc.part_outras_correntes??c.part_outras_correntes??null;c.part_capital=_rc.part_capital??c.part_capital??null;c.ind81=_rc.ind81??c.ind81??null;c.ind82=_rc.ind82??c.ind82??null;c.ind83=_rc.ind83??c.ind83??null;c.ind84=_rc.ind84??c.ind84??null;c.ind85=_rc.ind85??c.ind85??null;c.ind86=_rc.ind86??c.ind86??null;c.ind87=_rc.ind87??c.ind87??null;c.ind88=_rc.ind88??c.ind88??null;c.ind95=_rc.ind95??c.ind95??null;}if(_rc){c.insertionRatePR=_rc.insertionRatePR??null;c.egressosMunicipios=_rc.egressosMunicipios??_rc.raisMunCount??null;c.territoryIncome=_rc.territoryIncome??c.territoryIncome??null;c.idhmRegional=_rc.idhmRegional??c.idhmRegional??null;}if(window.SETI_CLUSTERS&&window.SETI_CLUSTERS[u.sigla]){const cl=window.SETI_CLUSTERS[u.sigla];groupKeys.forEach(k=>{c.groups[k]=cl[k]!=null?cl[k]:null;});}return c;}
-function render(){applySETIClusters();const c=context();currentFilteredCount=c.ref.length;syncScopeToggle(c.f.scope);updateScopeAvailability(c.f.scope);updateActiveTabFilters();renderTop(c);renderKpis(c);renderSide(c);renderTab(c);}
+function byYear(u,year){const [vol,bud,delta]=yearAdj[year]||yearAdj[2024];const c={...u,groups:{...u.groups},coursesFocus:[...u.coursesFocus]};["students","entrants","graduates","vacancies"].forEach(k=>c[k]=Math.round(c[k]*vol));c.budget=round(c.budget*bud,1);const cnpqReal=CNPQ_DATA[u.id]?.[Number(year)];if(cnpqReal){c.cnpq=round(cnpqReal.captacao,2);c.vinculos=cnpqReal.vinculos;}else{c.cnpq=round(c.cnpq*(.9+bud*.1),1);c.vinculos=null;}c.supplementation=round(c.supplementation+(1-bud)*3,1);["occupancy","completion","doctors","employment","facultyOcc","cres","execution","liquidation"].forEach(k=>c[k]=clamp(round(c[k]+delta,1),0,100));c.dropout=clamp(round(c.dropout-delta*.25,1),0,100);c.salary=Math.round(c.salary*(.88+bud*.12));const _rc=getRealIndicators(u.sigla,year);if(_rc&&_rc.cursosStudents!=null){if(_rc.cursosStudents!=null)c.students=_rc.cursosStudents;if(_rc.cursosEntrants!=null)c.entrants=_rc.cursosEntrants;if(_rc.cursosGraduates!=null)c.graduates=_rc.cursosGraduates;if(_rc.cursosCourses!=null)c.courses=_rc.cursosCourses;if(_rc.cursosVacancies!=null)c.vacancies=_rc.cursosVacancies;if(_rc.cursosOccupancy!=null)c.occupancy=_rc.cursosOccupancy;if(_rc.cursosDropout!=null)c.dropout=_rc.cursosDropout;if(_rc.cursosCompletion!=null)c.completion=_rc.cursosCompletion;c.vacanciesNova=_rc.cursosVacanciesNova??null;c.vacanciesDay=_rc.cursosVacanciesDay??null;c.vacanciesNight=_rc.cursosVacanciesNight??null;c.matDay=_rc.cursosMatDay??null;c.matNight=_rc.cursosMatNight??null;c.ingressOccupancy=_rc.cursosIngressOccupancy??null;c.vacanciesUnfilled=_rc.cursosVacanciesUnfilled??null;c.vacanciesNovaUnfilled=_rc.cursosVacanciesNovaUnfilled??null;c.mobility=_rc.cursosMobility??null;c.publicSchool=_rc.cursosPublicSchool??null;c.occDay=_rc.cursosOccupancyDay??null;c.occNight=_rc.cursosOccupancyNight??null;}if(_rc){if(_rc.iesDocDout!=null)c.doctors=_rc.iesDocDout;c.docForeign=_rc.iesDocForeign??null;c.capesPortal=_rc.iesCapesPortal??null;if(_rc.docTaxaOcup!=null)c.facultyOcc=_rc.docTaxaOcup;if(_rc.docCresTaxa!=null)c.cres=_rc.docCresTaxa;c.docVagasTotais=_rc.docVagasTotais??null;c.docVagasDisp=_rc.docVagasDisp??null;c.docVagasOcupadas=_rc.docVagasOcupadas??null;c.docTaxaUtil=_rc.docTaxaUtil??null;c.docVagasCond=_rc.docVagasCond??null;c.docPctCond=_rc.docPctCond??null;c.docTideAtrib=_rc.docTideAtrib??null;c.docTidePartic=_rc.docTidePartic??null;c.docTidePctNaoAtrib=_rc.docTidePctNaoAtrib??null;c.docChMedia=_rc.docChMedia??null;c.docCresAut=_rc.docCresAut??null;c.docCresUtil=_rc.docCresUtil??null;c.docCresSaldo=_rc.docCresSaldo??null;c.docCresOciosidade=_rc.docCresOciosidade??null;c.docCresPartic=_rc.docCresPartic??null;if(_rc.capesConceito!=null)c.capes=_rc.capesConceito;if(_rc.pg!=null)c.pg=_rc.pg;if(_rc.pgTop!=null)c.pgTop=_rc.pgTop;c.capesPct567=_rc.capesPct567??null;c.capesDocPermanentes=_rc.capesDocPermanentes??null;c.capesDocEstrangeiros=_rc.capesDocEstrangeiros??null;c.capesDocBolsa=_rc.capesDocBolsa??null;c.docTotal=_rc.docTotal??null;c.docExe=_rc.docExe??null;c.grauMix=_rc.grauMix??null;c.cbo2Profile=_rc.cbo2Profile??null;c.cbo2Diversity=_rc.cbo2Diversity??null;c.cbo2MunDestino=_rc.cbo2MunDestino??null;c.muniOccupancy=_rc.muniOccupancy??null;}if(_rc){c.budget=_rc.budget??_rc.liquidado??c.budget;c.execution=_rc.execution??_rc.tx_execucao_empenho??c.execution;c.liquidation=_rc.liquidation??_rc.tx_liquidacao??c.liquidation;c.supplementation=_rc.supplementation??_rc.var_dotacao_loa??c.supplementation;c.personnel=_rc.personnel??_rc.part_pessoal??c.personnel;if(_rc.cnpqCaptacao!=null){c.cnpq=_rc.cnpqCaptacao;}if(_rc.cnpqVinculos!=null){c.vinculos=_rc.cnpqVinculos;}c.dotacao_inicial=_rc.dotacao_inicial??c.dotacao_inicial??null;c.orcamento_atualizado=_rc.orcamento_atualizado??c.orcamento_atualizado??null;c.empenhado=_rc.empenhado??c.empenhado??null;c.liquidado=_rc.liquidado??c.liquidado??null;c.pago=_rc.pago??c.pago??null;c.tx_execucao_empenho=_rc.tx_execucao_empenho??c.tx_execucao_empenho??null;c.tx_liquidacao=_rc.tx_liquidacao??c.tx_liquidacao??null;c.tx_pagamento_liq=_rc.tx_pagamento_liq??c.tx_pagamento_liq??null;c.grau_contingenciamento=_rc.grau_contingenciamento??c.grau_contingenciamento??null;c.var_dotacao_loa=_rc.var_dotacao_loa??c.var_dotacao_loa??null;c.part_pessoal=_rc.part_pessoal??c.part_pessoal??null;c.part_outras_correntes=_rc.part_outras_correntes??c.part_outras_correntes??null;c.part_capital=_rc.part_capital??c.part_capital??null;c.ind81=_rc.ind81??c.ind81??null;c.ind82=_rc.ind82??c.ind82??null;c.ind83=_rc.ind83??c.ind83??null;c.ind84=_rc.ind84??c.ind84??null;c.ind85=_rc.ind85??c.ind85??null;c.ind86=_rc.ind86??c.ind86??null;c.ind87=_rc.ind87??c.ind87??null;c.ind88=_rc.ind88??c.ind88??null;c.ind95=_rc.ind95??c.ind95??null;}if(_rc){c.insertionRatePR=_rc.insertionRatePR??null;c.egressosMunicipios=_rc.egressosMunicipios??_rc.raisMunCount??null;c.territoryIncome=_rc.territoryIncome??c.territoryIncome??null;c.idhmRegional=_rc.idhmRegional??c.idhmRegional??null;}if(window.SETI_CLUSTERS&&window.SETI_CLUSTERS[u.sigla]){const cl=window.SETI_CLUSTERS[u.sigla];groupKeys.forEach(k=>{c.groups[k]=cl[k]!=null?cl[k]:null;});}return c;}
+// Selo visual para valores estimados (fallback de fórmula quando a base não
+// cobre a IES/ano). Usar junto ao valor ou no título do gráfico.
+function estBadge(reason){
+  const title=(reason||"Valor estimado por fórmula — sem cobertura na base de dados para este recorte").replace(/"/g,"&quot;");
+  return `<sup class="est-badge" title="${title}">est.</sup>`;
+}
+window.estBadge=estBadge;
+
+// Substitui as constantes estimadas de `brazil.result` pela média REAL das
+// IEES estaduais brasileiras (dados 2024 do JSON pré-processado), assim que a
+// base carrega. employment/salary permanecem estimados (RAIS cobre só o PR).
+function applyRealBrazilBenchmarks(){
+  if(applyRealBrazilBenchmarks._done)return;
+  if(!window.DATA_STATUS||!DATA_STATUS.precomputedGenerated)return;
+  try{
+    const rows=scopeUniverse("Brasil").map(u=>byYear(u,"2024"));
+    if(!rows.length)return;
+    const a=agg(rows);
+    if(a.vacancies>0&&isFinite(a.occupancy))brazil.result.occupancy=round(a.occupancy,1);
+    if(isFinite(a.completion))brazil.result.completion=round(a.completion,1);
+    const permanence=100-wavg(rows,u=>u.dropout,u=>u.students);
+    if(isFinite(permanence))brazil.result.permanence=round(permanence,1);
+    const docRows=rows.filter(u=>u.doctors!=null&&u.doctors>0);
+    if(docRows.length)brazil.result.doctorate=round(mean(docRows,u=>u.doctors),1);
+    const capesRows=rows.filter(u=>u.capes!=null&&u.capes>0);
+    if(capesRows.length)brazil.result.capes=round(mean(capesRows,u=>u.capes),1);
+    const cnpqRows=rows.filter(u=>u.cnpq!=null&&u.cnpq>0&&u.students>0);
+    if(cnpqRows.length)brazil.result.cnpq=Math.round(sum(cnpqRows,u=>u.cnpq)*1e6/Math.max(sum(cnpqRows,u=>u.students),1));
+    applyRealBrazilBenchmarks._done=true;
+  }catch(err){console.error("applyRealBrazilBenchmarks:",err);}
+}
+function render(){applySETIClusters();applyRealBrazilBenchmarks();const c=context();currentFilteredCount=c.ref.length;syncScopeToggle(c.f.scope);updateScopeAvailability(c.f.scope);updateActiveTabFilters();renderTop(c);renderKpis(c);renderSide(c);renderTab(c);}
 
 // ── Cobertura de anos por aba ────────────────────────────────────────────────
 // Fonte: INEP → até 2024 | SETI docentes → 2022–2026 | RAIS → 2023–2024
@@ -3165,7 +3196,12 @@ function brBenchmarkTag(def) {
   if (!def || typeof def.benchmark !== "function") return "";
   const val = def.benchmark();
   if (!val) return "";
-  return `<div class="kpi-br-ref"><span class="br-ref-label">Brasil</span>${val}</div>`;
+  // Benchmarks de inserção (IND-37) e salário (IND-40) não têm fonte nacional
+  // (RAIS cobre só o PR) — permanecem como referência estimada.
+  const est = (def.code === "IND-37" || def.code === "IND-40")
+    ? estBadge("Referência nacional estimada — RAIS cobre apenas o Paraná, sem equivalente nacional")
+    : "";
+  return `<div class="kpi-br-ref"><span class="br-ref-label">Brasil</span>${val}${est}</div>`;
 }
 
 function nationalUnavailableNote(dimensionName) {
@@ -3232,10 +3268,10 @@ const decisoryQuestions = {
 
 const tabBlocks = {
   comparison: ["Tabela comparativa", "Ranking", "Radar"],
-  access: ["Escala da oferta", "Ocupação e ociosidade", "Distribuição territorial"],
-  retention: ["Funil", "Taxas", "Evolução do ranking por ano", "Dispersão", "Ranking por curso", "Alertas"],
+  access: ["Escala da oferta", "Ocupação e ociosidade", "Catálogo de indicadores e Distribuição territorial"],
+  retention: ["Funil", "Taxas", "Evolução do ranking por ano", "Dispersão", "Ranking por curso", "Conclusão × inserção profissional"],
   quality: ["Qualificação docente", "Pós-grad e CAPES", "Pesquisa e CNPq", "Internacionalização"],
-  faculty: ["Quadro legal", "Vagas disponíveis e condicionadas", "TIDE", "CRES e esforço", "Alertas"],
+  faculty: ["Quadro legal", "Vagas disponíveis e condicionadas", "TIDE", "CRES e esforço"],
   employment: ["Inserção geral", "Inserção PR e Sul", "CBO2 e salário", "Destino territorial", "Por curso", "Perfil ocupacional"],
   efficiency: ["Perfil da movimentação", "Composição crédito e despesa"],
   performance: ["Resposta ao Piloto", "Cruzamento desempenho acadêmico", "Cruzamento corpo docente", "Matriz de oportunidades e alertas"]
@@ -3416,8 +3452,8 @@ const IND_FIELD_MAP = {
   ind89: u=>budgetMetrics(u).freeResources,
   ind90: u=>budgetMetrics(u).ownResources,
   ind91: u=>budgetMetrics(u).transfers,
-  ind92: u=>budgetMetrics(u).works,
-  ind93: u=>budgetMetrics(u).equipment,
+  ind92: u=>u.ind92??budgetMetrics(u).works,
+  ind93: u=>u.ind93??budgetMetrics(u).equipment,
   ind94: u=>budgetMetrics(u).variationRate,
   ind95: u=>budgetMetrics(u).execInitial,
   ind96: u=>budgetMetrics(u).execAvailable,
@@ -3474,30 +3510,29 @@ const tabBlockIndMap = {
     "Radar":              ["ind1","ind5","ind6","ind26","ind27","ind37","ind81"]
   },
   access: {
-    "Escala da oferta":         ["ind10","ind11","ind15"],
+    "Escala da oferta":         ["ind10","ind11","ind15","ind16","ind17"],
     "Ocupação e ociosidade":    ["ind1","ind3","ind24","ind26","ind29","ind67"],
-    "Distribuição territorial": ["ind4","ind68","ind69"]
+    "Catálogo de indicadores e Distribuição territorial": ["ind4","ind67","ind68","ind69"]
   },
   retention: {
-    "Funil":                       ["ind12","ind13","ind14","ind27"],
+    "Funil":                       ["ind12","ind13","ind14"],
     "Taxas":                       ["ind5","ind27"],
-    "Evolução do ranking por ano": ["ind5","ind12","ind27"],
-    "Dispersão":                   ["ind12","ind27"],
-    "Ranking por curso":           ["ind14","ind27"],
-    "Alertas":                     ["ind5","ind12","ind13","ind14","ind27"]
+    "Evolução do ranking por ano": ["ind5","ind14","ind27"],
+    "Dispersão":                   ["ind5","ind12","ind27"],
+    "Ranking por curso":           ["ind5","ind27"],
+    "Conclusão × inserção profissional": ["ind27"]
   },
   quality: {
-    "Qualificação docente": ["ind6","ind8","ind63","ind65"],
-    "Pós-grad e CAPES":     ["ind7","ind9","ind62","ind66"],
+    "Qualificação docente": ["ind6","ind7","ind8","ind9"],
+    "Pós-grad e CAPES":     ["ind62","ind63","ind65","ind66"],
     "Pesquisa e CNPq":      ["ind60","ind61"],
     "Internacionalização":  ["ind7","ind8","ind9"]
   },
   faculty: {
-    "Quadro legal":                        ["ind43","ind45"],
-    "Vagas disponíveis e condicionadas":   ["ind46","ind47"],
-    "TIDE":                                ["ind53","ind63"],
-    "CRES e esforço":                      ["ind56","ind58","ind59"],
-    "Alertas":                             ["ind43","ind45","ind46","ind47","ind53","ind56","ind58","ind59","ind63"]
+    "Quadro legal":                        ["ind43","ind44","ind45","ind46","ind47","ind53"],
+    "Vagas disponíveis e condicionadas":   ["ind44","ind45","ind48","ind49"],
+    "TIDE":                                ["ind50","ind51","ind52"],
+    "CRES e esforço":                      ["ind46","ind56","ind58","ind59"]
   },
   employment: {
     "Inserção geral":    ["ind33","ind37","ind39"],
@@ -3657,7 +3692,9 @@ function miniKpi(label, value) {
   return `<div class="mini-kpi"><span class="mini-kpi-label">${label}</span><span class="mini-kpi-value">${value}</span></div>`;
 }
 function tabMiniKpis(tabId, c) {
-  const d = c.ref;
+  // Consolida sobre as IEES selecionadas no filtro (uma ou várias); sem
+  // seleção, usa o grupo de referência completo.
+  const d = c.display && c.display.length ? c.display : c.ref;
   if (!d.length) return "";
   const a = agg(d);
   let kpis = "";
@@ -4101,7 +4138,8 @@ function renderSystemAlerts(c) {
 state.comparisonShowOnlyCluster = state.comparisonShowOnlyCluster ?? true;
 state.radarReference = state.radarReference || "cluster";
 state.comparisonDimension = state.comparisonDimension || "all";
-state.retentionCourseType = state.retentionCourseType || "Bacharelado";
+// "all" = Todos: indicadores calculados sobre a totalidade dos cursos
+state.retentionCourseType = state.retentionCourseType || "all";
 
 var comparisonIndicatorSets = {};
 
@@ -5023,7 +5061,13 @@ function bindCustomCatalog(tabId) {
 
   const items = buildCatalogItems(tabId);
   const totalCount = items.length;
-  let selected = [];
+  // Seleção persistida em state para sobreviver aos re-renders do painel
+  state.catalogSelections = state.catalogSelections || {};
+  let selected = (state.catalogSelections[tabId] || []).filter(code => items.some(i => i.code === code));
+  selected.forEach(code => {
+    const cb = list?.querySelector(`input[value="${code}"]`);
+    if (cb) { cb.checked = true; cb.closest(".ind-option")?.classList.add("is-selected"); }
+  });
 
   function open() {
     dropdown.hidden = false;
@@ -5064,6 +5108,10 @@ function bindCustomCatalog(tabId) {
   }
 
   function updateUI() {
+    // Persistência + integração com os gráficos da aba (ver onCatalogSelectionChange)
+    state.catalogSelections[tabId] = selected.slice();
+    if (typeof window.onCatalogSelectionChange === "function") window.onCatalogSelectionChange(tabId, selected.slice());
+
     // Counter
     if (counter) counter.textContent = selected.length > 0 ? `${selected.length} de ${totalCount} selecionados` : `${totalCount} indicadores`;
 
@@ -5168,7 +5216,11 @@ function indicatorCatalogBlock(tabId, c) {
 }
 
 function appendIndicatorCatalog(tabId, c) {
-  if (!el.tabContent || !tabIndicatorCatalog[tabId] || el.tabContent.querySelector(".indicator-catalog-wrap")) return;
+  if (!el.tabContent || !tabIndicatorCatalog[tabId]) return;
+  // O catálogo pode já ter sido renderizado dentro de um bloco da aba
+  // (ex.: aba 3 exibe o catálogo antes dos indicadores territoriais);
+  // nesse caso apenas religa os eventos.
+  if (el.tabContent.querySelector(".indicator-catalog-wrap")) { bindCustomCatalog(tabId); return; }
   const blockNumber = tabId === "overview" ? 1 : (tabBlocks[tabId]?.length || 0) + 1;
   const target = el.tabContent.querySelector(".tab-aba-wrapper") || el.tabContent;
   target.insertAdjacentHTML("beforeend", renderBlock(blockNumber, "Catálogo de indicadores desta dimensão", indicatorCatalogBlock(tabId, c)));

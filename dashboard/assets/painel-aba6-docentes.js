@@ -4,9 +4,24 @@
    _SCATTER_IES_COLORS é const em painel.js (linha 11938) — acessada como global.
    ========================================================================== */
 
+// Respeita o filtro de IEES: com seleção ativa (c.display), restringe os
+// gráficos/cards às IEES escolhidas; sem seleção, usa o cluster/escopo.
 function facultyRows(c) {
-  const rows = clusterRowsFor(c);
-  return rows.length ? rows : c.all;
+  const base = clusterRowsFor(c);
+  const rows = base.length ? base : c.all;
+  if (c.display && c.display.length && c.display.length < rows.length) {
+    const ids = new Set(c.display.map(u => u.id));
+    const filtered = rows.filter(u => ids.has(u.id));
+    if (filtered.length) return filtered;
+  }
+  return rows;
+}
+
+// Filtro de indicadores da aba (barra "Visualizando:"): código ativo quando
+// pertence ao bloco; null = mostra tudo.
+function facultyIndFilter(blockCodes) {
+  const act = (state.activeIndicator && state.activeIndicator.faculty) || "all";
+  return act !== "all" && blockCodes.includes(act) ? act : null;
 }
 
 function realDocNumber(value) {
@@ -101,45 +116,138 @@ function facultyBlock(title, c) {
   return facultyAlertsBlock(c);
 }
 
+// Alertas de docentes consolidados na barra lateral (apontamento do doc):
+// na aba 6 a sidebar mostra os alertas desta dimensão; nas demais abas o
+// comportamento anterior é preservado (cadeia de overrides por aba).
+var _prevRenderSystemAlertsFaculty = renderSystemAlerts;
+renderSystemAlerts = function renderSystemAlertsWithFaculty(c) {
+  if (state.activeTab !== "faculty") return _prevRenderSystemAlertsFaculty(c);
+  const box = document.getElementById("systemAlerts");
+  if (!box) return;
+  const rows = facultyRows(c);
+  if (!rows.length) { _prevRenderSystemAlertsFaculty(c); return; }
+  const avgOcc = mean(rows, x => facultyMetrics(x).occupationRate);
+  const alerts = [];
+  rows.forEach(u => {
+    const m = facultyMetrics(u);
+    if (m.conditionedShare > 20) alerts.push(["alert-danger", "⚠", u.sigla, `IND-49 Vagas condicionadas ${formatPercent(m.conditionedShare)} — restrição de provimento`]);
+    else if (m.cresIdleRate > 15) alerts.push(["alert-warn", "⚠", u.sigla, `IND-58 Ociosidade da CRES ${formatPercent(m.cresIdleRate)} — capacidade autorizada não utilizada`]);
+    else if (m.occupationRate < 70 && m.cresParticipation > 20) alerts.push(["alert-warn", "⚠", u.sigla, `IND-46 Ocupação ${formatPercent(m.occupationRate)} com dependência de CRES (IND-59 ${formatPercent(m.cresParticipation)})`]);
+  });
+  if (!alerts.length) alerts.push(["alert-ok", "✓", "Quadro docente", "Sem alertas críticos de capacidade docente no recorte ativo."]);
+  box.innerHTML = alerts.slice(0, 6).map(([cls, icon, ies, msg]) => `<div class="alert-item ${cls}"><span class="alert-icon" aria-hidden="true">${icon}</span><div class="alert-body"><strong class="alert-ies">${ies}</strong><span class="alert-msg">${msg}</span></div></div>`).join("");
+};
+window.renderSystemAlerts = renderSystemAlerts;
+
 function facultyLegalBlock(c) {
   const rows = facultyRows(c);
   const a = facultyAgg(rows);
-  return `<div class="score-grid faculty-context-grid">
+  const act = facultyIndFilter(["ind43","ind44","ind45","ind46","ind47","ind53"]);
+  const cards = `<div class="score-grid faculty-context-grid">
     ${score("IND-43 Códigos LGU", formatNumber(a.totalCodes), "total do cluster", 78)}
     ${score("IND-44 Vagas disponíveis", formatNumber(a.availableOpen), "para provimento efetivo", 64)}
     ${score("IND-45 Vagas ocupadas", formatNumber(a.occupied), "docentes efetivos", a.occupationRate)}
     ${score("IND-46 Ocupação", formatPercent(a.occupationRate), "referência 75-80%", a.occupationRate)}
-  </div>
-  <article class="visual-card mt-14"><h3>IND-46 · Taxa de ocupação do quadro docente</h3><p class="card-subtitle">Segmentos: ocupadas, disponíveis e condicionadas. Linha laranja = média do cluster V5/porte ativo.</p>${facultyOccupationProgress(c)}</article>
-  ${metricTable(rows, [["IEES", u => `<strong>${u.sigla}</strong><br><span>${u.groups[c.f.groupBy]}</span>`], ["IND-43 Códigos LGU", u => formatNumber(facultyMetrics(u).totalCodes)], ["IND-44 Disponíveis", u => formatNumber(facultyMetrics(u).availableOpen)], ["IND-45 Ocupadas", u => formatNumber(facultyMetrics(u).occupied)], ["IND-46 Ocupação", u => formatPercent(facultyMetrics(u).occupationRate)], ["IND-47 Utiliz. disponíveis", u => formatPercent(facultyMetrics(u).availableUseRate)], ["IND-53 CH média", u => `${facultyMetrics(u).avgWorkload.toFixed(1).replace('.', ',')}h`]], "Quadro legal e ocupação docente")}`;
+  </div>`;
+  return `${cards}
+  <article class="visual-card mt-14"><h3>IND-46 · Taxa de ocupação do quadro docente</h3><p class="card-subtitle">Composição das vagas docentes por IEES — Ocupadas, Disponíveis e Condicionadas (dependem de autorização governamental). Linha laranja tracejada = média do cluster.</p>${facultyOccupationProgress(c)}</article>
+  ${facultyLegalVisualTable(rows, c, act)}`;
 }
 
+// Cada barra é 100% das vagas (ocupadas + disponíveis + condicionadas), com o
+// percentual dentro de cada segmento; barra de composição média do cluster no
+// topo e linha tracejada contínua da ocupação média (imagem de referência).
 function facultyOccupationProgress(c) {
   const rows = facultyRows(c);
   const allRows = c.base.length ? c.base : c.all;
   const clusterIds = new Set(rows.map(u => u.id));
   const chartRows = explicitClusterActive(c) ? allRows : rows;
-  const ref = mean(rows, u => facultyMetrics(u).occupationRate);
-  return `<div class="bars-reference-note"><span>Média do cluster: <strong>${formatPercent(ref)}</strong></span></div><div class="faculty-progress-list" style="--faculty-ref:${clamp(ref,0,100)}%">${chartRows.map(u => { const m = facultyMetrics(u); const occ = m.occupied / m.totalCodes * 100; const avail = m.availableOpen / m.totalCodes * 100; const cond = m.conditioned / m.totalCodes * 100; return `<div class="faculty-progress-row ${clusterIds.has(u.id) ? "in-cluster" : "out-cluster"} ${isUniSelected(c.f, u.id) ? "selected" : ""}"><span class="faculty-name" title="${u.nome}">${u.sigla}</span><div class="faculty-stack" title="${u.sigla}: IND-43 ${formatNumber(m.totalCodes)}; IND-44 ${formatNumber(m.availableOpen)}; IND-45 ${formatNumber(m.occupied)}"><span class="faculty-seg occupied" style="width:${occ}%"></span><span class="faculty-seg available" style="width:${avail}%"></span><span class="faculty-seg conditioned" style="width:${cond}%"></span><i class="faculty-ref-line" aria-hidden="true"></i></div><span class="faculty-value">${formatPercent(m.occupationRate)}</span></div>`; }).join("")}</div><div class="stack-legend"><span><i class="faculty-dot occupied"></i>Ocupadas</span><span><i class="faculty-dot available"></i>Disponíveis</span><span><i class="faculty-dot conditioned"></i>Condicionadas</span></div>`;
+  const a = facultyAgg(rows);
+  // Decomposição aditiva do quadro (IND-43): ocupadas + vagas em aberto +
+  // condicionadas = total de códigos. "Disponíveis" (docVagasDisp) inclui as
+  // ocupadas, por isso a parcela em aberto = total − ocupadas − condicionadas.
+  const totAvg = Math.max(a.totalCodes, 1);
+  const avgOcc = a.occupied / totAvg * 100;
+  const avgCond = a.conditioned / totAvg * 100;
+  const avgAvail = Math.max(100 - avgOcc - avgCond, 0);
+  const lbl = (v, min) => v >= min ? `<i class="faculty-seg-lbl">${v.toFixed(1).replace(".", ",")}%</i>` : "";
+
+  const clusterBar = `<div class="faculty-cluster-ref">
+    <div class="faculty-cluster-ref-head"><strong>Composição média do cluster</strong><span>Ocupadas ${formatPercent(avgOcc)} · Disponíveis ${formatPercent(avgAvail)} · Condicionadas ${formatPercent(avgCond)}</span></div>
+    <div class="faculty-stack faculty-stack-lg"><span class="faculty-seg occupied" style="width:${avgOcc}%">${lbl(avgOcc, 8)}</span><span class="faculty-seg available" style="width:${avgAvail}%">${lbl(avgAvail, 8)}</span><span class="faculty-seg conditioned" style="width:${avgCond}%">${lbl(avgCond, 7)}</span></div>
+  </div>`;
+
+  const legend = `<div class="stack-legend faculty-legend"><span><i class="faculty-dot occupied"></i>Ocupadas</span><span><i class="faculty-dot available"></i>Disponíveis</span><span><i class="faculty-dot conditioned"></i>Condicionadas</span><span class="faculty-legend-cond-note">Vagas condicionadas dependem de autorização governamental</span></div>`;
+
+  const list = chartRows.map(u => {
+    const m = facultyMetrics(u);
+    // Decomposição aditiva: ocupadas + em aberto + condicionadas = total (IND-43).
+    const tot = Math.max(m.totalCodes, 1);
+    const occ = m.occupied / tot * 100, cond = m.conditioned / tot * 100;
+    const avail = Math.max(100 - occ - cond, 0);
+    return `<div class="faculty-progress-row ${clusterIds.has(u.id) ? "in-cluster" : "out-cluster"} ${isUniSelected(c.f, u.id) ? "selected" : ""}">
+      <span class="faculty-name" title="${u.nome}">${u.sigla}</span>
+      <div class="faculty-stack faculty-stack-lg" title="${u.sigla}: IND-45 ${formatNumber(m.occupied)} ocupadas; IND-44 ${formatNumber(m.availableOpen)} disponíveis; IND-48 ${formatNumber(m.conditioned)} condicionadas"><span class="faculty-seg occupied" style="width:${occ}%">${lbl(occ, 8)}</span><span class="faculty-seg available" style="width:${avail}%">${lbl(avail, 8)}</span><span class="faculty-seg conditioned" style="width:${cond}%">${lbl(cond, 7)}</span><i class="faculty-ref-line" aria-hidden="true"></i></div>
+      <span class="faculty-cond-col">${formatPercent(cond)} <small>do quadro</small></span>
+    </div>`;
+  }).join("");
+
+  return `${clusterBar}${legend}<div class="faculty-progress-list faculty-occ-list" style="--faculty-ref:${clamp(avgOcc,0,100)}%"><div class="faculty-col-head"><span></span><span></span><span class="faculty-cond-col-head">Vagas condicionadas</span></div>${list}</div>`;
+}
+
+// Tabela visual (cores + valor vs. média), no padrão da Tabela comparativa da
+// ABA 2 / aba 5. Filtra colunas pelo indicador ativo.
+function facultyLegalVisualTable(rows, c, act) {
+  if (!rows.length) return "";
+  let cols = [
+    { code: "ind43", h: "IND-43 Códigos LGU",         get: u => facultyMetrics(u).totalCodes,     fmt: formatNumber,  pol: 1 },
+    { code: "ind44", h: "IND-44 Disponíveis",         get: u => facultyMetrics(u).availableOpen,  fmt: formatNumber,  pol: 1 },
+    { code: "ind45", h: "IND-45 Ocupadas",            get: u => facultyMetrics(u).occupied,       fmt: formatNumber,  pol: 1 },
+    { code: "ind46", h: "IND-46 Ocupação",            get: u => facultyMetrics(u).occupationRate, fmt: formatPercent, pol: 1 },
+    { code: "ind47", h: "IND-47 Utiliz. disponíveis", get: u => facultyMetrics(u).availableUseRate, fmt: formatPercent, pol: 1 },
+    { code: "ind53", h: "IND-53 CH média",            get: u => facultyMetrics(u).avgWorkload,    fmt: v => `${v.toFixed(1).replace(".", ",")}h`, pol: 1 }
+  ];
+  if (act) cols = cols.filter(col => col.code === act);
+  const means = cols.map(col => mean(rows, col.get));
+  const maxes = cols.map(col => Math.max(...rows.map(col.get), 0.001));
+  const tone = (v, avg) => v >= avg * 1.05 ? "g" : v <= avg * 0.95 ? "r" : "y";
+  const toneBg = { g: "#f0faf5", y: "#fffbeb", r: "#fdf2f2" };
+  const toneBar = { g: "#14804a", y: "#f59e0b", r: "#dc2626" };
+  const trs = [...rows].sort((a, b) => facultyMetrics(b).occupationRate - facultyMetrics(a).occupationRate).map(u => {
+    const tds = cols.map((col, i) => {
+      const v = col.get(u), t = tone(v, means[i]), d = v - means[i];
+      const deltaTxt = (d >= 0 ? "+" : "") + (col.fmt === formatNumber ? formatNumber(Math.round(d)) : d.toFixed(1).replace(".", ","));
+      return `<td style="background:${toneBg[t]}"><span>${col.fmt(v)}</span> <span class="bar-delta ${d >= 0 ? "delta-pos" : "delta-neg"}">(${deltaTxt})</span><div style="height:5px;border-radius:3px;background:${toneBar[t]};width:${clamp(v / maxes[i] * 100, 2, 100).toFixed(1)}%;margin-top:4px;min-width:3px"></div></td>`;
+    }).join("");
+    return `<tr><td><strong>${u.sigla}</strong><br><span>${u.groups[c.f.groupBy] ?? "—"}</span></td>${tds}</tr>`;
+  }).join("");
+  const footer = `<tr><td><em>Média do cluster</em></td>${cols.map((col, i) => `<td><em>${col.fmt(means[i])}</em></td>`).join("")}</tr>`;
+  return `<div class="table-wrap mt-14">
+    <h3>Quadro legal e ocupação docente</h3>
+    <p class="card-subtitle">Verde: ≥ 5% acima da média do cluster · Amarelo: na média (±5%) · Vermelho: ≥ 5% abaixo. Entre parênteses, a diferença para a média.</p>
+    <table class="data-table faculty-visual-table"><thead><tr><th>IEES</th>${cols.map(col => `<th>${col.h}</th>`).join("")}</tr></thead><tbody>${trs}</tbody><tfoot>${footer}</tfoot></table>
+  </div>`;
 }
 
 function facultyVacanciesBlock(c) {
   const rows = facultyRows(c);
   const avg = facultyAgg(rows);
-  return `<article class="visual-card"><h3>IND-45, IND-44 e IND-48 · Composição das vagas docentes</h3><p class="card-subtitle">Composição média do cluster exibida no topo. IND-49 mede restrição por vagas condicionadas.</p>${facultyVacancyStack(c, avg)}</article>`;
+  return `<article class="visual-card"><h3>IND-45, IND-44 e IND-48 · Composição das vagas docentes</h3><p class="card-subtitle">Percentuais de Ocupadas, Disponíveis e Condicionadas dentro de cada barra; composição média do cluster no topo. IND-49 mede a restrição por vagas condicionadas.</p>${facultyVacancyStack(c, avg)}</article>`;
 }
 
 function facultyVacancyStack(c, avg) {
   const rows = facultyRows(c);
-  const totalAvg = Math.max(avg.occupied + avg.availableOpen + avg.conditioned, 1);
+  const totalAvg = Math.max(avg.totalCodes, 1);
   const segLbl = (v, min) => v >= min ? `<i class="faculty-seg-lbl">${Math.round(v)}%</i>` : "";
   const segRow = (m) => {
     const total = Math.max(m.totalCodes, 1);
-    const occ = m.occupied / total * 100, avail = m.availableOpen / total * 100, cond = m.conditioned / total * 100;
+    const occ = m.occupied / total * 100, cond = m.conditioned / total * 100;
+    const avail = Math.max(100 - occ - cond, 0);
     return `<span class="faculty-seg occupied" style="width:${occ}%" title="Ocupadas: ${Math.round(occ)}%">${segLbl(occ, 12)}</span><span class="faculty-seg available" style="width:${avail}%" title="Disponíveis: ${Math.round(avail)}%">${segLbl(avail, 12)}</span><span class="faculty-seg conditioned" style="width:${cond}%" title="Condicionadas: ${Math.round(cond)}%">${segLbl(cond, 10)}</span>`;
   };
-  const avgOcc = avg.occupied / totalAvg * 100, avgAvail = avg.availableOpen / totalAvg * 100, avgCond = avg.conditioned / totalAvg * 100;
-  return `<div class="stack-reference"><div><strong>Composição média do cluster</strong><span>Ocupadas ${formatPercent(avgOcc)} · Disponíveis ${formatPercent(avgAvail)} · Condicionadas ${formatPercent(avgCond)}</span></div><div class="stack-reference-track"><span class="faculty-seg occupied" style="width:${avgOcc}%">${segLbl(avgOcc, 12)}</span><span class="faculty-seg available" style="width:${avgAvail}%">${segLbl(avgAvail, 12)}</span><span class="faculty-seg conditioned" style="width:${avgCond}%">${segLbl(avgCond, 10)}</span></div></div><div class="faculty-progress-list">${rows.map(u => { const m = facultyMetrics(u); return `<div class="faculty-progress-row ${isUniSelected(c.f, u.id) ? "selected" : ""}"><span class="faculty-name">${u.sigla}</span><div class="faculty-stack">${segRow(m)}</div><span class="faculty-value">IND-49 ${formatPercent(m.conditionedShare)}</span></div>`; }).join("")}</div>`;
+  const avgOcc = avg.occupied / totalAvg * 100, avgCond = avg.conditioned / totalAvg * 100, avgAvail = Math.max(100 - avgOcc - avgCond, 0);
+  const condCol = m => `<span class="faculty-cond-col"><strong>${formatPercent(m.conditionedShare)}</strong> <small>do quadro</small></span>`;
+  return `<div class="stack-reference"><div><strong>Composição média do cluster</strong><span>Ocupadas ${formatPercent(avgOcc)} · Disponíveis ${formatPercent(avgAvail)} · Condicionadas ${formatPercent(avgCond)}</span></div><div class="stack-reference-track faculty-stack-lg"><span class="faculty-seg occupied" style="width:${avgOcc}%">${segLbl(avgOcc, 8)}</span><span class="faculty-seg available" style="width:${avgAvail}%">${segLbl(avgAvail, 8)}</span><span class="faculty-seg conditioned" style="width:${avgCond}%">${segLbl(avgCond, 7)}</span></div></div><div class="stack-legend faculty-legend"><span><i class="faculty-dot occupied"></i>Ocupadas</span><span><i class="faculty-dot available"></i>Disponíveis</span><span><i class="faculty-dot conditioned"></i>Condicionadas</span></div><div class="faculty-progress-list faculty-occ-list"><div class="faculty-col-head"><span></span><span></span><span class="faculty-cond-col-head">Vagas condicionadas (IND-49)</span></div>${rows.map(u => { const m = facultyMetrics(u); return `<div class="faculty-progress-row ${isUniSelected(c.f, u.id) ? "selected" : ""}"><span class="faculty-name" title="${u.nome}">${u.sigla}</span><div class="faculty-stack faculty-stack-lg">${segRow(m)}</div>${condCol(m)}</div>`; }).join("")}</div>`;
 }
 
 function facultyTideBlock(c) {
@@ -148,14 +256,25 @@ function facultyTideBlock(c) {
   const ref = mean(rows, u => facultyMetrics(u).tideShare);
   const maxShare = Math.max(...metrics.map(x => x.m.tideShare), 0);
   const minShare = Math.min(...metrics.map(x => x.m.tideShare), 100);
-  const tideTone = v => v >= ref ? "rate-high" : v >= ref * 0.6 ? "rate-mid" : "rate-low";
+  const maxU = (metrics.find(x => x.m.tideShare === maxShare) || {u:{sigla:"—"}}).u.sigla;
+  const minU = (metrics.find(x => x.m.tideShare === minShare) || {u:{sigla:"—"}}).u.sigla;
   const deltaPP = v => { const d = v - ref; return (d >= 0 ? "+" : "") + d.toFixed(1).replace(".", ",") + " p.p."; };
   const cards = `<div class="tide-summary-cards">
-    <div class="tide-card"><span>Média cluster</span><strong>${formatPercent(ref)}</strong><small>IND-51</small></div>
-    <div class="tide-card tide-card-max"><span>Maior participação</span><strong>${formatPercent(maxShare)}</strong><small>${(metrics.find(x => x.m.tideShare === maxShare) || {u:{sigla:"—"}}).u.sigla}</small></div>
-    <div class="tide-card tide-card-min"><span>Menor participação</span><strong>${formatPercent(minShare)}</strong><small>${(metrics.find(x => x.m.tideShare === minShare) || {u:{sigla:"—"}}).u.sigla}</small></div>
+    <div class="tide-card"><span>Média do cluster</span><strong>${formatPercent(ref)}</strong><small>IND-51</small></div>
+    <div class="tide-card tide-card-max"><span>Maior participação</span><strong>${formatPercent(maxShare)}</strong><small>${maxU}</small></div>
+    <div class="tide-card tide-card-min"><span>Menor participação</span><strong>${formatPercent(minShare)}</strong><small>${minU}</small></div>
   </div>`;
-  return `<article class="visual-card">${cards}<h3>IND-51 · Participação do TIDE no quadro docente disponível</h3><p class="card-subtitle">Linha laranja = média do cluster · verde = acima da média · tooltip inclui IND-50 absoluto e IND-52 não atribuído.</p><div class="bars overview-cluster-bars tide-bars" style="--ref-pos:${clamp(ref,0,100)}%">${[...rows].sort((a,b)=>facultyMetrics(b).tideShare-facultyMetrics(a).tideShare).map(u => { const m = facultyMetrics(u); const delta = deltaPP(m.tideShare); return `<div class="bar-row ${isUniSelected(c.f, u.id) ? "selected" : ""}"><span class="bar-name" title="${u.nome}">${u.sigla}</span><span class="bar-track"><span class="bar-fill ${tideTone(m.tideShare)}" style="width:${clamp(m.tideShare,4,100)}%" title="IND-50 ${formatNumber(m.tideAssigned)} TIDE atribuídos; IND-51 ${formatPercent(m.tideShare)}; IND-52 ${formatPercent(m.tideNotAssignedShare)}; ${delta} vs. média"></span><span class="bar-reference" aria-hidden="true"></span></span><span class="bar-value">${formatPercent(m.tideShare)} <span class="bar-delta ${m.tideShare >= ref ? "delta-pos" : "delta-neg"}">${delta}</span> · <span class="tide-count" title="IND-50: docentes TIDE atribuídos">${formatNumber(m.tideAssigned)} TIDE</span></span></div>`; }).join("")}</div></article>`;
+  const refPos = clamp(ref, 0, 100);
+  const rowsHtml = [...rows].sort((a,b)=>facultyMetrics(b).tideShare-facultyMetrics(a).tideShare).map((u, i) => {
+    const m = facultyMetrics(u); const delta = deltaPP(m.tideShare);
+    return `<div class="bar-row tide-row ${isUniSelected(c.f, u.id) ? "selected" : ""}">
+      <span class="bar-name tide-rank" title="${u.nome}"><b>${i + 1}</b> ${u.sigla}</span>
+      <span class="bar-track"><span class="bar-fill tide-blue" style="width:${clamp(m.tideShare,4,100)}%" title="IND-50 ${formatNumber(m.tideAssigned)} TIDE atribuídos; IND-51 ${formatPercent(m.tideShare)}; IND-52 ${formatPercent(m.tideNotAssignedShare)}; ${delta} vs. média"></span><span class="bar-reference" aria-hidden="true"></span></span>
+      <span class="bar-value tide-pct">${formatPercent(m.tideShare)} <span class="bar-delta ${m.tideShare >= ref ? "delta-pos" : "delta-neg"}">${delta}</span></span>
+      <span class="tide-atrib-col">${formatNumber(m.tideAssigned)} <small>TIDE atribuído</small></span>
+    </div>`;
+  }).join("");
+  return `<article class="visual-card">${cards}<h3>IND-51 · Participação do TIDE no quadro docente disponível</h3><p class="card-subtitle">Percentual de docentes com TIDE no quadro disponível. Linha laranja tracejada = média do cluster. À direita, a quantidade absoluta de TIDE atribuído (IND-50).</p><div class="bars-reference-note"><span>▾ Média do cluster: <strong>${formatPercent(ref)}</strong></span></div><div class="bars overview-cluster-bars tide-bars tide-bars-ranked" style="--ref-pos:${refPos}%">${rowsHtml}</div></article>`;
 }
 
 function facultyCresBlock(c) {
@@ -195,8 +314,10 @@ function facultyTimeline(c) {
   const initOcio = fmt(mean(rows, function(u) { return facultyMetrics(u).cresIdleRate; }));
   const initOcup = fmt(mean(rows, function(u) { return facultyMetrics(u).occupationRate; }));
 
-  function _ftlUpdateCards(targetRow) {
-    var val = function(fn) { return targetRow ? fn(targetRow) : mean(rows, fn); };
+  function _ftlUpdateCards(sel) {
+    // sel: array de IEES selecionadas ou null (= todas)
+    var scope = (sel && sel.length) ? sel : rows;
+    var val = function(fn) { return mean(scope, fn); };
     var cu = document.getElementById('cardCresUtil');
     var co = document.getElementById('cardCresOcio');
     var cp = document.getElementById('cardCresOcup');
@@ -205,24 +326,30 @@ function facultyTimeline(c) {
     if (cp) cp.textContent = fmt(val(function(u) { return facultyMetrics(u).occupationRate; }));
   }
 
+  // Filtro multi-IEES (toggle): destaca uma ou várias IEES simultaneamente e
+  // atualiza os cards para a média das selecionadas. "Todas" limpa a seleção.
+  window._ftlSelected = window._ftlSelected || new Set();
   window.ftlFilter = function(sigla) {
+    var sel = window._ftlSelected;
+    if (sigla === 'todas') { sel.clear(); }
+    else if (sel.has(sigla)) { sel.delete(sigla); }
+    else { sel.add(sigla); }
+    var none = sel.size === 0;
     document.querySelectorAll('.ftl-btn').forEach(function(b) {
-      var isActive = b.dataset.ies === sigla;
-      b.style.background  = isActive ? 'var(--accent,#4A6FA5)' : 'transparent';
-      b.style.color       = isActive ? '#fff' : 'var(--text-primary,#222)';
-      b.style.borderColor = isActive ? 'var(--accent,#4A6FA5)' : '#cbd5e1';
+      var on = b.dataset.ies === 'todas' ? none : sel.has(b.dataset.ies);
+      b.style.background  = on ? 'var(--accent,#4A6FA5)' : 'transparent';
+      b.style.color       = on ? '#fff' : 'var(--text-primary,#222)';
+      b.style.borderColor = on ? 'var(--accent,#4A6FA5)' : '#cbd5e1';
     });
     document.querySelectorAll('.ftl-ies-line').forEach(function(line) {
-      if (sigla === 'todas') {
-        line.setAttribute('opacity', '0.5');
-        line.setAttribute('stroke-width', '1.2');
-      } else {
-        var sel = line.id === 'ftl-line-' + sigla;
-        line.setAttribute('opacity', sel ? '1' : '0.12');
-        line.setAttribute('stroke-width', sel ? '2.5' : '1');
-      }
+      if (none) { line.setAttribute('opacity', '0.5'); line.setAttribute('stroke-width', '1.2'); return; }
+      var s = line.id.replace('ftl-line-', '');
+      var on = sel.has(s);
+      line.setAttribute('opacity', on ? '1' : '0.10');
+      line.setAttribute('stroke-width', on ? '2.5' : '1');
     });
-    _ftlUpdateCards(sigla === 'todas' ? null : rows.find(function(u) { return u.sigla === sigla; }) || null);
+    var selRows = none ? null : rows.filter(function(u) { return sel.has(u.sigla); });
+    _ftlUpdateCards(selRows && selRows.length ? selRows : null);
   };
 
   var _FTL_MONTHS = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
@@ -235,7 +362,7 @@ function facultyTimeline(c) {
     if (!tip) return;
     var yr = 2022 + Math.floor(i / 12);
     var moIdx = i % 12;
-    var dateLabel = _FTL_MONTHS[moIdx] + '/' + yr;
+    var dateLabel = String(moIdx + 1).padStart(2, '0') + '/' + yr;
     var u = clusterMean[i], d = idleMean[i], o = occupationMean[i];
     document.getElementById('tooltipCresLabel').textContent = dateLabel;
     document.getElementById('tooltipCresLinhas').innerHTML =
@@ -291,7 +418,7 @@ function facultyTimeline(c) {
     '</div>';
 
   var axisLabels = [2022,2023,2024,2025,2026].map(function(y,i) {
-    return '<text class="timeline-label" x="' + (left + i * (plotW / 4)) + '" y="' + (height - 20) + '">Jan/' + y + '</text>';
+    return '<text class="timeline-label" x="' + (left + i * (plotW / 4)) + '" y="' + (height - 20) + '">01/' + y + '</text>';
   }).join('');
 
   var svgHtml =

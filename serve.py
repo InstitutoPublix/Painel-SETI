@@ -19,7 +19,7 @@ import socketserver
 import subprocess
 from pathlib import Path
 
-PORT = int(sys.argv[1]) if len(sys.argv) > 1 else 8080
+PORT = int(sys.argv[1]) if len(sys.argv) > 1 else 8000
 ROOT = Path(__file__).parent.resolve()
 JSON_PATH = ROOT / "data" / "seti_precomputed.json"
 DASHBOARD = f"http://localhost:{PORT}/dashboard/v8_painel_seti_html.html"
@@ -32,8 +32,11 @@ os.chdir(ROOT)
 if not JSON_PATH.exists():
     print("Gerando indicadores pré-processados (primeira execução)...")
     print("Isso pode levar alguns minutos — processando os arquivos XLSX...\n")
+    # Pipeline COMPLETO (base + enriquecimentos com dados reais 2020-2024 +
+    # CAPES/CNPq/municípios/CBO2 + normalização). Rodar só o assemble_final
+    # deixaria vários indicadores em valores estimados.
     result = subprocess.run(
-        [sys.executable, "pipeline/assemble_final.py"],
+        [sys.executable, "pipeline/build_all.py"],
         stderr=sys.stderr,
     )
     if result.returncode != 0:
@@ -45,8 +48,13 @@ else:
     try:
         meta = json.loads(JSON_PATH.read_text(encoding="utf-8"))
         gen  = meta.get("generated", "?")
+        enr  = meta.get("enrichedCbo2Muni") or meta.get("enrichedCnpq") or meta.get("enriched")
         print(f"Dados pré-processados de: {gen}")
-        print("  (regenerar: python pipeline/assemble_final.py)\n")
+        if enr:
+            print(f"Enriquecido (dados reais) em: {enr}")
+        else:
+            print("  [ATENÇÃO] JSON sem enriquecimento — rode: python pipeline/build_all.py")
+        print("  (regenerar tudo: python pipeline/build_all.py)\n")
     except Exception:
         pass
 

@@ -1450,6 +1450,10 @@ async function loadPrecomputedJson() {
     }
     if (data.clusters)   window.SETI_CLUSTERS   = data.clusters;
     if (data.quartiRefs) window.SETI_QUARTIREFS  = data.quartiRefs;
+    // Programas de pós-graduação reais por IES (Base CAPES via enrich_capes.py)
+    if (data.capesPrograms) window.SETI_CAPES_PROGRAMS = data.capesPrograms;
+    // Vagas reais por município (Base Cursos via enrich_municipios.py)
+    if (data.vagasMunicipios) window.SETI_VAGAS_MUNICIPIOS = data.vagasMunicipios;
     // Expõe byYear por IES para série histórica ind81-87 (2024/2025/2026)
     if (data.byYear)     window.SETI_BYEAR       = data.byYear;
     // SELO-PR — avaliação anual da qualidade da execução orçamentária por IES

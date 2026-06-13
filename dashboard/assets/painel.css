@@ -70,10 +70,23 @@ button {
   position: relative;
   display: flex;
   flex-direction: column;
-  background-color: #0b2545;
+  /* Gradiente navy mais rico (igual à imagem de referência) */
+  background: linear-gradient(105deg, #081d3c 0%, #0c2c5a 52%, #0a2247 100%);
   overflow: hidden;
   box-shadow: 0 3px 14px rgba(0, 0, 0, 0.4);
   z-index: 100;
+}
+
+/* Faixa fina em gradiente (azul → ciano → verde) na base do cabeçalho */
+.institutional-header::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 4px;
+  background: linear-gradient(90deg, #1b6fc4 0%, #169fb0 55%, #2ecc71 100%);
+  z-index: 3;
 }
 
 /* Faixa superior fina (linha esmeralda) */
@@ -89,8 +102,8 @@ button {
   align-items: center;
   justify-content: space-between;
   gap: 1.5rem;
-  padding: 0.65rem 2rem 0.65rem 1.5rem;
-  min-height: 82px;
+  padding: 0.9rem 2.25rem 0.95rem 1.75rem;
+  min-height: 96px;
   position: relative;
   z-index: 1;
 }
@@ -166,15 +179,15 @@ button {
   filter: brightness(1) drop-shadow(0 1px 3px rgba(0, 0, 0, 0.3));
 }
 
-.header-logo:first-child { height: 46px; max-width: 128px; }
-.header-logo:last-child  { height: 50px; max-width: 142px; }
+.header-logo:first-child { height: 130px; max-width: 220px; }
+.header-logo:last-child  { height: 70px; max-width: 220px; }
 
-/* Curvas decorativas SVG */
+/* Curvas decorativas SVG — arco amplo atravessando todo o cabeçalho */
 .header-decoration {
   position: absolute;
+  left: 0;
   right: 0;
   top: 0;
-  width: 460px;
   height: 100%;
   pointer-events: none;
   z-index: 0;
@@ -7851,8 +7864,18 @@ details.ind-detail-accordion .catalog-card { border: none; border-radius: 0; mar
 .bar-fill.br-vagas-bar  { background: #185fa5; }
 .bar-fill.br-cursos-bar { background: #e07b10; }
 
-/* ── BR reference marker — laranja (média nacional) ──────────────────── */
-.br-ref-marker { background: #f28c28 !important; }
+/* ── BR reference marker — média nacional ────────────────────────────── */
+/* Halo branco + traço mais largo para não sumir sobre a barra colorida.   */
+.br-ref-marker {
+  background: #f28c28 !important;
+  width: 3px;
+  opacity: 1;
+  top: -2px;
+  bottom: -2px;
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.95);
+}
+/* Variante azul-escura: usada no ranking de cursos (barras laranjas). */
+.br-ref-marker.br-ref-navy { background: #1e3a5f !important; }
 
 /* ── BR escala legend ─────────────────────────────────────────────────── */
 .br-escala-legend {
@@ -7864,6 +7887,7 @@ details.ind-detail-accordion .catalog-card { border: none; border-radius: 0; mar
   display: inline-block; width: 18px; height: 0;
   border-top: 2px dashed #f28c28; flex-shrink: 0;
 }
+.br-escala-leg-line.br-ref-navy { border-top-color: #1e3a5f; }
 
 /* ── BR Occupancy Ranking Table ──────────────────────────────────────── */
 .br-occ-table {
@@ -7916,7 +7940,11 @@ details.ind-detail-accordion .catalog-card { border: none; border-radius: 0; mar
   transform: translateY(-50%);
   font-size: 10.5px;
   font-weight: 700;
-  color: #fff;
+  /* Escuro com halo branco: legível tanto sobre a barra colorida quanto
+     sobre o trilho claro (antes era branco e desaparecia). */
+  color: #1e293b;
+  text-shadow: 0 1px 2px rgba(255,255,255,.95), 0 -1px 2px rgba(255,255,255,.95),
+               1px 0 2px rgba(255,255,255,.95), -1px 0 2px rgba(255,255,255,.95);
   pointer-events: none;
   white-space: nowrap;
   mix-blend-mode: normal;
@@ -7956,3 +7984,1001 @@ details.ind-detail-accordion .catalog-card { border: none; border-radius: 0; mar
 .signal-grid .signal-card:nth-child(5)  { animation-delay: 0.20s; }
 .signal-grid .signal-card:nth-child(6)  { animation-delay: 0.25s; }
 .signal-grid .signal-card:nth-child(7)  { animation-delay: 0.30s; }
+
+/* ── Aba 3 · Mapa de calor Brasil (escopo nacional) ───────────────────── */
+.br-heatmap-svg {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+.br-map-shape {
+  fill: #e6f1fb;
+  stroke: #b9cfe4;
+  stroke-width: 2;
+  stroke-linejoin: round;
+}
+
+.br-heat-node circle {
+  transition: stroke 160ms ease, stroke-width 160ms ease, opacity 160ms ease;
+}
+
+.br-heat-node:hover circle {
+  stroke: #f28c28;
+  stroke-width: 3;
+}
+
+.br-heat-label {
+  font-size: 10px;
+  font-weight: 700;
+  fill: #2c3e50;
+  text-anchor: middle;
+  pointer-events: none;
+  paint-order: stroke;
+  stroke: #ffffff;
+  stroke-width: 2.5px;
+}
+
+.br-heat-label.selected {
+  fill: #b35a00;
+  font-size: 11px;
+}
+
+.map-side-kpi.br-map-sel {
+  border-left: 4px solid #f28c28;
+}
+
+/* ── Aba 4 · Funil único com painel lateral ───────────────────────────── */
+.ff-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1.6fr) minmax(240px, 1fr);
+  gap: 18px;
+  align-items: start;
+}
+
+@media (max-width: 900px) {
+  .ff-layout { grid-template-columns: 1fr; }
+}
+
+.ff-side {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.ff-kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.ff-kpi {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border: 1px solid #dde6f0;
+  border-radius: 10px;
+  background: #f8fbff;
+}
+
+.ff-kpi-icon {
+  font-size: 17px;
+  color: #185fa5;
+  flex-shrink: 0;
+}
+
+.ff-kpi-label {
+  display: block;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--gray-600, #475569);
+  line-height: 1.3;
+}
+
+.ff-kpi-value {
+  font-size: 18px;
+  color: var(--gray-800, #1e293b);
+}
+
+.ff-howto {
+  padding: 12px 14px;
+  border-radius: 10px;
+  background: #f0f4fa;
+  border-left: 3px solid #185fa5;
+  font-size: 12px;
+  color: var(--gray-700, #374151);
+  line-height: 1.6;
+}
+
+.ff-howto strong { display: block; margin-bottom: 4px; }
+.ff-howto p { margin: 0 0 8px 0; }
+
+.ff-flow-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 8px;
+  font-size: 11px;
+  font-weight: 600;
+  align-items: center;
+}
+
+.ff-flow-legend span { display: inline-flex; align-items: center; gap: 4px; }
+.ff-flow-legend i { width: 10px; height: 10px; border-radius: 3px; display: inline-block; }
+
+/* ── Aba 4 · Legenda de faixas e etiqueta da média ────────────────────── */
+.rate-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 12px;
+  margin-bottom: 8px;
+}
+
+.rate-legend-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--gray-700, #374151);
+}
+
+.rate-legend-chip i {
+  width: 10px;
+  height: 10px;
+  border-radius: 3px;
+  display: inline-block;
+}
+
+.bars-ref-flag {
+  margin: 4px 0 6px;
+}
+
+.bars-ref-flag span {
+  display: inline-block;
+  font-size: 11px;
+  font-weight: 700;
+  color: #d23b3b;
+  background: #fdf0ef;
+  border: 1px dashed #e08a85;
+  border-radius: 6px;
+  padding: 2px 9px;
+}
+
+.retention-bars .bar-reference {
+  top: -7px;
+  bottom: -7px;
+  width: 0;
+  border-left: 2px dashed #d23b3b;
+  background: none;
+  opacity: 0.85;
+}
+
+/* ── Aba 4 · Ranking por curso (composição empilhada) ─────────────────── */
+.crk-legend {
+  display: flex;
+  gap: 14px;
+  margin-bottom: 10px;
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--gray-700, #374151);
+}
+
+.crk-legend span { display: inline-flex; align-items: center; gap: 5px; }
+.crk-legend i { width: 10px; height: 10px; border-radius: 3px; display: inline-block; }
+.crk-legend i.crk-drop, .crk-seg.crk-drop { background: #c43f3a; }
+.crk-legend i.crk-comp, .crk-seg.crk-comp { background: #14804a; }
+
+.crk-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12.5px;
+}
+
+.crk-table th {
+  text-align: left;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: var(--gray-500, #64748b);
+  padding: 6px 8px;
+  border-bottom: 1px solid #e5eaf1;
+}
+
+.crk-table td {
+  padding: 7px 8px;
+  border-bottom: 1px solid #eef1f6;
+  vertical-align: middle;
+}
+
+.crk-pos { width: 40px; font-weight: 700; color: var(--gray-500, #64748b); }
+
+.crk-ies { white-space: nowrap; }
+
+.crk-cluster-badge {
+  display: inline-block;
+  margin-left: 8px;
+  padding: 1px 8px;
+  border-radius: 10px;
+  background: #eef4ff;
+  border: 1px solid #c9dcf5;
+  color: #1e3a5f;
+  font-size: 10.5px;
+  font-weight: 600;
+}
+
+.crk-bar {
+  display: flex;
+  width: 100%;
+  min-width: 220px;
+  height: 22px;
+  border-radius: 999px;
+  overflow: hidden;
+  background: var(--gray-200, #e2e8f0);
+}
+
+.crk-seg {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 30px;
+  color: #fff;
+  font-size: 10.5px;
+  font-weight: 700;
+}
+
+.crk-seg em { font-style: normal; padding: 0 4px; white-space: nowrap; }
+
+.crk-result { width: 78px; text-align: right; font-weight: 700; color: #14804a; white-space: nowrap; }
+
+/* ── Aba 4 · Conclusão × inserção profissional ────────────────────────── */
+.cx-legend {
+  display: flex;
+  gap: 14px;
+  margin-bottom: 10px;
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--gray-700, #374151);
+}
+
+.cx-legend span { display: inline-flex; align-items: center; gap: 5px; }
+.cx-legend i { width: 10px; height: 10px; border-radius: 3px; display: inline-block; }
+.cx-legend i.cx-comp, .cx-bar.cx-comp { background: #185fa5; }
+.cx-legend i.cx-emp,  .cx-bar.cx-emp  { background: #14804a; }
+
+.cx-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1.55fr) minmax(240px, 1fr);
+  gap: 18px;
+  align-items: start;
+}
+
+@media (max-width: 900px) {
+  .cx-layout { grid-template-columns: 1fr; }
+}
+
+.cx-row {
+  display: grid;
+  grid-template-columns: 86px minmax(0, 1fr);
+  gap: 8px;
+  align-items: center;
+  padding: 6px 0;
+  border-bottom: 1px solid #eef1f6;
+}
+
+.cx-row.selected { background: var(--accent-faint, #eef4ff); }
+
+.cx-name { font-weight: 700; font-size: 12.5px; }
+
+.cx-bars { display: flex; flex-direction: column; gap: 4px; }
+
+.cx-track {
+  position: relative;
+  height: 15px;
+  border-radius: 999px;
+  background: var(--gray-200, #e2e8f0);
+  overflow: hidden;
+}
+
+.cx-bar {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+  animation: barGrow 520ms ease both;
+}
+
+.cx-val {
+  position: absolute;
+  top: 50%;
+  right: 6px;
+  transform: translateY(-50%);
+  font-style: normal;
+  font-size: 10px;
+  font-weight: 700;
+  color: #1e293b;
+  text-shadow: 0 1px 2px rgba(255,255,255,.95), 0 -1px 2px rgba(255,255,255,.95);
+  white-space: nowrap;
+}
+
+.cx-track.cx-na .cx-val { color: var(--gray-500, #94a3b8); font-weight: 600; }
+
+.cx-side { display: flex; flex-direction: column; gap: 12px; }
+
+.cx-kpis { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+
+.cx-kpi {
+  padding: 10px 12px;
+  border: 1px solid #dde6f0;
+  border-radius: 10px;
+  background: #f8fbff;
+}
+
+.cx-kpi span { display: block; font-size: 11px; font-weight: 600; color: var(--gray-600, #475569); }
+.cx-kpi strong { font-size: 18px; color: var(--gray-800, #1e293b); }
+
+.cx-diag-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  max-height: 260px;
+  overflow-y: auto;
+}
+
+.cx-diag-title { font-size: 12px; color: var(--gray-700, #374151); }
+
+.cx-diag {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  padding: 6px 10px;
+  border-radius: 8px;
+  font-size: 11.5px;
+  background: #f7f9fc;
+  border-left: 3px solid #c9d4e3;
+}
+
+.cx-diag.alert-ok     { border-left-color: #14804a; background: #f0faf5; }
+.cx-diag.alert-warn   { border-left-color: #af7a00; background: #fffbeb; }
+.cx-diag.alert-info   { border-left-color: #185fa5; background: #eef4ff; }
+.cx-diag.alert-danger { border-left-color: #c43f3a; background: #fdf2f2; }
+
+.cx-diag strong { flex-shrink: 0; }
+.cx-diag span { color: var(--gray-600, #475569); }
+
+/* ── Aba 4 · Dispersão: rótulos dos eixos ─────────────────────────────── */
+.scatter-axis-tick {
+  position: absolute;
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--gray-500, #64748b);
+  pointer-events: none;
+  white-space: nowrap;
+}
+
+/* ── Aba 4 · Funil — visual refinado ──────────────────────────────────── */
+.ff-funnel {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0;
+  padding: 8px 0 4px;
+  width: 100%;
+}
+
+.ff-step {
+  position: relative;
+  min-height: 96px;
+  border-radius: 14px;
+  padding: 14px 20px 13px;
+  color: #fff;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  box-shadow: 0 8px 18px rgba(15, 42, 77, 0.16), inset 0 1px 0 rgba(255, 255, 255, 0.18);
+  transition: opacity 200ms ease, transform 200ms ease;
+}
+
+.ff-step:hover { transform: translateY(-1px); }
+
+.ff-step.ff-dim { opacity: 0.25; }
+
+.ff-step-top {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.ff-step .ff-num {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.22);
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  font-size: 11px;
+  font-weight: 800;
+  line-height: 20px;
+  text-align: center;
+  margin: 0;
+  flex-shrink: 0;
+}
+
+.ff-step .ff-code {
+  background: rgba(255, 255, 255, 0.16);
+  border: 1px solid rgba(255, 255, 255, 0.28);
+  border-radius: 999px;
+  padding: 1px 9px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+}
+
+.ff-step .ff-label {
+  font-size: 13.5px;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+}
+
+.ff-step .ff-val {
+  font-size: 26px;
+  font-weight: 800;
+  line-height: 1.05;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.18);
+}
+
+.ff-step .ff-pct {
+  font-size: 11px;
+  font-weight: 600;
+  opacity: 0.88;
+}
+
+/* Conector entre etapas: linha-guia vertical + chip central com a conversão */
+.ff-conn {
+  position: relative;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+  gap: 0;
+  width: 100%;
+  padding: 13px 0;
+}
+
+.ff-conn::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 50%;
+  width: 2px;
+  margin-left: -1px;
+  background: #cdd9e8;
+}
+
+.ff-conn .ff-conn-chip {
+  position: relative;
+  z-index: 1;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: #fff;
+  border: 1.5px solid;
+  border-radius: 999px;
+  padding: 4px 14px;
+  font-size: 11.5px;
+  font-weight: 600;
+  white-space: nowrap;
+  box-shadow: 0 2px 8px rgba(15, 42, 77, 0.10);
+}
+
+.ff-conn .ff-conn-chip svg { width: 13px; height: 13px; flex-shrink: 0; }
+.ff-conn .ff-conn-chip strong { font-weight: 800; }
+
+.ff-conn-ok  .ff-conn-chip { border-color: #b9e0cb; color: #14804a; }
+.ff-conn-low .ff-conn-chip { border-color: #f0c4c0; color: #c43f3a; }
+
+/* KPIs laterais com ícones SVG padronizados */
+.ff-kpi {
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  min-height: 66px;
+  box-shadow: 0 1px 3px rgba(15, 42, 77, 0.06);
+}
+
+.ff-kpi-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  background: #e3eefb;
+  color: #185fa5;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  font-size: 0;
+}
+
+.ff-kpi-icon svg { width: 19px; height: 19px; }
+
+.ff-kpi-value { font-size: 19px; line-height: 1.15; }
+
+/* Legenda do fluxo em chips */
+.ff-flow-legend {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 5px;
+}
+
+.ff-flow-legend span {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: #fff;
+  border: 1px solid #dde6f0;
+  border-radius: 999px;
+  padding: 2px 10px;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--gray-700, #374151);
+}
+
+.ff-flow-legend i {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+.ff-flow-arrow {
+  color: #94a3b8;
+  font-weight: 700;
+  font-size: 12px;
+}
+
+/* ── Aba 4 · Funil — blocos uniformes + divisor da coluna lateral ─────── */
+.ff-funnel .ff-step {
+  width: min(100%, 480px);
+  min-height: 104px;
+  padding-bottom: 16px;
+}
+
+.ff-step .ff-meter {
+  width: calc(100% - 8px);
+  height: 5px;
+  margin-top: 7px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.22);
+  overflow: hidden;
+}
+
+.ff-step .ff-meter span {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.85);
+}
+
+.ff-layout {
+  gap: 0;
+}
+
+.ff-layout .ff-funnel {
+  padding-right: 22px;
+}
+
+.ff-layout .ff-side {
+  border-left: 1px solid #e5eaf1;
+  padding-left: 22px;
+}
+
+@media (max-width: 900px) {
+  .ff-layout .ff-funnel { padding-right: 0; }
+  .ff-layout .ff-side {
+    border-left: none;
+    border-top: 1px solid #e5eaf1;
+    padding-left: 0;
+    padding-top: 16px;
+    margin-top: 4px;
+  }
+}
+
+/* ── Aba 5 · Cores das barras (tons high/mid/low) ─────────────────────── */
+/* As classes rate-* eram atribuídas no JS mas só tinham CSS nos containers
+   .tide-bars/.employment-rate-bars — nos gráficos da aba 5 não tinham efeito. */
+.quality-doctor-bars .bar-fill.rate-high,
+.cnpq-bars .bar-fill.rate-high { background: #14804a; }
+.quality-doctor-bars .bar-fill.rate-mid,
+.cnpq-bars .bar-fill.rate-mid { background: #2f7fd1; }
+.quality-doctor-bars .bar-fill.rate-low,
+.cnpq-bars .bar-fill.rate-low { background: #c43f3a; }
+
+/* Linha de referência nacional INEP (roxa) + pontos da legenda */
+.inep-ref-line {
+  position: absolute;
+  top: -4px;
+  bottom: -4px;
+  left: var(--inep-ref, 82%);
+  width: 0;
+  border-left: 2px dashed #7c3aed;
+  opacity: 0.8;
+  pointer-events: none;
+}
+
+.ref-dot {
+  display: inline-block;
+  width: 10px;
+  height: 3px;
+  border-radius: 2px;
+  margin-right: 5px;
+  vertical-align: middle;
+}
+
+.ref-dot.ref-cluster { background: #f28c28; }
+.ref-dot.ref-pr      { background: #2f7fd1; }
+.ref-dot.ref-inep    { background: #7c3aed; }
+
+/* ── Aba 5 · Scatter CAPES com quadrantes e legendas ──────────────────── */
+.capes-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1.8fr) minmax(220px, 1fr);
+  gap: 16px;
+  align-items: start;
+}
+
+@media (max-width: 900px) {
+  .capes-layout { grid-template-columns: 1fr; }
+}
+
+.capes-scatter { overflow: hidden; }
+
+.capes-quad {
+  position: absolute;
+  z-index: 0;
+  pointer-events: none;
+}
+
+.capes-quad-label {
+  position: absolute;
+  z-index: 1;
+  font-size: 9.5px;
+  font-weight: 700;
+  line-height: 1.25;
+  opacity: 0.75;
+  pointer-events: none;
+}
+
+.capes-ref-label {
+  position: absolute;
+  z-index: 1;
+  font-size: 9.5px;
+  font-weight: 700;
+  background: rgba(255, 255, 255, 0.85);
+  padding: 0 4px;
+  border-radius: 3px;
+  pointer-events: none;
+}
+
+.capes-dot-label {
+  position: absolute;
+  z-index: 3;
+  transform: translateX(-50%);
+  font-size: 9.5px;
+  font-weight: 700;
+  color: #1e3a5f;
+  background: rgba(255, 255, 255, 0.9);
+  border: 1px solid rgba(30, 58, 95, 0.18);
+  border-radius: 3px;
+  padding: 0 4px;
+  line-height: 1.4;
+  pointer-events: none;
+  white-space: nowrap;
+}
+
+.capes-dot { color: #fff; font-weight: 700; text-shadow: 0 1px 2px rgba(0,0,0,0.35); }
+
+.capes-howto {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.capes-size-legend {
+  padding: 12px 14px;
+  border-radius: 10px;
+  border: 1px solid #dde6f0;
+  background: #f8fbff;
+  font-size: 11.5px;
+  color: var(--gray-700, #374151);
+}
+
+.capes-size-legend strong { display: block; font-size: 12px; }
+.capes-size-note { display: block; color: var(--gray-500, #64748b); margin-bottom: 8px; }
+
+.capes-size-legend div {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 6px;
+}
+
+.capes-size-legend i {
+  display: inline-block;
+  border-radius: 50%;
+  background: #185fa5;
+  opacity: 0.8;
+  flex-shrink: 0;
+}
+
+/* Síntese comparativa por IEES */
+.capes-synth-table td { vertical-align: middle; }
+
+.capes-cell-bar {
+  width: 100%;
+  min-width: 110px;
+  height: 9px;
+  border-radius: 999px;
+  background: var(--gray-200, #e2e8f0);
+  overflow: hidden;
+}
+
+.capes-cell-bar span {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+  animation: barGrow 520ms ease both;
+}
+
+.capes-bar-blue   { background: #185fa5; }
+.capes-bar-green  { background: #14804a; }
+.capes-bar-orange { background: #e07b10; }
+
+.capes-cell-val {
+  display: block;
+  font-style: normal;
+  font-size: 11px;
+  font-weight: 700;
+  margin-top: 3px;
+  color: var(--gray-700, #374151);
+}
+
+.capes-read {
+  display: inline-block;
+  padding: 2px 10px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.capes-read-top  { background: #e8f7ef; color: #117a43; border: 1px solid #b7e2cb; }
+.capes-read-up   { background: #eef7f1; color: #15803d; border: 1px solid #cfe8d8; }
+.capes-read-warn { background: #fff7e6; color: #b45309; border: 1px solid #f3dfb6; }
+
+/* ── Aba 5 · Internacionalização ──────────────────────────────────────── */
+.intl-kpi-row {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+@media (max-width: 900px) {
+  .intl-kpi-row { grid-template-columns: 1fr; }
+}
+
+.intl-kpi {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  border: 1px solid #dde6f0;
+  border-radius: 12px;
+  background: #f8fbff;
+  box-shadow: 0 1px 3px rgba(15, 42, 77, 0.06);
+}
+
+.intl-rank-bars .bar-fill.intl-rank-fill { background: #185fa5; }
+
+.intl-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 14px;
+  margin-bottom: 10px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--gray-700, #374151);
+}
+
+.intl-legend span { display: inline-flex; align-items: center; gap: 5px; }
+.intl-legend i { width: 10px; height: 10px; border-radius: 3px; display: inline-block; }
+
+.intl-m-blue   { background: #185fa5; }
+.intl-m-green  { background: #14804a; }
+.intl-m-orange { background: #e07b10; }
+
+.intl-group-row {
+  display: grid;
+  grid-template-columns: 86px minmax(0, 1fr);
+  gap: 8px;
+  align-items: center;
+  padding: 6px 0;
+  border-bottom: 1px solid #eef1f6;
+}
+
+.intl-group-row.selected { background: var(--accent-faint, #eef4ff); }
+
+.intl-group-name { font-weight: 700; font-size: 12.5px; }
+
+.intl-group-bars { display: flex; flex-direction: column; gap: 3px; }
+
+.intl-metric-track {
+  position: relative;
+  height: 11px;
+  border-radius: 999px;
+  background: var(--gray-100, #f1f5f9);
+  overflow: visible;
+}
+
+.intl-metric-bar {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+  animation: barGrow 520ms ease both;
+}
+
+.intl-metric-track em {
+  position: absolute;
+  top: 50%;
+  left: calc(100% + 0px);
+  transform: translateY(-50%);
+  font-style: normal;
+  font-size: 9.5px;
+  font-weight: 700;
+  color: var(--gray-600, #475569);
+  white-space: nowrap;
+  padding-left: 4px;
+}
+
+.intl-metric-track { margin-right: 44px; }
+
+.intl-bottom-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.6fr) minmax(240px, 1fr);
+  gap: 14px;
+  align-items: start;
+}
+
+@media (max-width: 900px) {
+  .intl-bottom-grid { grid-template-columns: 1fr; }
+}
+
+.intl-portal-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.intl-portal-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 8px 14px;
+  border: 1px solid #e5eaf1;
+  border-radius: 10px;
+  background: #fbfdff;
+  font-size: 12px;
+  font-weight: 700;
+  min-width: 84px;
+}
+
+/* ── Selo de valor estimado (fallback de fórmula) ─────────────────────── */
+.est-badge {
+  display: inline-block;
+  margin-left: 4px;
+  padding: 0 5px;
+  border-radius: 999px;
+  background: #fff3e0;
+  border: 1px solid #f0c890;
+  color: #b45309;
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  vertical-align: super;
+  cursor: help;
+  line-height: 1.5;
+}
+
+/* ── Aba 6 · Ocupação docente — barras maiores + % + coluna condicionadas ── */
+.faculty-stack-lg { height: 26px; border-radius: 8px; }
+.faculty-stack-lg .faculty-seg-lbl { font-size: 11px; }
+
+.faculty-cluster-ref {
+  padding: 10px 12px;
+  border: 1px solid #dde6f0;
+  border-radius: 10px;
+  background: #f8fbff;
+  margin-bottom: 12px;
+}
+.faculty-cluster-ref-head {
+  display: flex; justify-content: space-between; gap: 8px; flex-wrap: wrap;
+  margin-bottom: 7px; font-size: 12px; color: var(--gray-700, #374151);
+}
+.faculty-cluster-ref-head strong { font-size: 12.5px; }
+
+.faculty-legend {
+  align-items: center;
+  gap: 8px 16px;
+  margin: 6px 0 12px;
+}
+.faculty-legend-cond-note {
+  font-size: 10.5px;
+  color: var(--gray-500, #94a3b8);
+  font-style: italic;
+}
+
+.faculty-occ-list .faculty-progress-row {
+  grid-template-columns: 88px minmax(0, 1fr) 132px;
+  align-items: center;
+  gap: 10px;
+}
+.faculty-col-head {
+  display: grid;
+  grid-template-columns: 88px minmax(0, 1fr) 132px;
+  gap: 10px;
+  margin-bottom: 4px;
+}
+.faculty-col-head .faculty-cond-col-head {
+  font-size: 10.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: var(--gray-500, #64748b);
+  text-align: right;
+}
+.faculty-cond-col {
+  text-align: right;
+  font-size: 13px;
+  font-weight: 700;
+  color: #b45309;
+  white-space: nowrap;
+}
+.faculty-cond-col small { display: block; font-size: 9.5px; font-weight: 600; color: var(--gray-500, #94a3b8); }
+
+/* ── Aba 6 · TIDE — ranking azul + linha tracejada rotulada + coluna ──── */
+.bar-fill.tide-blue { background: #2f6fb0 !important; opacity: 1; }
+.tide-bars-ranked { position: relative; }
+.tide-bars-ranked .tide-row {
+  display: grid;
+  grid-template-columns: 110px minmax(0, 1fr) 150px 120px;
+  align-items: center;
+  gap: 10px;
+}
+.tide-rank b {
+  display: inline-block;
+  min-width: 16px;
+  margin-right: 4px;
+  color: var(--gray-400, #9aa6b6);
+  font-weight: 800;
+}
+.tide-pct { white-space: nowrap; }
+.tide-atrib-col {
+  text-align: right;
+  font-weight: 800;
+  font-size: 14px;
+  color: var(--gray-800, #1e293b);
+  white-space: nowrap;
+}
+.tide-atrib-col small { display: block; font-size: 9.5px; font-weight: 600; color: var(--gray-500, #94a3b8); }
+/* a linha de referência das barras TIDE (laranja tracejada contínua) */
+.tide-bars-ranked .bar-reference {
+  position: absolute; top: 0; bottom: 0; left: var(--ref-pos);
+  width: 0; border-left: 2px dashed #f28c28; opacity: 0.9;
+}

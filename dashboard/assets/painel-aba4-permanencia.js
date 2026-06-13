@@ -14,64 +14,123 @@ function retentionBlock(title, c) {
   if (title.includes("Evolução")) return retentionYearRankingBlock(c);
   if (title.includes("Dispersão")) return retentionScatterBlock(c);
   if (title.includes("Ranking"))  return retentionCourseRankingBlock(c);
-  return retentionAlertsBlock(c);
+  return retentionCrossBlock(c);
 }
 
-// ── Utilitário: subject rows (IEES selecionada ou cluster) ──────────────────
+// ── Filtro de indicadores da aba (barra "Visualizando:") ────────────────────
+// Retorna o código ativo quando ele pertence ao bloco; null = mostrar tudo.
+function retentionIndFilter(blockCodes) {
+  const act = (state.activeIndicator && state.activeIndicator.retention) || "all";
+  return act !== "all" && blockCodes.includes(act) ? act : null;
+}
+
+// ── Utilitário: subject rows (seleção consolidada, cluster ou escopo) ───────
 function retentionSubjectRows(c) {
   const clusterRows = clusterRowsFor(c);
-  if (c.selected && clusterRows.some(u => u.id === c.selected.id)) return { label: c.selected.sigla, rows: [c.selected] };
+  const refLen = (c.ref && c.ref.length) || clusterRows.length;
+  if (c.display && c.display.length && c.display.length < refLen) {
+    const label = c.display.length === 1
+      ? c.display[0].sigla
+      : `${c.display.length} IEES selecionadas`;
+    return { label, rows: c.display };
+  }
+  if (typeof isBrasilContext === "function" && isBrasilContext(c)) {
+    return { label: "Brasil — IEES estaduais", rows: clusterRows };
+  }
   return { label: explicitClusterActive(c) ? c.f.groupLevel : "Sistema PR", rows: clusterRows };
 }
 
-// ── 1. Funil formativo ──────────────────────────────────────────────────────
+// ── 1. Funil formativo (gráfico único + painel lateral) ─────────────────────
 function retentionFunnelBlock(c) {
   const subject = retentionSubjectRows(c);
-  const clusterRows = clusterRowsFor(c);
-  return `<div class="retention-funnel-grid">
-    ${formationFunnel(subject.label, subject.rows, "Funil do recorte")}
-    ${formationFunnel("Média do cluster", clusterRows, "Referência do agrupamento")}
-  </div>`;
+  return formationFunnel(subject.label, subject.rows, c);
 }
 
-function formationFunnel(title, rows, subtitle) {
+function formationFunnel(title, rows, c) {
   const a = overviewAgg(rows);
   const vacancies = Math.max(a.vacancies, 1);
-  const r1 = clamp(a.entrants / vacancies * 100, 0, 100);
-  const r2 = clamp(100 - (a.dropout || 0), 0, 100);
-  const r3 = clamp(a.completion || 0, 0, 100);
-  const fmt = v => v.toFixed(1).replace('.', ',');
+  const entrants = Math.max(a.entrants, 1);
+  const students = Math.max(a.students, 1);
+  const fmt1 = v => v.toFixed(1).replace(".", ",");
 
-  const w1 = 100;
-  const w2 = clamp(r1, 40, 96);
-  const w3 = clamp(w2 * r2 / 100, 30, 82);
-  const w4 = clamp(w3 * r3 / 100, 20, 66);
+  // Conversões coerentes com os quantitativos exibidos:
+  // ocupação = ingressantes/vagas; concluintes = concluintes/matrículas.
+  // Matrículas ativas são estoque (todas as coortes), por isso a etapa é
+  // descrita pela relação matrículas/ingressante e não por um percentual.
+  const occRate = clamp(a.entrants / vacancies * 100, 0, 100);
+  const gradRate = clamp(a.graduates / students * 100, 0, 100);
+  const stockRatio = a.students / entrants;
+  const idleVacancies = Math.max(a.vacancies - a.entrants, 0);
+
+  const act = retentionIndFilter(["ind11", "ind12", "ind13", "ind14"]);
+  const maxVal = Math.max(a.vacancies, a.entrants, a.students, a.graduates, 1);
 
   const steps = [
-    { num:1, code:"IND-11", label:"Vagas ofertadas",   val:a.vacancies, pctTxt:"etapa base (100%)",            bg:"#0f3b68", w:w1 },
-    { num:2, code:"IND-13", label:"Ingressantes",      val:a.entrants,  pctTxt:`${fmt(r1)}% das vagas`,        bg:"#1f72b8", w:w2 },
-    { num:3, code:"IND-5",  label:"Estudantes ativos", val:a.students,  pctTxt:`${fmt(r2)}% retidos (IND-5)`,  bg:"#f28c28", w:w3 },
-    { num:4, code:"IND-27", label:"Concluintes",       val:a.graduates, pctTxt:`${fmt(r3)}% concluíram`,       bg:"#14804a", w:w4 }
+    { num:1, code:"IND-11", ind:"ind11", label:"Vagas ofertadas",  val:a.vacancies, pctTxt:"oferta do ano de referência",            bg:"#0f3b68" },
+    { num:2, code:"IND-13", ind:"ind13", label:"Ingressantes",     val:a.entrants,  pctTxt:`${fmt1(occRate)}% das vagas ocupadas`,   bg:"#1f72b8" },
+    { num:3, code:"IND-12", ind:"ind12", label:"Matrículas ativas",val:a.students,  pctTxt:"estoque de todas as coortes",            bg:"#e07b10" },
+    { num:4, code:"IND-14", ind:"ind14", label:"Concluintes",      val:a.graduates, pctTxt:`${fmt1(gradRate)}% das matrículas`,      bg:"#14804a" }
   ];
 
+  const chevron = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>`;
   const connectors = [
-    { rate: r1, label: fmt(r1) + "%" },
-    { rate: r2, label: fmt(r2) + "%" },
-    { rate: r3, label: fmt(r3) + "%" }
+    { label: `Taxa de ocupação das vagas`, value: `${fmt1(occRate)}%`,  low: occRate < 70 },
+    { label: `Matrículas por ingressante`, value: stockRatio.toFixed(1).replace(".", ","), low: false },
+    { label: `Taxa de concluintes`,        value: `${fmt1(gradRate)}%`, low: gradRate < 15 }
   ];
 
-  let html = `<div class="ff-funnel">`;
+  // Blocos com largura uniforme; a proporção entre etapas é mostrada pela
+  // régua inferior de cada bloco (ff-meter) e pelos chips de conversão.
+  let funnel = `<div class="ff-funnel">`;
   steps.forEach((s, i) => {
-    html += `<div class="ff-step" style="width:${s.w}%;background:${s.bg}"><div class="ff-step-inner"><div class="ff-num">${s.num}</div><div class="ff-code">${s.code}</div><div class="ff-label">${s.label}</div><div class="ff-val">${formatNumber(s.val)}</div><div class="ff-pct">${s.pctTxt}</div></div></div>`;
+    const dim = act && act !== s.ind ? " ff-dim" : "";
+    const meterW = clamp(s.val / maxVal * 100, 3, 100).toFixed(1);
+    funnel += `<div class="ff-step${dim}" style="background:${s.bg}">
+      <div class="ff-step-top"><span class="ff-num">${s.num}</span><span class="ff-code">${s.code}</span><span class="ff-label">${s.label}</span></div>
+      <div class="ff-val">${formatNumber(s.val)}</div>
+      <div class="ff-pct">${s.pctTxt}</div>
+      <div class="ff-meter" title="Proporção sobre a maior etapa: ${meterW}%"><span style="width:${meterW}%"></span></div>
+    </div>`;
     if (i < steps.length - 1) {
       const conn = connectors[i];
-      const cls = conn.rate >= 70 ? "ff-conn-ok" : "ff-conn-low";
-      html += `<div class="ff-conn ${cls}"><span>${conn.label}</span><span class="ff-arrow">&#9660;</span></div>`;
+      funnel += `<div class="ff-conn ${conn.low ? "ff-conn-low" : "ff-conn-ok"}"><span class="ff-conn-chip">${chevron}${conn.label}: <strong>${conn.value}</strong></span></div>`;
     }
   });
-  html += `</div>`;
+  funnel += `</div>`;
 
-  return `<article class="visual-card formation-funnel-card"><h3>${title}</h3><p class="card-subtitle">${subtitle}</p>${html}</article>`;
+  const ffIcons = {
+    idle: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5" stroke-dasharray="2.5 2.5"/></svg>`,
+    gauge: `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3a9 9 0 1 0 9 9 9 9 0 0 0-9-9zm0 2a7 7 0 1 1-7 7 7 7 0 0 1 7-7z" fill="currentColor" opacity=".3"/><path d="M12 5a7 7 0 0 1 7 7h-7z" fill="currentColor"/></svg>`,
+    grad: `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4 2 9l10 5 8-4v5.5h2V9z" fill="currentColor"/><path d="M6.5 12.8V16c0 1.66 2.46 3 5.5 3s5.5-1.34 5.5-3v-3.2L12 15.5z" fill="currentColor" opacity=".65"/></svg>`,
+    ratio: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 8h10M13 4l4 4-4 4"/><path d="M17 16H7M11 12l-4 4 4 4"/></svg>`
+  };
+  const kpi = (label, value, icon) =>
+    `<div class="ff-kpi"><span class="ff-kpi-icon" aria-hidden="true">${icon}</span><div><span class="ff-kpi-label">${label}</span><strong class="ff-kpi-value">${value}</strong></div></div>`;
+
+  const side = `<div class="ff-side">
+    <div class="ff-kpi-grid">
+      ${kpi("Vagas ociosas", formatNumber(idleVacancies), ffIcons.idle)}
+      ${kpi("Ocupação das vagas", fmt1(occRate) + "%", ffIcons.gauge)}
+      ${kpi("Taxa de concluintes", fmt1(gradRate) + "%", ffIcons.grad)}
+      ${kpi("Matrículas por ingressante", stockRatio.toFixed(1).replace(".", ","), ffIcons.ratio)}
+    </div>
+    <div class="ff-howto">
+      <strong>Como ler</strong>
+      <p>O funil apresenta a jornada no sistema: da oferta de vagas ao ingresso, à permanência (matrículas ativas de todas as coortes) e à conclusão dos cursos. A régua na base de cada bloco indica a proporção da etapa sobre a maior delas.</p>
+      <div class="ff-flow-legend">
+        <span><i style="background:#0f3b68"></i>Oferta</span><b class="ff-flow-arrow">→</b>
+        <span><i style="background:#1f72b8"></i>Ingresso</span><b class="ff-flow-arrow">→</b>
+        <span><i style="background:#e07b10"></i>Permanência</span><b class="ff-flow-arrow">→</b>
+        <span><i style="background:#14804a"></i>Conclusão</span>
+      </div>
+    </div>
+  </div>`;
+
+  return `<article class="visual-card formation-funnel-card">
+    <h3>Funil formativo — ${title}</h3>
+    <p class="card-subtitle">Oferta, ingresso, permanência e conclusão no recorte selecionado. Os valores refletem o filtro de IEES aplicado.</p>
+    <div class="ff-layout">${funnel}${side}</div>
+  </article>`;
 }
 
 // ── 2. Taxas de desvinculação e concluintes ─────────────────────────────────
@@ -88,10 +147,19 @@ function completionTone(v) {
 }
 
 function retentionRatesBlock(c) {
+  const act = retentionIndFilter(["ind5", "ind27"]);
+  const dropLegend = rateLegendChips([["occ-red", "> 10%"], ["occ-yellow", "7–10%"], ["occ-green", "≤ 7%"]]);
+  const compLegend = rateLegendChips([["occ-green", "> 75%"], ["occ-yellow", "60–75%"], ["occ-red", "< 60%"]]);
   return `<div class="chart-grid">
-    <article class="visual-card"><h3>IND-5 · Taxa anual de desvinculação</h3><p class="card-subtitle">Ordenado da maior para menor; vermelho > 10%, amarelo 7–10%, verde ≤ 7%.</p>${quartilChipStrip("retentionRateBarsDropout", c.f.groupBy, c.base, c)}${retentionRateBars(c, "dropout")}</article>
-    <article class="visual-card"><h3>IND-27 · Taxa de concluintes</h3><p class="card-subtitle">Verde > 75%, amarelo 60–75%, vermelho < 60%.</p>${quartilChipStrip("retentionRateBarsCompletion", c.f.groupBy, c.base, c)}${retentionRateBars(c, "completion")}</article>
+    ${!act || act === "ind5" ? `<article class="visual-card"><h3>IND-5 · Taxa anual de desvinculação</h3><p class="card-subtitle">Ordenado da maior para menor taxa.</p>${dropLegend}${quartilChipStrip("retentionRateBarsDropout", c.f.groupBy, c.base, c)}${retentionRateBars(c, "dropout")}</article>` : ""}
+    ${!act || act === "ind27" ? `<article class="visual-card"><h3>IND-27 · Taxa de concluintes</h3><p class="card-subtitle">Ordenado da maior para menor taxa.</p>${compLegend}${quartilChipStrip("retentionRateBarsCompletion", c.f.groupBy, c.base, c)}${retentionRateBars(c, "completion")}</article>` : ""}
   </div>`;
+}
+
+function rateLegendChips(items) {
+  return `<div class="rate-legend">${items.map(([tone, label]) =>
+    `<span class="rate-legend-chip"><i class="${tone}"></i>${label}</span>`
+  ).join("")}</div>`;
 }
 
 function retentionRateBars(c, metric) {
@@ -101,7 +169,8 @@ function retentionRateBars(c, metric) {
   const fmt = formatPercent;
   const ref = mean(rows, get);
   const sorted = [...rows].sort((a, b) => get(b) - get(a));
-  return `<div class="bars-reference-note"><span>Média do cluster: <strong>${fmt(ref)}</strong></span></div><div class="bars overview-cluster-bars retention-bars" style="--ref-pos:${clamp(ref,0,100)}%">${sorted.map((u, index) => `<div class="bar-row ${isUniSelected(c.f, u.id) ? "selected" : ""}"><span class="bar-name" title="${u.nome}">${u.sigla}</span><span class="bar-track"><span class="bar-fill ${metric === "dropout" ? dropoutTone(get(u)) : completionTone(get(u))}" style="width:${clamp(get(u),4,100)}%"></span><span class="bar-reference" aria-hidden="true"></span></span><span class="bar-value">${fmt(get(u))} · ${index + 1}º</span></div>`).join("")}</div>`;
+  const refFlag = `<div class="bars-ref-flag"><span>▾ Média do cluster: <strong>${fmt(ref)}</strong></span></div>`;
+  return `${refFlag}<div class="bars overview-cluster-bars retention-bars" style="--ref-pos:${clamp(ref,0,100)}%">${sorted.map((u, index) => `<div class="bar-row ${isUniSelected(c.f, u.id) ? "selected" : ""}"><span class="bar-name" title="${u.nome}">${u.sigla}</span><span class="bar-track"><span class="bar-fill ${metric === "dropout" ? dropoutTone(get(u)) : completionTone(get(u))}" style="width:${clamp(get(u),4,100)}%"></span><span class="bar-reference" aria-hidden="true"></span></span><span class="bar-value">${fmt(get(u))} · ${index + 1}º</span></div>`).join("")}</div>`;
 }
 
 // ── 3. Ranking animado por ano ──────────────────────────────────────────────
@@ -114,16 +183,22 @@ function retentionYearRankingBlock(c) {
   state._rankingClusterIds = clusterRows.map(u => u.id);
   state._rankingGroupBy = c.f.groupBy;
   const ITEM_H = 60;
-  const metric = state.rankingMetric || "completion";
+  // Filtro de indicadores da aba: ind5/ind14/ind27 selecionam a métrica do ranking
+  const actEvo = retentionIndFilter(["ind5", "ind14", "ind27"]);
+  const metricByInd = { ind5: "dropout", ind14: "graduates", ind27: "completion" };
+  const metric = actEvo ? metricByInd[actEvo] : (state.rankingMetric || "completion");
+  if (actEvo) state.rankingMetric = metric;
   const yr = state.rankingYear || "2024";
   const metricDefs = [
     { key: "completion", label: "Taxa de concluintes" },
     { key: "dropout",    label: "Taxa anual de desvinculação discente" },
     { key: "graduates",  label: "Total de estudantes concluintes" }
   ];
-  const metricSelectorHTML = metricDefs.map(m =>
-    `<button class="rank-metric-btn${m.key === metric ? " active" : ""}" data-metric="${m.key}" type="button" onclick="setRankingMetric('${m.key}')">${m.label}</button>`
-  ).join("");
+  const metricSelectorHTML = metricDefs
+    .filter(m => !actEvo || m.key === metric)
+    .map(m =>
+      `<button class="rank-metric-btn${m.key === metric ? " active" : ""}" data-metric="${m.key}" type="button" onclick="setRankingMetric('${m.key}')">${m.label}</button>`
+    ).join("");
   const yearBtnsHTML = [2020,2021,2022,2023,2024].map(y =>
     `<button class="rank-year-btn${String(y) === String(yr) ? " active" : ""}" type="button" onclick="setRankingYear(${y})">${y}</button>`
   ).join("");
@@ -242,8 +317,20 @@ function retentionScatterBlock(c) {
   const avgComp = mean(clusterRows, u => u.completion);
   const maxStudents = Math.max(...rows.map(u => u.students), 1);
 
-  const axPctX = clamp(avgDrop, 2, 96).toFixed(1);
-  const axPctY = clamp(avgComp, 2, 96).toFixed(1);
+  // Eixos escalados ao intervalo real dos dados (com folga) em vez de 0–100%:
+  // os valores ocupavam uma faixa estreita e os pontos ficavam sobrepostos,
+  // principalmente no escopo Brasil.
+  const xVals = rows.map(u => u.dropout).concat(avgDrop);
+  const yVals = rows.map(u => u.completion).concat(avgComp);
+  const xMin = Math.max(0, Math.min(...xVals) - 1.5);
+  const xMax = Math.max(...xVals) + 1.5;
+  const yMin = Math.max(0, Math.min(...yVals) - 3);
+  const yMax = Math.min(100, Math.max(...yVals) + 3);
+  const toX = v => clamp((v - xMin) / Math.max(xMax - xMin, 0.1) * 100, 2, 97);
+  const toY = v => clamp((v - yMin) / Math.max(yMax - yMin, 0.1) * 100, 2, 97);
+
+  const axPctX = toX(avgDrop).toFixed(1);
+  const axPctY = toY(avgComp).toFixed(1);
 
   const quadBg =
     `<div style="position:absolute;left:0;top:0;width:${axPctX}%;bottom:${axPctY}%;background:rgba(34,197,94,0.07);z-index:0;pointer-events:none;"></div>` +
@@ -282,20 +369,27 @@ function retentionScatterBlock(c) {
     panelEl.style.display = 'block';
   };
 
+  // Pontos: a sigla fica SEMPRE dentro da bolha — a bolha é dimensionada para
+  // o texto caber (sem rótulos externos, que ficavam soltos/duplicados).
+  // A variação de tamanho por matrículas é mantida por cima do mínimo textual.
   const dots = rows.map(u => {
     const col = _SCATTER_IES_COLORS[u.sigla] || '#4A6FA5';
-    const size = Math.round(18 + u.students / maxStudents * 26);
-    const x = clamp(u.dropout, 2, 94);
-    const y = clamp(u.completion, 2, 94);
+    const len = Math.max(u.sigla.length, 3);
+    const base = rows.length > 12 ? 34 : 42;
+    const sizeVar = rows.length > 12 ? 10 : 14;
+    let size = Math.round(base + u.students / maxStudents * sizeVar);
+    // fonte que cabe no diâmetro; se ficar pequena demais, alarga a bolha
+    let fontSize = (size - 8) / (0.60 * len);
+    if (fontSize < 7.5) { fontSize = 7.5; size = Math.ceil(0.60 * len * 7.5) + 8; }
+    fontSize = Math.min(fontSize, 11);
+    const x = toX(u.dropout);
+    const y = toY(u.completion);
     const half = Math.round(size / 2);
     const tooltip = `${u.sigla}: desvinculação ${formatPercent(u.dropout)}; conclusão ${formatPercent(u.completion)}`;
-    const lx = half + 4;
-    const ly = half + 2;
     return `<div class="scatter-item" style="position:absolute;left:${x}%;bottom:${y}%;width:0;height:0;z-index:2;">` +
       `<button class="scatter-point ${clusterIds.has(u.id) ? "in-cluster" : "out-cluster"} ${isUniSelected(c.f, u.id) ? "selected" : ""}" ` +
-      `style="position:absolute;left:-${half}px;bottom:-${half}px;width:${size}px;height:${size}px;display:flex;align-items:center;justify-content:center;font-size:${size >= 28 ? 10 : 0}px;overflow:hidden;background:${col};border-color:${col}cc;" ` +
-      `type="button" title="${tooltip}" aria-label="${tooltip}" onclick="window.dispersaoTab4Click('${u.sigla}')">${size >= 28 ? u.sigla : ""}</button>` +
-      `<span class="scatter-sigla-label" style="position:absolute;left:${lx}px;bottom:${ly}px;font-size:10px;font-weight:600;white-space:nowrap;background:rgba(255,255,255,0.88);padding:0 3px;border-radius:2px;pointer-events:none;line-height:1.4;border:1px solid rgba(0,0,0,0.08)">${u.sigla}</span>` +
+      `style="position:absolute;left:-${half}px;bottom:-${half}px;width:${size}px;height:${size}px;display:flex;align-items:center;justify-content:center;font-size:${fontSize.toFixed(1)}px;font-weight:700;white-space:nowrap;background:${col};border-color:${col}cc;color:#fff;text-shadow:0 1px 2px rgba(0,0,0,0.4);letter-spacing:0;" ` +
+      `type="button" title="${tooltip}" aria-label="${tooltip}" onclick="window.dispersaoTab4Click('${u.sigla}')">${u.sigla}</button>` +
       `</div>`;
   }).join("");
 
@@ -326,9 +420,16 @@ function retentionScatterBlock(c) {
     `<p style="font-size:0.78rem;color:var(--text-secondary,#777);margin-top:10px;">` +
     `<strong>Fonte:</strong> INEP — Censo da Educação Superior / Base Cursos - Brasil.xlsx · IND-5: QT_SIT_DESVINCULADO / QT_MAT × 100 · IND-27: QT_CONCLUINTE / QT_MAT × 100</p>`;
 
+  const fmtAxis = v => v.toFixed(1).replace(".", ",") + "%";
+  const axisLabels =
+    `<span class="scatter-axis-tick" style="left:4px;bottom:-18px;">${fmtAxis(xMin)}</span>` +
+    `<span class="scatter-axis-tick" style="right:4px;bottom:-18px;">${fmtAxis(xMax)}</span>` +
+    `<span class="scatter-axis-tick" style="left:-6px;bottom:2px;transform:translateX(-100%);">${fmtAxis(yMin)}</span>` +
+    `<span class="scatter-axis-tick" style="left:-6px;top:2px;transform:translateX(-100%);">${fmtAxis(yMax)}</span>`;
+
   return `<article class="visual-card"><h3>IND-5 × IND-27 · Dispersão formação</h3>
-    <p class="card-subtitle">X = desvinculação (→ pior); Y = taxa de concluintes (↑ melhor); tamanho = matrículas · Quadrantes definidos pela média do grupo</p>
-    <div class="retention-scatter faculty-scatter" style="background:var(--surface-1,#fff);">${quadBg}${refLines}${qLabels}${dots}</div>
+    <p class="card-subtitle">X = desvinculação (→ pior); Y = taxa de concluintes (↑ melhor); tamanho = matrículas · Quadrantes definidos pela média do grupo · Eixos ajustados ao intervalo dos dados · Clique em uma bolha para detalhar</p>
+    <div class="retention-scatter faculty-scatter" style="background:var(--surface-1,#fff);overflow:visible;margin-left:42px;margin-bottom:20px;">${quadBg}${refLines}${qLabels}${axisLabels}${dots}</div>
     ${legend}${fonte}${painel}
   </article>`;
 }
@@ -341,30 +442,54 @@ function setRetentionCourseType(type) {
 window.setRetentionCourseType = setRetentionCourseType;
 
 function courseTypeMetrics(u, type) {
+  // Dados REAIS por grau acadêmico (grauMix, Base Cursos INEP via pipeline);
+  // os offsets sintéticos abaixo só atuam quando o registro não tem o dado.
+  const g = u.grauMix && u.grauMix[type];
+  if (g && g.completion != null && g.dropout != null && g.students > 0) {
+    return { completion: g.completion, dropout: g.dropout, real: true };
+  }
   const offset = type === "Licenciatura" ? -6 : type === "Tecnólogo" ? 2 : 4;
   const dropoutOffset = type === "Licenciatura" ? 2.4 : type === "Tecnólogo" ? -0.6 : -1.2;
-  return { completion: clamp(u.completion + offset, 35, 96), dropout: clamp(u.dropout + dropoutOffset, 2, 24) };
+  return { completion: clamp(u.completion + offset, 35, 96), dropout: clamp(u.dropout + dropoutOffset, 2, 24), real: false };
 }
 
-function courseTypeRanking(rows, type) {
-  const ranked = [...rows].sort((a, b) => courseTypeMetrics(b, type).completion - courseTypeMetrics(a, type).completion);
-  const max = Math.max(...ranked.map(u => courseTypeMetrics(u, type).completion), 1);
-  return `<div class="rank-list course-type-rank">${ranked.map((u, index) => { const m = courseTypeMetrics(u, type); return `<div class="rank-item"><span class="rank-number">${index + 1}</span><span><span class="rank-title">${u.sigla}</span><span class="rank-subtitle" style="margin-left:10px;font-size:0.78rem;color:var(--text-secondary,#777);font-weight:400;">Desvinculação ${formatPercent(m.dropout)}</span></span><span class="mini-bar"><i style="width:${clamp(m.completion / max * 100, 4, 100)}%"></i></span><span class="rank-value">${formatPercent(m.completion)}</span></div>`; }).join("")}</div>`;
+// Gráfico único: ranking com barra de composição (desvinculação × concluintes)
+function courseTypeRanking(rows, type, c) {
+  const getM = u => type === "all"
+    ? { completion: u.completion, dropout: u.dropout }
+    : courseTypeMetrics(u, type);
+  const ranked = [...rows].sort((a, b) => getM(b).completion - getM(a).completion);
+  const groupBy = c && c.f ? c.f.groupBy : "v1";
+  const trs = ranked.map((u, index) => {
+    const m = getM(u);
+    const total = Math.max(m.dropout + m.completion, 0.1);
+    const dropW = (m.dropout / total * 100).toFixed(1);
+    const compW = (m.completion / total * 100).toFixed(1);
+    const grp = (u.groups && u.groups[groupBy]) || "—";
+    return `<tr>
+      <td class="crk-pos">${index + 1}º</td>
+      <td class="crk-ies"><strong>${u.sigla}</strong><span class="crk-cluster-badge" title="Cluster (${groupBy.toUpperCase()})">${grp}</span></td>
+      <td><div class="crk-bar">
+        <span class="crk-seg crk-drop" style="width:${dropW}%"><em>${formatPercent(m.dropout)}</em></span>
+        <span class="crk-seg crk-comp" style="width:${compW}%"><em>${formatPercent(m.completion)}</em></span>
+      </div></td>
+      <td class="crk-result">${formatPercent(m.completion)}</td>
+    </tr>`;
+  }).join("");
+  return `<table class="crk-table">
+    <thead><tr><th>Rank</th><th>IEES · Cluster</th><th>Composição dos indicadores</th><th>Resultado</th></tr></thead>
+    <tbody>${trs}</tbody>
+  </table>`;
 }
 
 function retentionCourseRankingBlock(c) {
   const rows = clusterRowsFor(c);
-  const types = ["Bacharelado", "Licenciatura", "Tecnólogo"];
-  const active = state.retentionCourseType || "Bacharelado";
-  const chips = types.map(type =>
-    `<button class="qchip${type === active ? " qchip-active" : ""}" type="button"
-      onclick="setRetentionCourseType('${type}')">${type}</button>`
+  const types = [["all", "Todos"], ["Bacharelado", "Bacharelado"], ["Licenciatura", "Licenciatura"], ["Tecnólogo", "Tecnólogo"]];
+  const active = state.retentionCourseType || "all";
+  const chips = types.map(([key, label]) =>
+    `<button class="qchip${key === active ? " qchip-active" : ""}" type="button"
+      onclick="setRetentionCourseType('${key}')">${label}</button>`
   ).join("");
-  const clearBtn = '<button id="btnLimparGrauRanking" onclick="setRetentionCourseType(\'all\')" ' +
-    'style="margin-left:10px;padding:3px 12px;border-radius:14px;border:1px solid #e2e8f0;' +
-    'background:transparent;color:var(--text-secondary,#94a3b8);font-size:0.80rem;cursor:pointer;' +
-    'vertical-align:middle;" title="Voltar a exibir todos os graus">Limpar filtro</button>';
-  const subtitle = "Taxa de concluintes e taxa anual de desvinculação discente, ordenadas no cluster.";
   const infoNote =
     '<div style="display:flex;align-items:flex-start;gap:10px;margin:8px 0 14px 0;padding:10px 14px;' +
     'background:var(--surface-2,#f0f4fa);border-left:3px solid var(--accent,#4A6FA5);border-radius:4px;' +
@@ -379,39 +504,109 @@ function retentionCourseRankingBlock(c) {
     'com a taxa de conclusão: uma IES pode ter alta conclusão e alta desvinculação se houver ' +
     'grande volume de ingressantes. ' +
     'Fonte: INEP — Censo da Educação Superior / Base Cursos - Brasil.xlsx.</div></div>';
-  const chipStrip = `<div class="qchip-strip" style="margin-bottom:12px">${chips}${clearBtn}</div>`;
-  if (active === "all") {
-    return `<div class="course-ranking-filter">${chipStrip}${infoNote}${
-      types.map(type =>
-        `<article class="visual-card" style="margin-bottom:12px;"><h3>${type}</h3><p class="card-subtitle">${subtitle}</p>${courseTypeRanking(rows, type)}</article>`
-      ).join("")
-    }</div>`;
-  }
-  return `<div class="course-ranking-filter">${chipStrip}${infoNote}<article class="visual-card"><h3>${active}</h3><p class="card-subtitle">${subtitle}</p>${courseTypeRanking(rows, active)}</article></div>`;
+  const chipStrip = `<div class="qchip-strip" style="margin-bottom:12px">${chips}</div>`;
+  const legend = `<div class="crk-legend">
+    <span><i class="crk-drop"></i>Taxa de desvinculação</span>
+    <span><i class="crk-comp"></i>Taxa de concluintes</span>
+  </div>`;
+  const heading = active === "all" ? "Todos os graus" : active;
+  const hasRealGrau = active !== "all" && rows.some(u => courseTypeMetrics(u, active).real);
+  const subtitle = active === "all"
+    ? "Indicadores calculados sobre a totalidade dos cursos · ordenado pela taxa de concluintes dentro do cluster ativo."
+    : hasRealGrau
+      ? `Cursos de ${active} — dados reais por grau acadêmico (INEP, Base Cursos) · ordenado pela taxa de concluintes dentro do cluster ativo.`
+      : `Estimativa para cursos de ${active} · ordenado pela taxa de concluintes dentro do cluster ativo.`;
+  return `<div class="course-ranking-filter">${chipStrip}${infoNote}
+    <article class="visual-card"><h3>Ranking por curso — ${heading}</h3><p class="card-subtitle">${subtitle}</p>${legend}${courseTypeRanking(rows, active, c)}</article>
+  </div>`;
 }
 
-// ── 6. Alertas e cruzamento formação × inserção ─────────────────────────────
-function retentionAlertsBlock(c) {
+// ── 6. Conclusão × inserção profissional (barras agrupadas + diagnóstico) ────
+// Os "Alertas de formação" foram consolidados na barra lateral (ver override
+// de renderSystemAlerts no fim deste arquivo), conforme apontamento do doc.
+function retentionCrossBlock(c) {
+  const rows = clusterRowsFor(c).filter(u => u.completion != null);
+  if (!rows.length) return empty();
+  const empRows = rows.filter(u => u.employment != null && u.employment > 0);
+  const avgComp = mean(rows, u => u.completion);
+  const avgEmployment = empRows.length ? mean(empRows, u => u.employment) : null;
+  const hasEmployment = empRows.length > 0;
+
+  const sorted = [...rows].sort((a, b) => b.completion - a.completion);
+  const barRows = sorted.map(u => {
+    const compW = clamp(u.completion, 3, 100).toFixed(1);
+    const empOk = hasEmployment && u.employment != null && u.employment > 0;
+    const empW = empOk ? clamp(u.employment, 3, 100).toFixed(1) : 0;
+    const empBar = empOk
+      ? `<div class="cx-track"><span class="cx-bar cx-emp" style="width:${empW}%"></span><em class="cx-val">${formatPercent(u.employment)}</em></div>`
+      : `<div class="cx-track cx-na"><em class="cx-val">sem dado de inserção</em></div>`;
+    return `<div class="cx-row ${isUniSelected(c.f, u.id) ? "selected" : ""}">
+      <span class="cx-name" title="${u.nome}">${u.sigla}</span>
+      <div class="cx-bars">
+        <div class="cx-track"><span class="cx-bar cx-comp" style="width:${compW}%"></span><em class="cx-val">${formatPercent(u.completion)}</em></div>
+        ${empBar}
+      </div>
+    </div>`;
+  }).join("");
+
+  const diagnostics = sorted.map(u => {
+    if (!hasEmployment || u.employment == null || u.employment <= 0) return "";
+    const d = crossFormationEmployment(u, avgComp, avgEmployment);
+    return `<div class="cx-diag ${d.cls}"><strong>${u.sigla}</strong><span>${d.msg}</span></div>`;
+  }).filter(Boolean).join("");
+
+  const side = `<div class="cx-side">
+    <div class="cx-kpis">
+      <div class="cx-kpi"><span>Média de conclusão (IND-27)</span><strong>${formatPercent(avgComp)}</strong></div>
+      <div class="cx-kpi"><span>Média de inserção (IND-37)</span><strong>${avgEmployment != null ? formatPercent(avgEmployment) : "—"}</strong></div>
+    </div>
+    ${diagnostics ? `<div class="cx-diag-list"><strong class="cx-diag-title">Diagnóstico</strong>${diagnostics}</div>` : ""}
+    <div class="ff-howto">
+      <strong>Como interpretar</strong>
+      <p>Compara a taxa de concluintes (IND-27, azul) com a taxa de inserção formal no Paraná (IND-37, verde). IES com as duas barras acima das médias apresentam bom alinhamento entre formação e mercado de trabalho.</p>
+    </div>
+  </div>`;
+
+  const note = hasEmployment ? "" : `<p class="card-subtitle">Indicador de inserção (IND-37) disponível apenas para as IEES do Paraná (base RAIS-PR).</p>`;
+
+  return `<article class="visual-card">
+    <h3>Conclusão × inserção profissional</h3>
+    <p class="card-subtitle">IND-27 (azul) e IND-37 (verde) por IEES, escala 0–100% · ordenado pela taxa de concluintes.</p>
+    ${note}
+    <div class="cx-legend"><span><i class="cx-comp"></i>Taxa de conclusão</span><span><i class="cx-emp"></i>Taxa de inserção</span></div>
+    <div class="cx-layout"><div class="cx-chart">${barRows}</div>${side}</div>
+  </article>`;
+}
+
+function crossFormationEmployment(u, avgComp, avgEmployment) {
+  const compGood = u.completion >= avgComp;
+  const empGood = avgEmployment != null && u.employment >= avgEmployment;
+  const cls = compGood && empGood ? "alert-ok" : compGood && !empGood ? "alert-warn" : !compGood && empGood ? "alert-info" : "alert-danger";
+  const msg = compGood && !empGood ? "Conclui bem, mas insere abaixo da referência" : !compGood && empGood ? "Insere bem, mas conclui abaixo da referência" : compGood ? "Bom alinhamento formação-mercado" : "Baixa conclusão e baixa inserção";
+  return { cls, msg };
+}
+
+// ── Alertas de formação — consolidados na barra lateral ─────────────────────
+// Mantém a separação por aba: na aba 4 a sidebar mostra os alertas de
+// formação; nas demais abas o comportamento original é preservado.
+var _prevRenderSystemAlertsRetention = renderSystemAlerts;
+renderSystemAlerts = function renderSystemAlertsWithRetention(c) {
+  if (state.activeTab !== "retention") return _prevRenderSystemAlertsRetention(c);
+  const box = document.getElementById("systemAlerts");
+  if (!box) return;
   const rows = clusterRowsFor(c);
+  if (!rows.length) { _prevRenderSystemAlertsRetention(c); return; }
   const avgDrop = mean(rows, u => u.dropout);
   const avgComp = mean(rows, u => u.completion);
-  const avgEmployment = mean(rows, u => u.employment);
   const alerts = [];
   rows.forEach(u => {
     const highDrop = u.dropout > avgDrop + 2;
     const lowCompletion = u.completion < avgComp - 10;
     if (highDrop && lowCompletion) alerts.push(["alert-danger", "⚠", u.sigla, `IND-5 alto (${formatPercent(u.dropout)}) e IND-27 baixo (${formatPercent(u.completion)}). Atenção prioritária.`]);
-    else if (highDrop)        alerts.push(["alert-warn",   "⚠", u.sigla, `IND-5 ${formatPercent(u.dropout)}`]);
-    else if (lowCompletion)   alerts.push(["alert-warn",   "⚠", u.sigla, `IND-27 ${formatPercent(u.completion)}`]);
+    else if (highDrop)        alerts.push(["alert-warn", "⚠", u.sigla, `IND-5 Desvinculação ${formatPercent(u.dropout)} — acima da média do cluster`]);
+    else if (lowCompletion)   alerts.push(["alert-warn", "⚠", u.sigla, `IND-27 Concluintes ${formatPercent(u.completion)} — abaixo da média do cluster`]);
   });
-  if (!alerts.length) alerts.push(["alert-ok", "✓", "Cluster", "Sem alertas críticos de formação no recorte ativo."]);
-  return `<div class="chart-grid"><article class="visual-card"><h3>Alertas de formação</h3><p class="card-subtitle">Regras automáticas baseadas na média do cluster.</p><div class="system-alerts-list">${alerts.map(([cls, icon, ies, msg]) => `<div class="alert-item ${cls}"><span class="alert-icon" aria-hidden="true">${icon}</span><div class="alert-body"><strong class="alert-ies">${ies}</strong><span class="alert-msg">${msg}</span></div></div>`).join("")}</div></article><article class="visual-card"><h3>Conclusão × inserção profissional</h3><p class="card-subtitle">IND-27 comparado a IND-37; referências calculadas no cluster.</p><div class="cross-cards">${rows.map(u => crossFormationEmployment(u, avgComp, avgEmployment)).join("")}</div></article></div>`;
-}
-
-function crossFormationEmployment(u, avgComp, avgEmployment) {
-  const compGood = u.completion >= avgComp;
-  const empGood = u.employment >= avgEmployment;
-  const cls = compGood && empGood ? "alert-ok" : compGood && !empGood ? "alert-warn" : !compGood && empGood ? "alert-info" : "alert-danger";
-  const msg = compGood && !empGood ? "Conclui bem, mas insere abaixo da referência" : !compGood && empGood ? "Insere bem, mas conclui abaixo da referência" : compGood ? "Bom alinhamento formação-mercado" : "Baixa conclusão e baixa inserção";
-  return `<div class="cross-card ${cls}"><strong>${u.sigla}</strong><span>IND-27 ${formatPercent(u.completion)} · IND-37 ${formatPercent(u.employment)}</span><em>${msg}</em></div>`;
-}
+  if (!alerts.length) alerts.push(["alert-ok", "✓", "Formação", "Sem alertas críticos de formação no recorte ativo."]);
+  box.innerHTML = alerts.slice(0, 6).map(([cls, icon, ies, msg]) => `<div class="alert-item ${cls}"><span class="alert-icon" aria-hidden="true">${icon}</span><div class="alert-body"><strong class="alert-ies">${ies}</strong><span class="alert-msg">${msg}</span></div></div>`).join("");
+};
+window.renderSystemAlerts = renderSystemAlerts;
