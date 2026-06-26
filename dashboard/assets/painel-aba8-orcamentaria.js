@@ -49,6 +49,7 @@ tabBlocks.efficiency.push(
   "Custo por Resultado (8050)",
   "Execução Orçamentária 8050",
   "Evolução 2024–2026",
+  "Tendência Histórica 2024–2026",
   "Comparador de Eficiência",
   "Avaliação SELO-PR"
 );
@@ -506,6 +507,7 @@ function budget8050Block(title, c) {
   if (title === "Custo por Resultado (8050)") return renderOrcCustoPorResultado(efficiencyRows(c));
   if (title === "Execução Orçamentária 8050") return renderOrcExecucao(efficiencyRows(c));
   if (title === "Evolução 2024–2026") return renderOrcEvolucao(c);
+  if (title === "Tendência Histórica 2024–2026") return trendBlock(c);
   if (title === "Comparador de Eficiência") return renderEficienciaComparador(c);
   return null;
 }

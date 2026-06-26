@@ -2209,6 +2209,15 @@ body {
   line-height: 1.35;
 }
 
+.alert-action {
+  color: var(--gray-500);
+  font-size: 11px;
+  line-height: 1.5;
+  margin-top: 4px;
+  font-style: italic;
+  display: block;
+}
+
 .alert-danger {
   border-color: #f2b8b5;
   background: #fff6f5;

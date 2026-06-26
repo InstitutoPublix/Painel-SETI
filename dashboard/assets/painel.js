@@ -2891,6 +2891,29 @@ function historicalChart(u, precomp) {
     <div class="orc-bar-legend" style="margin-top:.4rem">${legend}</div>
   </div>`;
 }
+function trendBlock(c) {
+  if (c.f.scope !== 'Paraná') return '';
+  const ies = c.display.length ? c.display : [...c.ref];
+  if (!ies.length) return '';
+  const charts = ies.map(u => {
+    const precomp = (typeof getRealIndicators === 'function') ? {
+      '2024': getRealIndicators(u.sigla, '2024') || {},
+      '2025': getRealIndicators(u.sigla, '2025') || {},
+      '2026': getRealIndicators(u.sigla, '2026') || {}
+    } : window.SETI_BYEAR?.[u.sigla];
+    return historicalChart(u, precomp) || '';
+  }).filter(Boolean).join('');
+  if (!charts) return '';
+  return `<article class="visual-card" style="margin-top:1.5rem">
+    <h3>Evolução dos indicadores orçamentários (2024–2026)</h3>
+    <p class="card-subtitle">Fonte: Relatório da Despesa 8050 · SETI/SEFA · Dados reais — 2026 parcial</p>
+    <div class="metodologia-note" style="margin-bottom:1rem">
+      <span class="metodologia-icon">ⓘ</span>
+      Apenas indicadores com série histórica oficial são exibidos. Indicadores acadêmicos não constam por ausência de série real para anos anteriores.
+    </div>
+    <div class="orc-charts-grid">${charts}</div>
+  </article>`;
+}
 
 // ── Gráficos de pizza — Composição de Fontes de Despesa ─────────────────────
 function svgPie(slices, size) {
@@ -3127,7 +3150,7 @@ function orcamentarioBlock(c) {
   return ies.length === 1 ? orcamentarioKpis(ies[0]) : orcamentarioTable(ies);
 }
 
-function efficiency(c){const d=c.ref,rows=matrixRows(d,c.f);if(!d.length)return empty();return `${c.f.scope==="Paraná"?'<div class="metodologia-note"><span class="metodologia-icon">ℹ</span>Para a análise dos dados do Relatório da Despesa 8050, foram consideradas apenas as ações da Gestão das Atividades Universitárias.</div>':''}<div class="efficiency-layout"><article class="matrix-panel card-primary"><h3>Matriz de eficiência relativa por agrupamento dinâmico</h3><p class="card-subtitle">Eixo X: esforço orçamentário relativo ao grupo | Eixo Y: resultado relativo ao grupo | Tamanho: orçamento liquidado</p>${matrix(rows,c)}</article><div class="matrix-side"><article class="visual-card card-support"><h3>Quadrante oficial</h3><p class="card-subtitle">Disponível apenas quando a planilha/JSON trouxer critério de quadrante.</p>${legend(rows)}</article><article class="visual-card card-support"><h3>Insights automáticos</h3><p class="card-subtitle">Sinais contextuais para investigação</p>${insights(rows,c)}</article></div></div>${metricTable(d,[["IEES",u=>`<strong>${u.sigla}</strong><br><span>${u.groups[c.f.groupBy]}</span>`],["Orçamento",u=>formatCurrencyMillions(u.budget)],["Execução",u=>formatPercent(u.execution)],["Liquidação",u=>formatPercent(u.liquidation)],["Pessoal",u=>formatPercent(u.personnel)],["Suplementação",u=>formatPercent(u.supplementation)]],"Estrutura de gastos e execução orçamentária")}${orcamentarioBlock(c)}${c.f.scope==="Paraná"?(()=>{const _ies=(c.display.length?c.display:[...c.ref]).map(u=>composicaoFontesSection(byYear(u,c.f.year))).filter(Boolean);return _ies.length?`<article class="visual-card cf-card" style="margin-top:1.5rem"><h3>Composição por Fonte de Despesa</h3><p class="card-subtitle">Participação de cada fonte nos grupos de vinculação — Orçamento Atualizado 2024</p><div class="cf-all-ies">${_ies.join('')}</div></article>`:'';})():''}`;}
+function efficiency(c){const d=c.ref,rows=matrixRows(d,c.f);if(!d.length)return empty();return `${c.f.scope==="Paraná"?'<div class="metodologia-note"><span class="metodologia-icon">ℹ</span>Para a análise dos dados do Relatório da Despesa 8050, foram consideradas apenas as ações da Gestão das Atividades Universitárias.</div>':''}<div class="efficiency-layout"><article class="matrix-panel card-primary"><h3>Matriz de eficiência relativa por agrupamento dinâmico</h3><p class="card-subtitle">Eixo X: esforço orçamentário relativo ao grupo | Eixo Y: resultado relativo ao grupo | Tamanho: orçamento liquidado</p>${matrix(rows,c)}</article><div class="matrix-side"><article class="visual-card card-support"><h3>Quadrante oficial</h3><p class="card-subtitle">Disponível apenas quando a planilha/JSON trouxer critério de quadrante.</p>${legend(rows)}</article><article class="visual-card card-support"><h3>Insights automáticos</h3><p class="card-subtitle">Sinais contextuais para investigação</p>${insights(rows,c)}</article></div></div>${metricTable(d,[["IEES",u=>`<strong>${u.sigla}</strong><br><span>${u.groups[c.f.groupBy]}</span>`],["Orçamento",u=>formatCurrencyMillions(u.budget)],["Execução",u=>formatPercent(u.execution)],["Liquidação",u=>formatPercent(u.liquidation)],["Pessoal",u=>formatPercent(u.personnel)],["Suplementação",u=>formatPercent(u.supplementation)]],"Estrutura de gastos e execução orçamentária")}${orcamentarioBlock(c)}${trendBlock(c)}${c.f.scope==="Paraná"?(()=>{const _ies=(c.display.length?c.display:[...c.ref]).map(u=>composicaoFontesSection(byYear(u,c.f.year))).filter(Boolean);return _ies.length?`<article class="visual-card cf-card" style="margin-top:1.5rem"><h3>Composição por Fonte de Despesa</h3><p class="card-subtitle">Participação de cada fonte nos grupos de vinculação — Orçamento Atualizado 2024</p><div class="cf-all-ies">${_ies.join('')}</div></article>`:'';})():''}`;}
 function matrix(rows,c){if(!hasOfficialQuadrants())return quadrantUnavailableBlock();const max=Math.max(...rows.map(r=>r.budget),1);return `<div class="efficiency-matrix" role="img" aria-label="Matriz resultado relativo por esforço orçamentário relativo"><div class="quadrant-label q1">alto resultado, baixo esforço</div><div class="quadrant-label q2">alto resultado, alto esforço</div><div class="quadrant-label q3">baixo resultado, baixo esforço</div><div class="quadrant-label q4">baixo resultado, alto esforço</div><div class="matrix-axis-x">Esforço orçamentário relativo</div><div class="matrix-axis-y">Resultado relativo</div>${rows.map(r=>{const size=36+r.budget/max*22;return `<button class="matrix-point ${r.tone}${isUniSelected(c.f,r.id)?" selected":""}" style="left:${relpos(r.effortRel)}%;bottom:${relpos(r.resultRel)}%;width:${size}px;height:${size}px" type="button">${r.sigla}<span class="matrix-tooltip">${r.nome}<br>Resultado: ${r.resultRel.toFixed(1)}% | Esforço: ${r.effortRel.toFixed(1)}%<br>${r.quadrant}</span></button>`}).join("")}</div>`;}
 function legend(rows){if(!hasOfficialQuadrants())return quadrantUnavailableBlock();const counts=rows.reduce((a,r)=>(a[r.quadrant]=(a[r.quadrant]||0)+1,a),{});return `<div class="legend-list">${Object.entries(counts).map(([label,count])=>{const tone=label==="alto resultado, baixo esforço"?"high":label==="baixo resultado, alto esforço"?"low":"mid";return `<div class="legend-item ${tone}"><span><span class="legend-dot"></span> ${label}</span><strong>${count}</strong></div>`;}).join("")}</div>`;}
 function insights(rows,c){
@@ -3596,12 +3619,13 @@ function renderTop(c) {
 }
 
 function renderSide(c) {
+  const _alertsFn = (state.activeTab === "efficiency" || state.activeTab === "performance") ? renderEfficiencyAlerts : renderSystemAlerts;
   if (c.f.noGroup) {
     el.groupTitle.textContent = "Sem agrupamento";
     if (el.criteriaList)  el.criteriaList.innerHTML = "";
     if (el.groupBreakdown) el.groupBreakdown.innerHTML =
       '<p style="color:var(--gray-500);font-size:13px;padding:8px 0">Nenhum agrupamento ativo.</p>';
-    renderSystemAlerts(c);
+    _alertsFn(c);
     return;
   }
   const meta = groupMeta[c.f.groupBy];
@@ -3621,7 +3645,7 @@ function renderSide(c) {
     }).join("");
   }
   el.analyticalNote.textContent = sr ? `${c.selected.sigla}: resultado relativo de ${sr.resultRel.toFixed(1)}% e esforço relativo de ${sr.effortRel.toFixed(1)}%. Classificação descritiva: ${sr.quadrant}.` : "A leitura compara cada IEES com o grupo de referência dinâmico. A mesma universidade pode mudar de grupo conforme a variável selecionada.";
-  renderSystemAlerts(c);
+  _alertsFn(c);
 }
 
 function renderTab(c) {
@@ -3665,16 +3689,21 @@ function renderQuartilThresholds(variable) {
   box.innerHTML = rows.map(([label, value]) => `<div class="threshold-row"><span class="th-label">${label}</span><span class="th-value">${value}</span></div>`).join("");
 }
 
-function renderSystemAlerts(c) {
+function renderEfficiencyAlerts(c) {
   const box = document.getElementById("systemAlerts");
   if (!box) return;
   const rows = matrixRows(c.ref, c.f);
   const alerts = [];
-  rows.filter(r => r.resultRel < 96 && r.effortRel > 104).slice(0, 2).forEach(r => alerts.push(["alert-danger", "⚠", r.sigla, `Resultado ${r.resultRel.toFixed(1)}% e esforço ${r.effortRel.toFixed(1)}% no cluster ativo`]));
-  rows.filter(r => r.resultRel < 100 && r.effortRel <= 100).slice(0, 2).forEach(r => alerts.push(["alert-warn", "⚠", r.sigla, "Resultado abaixo da média do grupo com esforço controlado"]));
-  rows.filter(r => r.resultRel >= 103 && r.effortRel <= 100).slice(0, 2).forEach(r => alerts.push(["alert-ok", "✓", r.sigla, "Referência positiva no cluster: alto resultado com esforço abaixo da média"]));
+  const grupLabel = c.f.groupLevel !== "all" ? `no cluster ${c.f.groupBy.toUpperCase()} · ${c.f.groupLevel}` : "no recorte ativo";
+  rows.filter(r => r.resultRel < 96 && r.effortRel > 104).slice(0, 2).forEach(r => alerts.push(["alert-danger", "⚠", r.sigla, `Resultado ${r.resultRel.toFixed(1)}% e esforço ${r.effortRel.toFixed(1)}% ${grupLabel}`]));
+  rows.filter(r => r.resultRel < 100 && r.effortRel <= 100).slice(0, 2).forEach(r => alerts.push(["alert-warn", "⚠", r.sigla, `Resultado abaixo da média ${grupLabel}, com esforço controlado`]));
+  rows.filter(r => r.resultRel >= 103 && r.effortRel <= 100).slice(0, 2).forEach(r => alerts.push(["alert-ok", "✓", r.sigla, `Referência positiva ${grupLabel}: alto resultado com esforço abaixo da média`]));
   if (!alerts.length) alerts.push(["alert-info", "i", "Sistema", "Nenhum alerta crítico no recorte selecionado"]);
   box.innerHTML = alerts.slice(0, 4).map(([cls, icon, ies, msg]) => `<div class="alert-item ${cls}"><span class="alert-icon" aria-hidden="true">${icon}</span><div class="alert-body"><strong class="alert-ies">${ies}</strong><span class="alert-msg">${msg}</span></div></div>`).join("");
+  const refLabel = (c.f.groupLevel !== "all")
+    ? `Referência: cluster ${c.f.groupBy.toUpperCase()} · ${c.f.groupLevel} (${c.ref.length} IEES)`
+    : `Referência: todas as IEES no recorte (${c.ref.length} IEES)`;
+  box.innerHTML += `<p class="side-note" style="margin-top:8px;font-size:0.78rem;color:var(--gray-500)">${refLabel}</p>`;
 }
 
 // Bases necessárias por aba (para nota de disponibilidade metodológica)
@@ -4119,19 +4148,42 @@ function renderSystemAlerts(c) {
     box.innerHTML = `<div class="alert-item alert-info"><span class="alert-icon" aria-hidden="true">i</span><div class="alert-body"><strong class="alert-ies">Sistema</strong><span class="alert-msg">Nenhuma IEES no recorte selecionado.</span></div></div>`;
     return;
   }
-  const avgOcc = mean(data, u => u.occupancy);
-  const avgDrop = mean(data, u => u.dropout);
-  const avgEmployment = mean(data, u => u.employment);
+  const clusterRef = (c.f.groupLevel !== "all") ? c.ref : c.base;
+  const avgOcc = mean(clusterRef, u => u.occupancy);
+  const avgDrop = mean(clusterRef, u => u.dropout);
+  const avgEmployment = mean(clusterRef, u => u.employment);
+  const refType = (c.f.groupLevel !== "all") ? "do cluster" : "do sistema";
   const alerts = [];
   data.forEach(u => {
-    if (u.execution < 80) alerts.push(["alert-danger", "⚠", u.sigla, `IND-81 Execução orçamentária ${formatPercent(u.execution)} — abaixo de 80%.`]);
-    if (u.occupancy < avgOcc - 10) alerts.push(["alert-warn", "⚠", u.sigla, `IND-26 Ocupação ${formatPercent(u.occupancy)}`]);
-    if (u.dropout > avgDrop + 2) alerts.push(["alert-warn", "⚠", u.sigla, `IND-5 Desvinculação ${formatPercent(u.dropout)}`]);
-    if (u.facultyOcc < 70) alerts.push(["alert-warn", "⚠", u.sigla, `IND-46 Ocupação do quadro docente ${formatPercent(u.facultyOcc)} — abaixo de 70%.`]);
-    if (u.employment < avgEmployment - 5) alerts.push(["alert-warn", "⚠", u.sigla, `IND-37 Inserção PR ${formatPercent(u.employment)}`]);
+    if (u.execution < 80) alerts.push(["alert-danger", "⚠", u.sigla,
+      `Taxa de Execução Orçamentária (Empenho): ${formatPercent(u.execution)} — abaixo de 80%.`,
+      "Pode valer investigar os estágios de empenho represados — se há contingenciamento externo, processos licitatórios em andamento ou gargalos internos de absorção. Uma revisão do calendário de execução e um alinhamento com a SEFA sobre liberação de cotas podem ajudar a identificar a origem do desvio."
+    ]);
+    if (u.occupancy < avgOcc - 10) alerts.push(["alert-warn", "⚠", u.sigla,
+      `Taxa de Ocupação de Vagas (Ingressantes / Vagas Ofertadas): ${formatPercent(u.occupancy)} — abaixo da média ${refType} (${formatPercent(avgOcc)}).`,
+      "Vale observar a relação entre vagas ofertadas e demanda regional, desagregando por curso e turno. Quando a baixa ocupação é recorrente em determinadas áreas, pode indicar desalinhamento com o perfil do território. Ações de divulgação dirigidas e revisão do plano de vagas são caminhos possíveis a explorar."
+    ]);
+    if (u.dropout > avgDrop + 2) alerts.push(["alert-warn", "⚠", u.sigla,
+      `Taxa de Desvinculação Discente: ${formatPercent(u.dropout)} — acima da média ${refType} (${formatPercent(avgDrop)}).`,
+      "Pode ser útil mapear em quais cursos e períodos a evasão se concentra — com frequência ela é mais intensa nos primeiros semestres e em cursos noturnos com público trabalhador. Programas de acolhimento e o cruzamento com dados socioeconômicos dos estudantes podem oferecer pistas sobre os fatores mais relevantes."
+    ]);
+    if (u.facultyOcc < 70) alerts.push(["alert-warn", "⚠", u.sigla,
+      `Taxa de Ocupação do Quadro Docente: ${formatPercent(u.facultyOcc)} — abaixo de 70%.`,
+      "Vale verificar se a ociosidade reflete vagas condicionadas à autorização governamental ou vacância por concurso não realizado — os dois casos pedem respostas diferentes. Cruzar com a Taxa de Utilização da CRES pode ajudar a dimensionar a margem disponível e orientar uma eventual redistribuição de carga entre campi."
+    ]);
+    if (u.employment < avgEmployment - 5) alerts.push(["alert-warn", "⚠", u.sigla,
+      `Taxa de Inserção de Egressos no Mercado Formal (Paraná): ${formatPercent(u.employment)} — abaixo da média ${refType} (${formatPercent(avgEmployment)}).`,
+      "Pode valer analisar quais cursos concentram os menores índices de inserção, cruzando com o perfil CBO2 e o território de atuação dos egressos. Baixas taxas podem refletir saturação regional de certas ocupações ou oportunidades de atualização curricular — um diálogo com o setor produtivo local pode ajudar a identificar caminhos."
+    ]);
   });
-  if (!alerts.length) alerts.push(["alert-ok", "✓", "Sistema", "Nenhum alerta crítico no recorte ativo. Indicadores dentro da faixa esperada do cluster."]);
-  box.innerHTML = alerts.slice(0, 5).map(([cls, icon, ies, msg]) => `<div class="alert-item ${cls}"><span class="alert-icon" aria-hidden="true">${icon}</span><div class="alert-body"><strong class="alert-ies">${ies}</strong><span class="alert-msg">${msg}</span></div></div>`).join("");
+  if (!alerts.length) alerts.push(["alert-ok", "✓", "Sistema", "Nenhum alerta crítico no recorte ativo. Indicadores dentro da faixa esperada do cluster.", ""]);
+  const refLabel = (c.f.groupLevel !== "all")
+    ? `Referência: cluster ${c.f.groupBy.toUpperCase()} · ${c.f.groupLevel} (${clusterRef.length} IEES)`
+    : `Referência: sistema completo (${clusterRef.length} IEES)`;
+  box.innerHTML = alerts.slice(0, 5).map(([cls, icon, ies, msg, action]) =>
+    `<div class="alert-item ${cls}"><span class="alert-icon" aria-hidden="true">${icon}</span><div class="alert-body"><strong class="alert-ies">${ies}</strong><span class="alert-msg">${msg}</span>${action ? `<span class="alert-action">${action}</span>` : ""}</div></div>`
+  ).join("")
+    + `<p class="side-note" style="margin-top:8px;font-size:0.78rem;color:var(--gray-500)">${refLabel}</p>`;
 }
 
 /* Abas 2 e 3 - comparação por dimensão e acesso/oferta orientados a cluster */

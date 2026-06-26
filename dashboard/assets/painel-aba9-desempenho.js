@@ -640,13 +640,13 @@ function renderPilotEvidenceCards(rows) {
   }
   return `<div class="pilot-evidence-grid">
     ${corr != null
-      ? card("Correlação orçamento × desempenho", corr.toFixed(2).replace(".", ","), `Relação ${classifyCorrelation(corr)} entre custo por aluno e desempenho`)
+      ? card("Correlação orçamento × desempenho", corr.toFixed(2).replace(".", ","), `Relação ${classifyCorrelation(corr)} entre custo por aluno e desempenho, no recorte ativo`)
       : card("Correlação orçamento × desempenho", "—", "Dados insuficientes")}
     ${mostEff
-      ? card("IEES mais eficiente", mostEff.u.sigla, `Índice de eficiência: ${mostEff.idx.toFixed(2).replace(".", ",")}`)
+      ? card("IEES mais eficiente", mostEff.u.sigla, `Índice de eficiência: ${mostEff.idx.toFixed(2).replace(".", ",")} no recorte ativo`)
       : card("IEES mais eficiente", "—", "Não calculável")}
     ${highestCost
-      ? card("Maior custo por aluno", highestCost.u.sigla, `${formatCurrency(highestCost.cps)} por estudante`)
+      ? card("Maior custo por aluno", highestCost.u.sigla, `${formatCurrency(highestCost.cps)} por estudante no recorte ativo`)
       : card("Maior custo por aluno", "—", "Não disponível")}
     ${bestOutperf
       ? card("Menor orçamento, maior desempenho", bestOutperf.low.sigla, `Supera ${bestOutperf.high.sigla} em ${bestOutperf.wins} de ${bestOutperf.total} indicadores`)
@@ -1107,6 +1107,9 @@ function renderPilotConclusion(rows) {
 function performanceRelativeBlock(title, c) {
   if (title.includes("Resposta ao Piloto")) {
     const rows = efficiencyRows(c);
+    const refLabel = (c.f.groupLevel !== "all")
+      ? `Referência: cluster ${c.f.groupBy.toUpperCase()} · ${c.f.groupLevel} (${rows.length} IEES)`
+      : `Referência: sistema completo (${rows.length} IEES)`;
     return `
       <div class="pilot-answer-section">
         <h3 class="pilot-answer-question">Orçamento maior gera melhor desempenho?</h3>
@@ -1144,6 +1147,7 @@ function performanceRelativeBlock(title, c) {
             </li>
           </ul>
         </div>
+        <p class="side-note" style="margin-bottom:8px;font-size:0.78rem;color:var(--gray-500)">${refLabel}</p>
         ${renderEfficiencyRankingTable(rows)}
       </div>
       ${renderComparadorDireto(c)}
