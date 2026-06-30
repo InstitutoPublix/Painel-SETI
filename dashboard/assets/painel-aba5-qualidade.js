@@ -161,8 +161,9 @@ function qualityFacultyTable(rows, act) {
 // exibidos em pgProgramRealTable. Os percentuais do scatter também são reais
 // (capesDocBolsa/Permanentes/Estrangeiros) quando presentes no JSON.
 function qualityCapesBlock(c) {
-  const rows = qualityRows(c).filter(u => u.capes != null);
-  if (!rows.length) return `<div class="empty-state"><span class="empty-icon">📊</span><p class="empty-title">Sem dados CAPES</p><p class="empty-desc">Nenhuma IEES do recorte possui conceito CAPES na base de dados.</p></div>`;
+  const rows   = qualityRows(c).filter(u => u.capes != null);
+  const rows5b = qualityRows(c);
+  if (!rows.length) return `<div class="empty-state"><span class="empty-icon">📊</span><p class="empty-title">Sem dados CAPES</p><p class="empty-desc">Nenhuma IEES do recorte possui conceito CAPES na base de dados.</p></div>${pg5bBlocks(rows5b, c)}`;
   const allReal = rows.every(u => u.capesDocBolsa != null && u.capesDocPermanentes != null);
   const originNote = allReal
     ? "Percentuais reais da Base CAPES (docentes distintos por IES)."
@@ -173,27 +174,62 @@ function qualityCapesBlock(c) {
     <div class="capes-layout">${capesScatter(c)}${capesHowTo(rows)}</div>
   </article>
   ${capesSynthesisTable(rows)}
-  ${pgProgramRealTable(rows, c)}`;
+  ${pgProgramRealTable(rows, c)}
+  ${pg5bBlocks(rows5b, c)}`;
 }
 
 // ── Tabela por programa de pós-graduação (dados REAIS da Base CAPES) ─────────
 function setPgProgramIes(sigla) {
   state.pgProgramIes = sigla;
+  state.pgProgramGrau = "";
   render();
 }
 window.setPgProgramIes = setPgProgramIes;
+
+function setPgProgramGrau(grau) {
+  state.pgProgramGrau = grau;
+  render();
+}
+window.setPgProgramGrau = setPgProgramGrau;
 
 function pgProgramRealTable(rows, c) {
   const all = window.SETI_CAPES_PROGRAMS || null;
   if (!all) return "";
   const siglas = rows.map(u => u.sigla).filter(s => Array.isArray(all[s]) && all[s].length);
   if (!siglas.length) return "";
-  const sel = siglas.includes(state.pgProgramIes) ? state.pgProgramIes : siglas[0];
-  const progs = all[sel] || [];
-  const ano = progs[0] ? progs[0].ano : "";
+  const sel      = siglas.includes(state.pgProgramIes) ? state.pgProgramIes : siglas[0];
+  const progsAll = all[sel] || [];
+  const ano      = progsAll[0] ? progsAll[0].ano : "";
+
+  // Seletor de IES
   const tabs = siglas.map(s =>
     `<button class="rank-metric-btn${s === sel ? " active" : ""}" type="button" onclick="setPgProgramIes('${s}')">${s}</button>`
   ).join("");
+
+  // Seletor de grau — apenas graus presentes nesta IES
+  const GRAU_LABELS = {
+    "MESTRADO":                                    "Mestrado",
+    "MESTRADO PROFISSIONAL":                       "Mestrado Profissional",
+    "DOUTORADO":                                   "Doutorado",
+    "MESTRADO/DOUTORADO":                          "Mestrado/Doutorado",
+    "MESTRADO PROFISSIONAL/DOUTORADO PROFISSIONAL":"Mestrado Prof./Dout. Prof.",
+  };
+  const grausPresentes = [...new Set(progsAll.map(p => p.grau).filter(Boolean))].sort();
+  const selGrau = (state.pgProgramGrau && grausPresentes.includes(state.pgProgramGrau))
+    ? state.pgProgramGrau : "";
+  const grauBtns = [
+    `<button class="rank-metric-btn${!selGrau ? " active" : ""}" type="button" onclick="setPgProgramGrau('')">Todos</button>`,
+    ...grausPresentes.map(g =>
+      `<button class="rank-metric-btn${g === selGrau ? " active" : ""}" type="button" onclick="setPgProgramGrau('${g.replace(/'/g, "\\'")}')">${GRAU_LABELS[g] || g}</button>`
+    ),
+  ].join("");
+
+  // Filtra programas pelo grau selecionado
+  const progs    = selGrau ? progsAll.filter(p => p.grau === selGrau) : progsAll;
+  const emptyMsg = (selGrau && !progs.length)
+    ? `<p class="card-subtitle" style="padding:8px 0;color:#ef4444">Nenhum programa de "${GRAU_LABELS[selGrau] || selGrau}" nesta IES.</p>`
+    : "";
+
   const trs = progs.map(p => `<tr>
     <td><strong>${p.nome}</strong><br><span>${p.area}</span></td>
     <td>${p.grau || "—"}</td>
@@ -204,11 +240,26 @@ function pgProgramRealTable(rows, c) {
     <td>${formatNumber(p.bolsistas)}</td>
     <td>${p.conceito != null && p.conceito >= 5 ? '<span class="status-pill status-high">Sim</span>' : '<span class="status-pill status-mid">Não</span>'}</td>
   </tr>`).join("");
+
   return `<div class="table-wrap mt-14 pg-program-table">
     <h3>Tabela por programa de pós-graduação — ${sel}</h3>
-    <p class="card-subtitle">Dados reais da Base CAPES (Base_Docentes, AN_BASE=${ano}) · ${progs.length} programas · docentes distintos por programa.</p>
-    <div class="rank-metric-selector" style="margin-bottom:10px">${tabs}</div>
-    <table class="data-table"><thead><tr><th>Programa</th><th>Grau</th><th>Conceito</th><th>Docentes</th><th>Permanentes</th><th>Estrangeiros</th><th>Bolsistas produtividade</th><th>Conceito 5-7?</th></tr></thead><tbody>${trs}</tbody></table>
+    <p class="card-subtitle">Dados reais da Base CAPES (Base_Docentes, AN_BASE=${ano}) · ${progsAll.length} programas · docentes distintos por programa (set de ID_PESSOA).</p>
+    <div class="rank-metric-selector" style="margin-bottom:4px">${tabs}</div>
+    <div class="rank-metric-selector" style="margin-bottom:10px;margin-top:4px">${grauBtns}</div>
+    ${emptyMsg}
+    <table class="data-table">
+      <thead><tr>
+        <th>Programa</th>
+        <th>Grau</th>
+        <th title="Nota de avaliação CAPES do programa (escala 3–7). Programas apenas de mestrado vão até 5; a nota 6 ou 7 exige oferta de doutorado com desempenho de excelência.">Conceito CAPES</th>
+        <th title="Total de docentes vinculados ao programa, de qualquer categoria (PERMANENTE, COLABORADOR, VISITANTE), contados uma única vez por programa via set(ID_PESSOA) na Base_Docentes CAPES.">Docentes Vinculados</th>
+        <th title="Docentes com DS_CATEGORIA_DOCENTE = 'PERMANENTE' na Base_Docentes CAPES, contados uma única vez por programa (set de ID_PESSOA).">Docentes Permanentes</th>
+        <th title="Docentes com DS_TIPO_NACIONALIDADE_DOCENTE = 'ESTRANGEIRO' na Base_Docentes CAPES, contados uma única vez por programa (set de ID_PESSOA).">Docentes Estrangeiros</th>
+        <th title="Docentes com qualquer categoria de bolsa de produtividade CNPq diferente de 'NA' no campo CD_CAT_BOLSA_PRODUTIVIDADE da Base_Docentes CAPES.">Docentes c/ Bolsa Produtividade</th>
+        <th title="Indica se o conceito CAPES do programa é 5, 6 ou 7 — referência de excelência na avaliação quadrienal CAPES.">Conceito 5–7?</th>
+      </tr></thead>
+      <tbody>${trs}</tbody>
+    </table>
   </div>`;
 }
 
@@ -420,4 +471,200 @@ function qualityInternationalBlock(c) {
   <div class="chart-grid mt-14">${rankCard}${groupCard}</div>
   <div class="intl-bottom-grid mt-14">${portalChips}${howTo}</div>
   <div class="architecture-message mt-14">Dado de mobilidade acadêmica sujeito à disponibilidade da coleta INEP para o ano selecionado.</div>`;
+}
+
+// ── 5b. Novos indicadores CAPES — Base_Discentes + Base_Docentes + Base_Cursos ──
+
+function setPgAreaIes(sigla) {
+  state.pgAreaIes = sigla;
+  render();
+}
+window.setPgAreaIes = setPgAreaIes;
+
+// Orquestrador: 8 novos blocos injetados após o conteúdo existente de qualityCapesBlock
+function pg5bBlocks(rows5b, c) {
+  if (!rows5b.length) return "";
+  return `
+  <article class="visual-card mt-14">
+    <h3>Programas por nível</h3>
+    <p class="card-subtitle">Programas stricto sensu distintos por grau (NM_GRAU_CURSO, Base_Cursos CAPES, AN_BASE mais recente). Programas com dois graus são contados em cada categoria correspondente.</p>
+    ${pgNivelBars(rows5b)}
+  </article>
+  <article class="visual-card mt-14">
+    <h3>Distribuição por grande área do conhecimento</h3>
+    <p class="card-subtitle">Programas distintos por NM_GRANDE_AREA_CONHECIMENTO (Base_Cursos CAPES, AN_BASE mais recente). Selecione a IES abaixo.</p>
+    ${pgGrandeAreaChart(rows5b, c)}
+  </article>
+  <article class="visual-card mt-14">
+    <h3>Conceitos CAPES — destaque de excelência</h3>
+    <p class="card-subtitle">% de programas com CD_CONCEITO_PROGRAMA ≥ 6 sobre o total de programas distintos da IES (Base_Discentes CAPES, AN_BASE=2024).</p>
+    ${pgExcelenciaBars(rows5b)}
+    <p style="margin-top:8px;font-size:11px;color:#64748b;font-style:italic">⚠ Excelência = programas com CD_CONCEITO_PROGRAMA ≥ 6 (Base_Discentes). Métrica distinta do conceito por curso (CD_CONCEITO_CURSO) usado em pgTop/capes acima — não comparar diretamente.</p>
+  </article>
+  <article class="visual-card mt-14">
+    <h3>Discentes matriculados em pós-graduação</h3>
+    <p class="card-subtitle">set(ID_PESSOA) com NM_SITUACAO_DISCENTE = "MATRICULADO" por grau (Base_Discentes CAPES, AN_BASE=2024). Cada discente conta uma vez por grau.</p>
+    ${discMatriculadosBars(rows5b)}
+  </article>
+  <article class="visual-card mt-14">
+    <h3>Titulados por ano-base</h3>
+    <p class="card-subtitle">set(ID_PESSOA) com NM_SITUACAO_DISCENTE = "TITULADO" por grau (Base_Discentes CAPES, AN_BASE=2024).</p>
+    ${tituladosBars(rows5b)}
+    <p style="margin-top:8px;font-size:11px;color:#64748b;font-style:italic">Ano de referência = AN_BASE (ano-base CAPES), não necessariamente o ano civil de defesa.</p>
+  </article>
+  <article class="visual-card mt-14">
+    <h3>Corpo docente da pós-graduação</h3>
+    <p class="card-subtitle">set(ID_PESSOA) por DS_CATEGORIA_DOCENTE (Base_Docentes CAPES, AN_BASE=2024). Docentes em múltiplos programas da mesma IES são contados uma única vez.</p>
+    ${docCorpoPosBars(rows5b)}
+  </article>
+  <article class="visual-card mt-14">
+    <h3>Razão discente / docente permanente</h3>
+    <p class="card-subtitle">Fórmula: (discMestrado + discDoutorado) ÷ docPermanentes. Valores menores indicam maior capacidade de orientação por docente.</p>
+    ${razaoBars(rows5b)}
+    <p style="margin-top:8px;font-size:11px;color:#64748b;font-style:italic">Fórmula: (discentes mestrado matriculados + discentes doutorado matriculados) ÷ docentes permanentes. Fonte: Base_Discentes + Base_Docentes, AN_BASE=2024.</p>
+  </article>
+  <article class="visual-card mt-14">
+    <h3>Capilaridade dos programas</h3>
+    <p class="card-subtitle">Municípios distintos com programas de pós-graduação da IES (NM_MUNICIPIO_PROGRAMA_IES, Base_Cursos CAPES, AN_BASE mais recente).</p>
+    ${pgCapilaridadeCards(rows5b)}
+  </article>`;
+}
+
+// a) Programas por nível — pgMestrado, pgMestradoProf, pgDoutorado
+function pgNivelBars(rows) {
+  const valid = rows.filter(u => u.pgMestrado != null || u.pgDoutorado != null);
+  if (!valid.length) return `<p class="card-subtitle">Dados de grau não disponíveis para este recorte.</p>`;
+  const metrics = [
+    { label: "Mestrado Acadêmico",   cls: "intl-m-blue",   get: u => u.pgMestrado     || 0 },
+    { label: "Mestrado Profissional", cls: "intl-m-orange", get: u => u.pgMestradoProf || 0 },
+    { label: "Doutorado",            cls: "intl-m-green",  get: u => u.pgDoutorado    || 0 },
+  ];
+  const maxVal = Math.max(...valid.flatMap(u => metrics.map(m => m.get(u))), 1);
+  const sorted = [...valid].sort((a, b) =>
+    ((b.pgMestrado||0)+(b.pgDoutorado||0)) - ((a.pgMestrado||0)+(a.pgDoutorado||0))
+  );
+  const legend = `<div class="intl-legend">${metrics.map(m => `<span><i class="${m.cls}"></i>${m.label}</span>`).join("")}</div>`;
+  const groupRows = sorted.map(u =>
+    `<div class="intl-group-row"><span class="intl-group-name" title="${u.nome}">${u.sigla}</span><div class="intl-group-bars">${
+      metrics.map(m => { const v = m.get(u); return `<div class="intl-metric-track"><span class="intl-metric-bar ${m.cls}" style="width:${v > 0 ? clamp(v/maxVal*100,3,100).toFixed(1) : 0}%"></span><em>${v}</em></div>`; }).join("")
+    }</div></div>`
+  ).join("");
+  return `${legend}<div class="intl-group-chart">${groupRows}</div>`;
+}
+
+// b) Grande área do conhecimento — pgPorGrandeArea (dict por IES, com seletor)
+function pgGrandeAreaChart(rows, c) {
+  const valid = rows.filter(u => u.pgPorGrandeArea && typeof u.pgPorGrandeArea === "object" && Object.keys(u.pgPorGrandeArea).length > 0);
+  if (!valid.length) return `<p class="card-subtitle">Dados de grande área não disponíveis para este recorte.</p>`;
+  const siglas = valid.map(u => u.sigla);
+  const sel    = (state.pgAreaIes && siglas.includes(state.pgAreaIes)) ? state.pgAreaIes : siglas[0];
+  const selRow = valid.find(r => r.sigla === sel);
+  const areaData = (selRow && selRow.pgPorGrandeArea) ? selRow.pgPorGrandeArea : {};
+  const entries  = Object.entries(areaData).sort((a, b) => b[1] - a[1]);
+  const maxV     = entries.length ? entries[0][1] : 1;
+  const tabs = siglas.map(s =>
+    `<button class="rank-metric-btn${s === sel ? " active" : ""}" type="button" onclick="setPgAreaIes('${s}')">${s}</button>`
+  ).join("");
+  const bars = entries.map(([area, cnt]) =>
+    `<div class="bar-row"><span class="bar-name" title="${area}" style="min-width:170px;max-width:210px;font-size:11.5px;white-space:normal;line-height:1.3">${area}</span><span class="bar-track"><span class="bar-fill rate-high" style="width:${clamp(cnt/maxV*100,4,100).toFixed(1)}%"></span></span><span class="bar-value">${cnt} prog.</span></div>`
+  ).join("");
+  return `<div class="rank-metric-selector" style="margin-bottom:10px">${tabs}</div><div class="bars">${bars}</div>`;
+}
+
+// c) pctExcelencia — CD_CONCEITO_PROGRAMA >= 6 / total (Base_Discentes)
+function pgExcelenciaBars(rows) {
+  const valid = rows.filter(u => u.pctExcelencia != null);
+  if (!valid.length) return `<p class="card-subtitle">Sem dados de excelência para este recorte.</p>`;
+  const max    = Math.max(...valid.map(u => u.pctExcelencia), 0.1);
+  const avg    = mean(valid, u => u.pctExcelencia);
+  const sorted = [...valid].sort((a, b) => b.pctExcelencia - a.pctExcelencia);
+  const tone   = v => v >= avg * 1.1 ? "rate-high" : v >= avg * 0.5 ? "rate-mid" : "rate-low";
+  return `<div class="bars-reference-note"><span>Média do recorte: <strong>${avg.toFixed(1).replace(".",",")}%</strong></span></div>
+  <div class="bars" style="--ref-pos:${clamp(avg/Math.max(max,0.1)*100,0,100).toFixed(1)}%">
+    ${sorted.map(u => `<div class="bar-row"><span class="bar-name" title="${u.nome}">${u.sigla}</span><span class="bar-track"><span class="bar-fill ${tone(u.pctExcelencia)}" style="width:${u.pctExcelencia > 0 ? clamp(u.pctExcelencia/max*100,2,100).toFixed(1) : 0}%"></span><span class="bar-reference" aria-hidden="true"></span></span><span class="bar-value">${u.pctExcelencia.toFixed(1).replace(".",",")}%</span></div>`).join("")}
+  </div>`;
+}
+
+// d) Discentes matriculados — discMestrado + discDoutorado
+function discMatriculadosBars(rows) {
+  const valid = rows.filter(u => u.discMestrado != null || u.discDoutorado != null);
+  if (!valid.length) return `<p class="card-subtitle">Sem dados de discentes para este recorte.</p>`;
+  const metrics = [
+    { label: "Mestrado",  cls: "intl-m-blue",  get: u => u.discMestrado  || 0 },
+    { label: "Doutorado", cls: "intl-m-green",  get: u => u.discDoutorado || 0 },
+  ];
+  const maxVal  = Math.max(...valid.flatMap(u => metrics.map(m => m.get(u))), 1);
+  const sorted  = [...valid].sort((a, b) => ((b.discMestrado||0)+(b.discDoutorado||0)) - ((a.discMestrado||0)+(a.discDoutorado||0)));
+  const legend  = `<div class="intl-legend">${metrics.map(m => `<span><i class="${m.cls}"></i>${m.label}</span>`).join("")}</div>`;
+  const groupRows = sorted.map(u =>
+    `<div class="intl-group-row"><span class="intl-group-name" title="${u.nome}">${u.sigla}</span><div class="intl-group-bars">${
+      metrics.map(m => { const v = m.get(u); return `<div class="intl-metric-track"><span class="intl-metric-bar ${m.cls}" style="width:${v > 0 ? clamp(v/maxVal*100,2,100).toFixed(1) : 0}%"></span><em>${formatNumber(v)}</em></div>`; }).join("")
+    }</div></div>`
+  ).join("");
+  return `${legend}<div class="intl-group-chart">${groupRows}</div>`;
+}
+
+// e) Titulados — tituladosMestrado + tituladosDoutorado
+function tituladosBars(rows) {
+  const valid = rows.filter(u => u.tituladosMestrado != null || u.tituladosDoutorado != null);
+  if (!valid.length) return `<p class="card-subtitle">Sem dados de titulados para este recorte.</p>`;
+  const metrics = [
+    { label: "Mestrado titulado",  cls: "intl-m-blue",   get: u => u.tituladosMestrado  || 0 },
+    { label: "Doutorado titulado", cls: "intl-m-orange",  get: u => u.tituladosDoutorado || 0 },
+  ];
+  const maxVal  = Math.max(...valid.flatMap(u => metrics.map(m => m.get(u))), 1);
+  const sorted  = [...valid].sort((a, b) => ((b.tituladosMestrado||0)+(b.tituladosDoutorado||0)) - ((a.tituladosMestrado||0)+(a.tituladosDoutorado||0)));
+  const legend  = `<div class="intl-legend">${metrics.map(m => `<span><i class="${m.cls}"></i>${m.label}</span>`).join("")}</div>`;
+  const groupRows = sorted.map(u =>
+    `<div class="intl-group-row"><span class="intl-group-name" title="${u.nome}">${u.sigla}</span><div class="intl-group-bars">${
+      metrics.map(m => { const v = m.get(u); return `<div class="intl-metric-track"><span class="intl-metric-bar ${m.cls}" style="width:${v > 0 ? clamp(v/maxVal*100,2,100).toFixed(1) : 0}%"></span><em>${formatNumber(v)}</em></div>`; }).join("")
+    }</div></div>`
+  ).join("");
+  return `${legend}<div class="intl-group-chart">${groupRows}</div>`;
+}
+
+// f) Corpo docente — docPermanentes + docColaboradores + docVisitantes
+function docCorpoPosBars(rows) {
+  const valid = rows.filter(u => u.docPermanentes != null);
+  if (!valid.length) return `<p class="card-subtitle">Sem dados de docentes da pós para este recorte.</p>`;
+  const metrics = [
+    { label: "Permanentes",   cls: "intl-m-blue",   get: u => u.docPermanentes   || 0 },
+    { label: "Colaboradores", cls: "intl-m-orange",  get: u => u.docColaboradores || 0 },
+    { label: "Visitantes",    cls: "intl-m-green",   get: u => u.docVisitantes    || 0 },
+  ];
+  const maxVal  = Math.max(...valid.flatMap(u => metrics.map(m => m.get(u))), 1);
+  const sorted  = [...valid].sort((a, b) => (b.docPermanentes||0) - (a.docPermanentes||0));
+  const legend  = `<div class="intl-legend">${metrics.map(m => `<span><i class="${m.cls}"></i>${m.label}</span>`).join("")}</div>`;
+  const groupRows = sorted.map(u =>
+    `<div class="intl-group-row"><span class="intl-group-name" title="${u.nome}">${u.sigla}</span><div class="intl-group-bars">${
+      metrics.map(m => { const v = m.get(u); return `<div class="intl-metric-track"><span class="intl-metric-bar ${m.cls}" style="width:${v > 0 ? clamp(v/maxVal*100,2,100).toFixed(1) : 0}%"></span><em>${formatNumber(v)}</em></div>`; }).join("")
+    }</div></div>`
+  ).join("");
+  return `${legend}<div class="intl-group-chart">${groupRows}</div>`;
+}
+
+// g) Razão discente / docente permanente — razaoDocenteDiscente
+function razaoBars(rows) {
+  const valid = rows.filter(u => u.razaoDocenteDiscente != null);
+  if (!valid.length) return `<p class="card-subtitle">Sem dados de razão para este recorte.</p>`;
+  const max    = Math.max(...valid.map(u => u.razaoDocenteDiscente), 0.1);
+  const avg    = mean(valid, u => u.razaoDocenteDiscente);
+  const sorted = [...valid].sort((a, b) => a.razaoDocenteDiscente - b.razaoDocenteDiscente);
+  const tone   = v => v <= avg * 0.9 ? "rate-high" : v <= avg * 1.1 ? "rate-mid" : "rate-low";
+  return `<div class="bars-reference-note"><span>Média do recorte: <strong>${avg.toFixed(1).replace(".",",")} disc./doc.</strong></span></div>
+  <div class="bars">
+    ${sorted.map(u => `<div class="bar-row"><span class="bar-name" title="${u.nome}">${u.sigla}</span><span class="bar-track"><span class="bar-fill ${tone(u.razaoDocenteDiscente)}" style="width:${clamp(u.razaoDocenteDiscente/max*100,4,100).toFixed(1)}%"></span></span><span class="bar-value">${u.razaoDocenteDiscente.toFixed(1).replace(".",",")}</span></div>`).join("")}
+  </div>`;
+}
+
+// h) Capilaridade — pgMunicipiosDistintos
+function pgCapilaridadeCards(rows) {
+  const valid  = rows.filter(u => u.pgMunicipiosDistintos != null);
+  if (!valid.length) return `<p class="card-subtitle">Sem dados de município para este recorte.</p>`;
+  const max    = Math.max(...valid.map(u => u.pgMunicipiosDistintos), 1);
+  const sorted = [...valid].sort((a, b) => b.pgMunicipiosDistintos - a.pgMunicipiosDistintos);
+  const tone   = v => v >= 3 ? "rate-high" : v >= 2 ? "rate-mid" : "rate-low";
+  return `<div class="bars">
+    ${sorted.map(u => `<div class="bar-row"><span class="bar-name" title="${u.nome}">${u.sigla}</span><span class="bar-track"><span class="bar-fill ${tone(u.pgMunicipiosDistintos)}" style="width:${clamp(u.pgMunicipiosDistintos/max*100,4,100).toFixed(1)}%"></span></span><span class="bar-value">${u.pgMunicipiosDistintos} munic.</span></div>`).join("")}
+  </div>`;
 }

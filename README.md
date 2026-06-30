@@ -432,6 +432,14 @@ python pipeline/assemble_final.py
 
 A tabela resumo aparece no `stderr`. O JSON é gravado em `data/seti_precomputed.json`.
 
+> **Atenção:** `assemble_final.py` **não** grava `capesPrograms` no JSON. Sempre que o pipeline principal rodar, execute também:
+>
+> ```bash
+> python pipeline/enrich_capes.py
+> ```
+>
+> Sem esse passo, `window.SETI_CAPES_PROGRAMS` ficará indefinido e a "Tabela por programa de pós-graduação" na Aba 5 ficará vazia silenciosamente (a função retorna `""` quando o dado não está disponível).
+
 ---
 
 ## Dependências

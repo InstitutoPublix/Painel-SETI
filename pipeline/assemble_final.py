@@ -87,6 +87,16 @@ INDICATORS = [
     "students", "entrants", "graduates", "courses", "vacancies",
     "occupancy", "dropout", "completion", "doctors",
     "cnpq", "capes", "pg", "pgTop",
+    # Seção 5 — Base_Cursos (CAPES): breakdown por grau, área e município
+    "pgMestrado", "pgMestradoProf", "pgDoutorado",
+    "pgPorGrandeArea", "pgMunicipiosDistintos",
+    # Seção 5b — Base_Discentes (CAPES)
+    "discMestrado", "discDoutorado",
+    "tituladosMestrado", "tituladosDoutorado",
+    "pctExcelencia",
+    # Seção 5b — Base_Docentes (CAPES)
+    "docPermanentes", "docColaboradores", "docVisitantes",
+    "razaoDocenteDiscente",
     "budget", "execution", "liquidation", "personnel", "supplementation",
     "employment", "salary", "insertionRatePR",
     "facultyOcc", "cres", "tide",
@@ -491,6 +501,9 @@ sg_col     = col_idx.get("SG_ENTIDADE_ENSINO")
 prog_col   = col_idx.get("NM_PROGRAMA_IES")
 conc_col   = col_idx.get("CD_CONCEITO_CURSO")
 media_col  = col_idx.get("Conceito médio dos programas de pós-graduação")
+grau_col   = col_idx.get("NM_GRAU_CURSO")           # em Base_Cursos o campo chama NM_GRAU_CURSO
+area_col   = col_idx.get("NM_GRANDE_AREA_CONHECIMENTO")
+muni_col   = col_idx.get("NM_MUNICIPIO_PROGRAMA_IES")
 
 capes_raw = {}
 for row in ws.iter_rows(min_row=2, values_only=True):
@@ -516,6 +529,9 @@ for row in ws.iter_rows(min_row=2, values_only=True):
     prog  = row[prog_col]  if prog_col  is not None else None
     c     = row[conc_col]  if conc_col  is not None else None
     media = row[media_col] if media_col is not None else None
+    grau  = row[grau_col]  if grau_col  is not None else None
+    area  = row[area_col]  if area_col  is not None else None
+    muni  = row[muni_col]  if muni_col  is not None else None
     try:
         c_int = int(c) if c is not None else 0
     except Exception:
@@ -524,7 +540,9 @@ for row in ws.iter_rows(min_row=2, values_only=True):
     if iees not in capes_raw:
         capes_raw[iees] = {}
     if y_int not in capes_raw[iees]:
-        capes_raw[iees][y_int] = {"progs": {}, "media": None}
+        capes_raw[iees][y_int] = {"progs": {}, "media": None, "graus": {}, "areas": {}, "munis": set()}
+        # graus: {NM_PROGRAMA_IES: set(NM_GRAU_CURSO)} — set porque programas combinados
+        # têm uma linha por grau (ex.: MESTRADO e DOUTORADO em linhas separadas)
 
     if media is not None and capes_raw[iees][y_int]["media"] is None:
         try:
@@ -538,6 +556,15 @@ for row in ws.iter_rows(min_row=2, values_only=True):
         cur = capes_raw[iees][y_int]["progs"].get(prog, 0)
         if c_int > cur:
             capes_raw[iees][y_int]["progs"][prog] = c_int
+        if grau is not None:
+            g_str = str(grau).upper().strip()
+            if prog not in capes_raw[iees][y_int]["graus"]:
+                capes_raw[iees][y_int]["graus"][prog] = set()
+            capes_raw[iees][y_int]["graus"][prog].add(g_str)
+        if area is not None:
+            capes_raw[iees][y_int]["areas"][prog] = str(area).strip()
+    if muni is not None:
+        capes_raw[iees][y_int]["munis"].add(str(muni).strip())
 wb.close()
 
 for iees in IEES:
@@ -565,6 +592,257 @@ for iees in IEES:
         pgTop=src + " / CD_CONCEITO_CURSO ≥ 5",
         capes=src + " / Conceito médio dos programas",
     )
+
+    # pgMestrado / pgMestradoProf / pgDoutorado / pgPorGrandeArea / pgMunicipiosDistintos
+    graus = data.get("graus", {})
+    areas = data.get("areas", {})
+    munis = data.get("munis", set())
+    pg_mestrado      = 0
+    pg_mestrado_prof = 0
+    pg_doutorado     = 0
+    pg_por_area: dict = {}
+    for pn, g_set in graus.items():
+        # g_set é set(NM_GRAU_CURSO); programas combinados têm múltiplos valores
+        # e são contados em cada categoria correspondente (conforme especificação)
+        if "MESTRADO" in g_set:
+            pg_mestrado += 1
+        if "MESTRADO PROFISSIONAL" in g_set:
+            pg_mestrado_prof += 1
+        if "DOUTORADO" in g_set or "DOUTORADO PROFISSIONAL" in g_set:
+            pg_doutorado += 1
+    for pn, av in areas.items():
+        pg_por_area[av] = pg_por_area.get(av, 0) + 1
+    pg_munis = len(munis)
+    results[key].update(
+        pgMestrado=pg_mestrado,
+        pgMestradoProf=pg_mestrado_prof,
+        pgDoutorado=pg_doutorado,
+        pgPorGrandeArea=pg_por_area,
+        pgMunicipiosDistintos=pg_munis,
+    )
+    sources[key].update(
+        pgMestrado=src + " / NM_PROGRAMA_IES distintos com NM_GRAU_CURSO=MESTRADO (programas combinados contados em ambas as categorias)",
+        pgMestradoProf=src + " / NM_PROGRAMA_IES distintos com NM_GRAU_CURSO=MESTRADO PROFISSIONAL",
+        pgDoutorado=src + " / NM_PROGRAMA_IES distintos com NM_GRAU_CURSO=DOUTORADO ou DOUTORADO PROFISSIONAL (programas combinados contados em ambas as categorias)",
+        pgPorGrandeArea=src + " / NM_PROGRAMA_IES distintos por NM_GRANDE_AREA_CONHECIMENTO",
+        pgMunicipiosDistintos=src + " / NM_MUNICIPIO_PROGRAMA_IES distintos",
+    )
+
+
+# ── 5b. CAPES — Discentes e Docentes ─────────────────────────────────────────
+# Fonte: Base CAPES- Pós-Graduação - Brasil.xlsx / Base_Discentes + Base_Docentes
+# Ano:   mais recente disponível por IES (AN_BASE), mesmo critério da Seção 5.
+# IMPORTANTE: CD_CONCEITO_PROGRAMA (conceito do programa) ≠ CD_CONCEITO_CURSO.
+#   pctExcelencia usa CD_CONCEITO_PROGRAMA >= 6 — NÃO é equivalente a pgTop.
+# Docentes contados via set(ID_PESSOA) por (CO_IES, AN_BASE, DS_CATEGORIA_DOCENTE).
+
+wb5b = openpyxl.load_workbook(
+    DATA_DIR / "Base CAPES- Pós-Graduação - Brasil.xlsx",
+    read_only=True, data_only=True,
+)
+
+# ── 5b.1 Base_Discentes ──────────────────────────────────────────────────────
+ws_disc = wb5b["Base_Discentes"]
+h_disc  = list(next(ws_disc.iter_rows(min_row=1, max_row=1, values_only=True)))
+ci_disc = {h: i for i, h in enumerate(h_disc) if h is not None}
+d_yr    = ci_disc.get("AN_BASE")
+d_co    = ci_disc.get("CO_IES")
+d_sg    = ci_disc.get("SG_ENTIDADE_ENSINO")
+d_pid   = ci_disc.get("ID_PESSOA")
+d_grau  = ci_disc.get("DS_GRAU_ACADEMICO_DISCENTE")
+d_sit   = ci_disc.get("NM_SITUACAO_DISCENTE")
+d_prog  = ci_disc.get("NM_PROGRAMA_IES")
+d_conc  = ci_disc.get("CD_CONCEITO_PROGRAMA")
+
+# disc_raw[iees][ano] = {
+#   "mat_m": set(ID_PESSOA) — matriculados mestrado
+#   "mat_d": set(ID_PESSOA) — matriculados doutorado
+#   "tit_m": set(ID_PESSOA) — titulados mestrado
+#   "tit_d": set(ID_PESSOA) — titulados doutorado
+#   "progs_conc": {NM_PROGRAMA_IES: max(CD_CONCEITO_PROGRAMA)} → pctExcelencia
+# }
+disc_raw = {}
+
+for row in ws_disc.iter_rows(min_row=2, values_only=True):
+    co = row[d_co] if d_co is not None else None
+    try:
+        co_int = int(co)
+    except Exception:
+        co_int = 0
+    iees = CO_IES_MAP.get(co_int)
+    if iees is None:
+        sg = row[d_sg] if d_sg is not None else None
+        if sg:
+            iees = next((i for i in IEES if i in str(sg).upper()), None)
+    if iees not in IEES:
+        continue
+
+    y = row[d_yr] if d_yr is not None else None
+    try:
+        y_int = int(y)
+    except Exception:
+        y_int = 0
+
+    pid  = row[d_pid]  if d_pid  is not None else None
+    grau = row[d_grau] if d_grau is not None else None
+    sit  = row[d_sit]  if d_sit  is not None else None
+    prog = row[d_prog] if d_prog is not None else None
+    conc = row[d_conc] if d_conc is not None else None
+
+    grau_up = str(grau).upper().strip() if grau else ""
+    sit_up  = str(sit).upper().strip()  if sit  else ""
+
+    if iees not in disc_raw:
+        disc_raw[iees] = {}
+    if y_int not in disc_raw[iees]:
+        disc_raw[iees][y_int] = {
+            "mat_m": set(), "mat_d": set(),
+            "tit_m": set(), "tit_d": set(),
+            "progs_conc": {},
+        }
+    bucket = disc_raw[iees][y_int]
+
+    if pid is not None:
+        if sit_up == "MATRICULADO":
+            if grau_up == "MESTRADO":
+                bucket["mat_m"].add(pid)
+            elif grau_up == "DOUTORADO":
+                bucket["mat_d"].add(pid)
+        elif sit_up == "TITULADO":
+            if grau_up == "MESTRADO":
+                bucket["tit_m"].add(pid)
+            elif grau_up == "DOUTORADO":
+                bucket["tit_d"].add(pid)
+
+    if prog is not None and conc is not None:
+        try:
+            conc_int = int(conc)
+        except Exception:
+            conc_int = 0
+        cur_conc = bucket["progs_conc"].get(prog, 0)
+        if conc_int > cur_conc:
+            bucket["progs_conc"][prog] = conc_int
+
+# ── 5b.2 Base_Docentes ──────────────────────────────────────────────────────
+ws_doc  = wb5b["Base_Docentes"]
+h_doc   = list(next(ws_doc.iter_rows(min_row=1, max_row=1, values_only=True)))
+ci_doc  = {h: i for i, h in enumerate(h_doc) if h is not None}
+dc_yr   = ci_doc.get("AN_BASE")
+dc_co   = ci_doc.get("CO_IES")
+dc_sg   = ci_doc.get("SG_ENTIDADE_ENSINO")
+dc_pid  = ci_doc.get("ID_PESSOA")
+dc_cat  = ci_doc.get("DS_CATEGORIA_DOCENTE")
+
+# doc_raw[iees][ano] = {
+#   "permanente":  set(ID_PESSOA)
+#   "colaborador": set(ID_PESSOA)
+#   "visitante":   set(ID_PESSOA)
+# }
+doc_raw = {}
+
+for row in ws_doc.iter_rows(min_row=2, values_only=True):
+    co = row[dc_co] if dc_co is not None else None
+    try:
+        co_int = int(co)
+    except Exception:
+        co_int = 0
+    iees = CO_IES_MAP.get(co_int)
+    if iees is None:
+        sg = row[dc_sg] if dc_sg is not None else None
+        if sg:
+            iees = next((i for i in IEES if i in str(sg).upper()), None)
+    if iees not in IEES:
+        continue
+
+    y = row[dc_yr] if dc_yr is not None else None
+    try:
+        y_int = int(y)
+    except Exception:
+        y_int = 0
+
+    pid    = row[dc_pid] if dc_pid is not None else None
+    cat    = row[dc_cat] if dc_cat is not None else None
+    cat_up = str(cat).upper().strip() if cat else ""
+
+    if iees not in doc_raw:
+        doc_raw[iees] = {}
+    if y_int not in doc_raw[iees]:
+        doc_raw[iees][y_int] = {"permanente": set(), "colaborador": set(), "visitante": set()}
+    if pid is not None:
+        bk = doc_raw[iees][y_int]
+        if cat_up == "PERMANENTE":
+            bk["permanente"].add(pid)
+        elif cat_up == "COLABORADOR":
+            bk["colaborador"].add(pid)
+        elif cat_up == "VISITANTE":
+            bk["visitante"].add(pid)
+
+wb5b.close()
+
+# ── 5b.3 Agregação ──────────────────────────────────────────────────────────
+for iees in IEES:
+    key = iees.lower()
+
+    # Discentes — ano mais recente
+    disc_yrs  = sorted(disc_raw.get(iees, {}).keys(), reverse=True)
+    disc_y    = disc_yrs[0] if disc_yrs else None
+    disc_data = disc_raw.get(iees, {}).get(disc_y, {}) if disc_y else {}
+
+    # Docentes — ano mais recente
+    doc_yrs  = sorted(doc_raw.get(iees, {}).keys(), reverse=True)
+    doc_y    = doc_yrs[0] if doc_yrs else None
+    doc_data = doc_raw.get(iees, {}).get(doc_y, {}) if doc_y else {}
+
+    if disc_y:
+        mat_m         = len(disc_data.get("mat_m", set()))
+        mat_d         = len(disc_data.get("mat_d", set()))
+        tit_m         = len(disc_data.get("tit_m", set()))
+        tit_d         = len(disc_data.get("tit_d", set()))
+        progs_conc    = disc_data.get("progs_conc", {})
+        total_progs_d = len(progs_conc)
+        progs_exc     = sum(1 for c in progs_conc.values() if c >= 6)
+        pct_exc       = round(progs_exc / total_progs_d * 100, 2) if total_progs_d > 0 else None
+        results[key].update(
+            discMestrado=mat_m,
+            discDoutorado=mat_d,
+            tituladosMestrado=tit_m,
+            tituladosDoutorado=tit_d,
+            pctExcelencia=pct_exc,
+        )
+        src_disc = f"Base CAPES- Pós-Graduação - Brasil.xlsx / Base_Discentes / AN_BASE={disc_y}"
+        sources[key].update(
+            discMestrado       =src_disc + " / set(ID_PESSOA) DS_GRAU_ACADEMICO_DISCENTE=MESTRADO + NM_SITUACAO_DISCENTE=MATRICULADO",
+            discDoutorado      =src_disc + " / set(ID_PESSOA) DS_GRAU_ACADEMICO_DISCENTE=DOUTORADO + NM_SITUACAO_DISCENTE=MATRICULADO",
+            tituladosMestrado  =src_disc + " / set(ID_PESSOA) DS_GRAU_ACADEMICO_DISCENTE=MESTRADO + NM_SITUACAO_DISCENTE=TITULADO",
+            tituladosDoutorado =src_disc + " / set(ID_PESSOA) DS_GRAU_ACADEMICO_DISCENTE=DOUTORADO + NM_SITUACAO_DISCENTE=TITULADO",
+            pctExcelencia      =src_disc + " / NM_PROGRAMA_IES distintos com CD_CONCEITO_PROGRAMA>=6 / total NM_PROGRAMA_IES × 100",
+        )
+
+    if doc_y:
+        doc_perm  = len(doc_data.get("permanente",  set()))
+        doc_colab = len(doc_data.get("colaborador", set()))
+        doc_vis   = len(doc_data.get("visitante",   set()))
+        results[key].update(
+            docPermanentes=doc_perm,
+            docColaboradores=doc_colab,
+            docVisitantes=doc_vis,
+        )
+        src_doc = f"Base CAPES- Pós-Graduação - Brasil.xlsx / Base_Docentes / AN_BASE={doc_y}"
+        sources[key].update(
+            docPermanentes   =src_doc + " / set(ID_PESSOA) DS_CATEGORIA_DOCENTE=PERMANENTE",
+            docColaboradores =src_doc + " / set(ID_PESSOA) DS_CATEGORIA_DOCENTE=COLABORADOR",
+            docVisitantes    =src_doc + " / set(ID_PESSOA) DS_CATEGORIA_DOCENTE=VISITANTE",
+        )
+
+    if disc_y and doc_y:
+        doc_perm_n  = len(doc_data.get("permanente", set()))
+        total_disc  = len(disc_data.get("mat_m", set())) + len(disc_data.get("mat_d", set()))
+        razao       = round(total_disc / doc_perm_n, 2) if doc_perm_n > 0 else None
+        results[key]["razaoDocenteDiscente"] = razao
+        sources[key]["razaoDocenteDiscente"] = (
+            f"(discMestrado + discDoutorado) / docPermanentes"
+            f" — disc AN_BASE={disc_y}, doc AN_BASE={doc_y}"
+        )
 
 
 # ── 6. Orçamento — budget, execution, liquidation, personnel ─────────────────
@@ -2010,6 +2288,52 @@ for ind in INDICATORS:
         row_str += f"{str(v):<13}"
     print(row_str, file=sys.stderr)
 print("=" * (20 + 13 * len(IEES)), file=sys.stderr)
+
+# ── Tabela 5b — validação CAPES Discentes / Docentes (7 IES-PR) ──────────────
+_5B_COLS = [
+    ("pgTop",               "pgTop"),
+    ("capes",               "capes"),
+    ("pgMestrado",          "pgMest"),
+    ("pgMestradoProf",      "pgProf"),
+    ("pgDoutorado",         "pgDout"),
+    ("pgMunicipiosDistintos", "pgMuni"),
+    ("pctExcelencia",       "pctExc%"),
+    ("discMestrado",        "discMest"),
+    ("discDoutorado",       "discDout"),
+    ("tituladosMestrado",   "titMest"),
+    ("tituladosDoutorado",  "titDout"),
+    ("docPermanentes",      "docPerm"),
+    ("docColaboradores",    "docColab"),
+    ("docVisitantes",       "docVis"),
+    ("razaoDocenteDiscente", "disc/docP"),
+]
+_W5B_IES = 12
+_W5B_COL = 10
+_SEP5B = "─" * (_W5B_IES + _W5B_COL * len(_5B_COLS))
+print("", file=sys.stderr)
+print(_SEP5B, file=sys.stderr)
+print("Seção 5b — CAPES Discentes/Docentes | Validação 7 IES-PR", file=sys.stderr)
+print("  pgTop/capes: CD_CONCEITO_CURSO (Base_Cursos)  |  pctExc%: CD_CONCEITO_PROGRAMA>=6 (Base_Discentes)", file=sys.stderr)
+print(_SEP5B, file=sys.stderr)
+_hdr5b = f"{'IES':<{_W5B_IES}}" + "".join(f"{_lbl:>{_W5B_COL}}" for _, _lbl in _5B_COLS)
+print(_hdr5b, file=sys.stderr)
+print(_SEP5B, file=sys.stderr)
+for _sig5b in IEES_PR:
+    _k5b   = _sig5b.lower()
+    _row5b = f"{_sig5b:<{_W5B_IES}}"
+    for _fld5b, _ in _5B_COLS:
+        _v5b = results[_k5b].get(_fld5b)
+        if _v5b is None:
+            _cell5b = "N/D"
+        elif isinstance(_v5b, float):
+            _cell5b = f"{_v5b:.1f}"
+        elif isinstance(_v5b, dict):
+            _cell5b = f"n={len(_v5b)}"
+        else:
+            _cell5b = str(_v5b)
+        _row5b += f"{_cell5b:>{_W5B_COL}}"
+    print(_row5b, file=sys.stderr)
+print(_SEP5B, file=sys.stderr)
 
 # ── Relatório de rastreabilidade (pipeline_report.json) ──────────────────────
 _pipeline_end = datetime.datetime.now()

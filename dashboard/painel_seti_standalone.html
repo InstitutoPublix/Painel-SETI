@@ -637,7 +637,7 @@ input:focus-visible {
 
 .bar-row {
   display: grid;
-  grid-template-columns: 100px minmax(0, 1fr) 70px;
+  grid-template-columns: 100px minmax(0, 1fr) max-content;
   align-items: center;
   gap: 10px;
 }
@@ -670,9 +670,7 @@ input:focus-visible {
   font-size: 12px;
   font-weight: 850;
   text-align: left;
-  overflow: hidden;
   white-space: nowrap;
-  text-overflow: ellipsis;
 }
 
 .rank-list {
@@ -1182,7 +1180,7 @@ input:focus-visible {
   }
 
   .bar-row {
-    grid-template-columns: 80px minmax(0, 1fr) 60px;
+    grid-template-columns: 80px minmax(0, 1fr) max-content;
   }
 
   .data-table {
