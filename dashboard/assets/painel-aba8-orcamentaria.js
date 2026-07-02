@@ -34,7 +34,7 @@
       ];
       D8050.forEach(function(f) { if (rc[f] != null) c[f] = rc[f]; });
       if (rc.composicaoFontes != null) c.composicaoFontes = rc.composicaoFontes;
-      ['ind81','ind82','ind83','ind84','ind85','ind86','ind87','ind88','ind89','ind90','ind91','ind92','ind93','ind94','ind95'].forEach(function(f){if(rc[f]!=null)c[f]=rc[f];});
+      ['ind81','ind82','ind83','ind84','ind85','ind86','ind87','ind88','ind89','ind90','ind91','ind92','ind93','ind94','ind95orc'].forEach(function(f){if(rc[f]!=null)c[f]=rc[f];});
     }
     return c;
   };
@@ -530,7 +530,7 @@ function costPerPgTop(u) {
 // ── opções do eixo Y do scatter ──────────────────────────────────────────────
 var TAB8_SCATTER_Y_OPTIONS = {
   occupancy:  { label: "Taxa de ocupação de vagas",  get: u => u.occupancy,   fmt: formatPercent },
-  completion: { label: "Taxa de conclusão",          get: u => u.completion,  fmt: formatPercent },
+  completion: { label: "Concluintes sobre matrículas", get: u => u.completion,  fmt: formatPercent },
   employment: { label: "Inserção profissional (PR)", get: u => u.employment,  fmt: formatPercent },
   capes:      { label: "Conceito CAPES médio",       get: u => u.capes,       fmt: v => Number(v || 0).toFixed(1).replace(".", ",") + " pts" },
   doctors:    { label: "% Docentes c/ doutorado",   get: u => u.doctors,     fmt: formatPercent },
@@ -692,7 +692,7 @@ if (!state.comparadorIES) state.comparadorIES = "UEL";
 var _COMP_INDS = [
   { key: "occupancy",  label: "Taxa de ocupação de vagas",
     get: function(u) { return u.occupancy;  }, fmt: _fmtP, higher: true },
-  { key: "completion", label: "Taxa de conclusão",
+  { key: "completion", label: "Concluintes sobre matrículas",
     get: function(u) { return u.completion; }, fmt: _fmtP, higher: true },
   { key: "employment", label: "Inserção profissional",
     get: function(u) { return u.employment; }, fmt: _fmtP, higher: true },
@@ -794,7 +794,7 @@ function _buildComparadorInner(rows, sigla) {
     '<th style="text-align:left;min-width:170px">'+_lbl+'INDICADOR</span></th>'+
     '<th style="text-align:right" title="Valor do indicador para a IES selecionada no filtro acima.">'+
       _lbl+sigla+'</span>'+_sub+'valor da IES</span></th>'+
-    '<th style="text-align:right" title="Melhor valor registrado entre as 7 universidades estaduais do Paraná (UEL, UEM, UEPG, UNIOESTE, UNICENTRO, UENP e UNESPAR) para este indicador, no ano selecionado.&#10;Em indicadores onde maior é melhor (ex: taxa de conclusão), é o maior valor.&#10;Em indicadores onde menor é melhor (ex: custo por aluno), é o menor valor.">'+
+    '<th style="text-align:right" title="Melhor valor registrado entre as 7 universidades estaduais do Paraná (UEL, UEM, UEPG, UNIOESTE, UNICENTRO, UENP e UNESPAR) para este indicador, no ano selecionado.&#10;Em indicadores onde maior é melhor (ex: concluintes sobre matrículas), é o maior valor.&#10;Em indicadores onde menor é melhor (ex: custo por aluno), é o menor valor.">'+
       _lbl+'MELHOR — PR</span>'+_sub+'entre as 7 IEES ⓘ</span></th>'+
     '<th style="text-align:right" title="Média aritmética do indicador entre as 7 universidades estaduais do Paraná.&#10;Use como referência para saber se a IES selecionada está acima ou abaixo do sistema estadual.">'+
       _lbl+'MÉDIA — PR</span>'+_sub+'das 7 IEES ⓘ</span></th>'+
@@ -984,7 +984,7 @@ ${execCard("Suplementação", avg(u => u.supplementation), "% crédito adicional
 // Opções do eixo Y
 var _SCATTER_Y_OPTS = {
   occupancy:  { label: "Taxa de ocupação de vagas (%)", get: function(u) { return u.occupancy;  }, fmt: _fmtP },
-  completion: { label: "Taxa de conclusão (%)",         get: function(u) { return u.completion; }, fmt: _fmtP },
+  completion: { label: "Concluintes sobre matrículas (%)", get: function(u) { return u.completion; }, fmt: _fmtP },
   employment: { label: "Egressos empregados (%)",       get: function(u) { return u.employment; }, fmt: _fmtP },
   capes:      { label: "Conceito CAPES médio",          get: function(u) { return u.capes;      }, fmt: function(v) { return (v != null && isFinite(v)) ? v.toFixed(1).replace(".", ",") + " pts" : "—"; } },
   doctors:    { label: "% Docentes doutores",           get: function(u) { return u.doctors;    }, fmt: _fmtP },
@@ -998,8 +998,8 @@ var _SCATTER_Y_META = {
     fonte: "INEP — Censo da Educação Superior / Base Cursos - Brasil.xlsx / QT_ING ÷ QT_VG_TOTAL",
   },
   completion: {
-    formula: "Concluintes ÷ Matrículas × 100",
-    fonte: "INEP — Censo da Educação Superior / Base Cursos - Brasil.xlsx / QT_CONC ÷ QT_MAT",
+    formula: "Concluintes do ano ÷ Matrículas do ano × 100",
+    fonte: "INEP — Censo da Educação Superior / Base Cursos - Brasil.xlsx / QT_CONC ÷ QT_MAT. Não acompanha coortes de ingresso.",
   },
   employment: {
     formula: "Egressos com vínculo formal no PR ÷ Total de egressos da coorte × 100",

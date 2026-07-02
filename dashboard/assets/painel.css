@@ -5706,6 +5706,16 @@ body {
   width: 14px; height: 14px; flex-shrink: 0; cursor: pointer;
 }
 
+/* Cluster Específico — item selecionado no dropdown, mesmo padrão visual
+   do estado ativo dos botões V1-V8 (.group-var-btn.is-active) */
+.cluster-especifico-item.is-active {
+  background: var(--blue-700);
+  color: var(--white);
+}
+.cluster-especifico-item.is-active:hover {
+  background: var(--blue-700);
+}
+
 .filter-active-status {
   display: flex;
   flex-direction: column;

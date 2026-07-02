@@ -1425,7 +1425,7 @@ async function loadPrecomputedJson() {
       if (vals.ind92 != null) augmented.ind92 = vals.ind92;
       if (vals.ind93 != null) augmented.ind93 = vals.ind93;
       if (vals.ind94 != null) augmented.ind94 = vals.ind94;
-      if (vals.ind95 != null) augmented.ind95 = vals.ind95;
+      if (vals.ind95 != null) augmented.ind95orc = vals.ind95;
       if (upsertYearIndicators(sigla, year, augmented)) count++;
     }
     if (count === 0) throw new Error("no_valid_rows");
@@ -1450,6 +1450,7 @@ async function loadPrecomputedJson() {
     }
     if (data.clusters)   window.SETI_CLUSTERS   = data.clusters;
     if (data.quartiRefs) window.SETI_QUARTIREFS  = data.quartiRefs;
+    if (data.clustersEspecificos) window.SETI_CLUSTERS_ESPECIFICOS = data.clustersEspecificos;
     // Programas de pós-graduação reais por IES (Base CAPES via enrich_capes.py)
     if (data.capesPrograms) window.SETI_CAPES_PROGRAMS = data.capesPrograms;
     // Vagas reais por município (Base Cursos via enrich_municipios.py)

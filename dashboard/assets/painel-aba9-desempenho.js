@@ -296,7 +296,23 @@ updateScopeAvailability = function(scope) {
 };
 
 function applyEfficiencyDefaults() {
+  // Esta função SUBSTITUI (não estende) a versão definida em painel.js
+  // (~linha 5858) — padrão de sobreposição já documentado no README
+  // ("Duplicate/progressive overlay pattern"). Como este arquivo carrega
+  // depois de painel.js no HTML, é ESTA versão que roda em runtime; a
+  // de painel.js fica morta (nunca executa), mantida só como base
+  // histórica comentada. Qualquer ajuste de comportamento deve ser
+  // feito AQUI, não em painel.js.
   if ((state.activeTab !== "efficiency" && state.activeTab !== "performance") || state.efficiencyDefaultApplied || !el.groupBy) return;
+  if (isBrasilScope(state.scope)) {
+    // Guard de escopo Brasil: hoje é inatingível na prática, pois
+    // activateTab() já força state.scope de volta para "PR" antes de
+    // entrar nas Abas 8/9 (TABS_WITH_BRASIL não inclui efficiency/
+    // performance). Mantido por segurança caso essa regra mude no
+    // futuro — sem ele, V6 seria forçado mesmo em escopo Brasil.
+    state.efficiencyDefaultApplied = true;
+    return;
+  }
 
   const hasActiveClusterSelection =
     el.groupLevelFilter && el.groupLevelFilter.value && el.groupLevelFilter.value !== "all";
@@ -598,7 +614,7 @@ function lowerBudgetOutperformance(rows) {
 // ── fim PILOTO: helpers de cálculo ──────────────────────────────────────────
 
 var budgetResultOptions = {
-  completion: { label: indicatorName(27), get: u => u.completion, fmt: formatPercent },
+  completion: { label: "Concluintes sobre matrículas", get: u => u.completion, fmt: formatPercent },
   occupancy: { label: indicatorName(26), get: u => u.occupancy, fmt: formatPercent },
   employment: { label: indicatorName(37), get: u => u.employment, fmt: formatPercent },
   doctorate: { label: indicatorName(6), get: u => u.doctors, fmt: formatPercent },
@@ -803,7 +819,7 @@ function renderEfficiencyRankingTable(rows) {
   return `<div class="table-wrap"><table class="pilot-ranking-table">
     <thead><tr><th>Pos.</th><th>IEES</th>
       <th><span class="eff-th-info" tabindex="0">Custo/aluno ⓘ<span class="eff-th-tooltip"><strong>Custo por aluno</strong><br>Orçamento total liquidado pela universidade no ano dividido pelo número de alunos com matrícula ativa. Reflete o investimento médio por estudante efetivamente matriculado — não considera vagas ofertadas.<br><br><em>Fontes: Despesa liquidada — Relatório da Despesa 8050 (SETI/SEFA, 2024); Matrículas ativas (QT_MAT) — INEP/Censo da Educação Superior (2024).</em></span></span></th>
-      <th><span class="eff-th-info" tabindex="0">Índice desempenho ⓘ<span class="eff-th-tooltip"><strong>Índice de Desempenho Acadêmico</strong><br>Score composto (0–100) calculado por média ponderada de seis indicadores:<br>• Conclusão: 25% &nbsp;• Permanência (1 − evasão): 20%<br>• Ocupação de vagas: 15% &nbsp;• % Docentes doutores: 15%<br>• Inserção profissional: 15% &nbsp;• Conceito CAPES médio: 10%<br>Quando um indicador está ausente, o peso é redistribuído entre os demais.<br><br><em>Fontes: INEP/Censo da Educação Superior, CAPES/Sucupira, bases administrativas SETI/PR.</em></span></span></th>
+      <th><span class="eff-th-info" tabindex="0">Índice desempenho ⓘ<span class="eff-th-tooltip"><strong>Índice de Desempenho Acadêmico</strong><br>Score composto (0–100) calculado por média ponderada de seis indicadores:<br>• Concluintes sobre matrículas: 25% &nbsp;• Permanência (1 − evasão): 20%<br>• Ocupação de vagas: 15% &nbsp;• % Docentes doutores: 15%<br>• Inserção profissional: 15% &nbsp;• Conceito CAPES médio: 10%<br>O componente IND-27 usa QT_CONC / QT_MAT × 100 no mesmo ano, sem acompanhamento de coorte. Quando um indicador está ausente, o peso é redistribuído entre os demais.<br><br><em>Fontes: INEP/Censo da Educação Superior, CAPES/Sucupira, bases administrativas SETI/PR.</em></span></span></th>
       <th><span class="eff-th-info" tabindex="0">Índice eficiência ⓘ<span class="eff-th-tooltip"><strong>Índice de Eficiência Acadêmico-Orçamentária</strong><br>Razão entre o desempenho relativo e o custo relativo da universidade em relação à média do conjunto: <em>desempenho da IES ÷ média do grupo</em> dividido por <em>custo da IES ÷ média do grupo</em>.<br>Valores acima de 1,0 indicam que a universidade entrega desempenho proporcionalmente superior ao seu custo.<br>• Acima de 1,10 → Alta eficiência<br>• Entre 0,90 e 1,10 → Eficiência proporcional<br>• Abaixo de 0,90 → Baixa eficiência<br><br><em>Fontes: calculado internamente a partir do Índice de Desempenho e do Custo/Aluno normalizados pela média das IEES-PR do recorte.</em></span></span></th>
       <th style="text-align:center;"><span class="eff-th-info" tabindex="0">SELO ${_seloAnoTabela} ⓘ<span class="eff-th-tooltip"><strong>Nota Final SELO-PR</strong><br>Nota final SELO-PR — Sistema de Excelência em Liderança Orçamentária (DOE/SEFA). Escala 0–100.<br><br>Composta por 11 indicadores em 3 eixos: Eficiência na Execução Orçamentária (60 pts), Racionalidade na Gestão de Créditos Adicionais (20 pts) e Passivos de Exercícios Anteriores (20 pts).<br><br>A cor indica posição relativa entre as IES do recorte: verde = 1º–2º &nbsp; azul-acinzentado = posições intermediárias &nbsp; laranja = últimas posições.<br><br><em>Fonte: Base SELO — Paraná (DOE/SEFA-PR), exercício ${_seloAnoTabela}.</em></span></span></th>
       <th>Classificação</th></tr></thead>
@@ -812,7 +828,7 @@ function renderEfficiencyRankingTable(rows) {
   <div class="metodologia-ranking-note">
     <strong>Como os índices são calculados</strong>
     <p><strong>Custo/Aluno:</strong> orçamento total liquidado pela IEES no exercício (Relatório da Despesa 8050 · SEFA/SETI), dividido pelo número de estudantes com matrícula ativa (QT_MAT · INEP/Censo da Educação Superior). Expresso em reais por estudante. Não considera vagas ofertadas não preenchidas.</p>
-    <p><strong>Índice de Desempenho Acadêmico</strong> (escala 0–100): média ponderada de seis indicadores acadêmicos — taxa de conclusão (peso 25%), permanência, ou seja, 100 menos a taxa de evasão (20%), taxa de ocupação de vagas (15%), proporção de docentes com doutorado (15%), taxa de inserção profissional de egressos (15%) e conceito CAPES médio dos programas de pós-graduação (10%). Quando algum indicador não está disponível para a IEES, o peso é redistribuído proporcionalmente entre os demais; o índice exige pelo menos dois indicadores com dado válido.</p>
+    <p><strong>Índice de Desempenho Acadêmico</strong> (escala 0–100): média ponderada de seis indicadores acadêmicos — concluintes sobre matrículas (peso 25%), permanência, ou seja, 100 menos a taxa de evasão (20%), taxa de ocupação de vagas (15%), proporção de docentes com doutorado (15%), taxa de inserção profissional de egressos (15%) e conceito CAPES médio dos programas de pós-graduação (10%). O componente de concluintes sobre matrículas é o IND-27: QT_CONC / QT_MAT × 100 no mesmo ano, sem acompanhamento de coorte. Quando algum indicador não está disponível para a IEES, o peso é redistribuído proporcionalmente entre os demais; o índice exige pelo menos dois indicadores com dado válido.</p>
     <p><strong>Índice de Eficiência Acadêmico-Orçamentária:</strong> razão entre o desempenho relativo e o custo relativo da IEES em relação à média do conjunto — isto é, (Índice de Desempenho da IEES ÷ média do grupo) dividido por (Custo/Aluno da IEES ÷ média do grupo). Um valor acima de 1,0 indica que a IEES entrega desempenho proporcionalmente superior ao que seu custo justificaria. Faixas de classificação: <em>Alta eficiência</em> (índice &gt; 1,10), <em>Eficiência proporcional</em> (0,90–1,10) e <em>Baixa eficiência</em> (&lt; 0,90).</p>
     <p style="margin:0"><em>Os índices têm caráter analítico-comparativo e devem ser interpretados em conjunto com o contexto institucional de cada IEES — porte, missão territorial, perfil de cursos e condições orçamentárias estruturais.</em></p>
   </div>`;
@@ -826,7 +842,7 @@ var _CD_IES  = ["UEL","UEM","UEPG","UNIOESTE","UNICENTRO","UENP","UNESPAR"];
 var _CD_INDS = [
   { key:"occupancy",  label:"Taxa de ocupação de vagas",
     get:function(u){return u.occupancy;},  fmt:_fmtP, higher:true },
-  { key:"completion", label:"Taxa de conclusão",
+  { key:"completion", label:"Concluintes sobre matrículas",
     get:function(u){return u.completion;}, fmt:_fmtP, higher:true },
   { key:"employment", label:"Inserção profissional",
     get:function(u){return u.employment;}, fmt:_fmtP, higher:true },
@@ -1144,7 +1160,7 @@ function performanceRelativeBlock(title, c) {
           <p><strong>Como ler esta tabela:</strong></p>
           <ul>
             <li><strong>Custo/Aluno:</strong> orçamento liquidado da IES no ano (R$) dividido pelo total de matrículas de graduação presencial — reflete o investimento médio por estudante efetivamente matriculado (fontes: Relatório da Despesa 8050 · Base SEFA-PR; matrículas QT_MAT · INEP/Censo da Educação Superior).</li>
-            <li><strong>Índice de Desempenho:</strong> pontuação sintética de resultado acadêmico, calculada como média ponderada: ocupação de vagas (15%) + taxa de concluintes (15%) + permanência — 100 menos evasão — (12%) + docentes com doutorado (14%) + captação CNPq normalizada entre 900 e 1.900 (12%) + conceito CAPES normalizado entre 3,2 e 5 (10%) + taxa de inserção profissional (12%) + salário dos egressos normalizado entre R$&nbsp;4.500 e R$&nbsp;6.500 (10%). Reúne indicadores de oferta, permanência, qualificação docente, pesquisa e inserção profissional.</li>
+            <li><strong>Índice de Desempenho:</strong> pontuação sintética de resultado acadêmico, calculada como média ponderada: ocupação de vagas (15%) + concluintes sobre matrículas (15%) + permanência — 100 menos evasão — (12%) + docentes com doutorado (14%) + captação CNPq normalizada entre 900 e 1.900 (12%) + conceito CAPES normalizado entre 3,2 e 5 (10%) + taxa de inserção profissional (12%) + salário dos egressos normalizado entre R$&nbsp;4.500 e R$&nbsp;6.500 (10%). Reúne indicadores de oferta, permanência, qualificação docente, pesquisa e inserção profissional.</li>
             <li><strong>Índice de Eficiência:</strong> razão entre o desempenho relativo e o custo relativo da IES em relação à média do grupo — <em>(desempenho IES ÷ média grupo) ÷ (custo IES ÷ média grupo)</em>. Valor acima de 1,0 indica que a IES entrega resultado acima da média com custo igual ou inferior; valor abaixo de 1,0 indica o oposto.</li>
             <li><strong>Classificação:</strong>
               <ul>
@@ -1463,7 +1479,7 @@ function renderPerformanceCrossScatter(rows, getY, fmtY, yLabel) {
 
 function budgetAcademicBlock(c) {
   const rows = efficiencyRows(c);
-  const chart1 = renderPerformanceCrossScatter(rows, u => u.completion, formatPercent, "Conclusão");
+  const chart1 = renderPerformanceCrossScatter(rows, u => u.completion, formatPercent, "Concluintes/matrículas");
   const chart2 = renderPerformanceCrossScatter(rows, u => u.occupancy, formatPercent, "Ocupação de vagas");
   const src1 = `<p class="chart-source" style="font-size:0.78rem;color:var(--text-secondary,#777);margin-top:6px;">
     <strong>Eixo X:</strong> Orçamento liquidado (Relatório da Despesa 8050 — SETI/SEFA) ÷ Matrículas ativas (INEP, Censo da Educação Superior) ·
@@ -1474,7 +1490,7 @@ function budgetAcademicBlock(c) {
     <strong>Eixo Y:</strong> Ingressantes ÷ Vagas ofertadas × 100 (INEP, Censo da Educação Superior — Base Cursos - Brasil.xlsx / QT_ING ÷ QT_VG_TOTAL)
   </p>`;
   return `<div class="chart-grid budget-relative-grid">
-    <article class="visual-card"><h3>Custo por aluno × Taxa de conclusão</h3><p class="card-subtitle">Eixo X: custo real (R$/aluno) · Eixo Y: % concluintes sobre matrículas.</p>${chart1}${src1}</article>
+    <article class="visual-card"><h3>Custo por aluno × Concluintes sobre matrículas</h3><p class="card-subtitle">Eixo X: custo real (R$/aluno) · Eixo Y: QT_CONC / QT_MAT × 100 no mesmo ano.</p>${chart1}${src1}</article>
     <article class="visual-card"><h3>Custo por aluno × Taxa de ocupação de vagas</h3><p class="card-subtitle">Eixo X: custo real (R$/aluno) · Eixo Y: % ingressantes sobre vagas ofertadas.</p>${chart2}${src2}</article>
   </div>`;
 }
@@ -1568,8 +1584,8 @@ function budgetOpportunityBlock(c) {
     if (!isValidNumber(bps)) return;
     if (bps > avgBPS && isValidNumber(u.completion) && u.completion < avgCompletion) {
       alerts.push({ emoji: '🔴', sigla: u.sigla,
-        msg: 'Alto custo por aluno com taxa de conclusão abaixo da média do grupo.',
-        detail: `Custo/aluno: ${formatCurrency(bps)} (média: ${formatCurrency(avgBPS)}) · Conclusão: ${formatPercent(u.completion)} (média: ${formatPercent(avgCompletion)})` });
+        msg: 'Alto custo por aluno com concluintes sobre matrículas abaixo da média do grupo.',
+        detail: `Custo/aluno: ${formatCurrency(bps)} (média: ${formatCurrency(avgBPS)}) · IND-27: ${formatPercent(u.completion)} (média: ${formatPercent(avgCompletion)})` });
     }
     if (isValidNumber(u.personnel) && u.personnel > 85) {
       alerts.push({ emoji: '🟡', sigla: u.sigla,
@@ -1578,8 +1594,8 @@ function budgetOpportunityBlock(c) {
     }
     if (bps < avgBPS && isValidNumber(u.completion) && u.completion > avgCompletion) {
       alerts.push({ emoji: '🟢', sigla: u.sigla,
-        msg: 'Alta taxa de conclusão com custo abaixo da média — destaque de eficiência.',
-        detail: `Custo/aluno: ${formatCurrency(bps)} (média: ${formatCurrency(avgBPS)}) · Conclusão: ${formatPercent(u.completion)} (média: ${formatPercent(avgCompletion)})` });
+        msg: 'Concluintes sobre matrículas acima da média com custo abaixo da média — destaque de eficiência.',
+        detail: `Custo/aluno: ${formatCurrency(bps)} (média: ${formatCurrency(avgBPS)}) · IND-27: ${formatPercent(u.completion)} (média: ${formatPercent(avgCompletion)})` });
     }
     if (medCnpqRatio > 0 && isValidNumber(u.cnpq) && isValidNumber(u.students) && u.students > 0
         && u.cnpq / u.students < medCnpqRatio) {
@@ -1604,7 +1620,7 @@ function budgetOpportunityBlock(c) {
   // Matriz de oportunidades: IEES × dimensões
   const DIMS = [
     { label: "Custo", get: u => { const bps = costPerStudent(u); return bps <= avgBPS ? "ok" : "warn"; }, tip: u => `Custo/aluno: ${formatCurrency(costPerStudent(u))}` },
-    { label: "Conclusão", get: u => u.completion >= avgCompletion ? "ok" : u.completion >= avgCompletion * 0.85 ? "mid" : "warn", tip: u => `Conclusão: ${formatPercent(u.completion)}` },
+    { label: "IND-27", get: u => u.completion >= avgCompletion ? "ok" : u.completion >= avgCompletion * 0.85 ? "mid" : "warn", tip: u => `Concluintes sobre matrículas: ${formatPercent(u.completion)}` },
     { label: "Pessoal", get: u => u.personnel <= 80 ? "ok" : u.personnel <= 85 ? "mid" : "warn", tip: u => `Pessoal: ${formatPercent(u.personnel)}` },
     { label: "CNPq", get: u => (medCnpqRatio > 0 && u.cnpq / Math.max(u.students, 1) >= medCnpqRatio) ? "ok" : "warn", tip: u => `CNPq/aluno: ${formatCurrency(u.cnpq * 1e6 / Math.max(u.students, 1))}` },
     { label: "Ocupação", get: u => u.occupancy >= 85 ? "ok" : u.occupancy >= 70 ? "mid" : "warn", tip: u => `Ocupação: ${formatPercent(u.occupancy)}` },
@@ -1635,8 +1651,8 @@ function budgetDiagnosticTable(c, resultOption) {
   const rows = budgetRelativeRows(c, resultOption);
   const subtitleHtml = '<p style="font-size:0.83rem; color:var(--text-secondary,#666); margin:4px 0 12px 0; line-height:1.5;">Cada IEES é comparada às demais universidades do mesmo cluster (agrupamento ativo no filtro). Os percentuais de Custo e Resultado mostram o desvio em relação à média do grupo: valor positivo = acima da média; negativo = abaixo da média.</p>';
   const thCusto = '<th style="cursor:default;"><span style="display:block;font-size:0.75rem;font-weight:700;letter-spacing:.04em;color:var(--text-primary,#222);">CUSTO RELATIVO</span><span style="display:block;font-size:0.70rem;font-weight:400;color:var(--text-secondary,#888);text-transform:none;letter-spacing:0;margin-top:2px;">% vs. média do cluster</span> <span style="display:inline-block;font-size:0.7rem;background:var(--accent,#4A6FA5);color:#fff;border-radius:50%;width:14px;height:14px;text-align:center;line-height:14px;cursor:help;vertical-align:middle;" title="Definição: desvio percentual do custo por aluno desta IES em relação à média do cluster ativo.&#10;Fórmula: (custo_IES − média_cluster) ÷ média_cluster × 100&#10;Fonte: Orçamento liquidado — Relatório da Despesa 8050 (SETI/SEFA) ÷ Matrículas ativas — INEP, Censo da Educação Superior.&#10;Valores negativos indicam custo abaixo da média do grupo; positivos indicam custo acima.">?</span></th>';
-  const thResult = '<th style="cursor:default;"><span style="display:block;font-size:0.75rem;font-weight:700;letter-spacing:.04em;color:var(--text-primary,#222);">RESULTADO RELATIVO</span><span style="display:block;font-size:0.70rem;font-weight:400;color:var(--text-secondary,#888);text-transform:none;letter-spacing:0;margin-top:2px;">% vs. média do cluster</span> <span style="display:inline-block;font-size:0.7rem;background:var(--accent,#4A6FA5);color:#fff;border-radius:50%;width:14px;height:14px;text-align:center;line-height:14px;cursor:help;vertical-align:middle;" title="Definição: desvio percentual do indicador de desempenho selecionado desta IES em relação à média do cluster ativo.&#10;Fórmula: (resultado_IES − média_cluster) ÷ média_cluster × 100&#10;Fonte: depende do indicador — ex: Taxa de concluintes: INEP (QT_CONC ÷ QT_MAT); Taxa de ocupação: INEP (QT_ING ÷ QT_VG_TOTAL); CRES: SETI, Base Docentes - Paraná.xlsx.&#10;Valores positivos indicam desempenho acima da média do grupo; negativos indicam abaixo — sempre em relação ao cluster, não ao universo total.">?</span></th>';
-  const noteHtml = '<div style="margin-top:14px;padding:12px 16px;background:var(--surface-2,#f5f5f5);border-radius:8px;font-size:0.80rem;color:var(--text-secondary,#666);line-height:1.65;"><strong style="display:block;margin-bottom:6px;color:var(--text-primary,#333);">Como ler esta tabela</strong><ul style="margin:0;padding-left:18px;"><li><strong>Custo relativo</strong> &#8212; quanto a IES gasta por aluno comparado à média das universidades do mesmo cluster. Fórmula: (custo da IES &#8722; média do cluster) &#247; média do cluster &#215; 100. Fonte: orçamento liquidado (Relatório da Despesa 8050, SETI/SEFA) &#247; matrículas ativas (INEP, Censo da Educação Superior).</li><li style="margin-top:6px;"><strong>Resultado relativo</strong> &#8212; desvio do indicador de desempenho selecionado (ex: taxa de conclusão, ocupação de vagas) em relação à média do cluster. Mesmo cálculo proporcional. Fontes variam conforme o indicador exibido na coluna &#8220;Indicador usado&#8221;.</li><li style="margin-top:6px;"><strong>Classificação</strong> &#8212; combinação das duas dimensões: uma IES com gasto abaixo da média e resultado acima entrega maior eficiência relativa dentro do seu grupo de referência.</li></ul></div>';
+  const thResult = '<th style="cursor:default;"><span style="display:block;font-size:0.75rem;font-weight:700;letter-spacing:.04em;color:var(--text-primary,#222);">RESULTADO RELATIVO</span><span style="display:block;font-size:0.70rem;font-weight:400;color:var(--text-secondary,#888);text-transform:none;letter-spacing:0;margin-top:2px;">% vs. média do cluster</span> <span style="display:inline-block;font-size:0.7rem;background:var(--accent,#4A6FA5);color:#fff;border-radius:50%;width:14px;height:14px;text-align:center;line-height:14px;cursor:help;vertical-align:middle;" title="Definição: desvio percentual do indicador de desempenho selecionado desta IES em relação à média do cluster ativo.&#10;Fórmula: (resultado_IES − média_cluster) ÷ média_cluster × 100&#10;Fonte: depende do indicador — ex: IND-27 Proporção anual de concluintes sobre matrículas: INEP (QT_CONC ÷ QT_MAT), sem coorte; Taxa de ocupação: INEP (QT_ING ÷ QT_VG_TOTAL); CRES: SETI, Base Docentes - Paraná.xlsx.&#10;Valores positivos indicam desempenho acima da média do grupo; negativos indicam abaixo — sempre em relação ao cluster, não ao universo total.">?</span></th>';
+  const noteHtml = '<div style="margin-top:14px;padding:12px 16px;background:var(--surface-2,#f5f5f5);border-radius:8px;font-size:0.80rem;color:var(--text-secondary,#666);line-height:1.65;"><strong style="display:block;margin-bottom:6px;color:var(--text-primary,#333);">Como ler esta tabela</strong><ul style="margin:0;padding-left:18px;"><li><strong>Custo relativo</strong> &#8212; quanto a IES gasta por aluno comparado à média das universidades do mesmo cluster. Fórmula: (custo da IES &#8722; média do cluster) &#247; média do cluster &#215; 100. Fonte: orçamento liquidado (Relatório da Despesa 8050, SETI/SEFA) &#247; matrículas ativas (INEP, Censo da Educação Superior).</li><li style="margin-top:6px;"><strong>Resultado relativo</strong> &#8212; desvio do indicador de desempenho selecionado (ex: concluintes sobre matrículas, ocupação de vagas) em relação à média do cluster. Mesmo cálculo proporcional. O IND-27 compara concluintes e matrículas do mesmo ano, não uma coorte de ingresso. Fontes variam conforme o indicador exibido na coluna &#8220;Indicador usado&#8221;.</li><li style="margin-top:6px;"><strong>Classificação</strong> &#8212; combinação das duas dimensões: uma IES com gasto abaixo da média e resultado acima entrega maior eficiência relativa dentro do seu grupo de referência.</li></ul></div>';
   return `<div class="table-wrap mt-14"><h3>Posicionamento relativo das IEES no cluster</h3>${subtitleHtml}<table class="data-table budget-diagnostic-table"><thead><tr><th>IEES</th><th>Cluster</th>${thCusto}${thResult}<th>Classificação</th><th>Indicador usado</th></tr></thead><tbody>${rows.map(row => {
     const q = classificaQuadrante(row.costDelta, row.resultDelta);
     return `<tr class="diag-q"><td><strong>${row.u.sigla}</strong><br><span>${row.u.nome}</span></td><td>${row.u.groups[c.f.groupBy] || row.u.groups.v6}</td><td>${row.costDelta >= 0 ? "+" : ""}${row.costDelta.toFixed(1).replace(".", ",")}%</td><td>${row.resultDelta >= 0 ? "+" : ""}${row.resultDelta.toFixed(1).replace(".", ",")}%</td><td><span style="font-weight:600;color:${q.color};">${q.label}</span></td><td>${resultOption.label}</td></tr>`;
@@ -1718,9 +1734,10 @@ function deltaForRenderedKpi(label, c) {
   if (text.includes("total de estudantes") || text.includes("matr")) return kpiDeltaForValue(a.students, p.students, "higher", "pct", previousYear, label);
   if (text.includes("ingressantes")) return kpiDeltaForValue(a.entrants, p.entrants, "higher", "pct", previousYear, label);
   if (text.includes("concluintes")) {
-    const current = text.includes("taxa") ? (a.completionByVacancy ?? a.completion) : a.graduates;
-    const previous = text.includes("taxa") ? (p.completionByVacancy ?? p.completion) : p.graduates;
-    return kpiDeltaForValue(current, previous, "higher", text.includes("taxa") ? "pp" : "pct", previousYear, label);
+    const isInd27 = text.includes("matr") || text.includes("propor") || text.includes("taxa");
+    const current = isInd27 ? a.completion : a.graduates;
+    const previous = isInd27 ? p.completion : p.graduates;
+    return kpiDeltaForValue(current, previous, "higher", isInd27 ? "pp" : "pct", previousYear, label);
   }
   if (text.includes("cursos")) return kpiDeltaForValue(a.courses, p.courses, "higher", "pct", previousYear, label);
   if (text.includes("vagas") && !text.includes("ocupa")) return kpiDeltaForValue(a.vacancies, p.vacancies, "higher", "pct", previousYear, label);

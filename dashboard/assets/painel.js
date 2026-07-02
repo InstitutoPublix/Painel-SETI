@@ -470,9 +470,9 @@ const INDICATOR_CATALOG = {
   },
   "ind27": {
     "codigo": 27,
-    "nome": "Taxa de concluintes",
+    "nome": "Proporção anual de concluintes sobre matrículas",
     "categoria": "Permanência e Conclusão",
-    "formula": "Alunos concluintes / vagas de ingresso x 100",
+    "formula": "QT_CONC / QT_MAT × 100",
     "unidade": "Percentual",
     "periodicidade": "Anual",
     "polaridade": "Quanto maior, melhor",
@@ -482,9 +482,9 @@ const INDICATOR_CATALOG = {
     "serie": "2020-2024",
     "atualizacao": "2026-04-01",
     "ocde": "Conclusão no ensino terciário",
-    "uso": "Mede a proporção de concluintes em relação à oferta inicial de vagas.",
+    "uso": "Mede a proporção anual de estudantes diplomados no ano em relação ao estoque de matrículas do mesmo ano. Não acompanha coortes de ingresso.",
     "link": "https://www.gov.br/inep/pt-br/acesso-a-informacao/dados-abertos/microdados/censo-da-educacao-superior",
-    "observacoes": ""
+    "observacoes": "Numerador: total de concluintes no ano (QT_CONC). Denominador: total de matrículas no ano (QT_MAT)."
   },
   "ind28": {
     "codigo": 28,
@@ -1674,7 +1674,7 @@ const INDICATOR_CATALOG = {
     "link": "Dados internos da SETI / SEFA / https://www.transparencia.pr.gov.br",
     "observacoes": "Créditos adicionais e suplementações legislativas podem causar variações positivas legítimas, não necessariamente por falha de planejamento."
   },
-  "ind95": {
+  "ind95orc": {
     "codigo": 95,
     "nome": "Percentual de execução de liquidação do Orçamento Inicial",
     "categoria": "Eficiência Orçamentária",
@@ -1692,7 +1692,7 @@ const INDICATOR_CATALOG = {
     "link": "Dados internos da SETI / SEFA / https://www.transparencia.pr.gov.br",
     "observacoes": "Valores acima de 100% indicam que houve suplementações ao longo do exercício."
   },
-  "ind96": {
+  "ind96orc": {
     "codigo": 96,
     "nome": "Percentual de execução de liquidação do Orçamento Disponível",
     "categoria": "Eficiência Orçamentária",
@@ -1710,7 +1710,7 @@ const INDICATOR_CATALOG = {
     "link": "Dados internos da SETI / SEFA / https://www.transparencia.pr.gov.br",
     "observacoes": "O denominador (Orçamento Atualizado – Contingenciado) pode ter cobertura parcial para exercícios anteriores a 2021, nos quais a coluna de contingenciamento pode estar incompleta."
   },
-  "ind97": {
+  "ind97orc": {
     "codigo": 97,
     "nome": "Percentual de execução de liquidação do Orçamento Atualizado",
     "categoria": "Eficiência Orçamentária",
@@ -1727,6 +1727,258 @@ const INDICATOR_CATALOG = {
     "uso": "Avalia o quanto do orçamento total atualizado (dotação inicial + créditos adicionais) foi convertido em liquidação efetiva.",
     "link": "Dados internos da SETI / SEFA / https://www.transparencia.pr.gov.br",
     "observacoes": "Este indicador mede diretamente a relação entre o orçamento disponível e a entrega, sem depender da etapa de empenho como intermediária."
+  },
+  "ind95": {
+    "codigo": 95,
+    "nome": "Programas de Mestrado Acadêmico (contagem)",
+    "categoria": "Oferta e Territorialização",
+    "formula": "Contagem de NM_PROGRAMA_IES distintos com NM_GRAU_CURSO = MESTRADO, na Base CAPES– Pós-Graduação - Brasil.xlsx / aba Base_Cursos, referente ao AN_BASE mais recente disponível por IES.",
+    "unidade": "Número",
+    "periodicidade": "Anual",
+    "polaridade": "Quanto maior, melhor (indica maior oferta de pós-graduação stricto sensu)",
+    "desagregacoes": "Universidade; Programa",
+    "dimensao": "Brasil",
+    "fonte": "CAPES – Base Pós-Graduação",
+    "serie": "2020-2024 (calculado com o ano-base (AN_BASE) mais recente disponível por IES, sem consolidação multianual)",
+    "atualizacao": "2026-06-30",
+    "ocde": "Sem correspondência direta",
+    "uso": "Permite dimensionar a oferta de mestrado acadêmico por IES e comparar com pgMestradoProf e pgDoutorado para entender o perfil da pós-graduação stricto sensu.",
+    "link": "https://www.gov.br/capes/pt-br/acesso-a-informacao/acoes-e-programas/outras-acoes/censo-da-pos-graduacao-stricto-sensu",
+    "observacoes": "Programas com mais de um grau (ex.: mestrado e doutorado no mesmo NM_PROGRAMA_IES) são contados em cada categoria de grau aplicável; a soma de pgMestrado + pgMestradoProf + pgDoutorado pode exceder o total de programas distintos da IES."
+  },
+  "ind96": {
+    "codigo": 96,
+    "nome": "Programas de Mestrado Profissional (contagem)",
+    "categoria": "Oferta e Territorialização",
+    "formula": "Contagem de NM_PROGRAMA_IES distintos com NM_GRAU_CURSO = MESTRADO PROFISSIONAL, na Base CAPES– Pós-Graduação - Brasil.xlsx / aba Base_Cursos, AN_BASE mais recente disponível por IES.",
+    "unidade": "Número",
+    "periodicidade": "Anual",
+    "polaridade": "Quanto maior, melhor (indica maior oferta de mestrado profissional)",
+    "desagregacoes": "Universidade; Programa",
+    "dimensao": "Brasil",
+    "fonte": "CAPES – Base Pós-Graduação",
+    "serie": "2020-2024 (calculado com o ano-base (AN_BASE) mais recente disponível por IES, sem consolidação multianual)",
+    "atualizacao": "2026-06-30",
+    "ocde": "Sem correspondência direta",
+    "uso": "Permite avaliar a vocação profissionalizante da pós-graduação da IES, em complemento a pgMestrado e pgDoutorado.",
+    "link": "https://www.gov.br/capes/pt-br/acesso-a-informacao/acoes-e-programas/outras-acoes/censo-da-pos-graduacao-stricto-sensu",
+    "observacoes": "Programas combinados são contados em cada categoria de grau aplicável; ver nota metodológica do Ind 95 (pgMestrado)."
+  },
+  "ind97": {
+    "codigo": 97,
+    "nome": "Programas de Doutorado (contagem)",
+    "categoria": "Oferta e Territorialização",
+    "formula": "Contagem de NM_PROGRAMA_IES distintos com NM_GRAU_CURSO = DOUTORADO ou DOUTORADO PROFISSIONAL, na Base CAPES– Pós-Graduação - Brasil.xlsx / aba Base_Cursos, AN_BASE mais recente disponível por IES.",
+    "unidade": "Número",
+    "periodicidade": "Anual",
+    "polaridade": "Quanto maior, melhor (indica maior oferta de doutorado)",
+    "desagregacoes": "Universidade; Programa",
+    "dimensao": "Brasil",
+    "fonte": "CAPES – Base Pós-Graduação",
+    "serie": "2020-2024 (calculado com o ano-base (AN_BASE) mais recente disponível por IES, sem consolidação multianual)",
+    "atualizacao": "2026-06-30",
+    "ocde": "Sem correspondência direta",
+    "uso": "Mede a maturidade acadêmica da IES na formação de doutores; usar em conjunto com pctExcelencia (Ind 108) para avaliar a qualidade dos programas de doutorado.",
+    "link": "https://www.gov.br/capes/pt-br/acesso-a-informacao/acoes-e-programas/outras-acoes/censo-da-pos-graduacao-stricto-sensu",
+    "observacoes": "Programas combinados são contados em cada categoria de grau aplicável; ver nota metodológica do Ind 95 (pgMestrado)."
+  },
+  "ind98": {
+    "codigo": 98,
+    "nome": "Distribuição de Programas por Grande Área do Conhecimento",
+    "categoria": "Oferta e Territorialização",
+    "formula": "Contagem de NM_PROGRAMA_IES distintos agrupados por NM_GRANDE_AREA_CONHECIMENTO, na Base CAPES– Pós-Graduação - Brasil.xlsx / aba Base_Cursos, AN_BASE mais recente disponível por IES. Resultado é uma distribuição (mapa grande área → nº de programas), não um valor escalar único.",
+    "unidade": "Número (desagregado por grande área do conhecimento)",
+    "periodicidade": "Anual",
+    "polaridade": "Neutra (indicador de composição/distribuição, não de desempenho)",
+    "desagregacoes": "Universidade; Grande área do conhecimento",
+    "dimensao": "Brasil",
+    "fonte": "CAPES – Base Pós-Graduação",
+    "serie": "2020-2024 (calculado com o ano-base (AN_BASE) mais recente disponível por IES, sem consolidação multianual)",
+    "atualizacao": "2026-06-30",
+    "ocde": "Sem correspondência direta",
+    "uso": "Permite identificar a vocação disciplinar da pós-graduação da IES e detectar concentração ou diversificação por grande área do conhecimento.",
+    "link": "https://www.gov.br/capes/pt-br/acesso-a-informacao/acoes-e-programas/outras-acoes/censo-da-pos-graduacao-stricto-sensu",
+    "observacoes": "O campo armazenado (pgPorGrandeArea) é um objeto/dicionário {grande área: contagem de programas}, e não um número único; depende de tratamento específico para visualização (ex.: gráfico de barras por categoria)."
+  },
+  "ind99": {
+    "codigo": 99,
+    "nome": "Discentes Matriculados em Mestrado",
+    "categoria": "Acesso e Inclusão",
+    "formula": "set(ID_PESSOA) distintos onde DS_GRAU_ACADEMICO_DISCENTE = MESTRADO e NM_SITUACAO_DISCENTE = MATRICULADO, na Base CAPES– Pós-Graduação - Brasil.xlsx / aba Base_Discentes, AN_BASE mais recente disponível por IES.",
+    "unidade": "Número",
+    "periodicidade": "Anual",
+    "polaridade": "Quanto maior, melhor (indica maior captação de discentes no mestrado)",
+    "desagregacoes": "Universidade; Programa",
+    "dimensao": "Brasil",
+    "fonte": "CAPES – Base Pós-Graduação",
+    "serie": "2020-2024 (calculado com o ano-base (AN_BASE) mais recente disponível por IES, sem consolidação multianual)",
+    "atualizacao": "2026-06-30",
+    "ocde": "Sem correspondência direta",
+    "uso": "Mede o volume de discentes ativos no mestrado; usar com tituladosMestrado (Ind 101) para estimar a dinâmica de conclusão e com docPermanentes (Ind 103) para a razão discente/docente.",
+    "link": "https://www.gov.br/capes/pt-br/acesso-a-informacao/acoes-e-programas/outras-acoes/censo-da-pos-graduacao-stricto-sensu",
+    "observacoes": "Contagem de pessoas distintas (set de ID_PESSOA), não de matrículas-evento; um mesmo discente é contado uma única vez mesmo se houver mais de um registro no AN_BASE."
+  },
+  "ind100": {
+    "codigo": 100,
+    "nome": "Discentes Matriculados em Doutorado",
+    "categoria": "Acesso e Inclusão",
+    "formula": "set(ID_PESSOA) distintos onde DS_GRAU_ACADEMICO_DISCENTE = DOUTORADO e NM_SITUACAO_DISCENTE = MATRICULADO, na Base CAPES– Pós-Graduação - Brasil.xlsx / aba Base_Discentes, AN_BASE mais recente disponível por IES.",
+    "unidade": "Número",
+    "periodicidade": "Anual",
+    "polaridade": "Quanto maior, melhor (indica maior captação de discentes no doutorado)",
+    "desagregacoes": "Universidade; Programa",
+    "dimensao": "Brasil",
+    "fonte": "CAPES – Base Pós-Graduação",
+    "serie": "2020-2024 (calculado com o ano-base (AN_BASE) mais recente disponível por IES, sem consolidação multianual)",
+    "atualizacao": "2026-06-30",
+    "ocde": "Sem correspondência direta",
+    "uso": "Mede o volume de discentes ativos no doutorado; usar com tituladosDoutorado (Ind 102) para estimar a dinâmica de conclusão e com docPermanentes (Ind 103) para a razão discente/docente.",
+    "link": "https://www.gov.br/capes/pt-br/acesso-a-informacao/acoes-e-programas/outras-acoes/censo-da-pos-graduacao-stricto-sensu",
+    "observacoes": "Contagem de pessoas distintas (set de ID_PESSOA), não de matrículas-evento; um mesmo discente é contado uma única vez mesmo se houver mais de um registro no AN_BASE."
+  },
+  "ind101": {
+    "codigo": 101,
+    "nome": "Titulados em Mestrado (ano-base)",
+    "categoria": "Permanência e Conclusão",
+    "formula": "set(ID_PESSOA) distintos onde DS_GRAU_ACADEMICO_DISCENTE = MESTRADO e NM_SITUACAO_DISCENTE = TITULADO, na Base CAPES– Pós-Graduação - Brasil.xlsx / aba Base_Discentes, AN_BASE mais recente disponível por IES.",
+    "unidade": "Número",
+    "periodicidade": "Anual",
+    "polaridade": "Quanto maior, melhor (indica maior formação de mestres)",
+    "desagregacoes": "Universidade; Programa",
+    "dimensao": "Brasil",
+    "fonte": "CAPES – Base Pós-Graduação",
+    "serie": "2020-2024 (calculado com o ano-base (AN_BASE) mais recente disponível por IES, sem consolidação multianual)",
+    "atualizacao": "2026-06-30",
+    "ocde": "Sem correspondência direta",
+    "uso": "Mede a produção de titulados em mestrado no ano-base; comparar com discMestrado (Ind 99) para situar o volume de titulações frente ao total de matriculados.",
+    "link": "https://www.gov.br/capes/pt-br/acesso-a-informacao/acoes-e-programas/outras-acoes/censo-da-pos-graduacao-stricto-sensu",
+    "observacoes": "Contagem de pessoas distintas tituladas no AN_BASE mais recente disponível por IES; não constitui série acumulada de titulados ao longo de múltiplos anos."
+  },
+  "ind102": {
+    "codigo": 102,
+    "nome": "Titulados em Doutorado (ano-base)",
+    "categoria": "Permanência e Conclusão",
+    "formula": "set(ID_PESSOA) distintos onde DS_GRAU_ACADEMICO_DISCENTE = DOUTORADO e NM_SITUACAO_DISCENTE = TITULADO, na Base CAPES– Pós-Graduação - Brasil.xlsx / aba Base_Discentes, AN_BASE mais recente disponível por IES.",
+    "unidade": "Número",
+    "periodicidade": "Anual",
+    "polaridade": "Quanto maior, melhor (indica maior formação de doutores)",
+    "desagregacoes": "Universidade; Programa",
+    "dimensao": "Brasil",
+    "fonte": "CAPES – Base Pós-Graduação",
+    "serie": "2020-2024 (calculado com o ano-base (AN_BASE) mais recente disponível por IES, sem consolidação multianual)",
+    "atualizacao": "2026-06-30",
+    "ocde": "Sem correspondência direta",
+    "uso": "Mede a produção de titulados em doutorado no ano-base; indicador-chave de maturidade do programa, comparável com discDoutorado (Ind 100).",
+    "link": "https://www.gov.br/capes/pt-br/acesso-a-informacao/acoes-e-programas/outras-acoes/censo-da-pos-graduacao-stricto-sensu",
+    "observacoes": "Contagem de pessoas distintas tituladas no AN_BASE mais recente disponível por IES; não constitui série acumulada de titulados ao longo de múltiplos anos."
+  },
+  "ind103": {
+    "codigo": 103,
+    "nome": "Docentes Permanentes da Pós-Graduação (contagem)",
+    "categoria": "Corpo Docente",
+    "formula": "set(ID_PESSOA) distintos onde DS_CATEGORIA_DOCENTE = PERMANENTE, na Base CAPES– Pós-Graduação - Brasil.xlsx / aba Base_Docentes, AN_BASE mais recente disponível por IES.",
+    "unidade": "Número",
+    "periodicidade": "Anual",
+    "polaridade": "Quanto maior, melhor (indica maior estabilidade do corpo docente da pós-graduação)",
+    "desagregacoes": "Universidade; Programa",
+    "dimensao": "Brasil",
+    "fonte": "CAPES – Base Pós-Graduação",
+    "serie": "2020-2024 (calculado com o ano-base (AN_BASE) mais recente disponível por IES, sem consolidação multianual)",
+    "atualizacao": "2026-06-30",
+    "ocde": "Sem correspondência direta",
+    "uso": "Mede o volume absoluto de docentes permanentes; usar junto com razaoDocenteDiscente (Ind 106) para avaliar a capacidade de orientação da IES.",
+    "link": "https://www.gov.br/capes/pt-br/acesso-a-informacao/acoes-e-programas/outras-acoes/censo-da-pos-graduacao-stricto-sensu",
+    "observacoes": "IMPORTANTE: este indicador é uma CONTAGEM ABSOLUTA de docentes permanentes, distinta do Ind 63 (\"Proporção de docentes permanentes da pós-graduação\"), que é um PERCENTUAL (docentes permanentes / total de docentes da pós-graduação × 100). Os dois indicadores são complementares — este mede volume, o Ind 63 mede proporção — e não devem ser usados como substitutos um do outro."
+  },
+  "ind104": {
+    "codigo": 104,
+    "nome": "Docentes Colaboradores da Pós-Graduação (contagem)",
+    "categoria": "Corpo Docente",
+    "formula": "set(ID_PESSOA) distintos onde DS_CATEGORIA_DOCENTE = COLABORADOR, na Base CAPES– Pós-Graduação - Brasil.xlsx / aba Base_Docentes, AN_BASE mais recente disponível por IES.",
+    "unidade": "Número",
+    "periodicidade": "Anual",
+    "polaridade": "Neutra (apoio complementar ao corpo permanente; não há direção normativa única para este volume)",
+    "desagregacoes": "Universidade; Programa",
+    "dimensao": "Brasil",
+    "fonte": "CAPES – Base Pós-Graduação",
+    "serie": "2020-2024 (calculado com o ano-base (AN_BASE) mais recente disponível por IES, sem consolidação multianual)",
+    "atualizacao": "2026-06-30",
+    "ocde": "Sem correspondência direta",
+    "uso": "Permite avaliar o grau de dependência de docentes colaboradores frente ao quadro permanente (docPermanentes, Ind 103).",
+    "link": "https://www.gov.br/capes/pt-br/acesso-a-informacao/acoes-e-programas/outras-acoes/censo-da-pos-graduacao-stricto-sensu",
+    "observacoes": "Contagem absoluta de pessoas distintas (set de ID_PESSOA); não há indicador correspondente no catálogo original para a categoria 'colaborador'."
+  },
+  "ind105": {
+    "codigo": 105,
+    "nome": "Docentes Visitantes da Pós-Graduação (contagem)",
+    "categoria": "Corpo Docente",
+    "formula": "set(ID_PESSOA) distintos onde DS_CATEGORIA_DOCENTE = VISITANTE, na Base CAPES– Pós-Graduação - Brasil.xlsx / aba Base_Docentes, AN_BASE mais recente disponível por IES.",
+    "unidade": "Número",
+    "periodicidade": "Anual",
+    "polaridade": "Neutra (apoio complementar e geralmente temporário; não há direção normativa única para este volume)",
+    "desagregacoes": "Universidade; Programa",
+    "dimensao": "Brasil",
+    "fonte": "CAPES – Base Pós-Graduação",
+    "serie": "2020-2024 (calculado com o ano-base (AN_BASE) mais recente disponível por IES, sem consolidação multianual)",
+    "atualizacao": "2026-06-30",
+    "ocde": "Sem correspondência direta",
+    "uso": "Permite identificar o grau de mobilidade/internacionalização do corpo docente quando combinado com o Ind 64 (proporção de docentes estrangeiros da pós-graduação).",
+    "link": "https://www.gov.br/capes/pt-br/acesso-a-informacao/acoes-e-programas/outras-acoes/censo-da-pos-graduacao-stricto-sensu",
+    "observacoes": "Contagem absoluta de pessoas distintas (set de ID_PESSOA); não há indicador correspondente no catálogo original para a categoria 'visitante'."
+  },
+  "ind106": {
+    "codigo": 106,
+    "nome": "Razão Discente/Docente Permanente da Pós-Graduação",
+    "categoria": "Corpo Docente",
+    "formula": "(discMestrado + discDoutorado) / docPermanentes, calculado por IES a partir da Base CAPES– Pós-Graduação - Brasil.xlsx. discMestrado e discDoutorado usam o AN_BASE mais recente disponível na aba Base_Discentes; docPermanentes usa o AN_BASE mais recente disponível na aba Base_Docentes — os dois anos-base podem divergir entre si para a mesma IES.",
+    "unidade": "Razão (discentes por docente permanente)",
+    "periodicidade": "Anual",
+    "polaridade": "Neutra (valores muito altos podem indicar sobrecarga de orientação; valores muito baixos podem indicar capacidade docente ociosa)",
+    "desagregacoes": "Universidade",
+    "dimensao": "Brasil",
+    "fonte": "CAPES – Base Pós-Graduação",
+    "serie": "2020-2024 (calculado com o ano-base (AN_BASE) mais recente disponível por IES, sem consolidação multianual)",
+    "atualizacao": "2026-06-30",
+    "ocde": "Sem correspondência direta",
+    "uso": "Mede a carga de orientação por docente permanente; valores muito acima da média do recorte podem indicar sobrecarga, valores muito abaixo podem indicar capacidade ociosa.",
+    "link": "https://www.gov.br/capes/pt-br/acesso-a-informacao/acoes-e-programas/outras-acoes/censo-da-pos-graduacao-stricto-sensu",
+    "observacoes": "Combina dados de duas abas (Base_Discentes e Base_Docentes) que podem ter AN_BASE distintos para a mesma IES; o resultado não é calculado (None) quando docPermanentes = 0."
+  },
+  "ind107": {
+    "codigo": 107,
+    "nome": "Capilaridade Territorial dos Programas de Pós-Graduação",
+    "categoria": "Oferta e Territorialização",
+    "formula": "Contagem de NM_MUNICIPIO_PROGRAMA_IES distintos, na Base CAPES– Pós-Graduação - Brasil.xlsx / aba Base_Cursos, AN_BASE mais recente disponível por IES.",
+    "unidade": "Número (municípios distintos)",
+    "periodicidade": "Anual",
+    "polaridade": "Quanto maior, melhor (indica maior capilaridade territorial da oferta de pós-graduação)",
+    "desagregacoes": "Universidade; Município",
+    "dimensao": "Brasil",
+    "fonte": "CAPES – Base Pós-Graduação",
+    "serie": "2020-2024 (calculado com o ano-base (AN_BASE) mais recente disponível por IES, sem consolidação multianual)",
+    "atualizacao": "2026-06-30",
+    "ocde": "Sem correspondência direta",
+    "uso": "Mede a dispersão geográfica dos programas de pós-graduação da IES pelos municípios onde são ofertados.",
+    "link": "https://www.gov.br/capes/pt-br/acesso-a-informacao/acoes-e-programas/outras-acoes/censo-da-pos-graduacao-stricto-sensu",
+    "observacoes": "Conta municípios onde o programa é OFERTADO (sede/campus do programa), não municípios de residência dos discentes; não confundir com os indicadores de inserção profissional por município de egressos da graduação (Ind 70-71, 78-79)."
+  },
+  "ind108": {
+    "codigo": 108,
+    "nome": "Proporção de Programas com Conceito CAPES 6-7",
+    "categoria": "Qualidade Acadêmica",
+    "formula": "Para cada NM_PROGRAMA_IES distinto, calcula-se max(CD_CONCEITO_PROGRAMA) registrado na Base CAPES– Pós-Graduação - Brasil.xlsx / aba Base_Discentes (AN_BASE mais recente disponível por IES). pctExcelencia = (nº de programas com esse máximo ≥ 6) / (total de programas com conceito informado) × 100.",
+    "unidade": "Percentual",
+    "periodicidade": "Anual",
+    "polaridade": "Quanto maior, melhor",
+    "desagregacoes": "Universidade; Programa",
+    "dimensao": "Brasil",
+    "fonte": "CAPES – Base Pós-Graduação",
+    "serie": "2020-2024 (calculado com o ano-base (AN_BASE) mais recente disponível por IES, sem consolidação multianual)",
+    "atualizacao": "2026-06-30",
+    "ocde": "Sem correspondência direta",
+    "uso": "Mede a proporção de programas de excelência (conceito CAPES 6 ou 7) na pós-graduação da IES.",
+    "link": "https://www.gov.br/capes/pt-br/acesso-a-informacao/acoes-e-programas/outras-acoes/censo-da-pos-graduacao-stricto-sensu",
+    "observacoes": "Limiar diferente do Ind 66 (≥6 vs ≥5 daquele indicador) — não comparar diretamente os dois valores sem considerar essa diferença de critério. Além do limiar, os campos de origem também diferem: este indicador usa CD_CONCEITO_PROGRAMA (aba Base_Discentes), enquanto o Ind 66 usa CD_CONCEITO_CURSO (aba Base_Cursos)."
   }
 };
 
@@ -1812,6 +2064,21 @@ const raw = [
    54.2,3475,70.5,84.4,83,
    ["Médio-baixo","Médio-alto","Alto","Baixo","Baixo","Baixo","Médio-baixo","Baixo"]]
 ];
+const CLUSTER_ESPECIFICO_NOTA = "Classificação fixa definida pelo Instituto Publix, combinando simultaneamente múltiplas variáveis (porte institucional, oferta de cursos, oferta territorial, qualificação docente e estrutura acadêmica composta). Diferente do Cluster Multidimensional (V1–V8), que agrupa por uma variável isolada por vez, o Cluster Específico atribui cada IES a um grupo único e fixo. Variáveis de orçamento, renda territorial e IDH não compõem esta classificação — permanecem como filtros complementares específicos do Paraná (V6-V8).";
+
+// Cluster Específico (C1-C8): fonte única agora é o pipeline (assemble_final.py →
+// seti_precomputed.json → clustersEspecificos → window.SETI_CLUSTERS_ESPECIFICOS).
+// O array estático foi removido em favor de buildClusterEspecificoCatalog(),
+// chamado a partir de applySETIClusters() assim que o JSON carrega — evita
+// drift silencioso caso a curadoria C1-C8 mude só na planilha
+// (Clusterização específica.xlsx) sem espelhar aqui.
+let CLUSTER_ESPECIFICO_CATALOG = [];
+function buildClusterEspecificoCatalog() {
+  const raw = window.SETI_CLUSTERS_ESPECIFICOS;
+  if (!Array.isArray(raw) || !raw.length) return null;
+  return raw.map(c => ({ ...c, grupoLabel: `${c.codigo} - ${c.nome}` }));
+}
+
 const groupKeys = ["v1","v2","v3","v4","v5","v6","v7","v8"];
 
 // IEES estaduais brasileiras — usadas quando escopo = "Brasil"
@@ -2056,7 +2323,7 @@ const groupMeta = {
 const resultIndicators = {
   composite:{label:"Resultado institucional composto",get:u=>composite(u),format:v=>`${v.toFixed(1)} pts`},
   occupancy:{label:"Taxa de ocupação das vagas",get:u=>u.occupancy,format:formatPercent},
-  completion:{label:"Taxa de concluintes",get:u=>u.completion,format:formatPercent},
+  completion:{label:"Concluintes sobre matrículas",get:u=>u.completion,format:formatPercent},
   permanence:{label:"Permanência discente",get:u=>100-u.dropout,format:formatPercent},
   doctorate:{label:"Proporção de docentes com doutorado",get:u=>u.doctors,format:formatPercent},
   cnpq:{label:"Captação CNPq por estudante",get:u=>u.cnpq*1000000/u.students,format:formatCurrency},
@@ -2075,7 +2342,7 @@ const effortIndicators = {
 };
 const tabInfo = {
   overview:["Visão integrada","Panorama Executivo","Como está o sistema universitário estadual? Síntese dos resultados acadêmicos, profissionais e orçamentários."],
-  comparison:["Comparação entre pares","Comparação entre IEES","Com quem cada universidade deve ser comparada? A leitura usa média Paraná, referência Brasil e média do agrupamento dinâmico."],
+  comparison:["Comparação entre pares","Comparação entre IEES","Com quem cada universidade deve ser comparada? A leitura usa média Paraná, referência Brasil e média do cluster multidimensional."],
   access:["Acesso, oferta e ociosidade","Acesso e Oferta","Onde há demanda, ocupação e ociosidade? Escala da oferta, ocupação, territorialização e eficiência da oferta."],
   retention:["Permanência e formação","Permanência e Formação","Os estudantes permanecem e concluem? Funil de ingressantes, matrículas e concluintes com custos associados."],
   quality:["Qualidade acadêmica e ciência","Qualidade, Pesquisa e Pós-Graduação","Onde está a maturidade acadêmica e científica? Qualificação docente, CAPES, CNPq e internacionalização."],
@@ -2198,13 +2465,62 @@ function groupVariableShortLabel(value, fallback) {
 
 function renderGroupVariableButtons() {
   const container = el.groupVariableButtons || document.getElementById("groupVariableButtons");
-  if (container) {
-    container.hidden = true;
-    container.setAttribute("aria-hidden", "true");
-    container.innerHTML = "";
-  }
+  if (!container) { renderClusterEspecificoControl(); return; }
+  const isBR = isBrasilScope(state.scope);
+  const current = (el.groupBy || document.getElementById("groupBy"))?.value || "v1";
+
+  // "especifico" saiu desta fileira — agora é o dropdown dedicado
+  // (#clusterEspecificoWrap), renderizado por renderClusterEspecificoControl()
+  // logo abaixo. Mantém o comportamento anterior de V6-V8 (PR_ONLY_GROUPS)
+  // e da fileira ficando vazia em escopo Brasil (V1-V5 sem seletor dedicado aqui).
+  const keys = isBR ? [] : groupKeys;
+  const visibleKeys = keys.filter(k => groupMeta[k] && !(isBR && PR_ONLY_GROUPS.has(k)));
+
+  container.innerHTML = visibleKeys.map(k => {
+    const label = (groupMeta[k].label || k.toUpperCase()).replace(/^V\d+\s*[–-]\s*/, "");
+    const isActive = current === k;
+    return `<button type="button" class="group-var-btn${isActive ? " is-active" : ""}"
+              data-group-var="${k}" aria-pressed="${isActive}">${label}</button>`;
+  }).join("");
+
+  container.hidden = true;
+  container.style.display = "none";
+  container.setAttribute("aria-hidden", "true");
+  renderClusterEspecificoControl();
 }
 window.renderGroupVariableButtons = renderGroupVariableButtons;
+
+function renderClusterEspecificoControl() {
+  const btn = document.getElementById("clusterEspecificoBtn");
+  const wrap = document.getElementById("clusterEspecificoWrap");
+  const label = document.getElementById("clusterEspecificoLabel");
+  const list = document.getElementById("clusterEspecificoList");
+  if (!btn || !list) return;
+  const current = (el.groupBy || document.getElementById("groupBy"))?.value || "v1";
+  const isActive = current === "especifico";
+  const activeLevel = isActive ? (el.groupLevelFilter?.value || "all") : "all";
+
+  if (wrap) wrap.classList.toggle("is-active", isActive);
+  btn.setAttribute("aria-pressed", String(isActive));
+  if (label) {
+    const activeCluster = isActive && activeLevel !== "all"
+      ? CLUSTER_ESPECIFICO_CATALOG.find(c => c.grupoLabel === activeLevel)
+      : null;
+    label.textContent = activeCluster ? activeCluster.grupoLabel : "Todos os grupos";
+  }
+
+  list.innerHTML = CLUSTER_ESPECIFICO_CATALOG.map(c => {
+    const itemActive = isActive && activeLevel === c.grupoLabel;
+    return `<button type="button" class="iees-multi-item cluster-especifico-item${itemActive ? " is-active" : ""}"
+              data-cluster-level="${c.grupoLabel.replace(/"/g, "&quot;")}" title="${c.perfil.replace(/"/g, "&quot;")}">
+              ${c.grupoLabel}
+            </button>`;
+  }).join("");
+
+  const allBtn = document.querySelector('#clusterEspecificoDropdown .cluster-especifico-item[data-cluster-level="all"]');
+  if (allBtn) allBtn.classList.toggle("is-active", isActive && activeLevel === "all");
+}
+window.renderClusterEspecificoControl = renderClusterEspecificoControl;
 
 function setGroupByVariable(value) {
   const select = el.groupBy || document.getElementById("groupBy");
@@ -2224,6 +2540,13 @@ window.setGroupByVariable = setGroupByVariable;
 const groupOptions = Object.fromEntries(groupKeys.map(k => [k, []]));
 const groupOptionNotes = Object.fromEntries(groupKeys.map(k => [k, {}]));
 Object.entries(groupOptions).forEach(([key,labels])=>{if(groupMeta[key]) groupMeta[key].criteria=labels.map(label=>[label,groupOptionNotes[key][label]||""]);});
+groupOptions.especifico = [];
+groupMeta.especifico = {
+  label: "Cluster Específico",
+  getter: u => CLUSTER_ESPECIFICO_CATALOG.find(c => c.grupoLabel === u.groups?.especifico)?.variaveis || "",
+  format: v => v,
+  criteria: []
+};
 let _clustersApplied = false;
 let _stratificationMetadataApplied = false;
 function stratText(value) {
@@ -2280,9 +2603,16 @@ function applyOfficialTerritoryValues(u) {
 function applySETIClusters() {
   syncStratificationMetadataFromPrecomputed();
   if (_clustersApplied || !window.SETI_CLUSTERS) return;
+  const catalog = buildClusterEspecificoCatalog();
+  if (catalog) {
+    CLUSTER_ESPECIFICO_CATALOG = catalog;
+    groupOptions.especifico = catalog.map(c => c.grupoLabel);
+    groupMeta.especifico.criteria = catalog.map(c => [c.grupoLabel, c.perfil]);
+  }
   universities.concat(universitiesBrasil).forEach(u => {
     const cl = window.SETI_CLUSTERS[u.sigla];
     groupKeys.forEach(k => { u.groups[k] = cl && cl[k] != null ? cl[k] : null; });
+    u.groups.especifico = cl && cl.c_especifico != null ? cl.c_especifico : null;
     applyOfficialTerritoryValues(u);
   });
   _clustersApplied = true;
@@ -2352,7 +2682,7 @@ function renderDimensionHelp() {
 window.renderDimensionHelp = renderDimensionHelp;
 
 document.addEventListener("DOMContentLoaded", () => { cache(); populate(); bind(); render(); initSuggestedPath(); });
-function cache(){["yearFilter","universityFilter","dimensionFilter","groupBy","groupLevelFilter","quartilChips","groupVariableButtons","regionFilter","resultIndicator","effortIndicator","courseTypeFilter","municipalityFilter","courseFilter","courseAreaFilter","knowledgeAreaFilter","turnFilter","pgProgramFilter","cohortFilter","cbo2Filter","sourceFilter","periodicityFilter","creditTypeFilter","resourceOriginFilter","expenseGroupFilter","advancedToggle","advancedFilters","resetFilters","fbsClear","filterCountBadge","scopeLabel","activeClusterLabel","kpiGrid","activeTabKicker","activeTabTitle","activeTabDescription","periodPill","tabContent","groupTitle","criteriaList","groupBreakdown","analyticalNote","systemAlerts"].forEach(id=>el[id]=document.getElementById(id));el.tabs=[...document.querySelectorAll(".tab-button")];}
+function cache(){["yearFilter","universityFilter","dimensionFilter","groupBy","groupLevelFilter","quartilChips","groupVariableButtons","regionFilter","resultIndicator","effortIndicator","courseTypeFilter","municipalityFilter","courseFilter","courseAreaFilter","knowledgeAreaFilter","turnFilter","pgProgramFilter","cohortFilter","cbo2Filter","sourceFilter","periodicityFilter","creditTypeFilter","resourceOriginFilter","expenseGroupFilter","resetFilters","fbsClear","filterCountBadge","scopeLabel","activeClusterLabel","kpiGrid","activeTabKicker","activeTabTitle","activeTabDescription","periodPill","tabContent","groupTitle","criteriaList","groupBreakdown","analyticalNote","systemAlerts"].forEach(id=>el[id]=document.getElementById(id));el.tabs=[...document.querySelectorAll(".tab-button")];}
 function populate(){
   const _uniCbList=document.getElementById("universityCheckboxList");if(_uniCbList){universities.forEach(u=>{const l=document.createElement("label");l.className="iees-multi-item";l.innerHTML=`<input type="checkbox" class="uni-check" value="${u.id}"> <strong>${u.sigla}</strong> <span style="color:var(--gray-500);font-size:11px;margin-left:3px">– ${u.nome}</span>`;_uniCbList.appendChild(l);});}
   uniq(universities.map(u=>u.region)).forEach(v=>el.regionFilter?.append(new Option(v,v)));
@@ -2589,7 +2919,7 @@ function context(){
   if(f.attention&&hasOfficialQuadrants()){const ids=matrixRows(ref,f).filter(r=>r.resultRel<100&&r.effortRel>100).map(r=>r.id);ref=ref.filter(u=>ids.includes(u.id));display=display.filter(u=>ids.includes(u.id));}
   return {f,all,base,ref,display,selected,group};
 }
-function byYear(u,year){const [vol,bud,delta]=yearAdj[year]||yearAdj[2024];const c={...u,groups:{...u.groups},coursesFocus:[...u.coursesFocus]};["students","entrants","graduates","vacancies"].forEach(k=>c[k]=Math.round(c[k]*vol));c.budget=round(c.budget*bud,1);const cnpqReal=CNPQ_DATA[u.id]?.[Number(year)];if(cnpqReal){c.cnpq=round(cnpqReal.captacao,2);c.vinculos=cnpqReal.vinculos;}else{c.cnpq=round(c.cnpq*(.9+bud*.1),1);c.vinculos=null;}c.supplementation=round(c.supplementation+(1-bud)*3,1);["occupancy","completion","doctors","employment","facultyOcc","cres","execution","liquidation"].forEach(k=>c[k]=clamp(round(c[k]+delta,1),0,100));c.dropout=clamp(round(c.dropout-delta*.25,1),0,100);c.salary=Math.round(c.salary*(.88+bud*.12));const _rc=getRealIndicators(u.sigla,year);if(_rc&&_rc.cursosStudents!=null){if(_rc.cursosStudents!=null)c.students=_rc.cursosStudents;if(_rc.cursosEntrants!=null)c.entrants=_rc.cursosEntrants;if(_rc.cursosGraduates!=null)c.graduates=_rc.cursosGraduates;if(_rc.cursosCourses!=null)c.courses=_rc.cursosCourses;if(_rc.cursosVacancies!=null)c.vacancies=_rc.cursosVacancies;if(_rc.cursosOccupancy!=null)c.occupancy=_rc.cursosOccupancy;if(_rc.cursosDropout!=null)c.dropout=_rc.cursosDropout;if(_rc.cursosCompletion!=null)c.completion=_rc.cursosCompletion;c.vacanciesNova=_rc.cursosVacanciesNova??null;c.vacanciesDay=_rc.cursosVacanciesDay??null;c.vacanciesNight=_rc.cursosVacanciesNight??null;c.matDay=_rc.cursosMatDay??null;c.matNight=_rc.cursosMatNight??null;c.ingressOccupancy=_rc.cursosIngressOccupancy??null;c.vacanciesUnfilled=_rc.cursosVacanciesUnfilled??null;c.vacanciesNovaUnfilled=_rc.cursosVacanciesNovaUnfilled??null;c.mobility=_rc.cursosMobility??null;c.publicSchool=_rc.cursosPublicSchool??null;c.occDay=_rc.cursosOccupancyDay??null;c.occNight=_rc.cursosOccupancyNight??null;}if(_rc){if(_rc.iesDocDout!=null)c.doctors=_rc.iesDocDout;c.docForeign=_rc.iesDocForeign??null;c.capesPortal=_rc.iesCapesPortal??null;if(_rc.docTaxaOcup!=null)c.facultyOcc=_rc.docTaxaOcup;if(_rc.docCresTaxa!=null)c.cres=_rc.docCresTaxa;c.docVagasTotais=_rc.docVagasTotais??null;c.docVagasDisp=_rc.docVagasDisp??null;c.docVagasOcupadas=_rc.docVagasOcupadas??null;c.docTaxaUtil=_rc.docTaxaUtil??null;c.docVagasCond=_rc.docVagasCond??null;c.docPctCond=_rc.docPctCond??null;c.docTideAtrib=_rc.docTideAtrib??null;c.docTidePartic=_rc.docTidePartic??null;c.docTidePctNaoAtrib=_rc.docTidePctNaoAtrib??null;c.docChMedia=_rc.docChMedia??null;c.docCresAut=_rc.docCresAut??null;c.docCresUtil=_rc.docCresUtil??null;c.docCresSaldo=_rc.docCresSaldo??null;c.docCresOciosidade=_rc.docCresOciosidade??null;c.docCresPartic=_rc.docCresPartic??null;if(_rc.capesConceito!=null)c.capes=_rc.capesConceito;if(_rc.pg!=null)c.pg=_rc.pg;if(_rc.pgTop!=null)c.pgTop=_rc.pgTop;c.capesPct567=_rc.capesPct567??null;c.capesDocPermanentes=_rc.capesDocPermanentes??null;c.capesDocEstrangeiros=_rc.capesDocEstrangeiros??null;c.capesDocBolsa=_rc.capesDocBolsa??null;c.docTotal=_rc.docTotal??null;c.docExe=_rc.docExe??null;c.grauMix=_rc.grauMix??null;c.cbo2Profile=_rc.cbo2Profile??null;c.cbo2Diversity=_rc.cbo2Diversity??null;c.cbo2MunDestino=_rc.cbo2MunDestino??null;c.muniOccupancy=_rc.muniOccupancy??null;c.pgMestrado=_rc.pgMestrado??null;c.pgMestradoProf=_rc.pgMestradoProf??null;c.pgDoutorado=_rc.pgDoutorado??null;c.pgPorGrandeArea=_rc.pgPorGrandeArea??null;c.discMestrado=_rc.discMestrado??null;c.discDoutorado=_rc.discDoutorado??null;c.tituladosMestrado=_rc.tituladosMestrado??null;c.tituladosDoutorado=_rc.tituladosDoutorado??null;c.docPermanentes=_rc.docPermanentes??null;c.docColaboradores=_rc.docColaboradores??null;c.docVisitantes=_rc.docVisitantes??null;c.razaoDocenteDiscente=_rc.razaoDocenteDiscente??null;c.pgMunicipiosDistintos=_rc.pgMunicipiosDistintos??null;c.pctExcelencia=_rc.pctExcelencia??null;}if(_rc){c.budget=_rc.budget??_rc.liquidado??c.budget;c.execution=_rc.execution??_rc.tx_execucao_empenho??c.execution;c.liquidation=_rc.liquidation??_rc.tx_liquidacao??c.liquidation;c.supplementation=_rc.supplementation??_rc.var_dotacao_loa??c.supplementation;c.personnel=_rc.personnel??_rc.part_pessoal??c.personnel;if(_rc.cnpqCaptacao!=null){c.cnpq=_rc.cnpqCaptacao;}if(_rc.cnpqVinculos!=null){c.vinculos=_rc.cnpqVinculos;}c.dotacao_inicial=_rc.dotacao_inicial??c.dotacao_inicial??null;c.orcamento_atualizado=_rc.orcamento_atualizado??c.orcamento_atualizado??null;c.empenhado=_rc.empenhado??c.empenhado??null;c.liquidado=_rc.liquidado??c.liquidado??null;c.pago=_rc.pago??c.pago??null;c.tx_execucao_empenho=_rc.tx_execucao_empenho??c.tx_execucao_empenho??null;c.tx_liquidacao=_rc.tx_liquidacao??c.tx_liquidacao??null;c.tx_pagamento_liq=_rc.tx_pagamento_liq??c.tx_pagamento_liq??null;c.grau_contingenciamento=_rc.grau_contingenciamento??c.grau_contingenciamento??null;c.var_dotacao_loa=_rc.var_dotacao_loa??c.var_dotacao_loa??null;c.part_pessoal=_rc.part_pessoal??c.part_pessoal??null;c.part_outras_correntes=_rc.part_outras_correntes??c.part_outras_correntes??null;c.part_capital=_rc.part_capital??c.part_capital??null;c.ind81=_rc.ind81??c.ind81??null;c.ind82=_rc.ind82??c.ind82??null;c.ind83=_rc.ind83??c.ind83??null;c.ind84=_rc.ind84??c.ind84??null;c.ind85=_rc.ind85??c.ind85??null;c.ind86=_rc.ind86??c.ind86??null;c.ind87=_rc.ind87??c.ind87??null;c.ind88=_rc.ind88??c.ind88??null;c.ind95=_rc.ind95??c.ind95??null;}if(_rc){c.insertionRatePR=_rc.insertionRatePR??null;c.egressosMunicipios=_rc.egressosMunicipios??_rc.raisMunCount??null;c.territoryIncome=_rc.territoryIncome??c.territoryIncome??null;c.idhmRegional=_rc.idhmRegional??c.idhmRegional??null;}if(window.SETI_CLUSTERS&&window.SETI_CLUSTERS[u.sigla]){const cl=window.SETI_CLUSTERS[u.sigla];groupKeys.forEach(k=>{c.groups[k]=cl[k]!=null?cl[k]:null;});}return c;}
+function byYear(u,year){const [vol,bud,delta]=yearAdj[year]||yearAdj[2024];const c={...u,groups:{...u.groups},coursesFocus:[...u.coursesFocus]};["students","entrants","graduates","vacancies"].forEach(k=>c[k]=Math.round(c[k]*vol));c.budget=round(c.budget*bud,1);const cnpqReal=CNPQ_DATA[u.id]?.[Number(year)];if(cnpqReal){c.cnpq=round(cnpqReal.captacao,2);c.vinculos=cnpqReal.vinculos;}else{c.cnpq=round(c.cnpq*(.9+bud*.1),1);c.vinculos=null;}c.supplementation=round(c.supplementation+(1-bud)*3,1);["occupancy","completion","doctors","employment","facultyOcc","cres","execution","liquidation"].forEach(k=>c[k]=clamp(round(c[k]+delta,1),0,100));c.dropout=clamp(round(c.dropout-delta*.25,1),0,100);c.salary=Math.round(c.salary*(.88+bud*.12));const _rc=getRealIndicators(u.sigla,year);if(_rc&&_rc.cursosStudents!=null){if(_rc.cursosStudents!=null)c.students=_rc.cursosStudents;if(_rc.cursosEntrants!=null)c.entrants=_rc.cursosEntrants;if(_rc.cursosGraduates!=null)c.graduates=_rc.cursosGraduates;if(_rc.cursosCourses!=null)c.courses=_rc.cursosCourses;if(_rc.cursosVacancies!=null)c.vacancies=_rc.cursosVacancies;if(_rc.cursosOccupancy!=null)c.occupancy=_rc.cursosOccupancy;if(_rc.cursosDropout!=null)c.dropout=_rc.cursosDropout;if(_rc.cursosCompletion!=null)c.completion=_rc.cursosCompletion;c.vacanciesNova=_rc.cursosVacanciesNova??null;c.vacanciesDay=_rc.cursosVacanciesDay??null;c.vacanciesNight=_rc.cursosVacanciesNight??null;c.matDay=_rc.cursosMatDay??null;c.matNight=_rc.cursosMatNight??null;c.ingressOccupancy=_rc.cursosIngressOccupancy??null;c.vacanciesUnfilled=_rc.cursosVacanciesUnfilled??null;c.vacanciesNovaUnfilled=_rc.cursosVacanciesNovaUnfilled??null;c.mobility=_rc.cursosMobility??null;c.publicSchool=_rc.cursosPublicSchool??null;c.occDay=_rc.cursosOccupancyDay??null;c.occNight=_rc.cursosOccupancyNight??null;}if(_rc){if(_rc.iesDocDout!=null)c.doctors=_rc.iesDocDout;c.docForeign=_rc.iesDocForeign??null;c.capesPortal=_rc.iesCapesPortal??null;if(_rc.docTaxaOcup!=null)c.facultyOcc=_rc.docTaxaOcup;if(_rc.docCresTaxa!=null)c.cres=_rc.docCresTaxa;c.docVagasTotais=_rc.docVagasTotais??null;c.docVagasDisp=_rc.docVagasDisp??null;c.docVagasOcupadas=_rc.docVagasOcupadas??null;c.docTaxaUtil=_rc.docTaxaUtil??null;c.docVagasCond=_rc.docVagasCond??null;c.docPctCond=_rc.docPctCond??null;c.docTideAtrib=_rc.docTideAtrib??null;c.docTidePartic=_rc.docTidePartic??null;c.docTidePctNaoAtrib=_rc.docTidePctNaoAtrib??null;c.docChMedia=_rc.docChMedia??null;c.docCresAut=_rc.docCresAut??null;c.docCresUtil=_rc.docCresUtil??null;c.docCresSaldo=_rc.docCresSaldo??null;c.docCresOciosidade=_rc.docCresOciosidade??null;c.docCresPartic=_rc.docCresPartic??null;if(_rc.capesConceito!=null)c.capes=_rc.capesConceito;if(_rc.pg!=null)c.pg=_rc.pg;if(_rc.pgTop!=null)c.pgTop=_rc.pgTop;c.capesPct567=_rc.capesPct567??null;c.capesDocPermanentes=_rc.capesDocPermanentes??null;c.capesDocEstrangeiros=_rc.capesDocEstrangeiros??null;c.capesDocBolsa=_rc.capesDocBolsa??null;c.docTotal=_rc.docTotal??null;c.docExe=_rc.docExe??null;c.grauMix=_rc.grauMix??null;c.cbo2Profile=_rc.cbo2Profile??null;c.cbo2Diversity=_rc.cbo2Diversity??null;c.cbo2MunDestino=_rc.cbo2MunDestino??null;c.muniOccupancy=_rc.muniOccupancy??null;c.pgMestrado=_rc.pgMestrado??null;c.pgMestradoProf=_rc.pgMestradoProf??null;c.pgDoutorado=_rc.pgDoutorado??null;c.pgPorGrandeArea=_rc.pgPorGrandeArea??null;c.discMestrado=_rc.discMestrado??null;c.discDoutorado=_rc.discDoutorado??null;c.tituladosMestrado=_rc.tituladosMestrado??null;c.tituladosDoutorado=_rc.tituladosDoutorado??null;c.docPermanentes=_rc.docPermanentes??null;c.docColaboradores=_rc.docColaboradores??null;c.docVisitantes=_rc.docVisitantes??null;c.razaoDocenteDiscente=_rc.razaoDocenteDiscente??null;c.pgMunicipiosDistintos=_rc.pgMunicipiosDistintos??null;c.pctExcelencia=_rc.pctExcelencia??null;}if(_rc){c.budget=_rc.budget??_rc.liquidado??c.budget;c.execution=_rc.execution??_rc.tx_execucao_empenho??c.execution;c.liquidation=_rc.liquidation??_rc.tx_liquidacao??c.liquidation;c.supplementation=_rc.supplementation??_rc.var_dotacao_loa??c.supplementation;c.personnel=_rc.personnel??_rc.part_pessoal??c.personnel;if(_rc.cnpqCaptacao!=null){c.cnpq=_rc.cnpqCaptacao;}if(_rc.cnpqVinculos!=null){c.vinculos=_rc.cnpqVinculos;}c.dotacao_inicial=_rc.dotacao_inicial??c.dotacao_inicial??null;c.orcamento_atualizado=_rc.orcamento_atualizado??c.orcamento_atualizado??null;c.empenhado=_rc.empenhado??c.empenhado??null;c.liquidado=_rc.liquidado??c.liquidado??null;c.pago=_rc.pago??c.pago??null;c.tx_execucao_empenho=_rc.tx_execucao_empenho??c.tx_execucao_empenho??null;c.tx_liquidacao=_rc.tx_liquidacao??c.tx_liquidacao??null;c.tx_pagamento_liq=_rc.tx_pagamento_liq??c.tx_pagamento_liq??null;c.grau_contingenciamento=_rc.grau_contingenciamento??c.grau_contingenciamento??null;c.var_dotacao_loa=_rc.var_dotacao_loa??c.var_dotacao_loa??null;c.part_pessoal=_rc.part_pessoal??c.part_pessoal??null;c.part_outras_correntes=_rc.part_outras_correntes??c.part_outras_correntes??null;c.part_capital=_rc.part_capital??c.part_capital??null;c.ind81=_rc.ind81??c.ind81??null;c.ind82=_rc.ind82??c.ind82??null;c.ind83=_rc.ind83??c.ind83??null;c.ind84=_rc.ind84??c.ind84??null;c.ind85=_rc.ind85??c.ind85??null;c.ind86=_rc.ind86??c.ind86??null;c.ind87=_rc.ind87??c.ind87??null;c.ind88=_rc.ind88??c.ind88??null;c.ind95orc=_rc.ind95orc??c.ind95orc??null;}if(_rc){c.insertionRatePR=_rc.insertionRatePR??null;c.egressosMunicipios=_rc.egressosMunicipios??_rc.raisMunCount??null;c.territoryIncome=_rc.territoryIncome??c.territoryIncome??null;c.idhmRegional=_rc.idhmRegional??c.idhmRegional??null;}if(window.SETI_CLUSTERS&&window.SETI_CLUSTERS[u.sigla]){const cl=window.SETI_CLUSTERS[u.sigla];groupKeys.forEach(k=>{c.groups[k]=cl[k]!=null?cl[k]:null;});}return c;}
 // Selo visual para valores estimados (fallback de fórmula quando a base não
 // cobre a IES/ano). Usar junto ao valor ou no título do gráfico.
 function estBadge(reason){
@@ -2728,7 +3058,7 @@ function renderKpis(c){
   const cards=state.activeTab==="efficiency"?[
     ["Orçamento liquidado do grupo",formatCurrencyMillions(ar.budget),`${ref.length} IEES no grupo`,"+6,8%",d(ar.budget,arPrev?.budget,"neutral","pct")],["Execução orçamentária média",formatPercent(ar.execution),"empenho sobre disponível",badge(ar.execution,93,90),d(ar.execution,arPrev?.execution,"higher","pp")],["Taxa de liquidação",formatPercent(ar.liquidation),"liquidado sobre empenhado",badge(ar.liquidation,91,88),d(ar.liquidation,arPrev?.liquidation,"higher","pp")],[eff.label,eff.format(mean(ref,eff.get)),"média do grupo","ref.",null],["Resultado médio do grupo",res.format(mean(ref,res.get)),res.label,"grupo",null],["Resultado relativo",selectedRow?`${selectedRow.resultRel.toFixed(1)}%`:`${mean(rows,r=>r.resultRel).toFixed(1)}%`,"base grupo = 100",selectedRow?selectedRow.resultLabel:"média",null],["Esforço relativo",selectedRow?`${selectedRow.effortRel.toFixed(1)}%`:`${mean(rows,r=>r.effortRel).toFixed(1)}%`,"base grupo = 100",selectedRow?selectedRow.effortLabel:"média",null],["Quadrante oficial",selectedRow?selectedRow.quadrant:summarize(rows),"planilha de estratificação",`${rows.length} pontos`,null]
   ]:[
-    ["Total de estudantes",formatNumber(a.students),`${formatNumber(a.entrants)} ingressantes`,"+2,1%",d(a.students,aPrev?.students,"higher","pct")],["Taxa de ocupação das vagas",formatPercent(a.occupancy),`${formatNumber(a.vacancies)} vagas`,badge(a.occupancy,88,80),d(a.occupancy,aPrev?.occupancy,"higher","pp")],["Taxa de concluintes",formatPercent(a.completion),`${formatNumber(a.graduates)} concluintes`,badge(a.completion,62,56),d(a.completion,aPrev?.completion,"higher","pp")],["Docentes com doutorado",formatPercent(a.doctors),"proporção no corpo docente",badge(a.doctors,86,80),d(a.doctors,aPrev?.doctors,"higher","pp")],["Captação CNPq",formatCurrencyMillions(a.cnpq),"recursos captados","+4,4%",d(a.cnpq,aPrev?.cnpq,"higher","pct")],["Inserção no Paraná",formatPercent(a.employment),"egressos no mercado formal",badge(a.employment,72,67),d(a.employment,aPrev?.employment,"higher","pp")],["Orçamento liquidado",formatCurrencyMillions(a.budget),"grupo selecionado","+6,8%",d(a.budget,aPrev?.budget,"neutral","pct")],["Execução orçamentária",formatPercent(a.execution),"média ponderada",badge(a.execution,93,90),d(a.execution,aPrev?.execution,"higher","pp")]
+    ["Total de estudantes",formatNumber(a.students),`${formatNumber(a.entrants)} ingressantes`,"+2,1%",d(a.students,aPrev?.students,"higher","pct")],["Taxa de ocupação das vagas",formatPercent(a.occupancy),`${formatNumber(a.vacancies)} vagas`,badge(a.occupancy,88,80),d(a.occupancy,aPrev?.occupancy,"higher","pp")],["Concluintes sobre matrículas",formatPercent(a.completion),`${formatNumber(a.graduates)} concluintes no ano`,badge(a.completion,62,56),d(a.completion,aPrev?.completion,"higher","pp")],["Docentes com doutorado",formatPercent(a.doctors),"proporção no corpo docente",badge(a.doctors,86,80),d(a.doctors,aPrev?.doctors,"higher","pp")],["Captação CNPq",formatCurrencyMillions(a.cnpq),"recursos captados","+4,4%",d(a.cnpq,aPrev?.cnpq,"higher","pct")],["Inserção no Paraná",formatPercent(a.employment),"egressos no mercado formal",badge(a.employment,72,67),d(a.employment,aPrev?.employment,"higher","pp")],["Orçamento liquidado",formatCurrencyMillions(a.budget),"grupo selecionado","+6,8%",d(a.budget,aPrev?.budget,"neutral","pct")],["Execução orçamentária",formatPercent(a.execution),"média ponderada",badge(a.execution,93,90),d(a.execution,aPrev?.execution,"higher","pp")]
   ];
   el.kpiGrid.innerHTML=cards.map(([label,value,meta,trend,delta])=>{const cls=kpiClass(label,trend);return `<article class="kpi-card ${cls}"><div class="kpi-head"><div class="kpi-label">${label}</div><div class="kpi-icon" aria-hidden="true">${kpiIcon(label)}</div></div><div class="kpi-value">${value}</div></article>`;}).join("");
 }
@@ -2817,7 +3147,7 @@ function renderTab(c){const map={overview,comparison,access,retention,quality,fa
 function overview(c){const d=c.ref,res=resultIndicators[c.f.result];if(!d.length)return empty();const a=agg(d);return `<div class="insight-grid"><article class="visual-card card-primary"><h3>Resultado institucional por IEES</h3><p class="card-subtitle">Indicador selecionado: ${res.label}</p>${bars(d,res.get,res.format)}</article><article class="visual-card card-support"><h3>Ranking executivo do recorte</h3><p class="card-subtitle">Ordenado pelo resultado relativo ao grupo selecionado</p>${rank(matrixRows(d,c.f).sort((a,b)=>b.resultRel-a.resultRel).slice(0,5),r=>`${r.resultRel.toFixed(1)}%`,"resultLabel")}</article></div><div class="chart-grid mt-14"><article class="score-card"><h3>Selo de abrangência</h3><p class="card-subtitle">Referência comparativa ativa</p><div class="score-value">${c.f.scope}</div><div class="score-meter"><span style="width:${c.f.scope==="Brasil"?100:72}%"></span></div></article><article class="score-card"><h3>Orçamento para resultados</h3><p class="card-subtitle">Resultado composto x execução orçamentária</p><div class="score-value">${formatPercent((a.execution+a.completion)/2)}</div><div class="score-meter"><span style="width:${clamp((a.execution+a.completion)/2,0,100)}%"></span></div></article></div>${metricTable(d,[["IEES",u=>`<strong>${u.sigla}</strong><br><span>${u.nome}</span>`],["Estudantes",u=>formatNumber(u.students)],["Cursos",u=>formatNumber(u.courses)],["Ocupação",u=>formatPercent(u.occupancy)],["Concluintes",u=>formatNumber(u.graduates)],["Orçamento",u=>formatCurrencyMillions(u.budget)],["Grupo",u=>u.groups[c.f.groupBy]]],"Síntese por IEES")}`;}
 function comparison(c){const d=c.ref,res=resultIndicators[c.f.result],eff=effortIndicators[c.f.effort],rows=matrixRows(d,c.f).sort((a,b)=>b.resultRel-a.resultRel),g=mean(d,res.get),p=mean(c.all,res.get),br=brazil.result[c.f.result];if(!d.length)return empty();return `<div class="architecture-message">O agrupamento é dinâmico e depende da variável selecionada. A mesma IEES pode pertencer a grupos diferentes conforme o critério de comparação.</div><div class="insight-grid"><article class="visual-card card-primary"><h3>IEES x média do grupo</h3><p class="card-subtitle">${res.label}</p>${bars(d,res.get,res.format)}</article><article class="visual-card card-support"><h3>Posição relativa</h3><p class="card-subtitle">Resultado relativo e esforço orçamentário relativo</p>${rank(rows,r=>`${r.resultRel.toFixed(1)}%`,"quadrant")}</article></div><div class="table-wrap mt-14"><h3>Tabela comparativa das IEES</h3><p class="card-subtitle">Grupo: ${c.group==="all"?"todos":c.group} | Esforço: ${eff.label}</p><table class="data-table"><thead><tr><th>IEES</th><th>Resultado</th><th>Média grupo</th><th>Média Paraná</th><th>Média Brasil</th><th>Esforço relativo</th><th>Classificação</th></tr></thead><tbody>${rows.map(r=>`<tr><td><strong>${r.sigla}</strong><br><span>${r.region}</span></td><td>${res.format(r.result)}</td><td>${res.format(g)}</td><td>${res.format(p)}</td><td>${res.format(br)}</td><td>${r.effortRel.toFixed(1)}%</td><td>${status(r.quadrant,r.tone)}</td></tr>`).join("")}</tbody></table></div>`;}
 function access(c){const d=c.ref,a=agg(d),unfilled=Math.max(0,a.vacancies-Math.round(a.vacancies*a.occupancy/100));if(!d.length)return empty();return `<div class="score-grid">${score("Escala da oferta",formatNumber(a.vacancies),"Total de vagas",pct(a.vacancies,52000))}${score("Ocupação e ociosidade",formatPercent(a.occupancy),`${formatNumber(unfilled)} vagas não ocupadas`,a.occupancy)}${score("Eficiência da oferta",formatCurrency(mean(d,effortIndicators.costOccupiedVacancy.get)),"Custo por vaga ocupada",74)}</div><div class="chart-grid mt-14"><article class="visual-card card-primary"><h3>Taxa de ocupação por IEES</h3><p class="card-subtitle">Demanda, ocupação e ociosidade</p>${bars(d,u=>u.occupancy,formatPercent)}</article><article class="visual-card card-support"><h3>Participação na oferta</h3><p class="card-subtitle">Total de vagas no recorte selecionado</p>${bars(d,u=>u.vacancies,formatNumber)}</article></div>${metricTable(d,[["IEES",u=>`<strong>${u.sigla}</strong><br><span>${u.municipality}</span>`],["Cursos",u=>formatNumber(u.courses)],["Vagas",u=>formatNumber(u.vacancies)],["Ocupação",u=>formatPercent(u.occupancy)],["Vagas não ocupadas",u=>formatNumber(Math.max(0,Math.round(u.vacancies*(1-u.occupancy/100))))],["Custo por estudante",u=>formatCurrency(effortIndicators.budgetPerStudent.get(u))]],"Escala, ocupação e custo da oferta")}`;}
-function retention(c){const d=c.ref,a=agg(d);if(!d.length)return empty();return `<div class="insight-grid"><article class="visual-card card-primary"><h3>Funil formativo</h3><p class="card-subtitle">Ingressantes → estudantes → concluintes</p>${(()=>{const W=280,CX=160,ent=Math.max(a.entrants,1),w2=clamp(a.students/ent*W,60,W),w3=clamp(a.graduates/ent*W,30,w2),l=w=>(160-w/2).toFixed(1),r=w=>(160+w/2).toFixed(1),rate1=(a.students/ent*100).toFixed(1).replace('.',','),rate2=(a.completion||0).toFixed(1).replace('.',','),w3b=Math.max(w3*0.85,30);return '<svg viewBox="0 0 320 220" width="100%" style="max-width:340px;margin:0 auto;display:block"><polygon points="'+l(W)+',10 '+r(W)+',10 '+r(w2)+',60 '+l(w2)+',60" fill="var(--blue-700)" opacity="0.9"/><text x="'+CX+'" y="32" text-anchor="middle" fill="white" font-size="13" font-weight="600">'+formatNumber(a.entrants)+'</text><text x="'+CX+'" y="50" text-anchor="middle" fill="white" font-size="10">Ingressantes</text><text x="'+CX+'" y="76" text-anchor="middle" fill="var(--gray-600)" font-size="11">→ '+rate1+'% permaneceram</text><polygon points="'+l(w2)+',83 '+r(w2)+',83 '+r(w3)+',133 '+l(w3)+',133" fill="var(--blue-700)" opacity="0.75"/><text x="'+CX+'" y="105" text-anchor="middle" fill="white" font-size="13" font-weight="600">'+formatNumber(a.students)+'</text><text x="'+CX+'" y="123" text-anchor="middle" fill="white" font-size="10">Matrículas ativas</text><text x="'+CX+'" y="149" text-anchor="middle" fill="var(--gray-600)" font-size="11">→ '+rate2+'% concluíram</text><polygon points="'+l(w3)+',157 '+r(w3)+',157 '+r(w3b)+',207 '+l(w3b)+',207" fill="var(--blue-700)" opacity="0.6"/><text x="'+CX+'" y="179" text-anchor="middle" fill="white" font-size="13" font-weight="600">'+formatNumber(a.graduates)+'</text><text x="'+CX+'" y="197" text-anchor="middle" fill="white" font-size="10">Concluintes</text></svg>';})()}</article><article class="visual-card card-support"><h3>Desvinculação discente</h3><p class="card-subtitle">Barras por IEES</p>${bars(d,u=>u.dropout,formatPercent)}</article></div><div class="chart-grid mt-14"><article class="visual-card card-support"><h3>Taxa de concluintes</h3><p class="card-subtitle">Resultado formativo relativo ao agrupamento</p>${bars(d,u=>u.completion,formatPercent)}</article><article class="visual-card card-support"><h3>Custo por concluinte</h3><p class="card-subtitle">Cruzamento orçamentário prioritário</p>${bars(d,effortIndicators.costGraduate.get,formatCurrency)}</article></div>`;}
+function retention(c){const d=c.ref,a=agg(d);if(!d.length)return empty();return `<div class="insight-grid"><article class="visual-card card-primary"><h3>Funil formativo</h3><p class="card-subtitle">Ingressantes → estudantes → concluintes</p>${(()=>{const W=280,CX=160,ent=Math.max(a.entrants,1),w2=clamp(a.students/ent*W,60,W),w3=clamp(a.graduates/ent*W,30,w2),l=w=>(160-w/2).toFixed(1),r=w=>(160+w/2).toFixed(1),rate1=(a.students/ent*100).toFixed(1).replace('.',','),rate2=(a.completion||0).toFixed(1).replace('.',','),w3b=Math.max(w3*0.85,30);return '<svg viewBox="0 0 320 220" width="100%" style="max-width:340px;margin:0 auto;display:block"><polygon points="'+l(W)+',10 '+r(W)+',10 '+r(w2)+',60 '+l(w2)+',60" fill="var(--blue-700)" opacity="0.9"/><text x="'+CX+'" y="32" text-anchor="middle" fill="white" font-size="13" font-weight="600">'+formatNumber(a.entrants)+'</text><text x="'+CX+'" y="50" text-anchor="middle" fill="white" font-size="10">Ingressantes</text><text x="'+CX+'" y="76" text-anchor="middle" fill="var(--gray-600)" font-size="11">→ '+rate1+'% permaneceram</text><polygon points="'+l(w2)+',83 '+r(w2)+',83 '+r(w3)+',133 '+l(w3)+',133" fill="var(--blue-700)" opacity="0.75"/><text x="'+CX+'" y="105" text-anchor="middle" fill="white" font-size="13" font-weight="600">'+formatNumber(a.students)+'</text><text x="'+CX+'" y="123" text-anchor="middle" fill="white" font-size="10">Matrículas ativas</text><text x="'+CX+'" y="149" text-anchor="middle" fill="var(--gray-600)" font-size="11">→ '+rate2+'% concluintes/matrículas</text><polygon points="'+l(w3)+',157 '+r(w3)+',157 '+r(w3b)+',207 '+l(w3b)+',207" fill="var(--blue-700)" opacity="0.6"/><text x="'+CX+'" y="179" text-anchor="middle" fill="white" font-size="13" font-weight="600">'+formatNumber(a.graduates)+'</text><text x="'+CX+'" y="197" text-anchor="middle" fill="white" font-size="10">Concluintes</text></svg>';})()}</article><article class="visual-card card-support"><h3>Desvinculação discente</h3><p class="card-subtitle">Barras por IEES</p>${bars(d,u=>u.dropout,formatPercent)}</article></div><div class="chart-grid mt-14"><article class="visual-card card-support"><h3>Concluintes sobre matrículas</h3><p class="card-subtitle">Proporção anual: concluintes do ano / matrículas do mesmo ano</p>${bars(d,u=>u.completion,formatPercent)}</article><article class="visual-card card-support"><h3>Custo por concluinte</h3><p class="card-subtitle">Cruzamento orçamentário prioritário</p>${bars(d,effortIndicators.costGraduate.get,formatCurrency)}</article></div>`;}
 function quality(c){const d=c.ref;if(!d.length)return empty();return `<div class="score-grid">${score("Qualificação docente",formatPercent(mean(d,u=>u.doctors)),"Docentes com doutorado",mean(d,u=>u.doctors))}${score("Pesquisa e CNPq",formatCurrencyMillions(sum(d,u=>u.cnpq)),"Captação no recorte",78)}${score("Pós-graduação CAPES",mean(d,u=>u.capes).toFixed(1),"Conceito médio dos programas",mean(d,u=>u.capes)*18)}</div><div class="chart-grid mt-14"><article class="visual-card card-primary"><h3>Docentes com doutorado</h3><p class="card-subtitle">Qualificação docente por IEES</p>${bars(d,u=>u.doctors,formatPercent)}</article><article class="visual-card card-support"><h3>Captação CNPq por estudante</h3><p class="card-subtitle">Eficiência acadêmico-científica</p>${bars(d,resultIndicators.cnpq.get,formatCurrency)}</article></div>${metricTable(d,[["IEES",u=>`<strong>${u.sigla}</strong><br><span>${u.profile}</span>`],["Programas PG",u=>formatNumber(u.pg)],["CAPES",u=>u.capes.toFixed(1)],["CAPES 5, 6 e 7",u=>formatNumber(u.pgTop)],["Doutores",u=>formatPercent(u.doctors)],["CNPq",u=>formatCurrencyMillions(u.cnpq)]],"Qualidade acadêmica, pós-graduação e pesquisa")}`;}
 function faculty(c){const d=c.ref;if(!d.length)return empty();return `<div class="chart-grid"><article class="visual-card card-primary"><h3>Taxa de ocupação do quadro docente</h3><p class="card-subtitle">Vagas efetivas ocupadas sobre disponíveis</p>${bars(d,u=>u.facultyOcc,formatPercent)}</article><article class="visual-card card-support"><h3>Utilização da CRES</h3><p class="card-subtitle">Carga horária CRES utilizada sobre autorizada</p>${bars(d,u=>u.cres,formatPercent)}</article></div>${metricTable(d,[["IEES",u=>`<strong>${u.sigla}</strong><br><span>${u.region}</span>`],["Ocupação docente",u=>formatPercent(u.facultyOcc)],["TIDE estimado",u=>formatPercent((u.facultyOcc+u.doctors)/2)],["CRES",u=>formatPercent(u.cres)],["Despesa pessoal",u=>formatPercent(u.personnel)],["Estudantes/docente",u=>(u.students/Math.max(1,Math.round(u.students/15))).toFixed(1)]],"Quadro docente, TIDE e capacidade operacional")}`;}
 function employment(c){const d=c.ref;if(!d.length)return empty();return `<div class="score-grid">${score("Inserção no Paraná",formatPercent(mean(d,u=>u.employment)),"Egressos no mercado formal",mean(d,u=>u.employment))}${score("Aderência CBO2",formatPercent(mean(d,u=>u.employment-5)),"Ocupações aderentes à formação",mean(d,u=>u.employment-5))}${score("Média salarial",formatCurrency(mean(d,u=>u.salary)),"Egressos aderentes ao CBO2",76)}</div><div class="chart-grid mt-14"><article class="visual-card card-primary"><h3>Inserção profissional no Paraná</h3><p class="card-subtitle">Taxa de egressos empregados no estado</p>${bars(d,u=>u.employment,formatPercent)}</article><article class="visual-card card-support"><h3>Média salarial dos egressos</h3><p class="card-subtitle">Egressos aderentes ao filtro CBO2</p>${bars(d,u=>u.salary,formatCurrency)}</article></div>${metricTable(d,[["IEES",u=>`<strong>${u.sigla}</strong><br><span>${u.municipality}</span>`],["Paraná",u=>formatPercent(u.employment)],["Região Sul",u=>formatPercent(u.employment+5)],["Cidade-sede",u=>formatPercent(Math.max(25,u.employment-34))],["Aderência CBO2",u=>formatPercent(u.employment-5)],["Dispersão territorial",u=>`${u.territory} pts`]],"Inserção profissional, território e aderência ocupacional")}`;}
@@ -3094,7 +3424,7 @@ function autonomiaBlock(u) {
   </div>`;
 }
 function investimentoBlock(u) {
-  const e88=u.ind88, e92=u.ind92, e93=u.ind93, e95=u.ind95;
+  const e88=u.ind88, e92=u.ind92, e93=u.ind93, e95=u.ind95orc;
   if (e88==null && e92==null && e93==null && e95==null) return '';
   function icard(ind, title, v, pol, g, y, note, fmt) {
     const val = fmt ? fmt(v) : _orcFmt(v);
@@ -3123,7 +3453,7 @@ function orcamentarioTable(rows) {
     ['Pessoal (86)',u=>_orcFmt(u.ind86),''],
     ['Outras Corr (87)',u=>_orcFmt(u.ind87),''],
     ['Corr/Cap (88)',u=>fmt88(u.ind88),''],
-    ['Exec/LOA (95)',u=>_orcFmt(u.ind95),u=>_orcClass(u.ind95,'up',85,70)],
+    ['Exec/LOA (95)',u=>_orcFmt(u.ind95orc),u=>_orcClass(u.ind95orc,'up',85,70)],
   ];
   const hd = cols.map(([h])=>`<th>${h}</th>`).join('');
   const tbody = rows.map(u=>`<tr>${cols.map(([,val,col])=>`<td ${col?col(u):''}>${val(u)}</td>`).join('')}</tr>`).join('');
@@ -3190,7 +3520,7 @@ function realIndicatorsForUniversity(u){return typeof getRealIndicators==="funct
 function panelEmploymentRate(u){const real=realIndicatorsForUniversity(u);return real&&real.ind37!=null?clamp(Number(real.ind37)*100,0,100):u.employment;}
 function panelEmploymentSalary(u){const real=realIndicatorsForUniversity(u);return real&&real.ind40!=null?Number(real.ind40):u.salary;}
 function panelEgressosField(u,field,fallback){const real=realIndicatorsForUniversity(u);const val=real&&real[field]!=null?real[field]:null;return val!=null?val:fallback;}
-function agg(d){return {students:sum(d,u=>u.students),entrants:sum(d,u=>u.entrants),graduates:sum(d,u=>u.graduates),vacancies:sum(d,u=>u.vacancies),occupancy:wavg(d,u=>u.occupancy,u=>u.vacancies),completion:wavg(d,u=>u.completion,u=>u.entrants),doctors:wavg(d,u=>u.doctors,u=>u.students),cnpq:sum(d,u=>u.cnpq),employment:wavg(d,u=>panelEmploymentRate(u),u=>u.graduates),budget:sum(d,u=>u.budget),execution:wavg(d,u=>u.execution,u=>u.budget),liquidation:wavg(d,u=>u.liquidation,u=>u.budget),vinculos:sum(d,u=>u.vinculos||0)};}
+function agg(d){return {students:sum(d,u=>u.students),entrants:sum(d,u=>u.entrants),graduates:sum(d,u=>u.graduates),vacancies:sum(d,u=>u.vacancies),occupancy:wavg(d,u=>u.occupancy,u=>u.vacancies),completion:wavg(d,u=>u.completion,u=>u.students),doctors:wavg(d,u=>u.doctors,u=>u.students),cnpq:sum(d,u=>u.cnpq),employment:wavg(d,u=>panelEmploymentRate(u),u=>u.graduates),budget:sum(d,u=>u.budget),execution:wavg(d,u=>u.execution,u=>u.budget),liquidation:wavg(d,u=>u.liquidation,u=>u.budget),vinculos:sum(d,u=>u.vinculos||0)};}
 function matrixRows(d,f){if(!d.length)return [];const res=resultIndicators[f.result],eff=effortIndicators[f.effort],ra=mean(d,res.get)||1,ea=mean(d,eff.get)||1;return d.map(u=>{const result=res.get(u),effort=eff.get(u),resultRel=result/ra*100,effortRel=effort/ea*100,quad=quadrantUnavailable();return {...u,result,effort,resultRel,effortRel,quadrant:quad.label,tone:quad.tone,resultLabel:"sem quadrante oficial",effortLabel:"sem quadrante oficial"};});}
 function composite(u){return u.occupancy*.15+u.completion*.15+(100-u.dropout)*.12+u.doctors*.14+norm(resultIndicators.cnpq.get(u),900,1900)*.12+norm(u.capes,3.2,5)*.1+panelEmploymentRate(u)*.12+norm(panelEmploymentSalary(u),4500,6500)*.1;}
 function summarize(rows){const top=rows.reduce((b,r)=>r.resultRel>(b?.resultRel||0)?r:b,null);return top?top.quadrant:"sem dados";}
@@ -3293,7 +3623,7 @@ const decisoryQuestions = {
 const tabBlocks = {
   comparison: ["Tabela comparativa", "Ranking", "Radar"],
   access: ["Escala da oferta", "Ocupação e ociosidade", "Catálogo de indicadores e Distribuição territorial"],
-  retention: ["Funil", "Taxas", "Evolução do ranking por ano", "Dispersão", "Ranking por curso", "Conclusão × inserção profissional"],
+  retention: ["Funil", "Taxas", "Evolução do ranking por ano", "Dispersão", "Ranking por curso", "IND-27 × inserção profissional"],
   quality: ["Qualificação docente", "Pós-grad e CAPES", "Pesquisa e CNPq", "Internacionalização"],
   faculty: ["Quadro legal", "Vagas disponíveis e condicionadas", "TIDE", "CRES e esforço"],
   employment: ["Inserção geral", "Inserção PR e Sul", "CBO2 e salário", "Destino territorial", "Por curso", "Perfil ocupacional"],
@@ -3308,14 +3638,14 @@ const tabIndicators = {
     { code:"ind10", label:"Total de cursos" },
     { code:"ind12", label:"Total de estudantes" },
     { code:"ind26", label:"Taxa de ocupação das vagas" },
-    { code:"ind27", label:"Taxa de concluintes" }
+    { code:"ind27", label:"Concluintes sobre matrículas" }
   ],
   comparison: [
     { code:"ind1",  label:"Proporção de ocupação de vagas" },
     { code:"ind5",  label:"Taxa anual de desvinculação" },
     { code:"ind6",  label:"Proporção de docentes com doutorado" },
     { code:"ind26", label:"Taxa de ocupação das vagas" },
-    { code:"ind27", label:"Taxa de concluintes" },
+    { code:"ind27", label:"Concluintes sobre matrículas" },
     { code:"ind37", label:"Taxa de inserção de egressos no PR" },
     { code:"ind81", label:"Taxa de execução orçamentária" }
   ],
@@ -3338,7 +3668,7 @@ const tabIndicators = {
     { code:"ind12", label:"Total de estudantes" },
     { code:"ind13", label:"Total de estudantes ingressantes" },
     { code:"ind14", label:"Total de estudantes concluintes" },
-    { code:"ind27", label:"Taxa de concluintes" }
+    { code:"ind27", label:"Concluintes sobre matrículas" }
   ],
   quality: [
     { code:"ind6",  label:"Proporção de docentes com doutorado" },
@@ -3381,9 +3711,9 @@ const tabIndicators = {
     { code:"ind86", label:"Participação de pessoal no total da despesa" },
     { code:"ind89", label:"Participação de recursos livres" },
     { code:"ind90", label:"Participação de recursos próprios" },
-    { code:"ind95", label:"Execução sobre orçamento inicial" },
-    { code:"ind96", label:"Execução sobre orçamento disponível" },
-    { code:"ind97", label:"Execução sobre orçamento atualizado" }
+    { code:"ind95orc", label:"Execução sobre orçamento inicial" },
+    { code:"ind96orc", label:"Execução sobre orçamento disponível" },
+    { code:"ind97orc", label:"Execução sobre orçamento atualizado" }
   ]
 };
 
@@ -3479,9 +3809,9 @@ const IND_FIELD_MAP = {
   ind92: u=>u.ind92??budgetMetrics(u).works,
   ind93: u=>u.ind93??budgetMetrics(u).equipment,
   ind94: u=>budgetMetrics(u).variationRate,
-  ind95: u=>budgetMetrics(u).execInitial,
-  ind96: u=>budgetMetrics(u).execAvailable,
-  ind97: u=>budgetMetrics(u).execUpdated,
+  ind95orc: u=>budgetMetrics(u).execInitial,
+  ind96orc: u=>budgetMetrics(u).execAvailable,
+  ind97orc: u=>budgetMetrics(u).execUpdated,
 };
 
 IND_FIELD_MAP["students"]  = IND_FIELD_MAP["ind2"];
@@ -3544,7 +3874,7 @@ const tabBlockIndMap = {
     "Evolução do ranking por ano": ["ind5","ind14","ind27"],
     "Dispersão":                   ["ind5","ind12","ind27"],
     "Ranking por curso":           ["ind5","ind27"],
-    "Conclusão × inserção profissional": ["ind27"]
+    "IND-27 × inserção profissional": ["ind27"]
   },
   quality: {
     "Qualificação docente": ["ind6","ind7","ind8","ind9"],
@@ -3571,9 +3901,9 @@ const tabBlockIndMap = {
     "Composição crédito e despesa":       ["ind86","ind89","ind90"]
   },
   performance: {
-    "Cruzamento desempenho acadêmico":    ["ind95","ind96","ind97"],
-    "Cruzamento corpo docente":           ["ind95","ind96","ind97"],
-    "Matriz de oportunidades e alertas":  ["ind81","ind82","ind83","ind84","ind85","ind86","ind89","ind90","ind95","ind96","ind97"]
+    "Cruzamento desempenho acadêmico":    ["ind95orc","ind96orc","ind97orc"],
+    "Cruzamento corpo docente":           ["ind95orc","ind96orc","ind97orc"],
+    "Matriz de oportunidades e alertas":  ["ind81","ind82","ind83","ind84","ind85","ind86","ind89","ind90","ind95orc","ind96orc","ind97orc"]
   }
 };
 
@@ -3735,7 +4065,7 @@ function tabMiniKpis(tabId, c) {
          + miniKpi("Vagas ociosas", formatNumber(unfilled));
   } else if (tabId === "retention") {
     kpis = miniKpi("Ingressantes", formatNumber(a.entrants))
-         + miniKpi("Taxa de concluintes", formatPercent(a.completion))
+         + miniKpi("Concluintes sobre matrículas", formatPercent(a.completion))
          + miniKpi("Desvinculação média", formatPercent(mean(d, u => u.dropout)));
   } else if (tabId === "quality") {
     kpis = miniKpi("Doutores médio", formatPercent(mean(d, u => u.doctors)))
@@ -3935,7 +4265,7 @@ var overviewKpiDefinitions = [
   { code: "IND-26", title: "Taxa de ocupação das vagas", source: "INEP", formula: "QT_MAT / QT_VG_TOTAL × 100", polarity: "↑", mode: "pp", benchmark: () => formatPercent(brazil.result.occupancy), get: a => a.occupancy, fmt: formatPercent },
   { code: "IND-24", title: "Taxa de ocupação das vagas de ingresso", source: "INEP", formula: "QT_ING / QT_VG_NOVA × 100", polarity: "↑", mode: "pp", get: a => a.ingressOccupancy, fmt: formatPercent },
   { code: "IND-5", title: "Taxa anual de desvinculação discente", source: "INEP", formula: "QT_DESVINCULADO / QT_MAT × 100", polarity: "↓", mode: "pp", benchmark: () => formatPercent(100 - brazil.result.permanence), get: a => a.dropout, fmt: formatPercent },
-  { code: "IND-27", title: "Taxa de concluintes", source: "INEP", formula: "QT_CONC / QT_VG_NOVA × 100", polarity: "↑", mode: "pp", benchmark: () => formatPercent(brazil.result.completion), get: a => a.completionByVacancy, fmt: formatPercent },
+  { code: "IND-27", title: "Concluintes sobre matrículas", source: "INEP", formula: "QT_CONC / QT_MAT × 100", polarity: "↑", mode: "pp", benchmark: () => formatPercent(brazil.result.completion), get: a => a.completion, fmt: formatPercent },
   { code: "IND-6", title: "Docentes com doutorado", source: "INEP", formula: "QT_DOC_EX_DOUT / QT_DOC_EXE × 100", polarity: "↑", mode: "pp", benchmark: () => formatPercent(brazil.result.doctorate), get: a => a.doctors, fmt: formatPercent },
   { code: "IND-37", title: "Inserção de egressos no Paraná", source: "SETI / RAIS", formula: "Egressos PR / Total egressos × 100", polarity: "↑", mode: "pp", benchmark: () => formatPercent(brazil.result.employment), get: a => a.employment, fmt: formatPercent },
   { code: "IND-40", title: "Média salarial dos egressos", source: "SETI / RAIS", formula: "Média salarial PR + CBO2", polarity: "↑", mode: "pct", benchmark: () => formatCurrency(brazil.result.salary), get: a => a.salary, fmt: formatCurrency },
@@ -4094,7 +4424,7 @@ function overview(c) {
       <td>${renderMetricCell(u.graduates, maxGraduates)}</td>
       <td>${renderGroupBadge(u.groups[c.f.groupBy] || "—", groupList)}</td>
     </tr>`).join("");
-    const noteHtml = '<div style="margin-top:14px;padding:12px 16px;background:var(--surface-2,#f5f5f5);border-radius:8px;font-size:0.80rem;color:var(--text-secondary,#666);line-height:1.65;"><strong style="display:block;margin-bottom:6px;color:var(--text-primary,#333);">Como ler esta tabela</strong><ul style="margin:0;padding-left:18px;"><li><strong>Custo relativo</strong> &#8212; quanto a IES gasta por aluno comparado à média das universidades do mesmo cluster. Fórmula: (custo da IES &#8722; média do cluster) &#247; média do cluster &#215; 100. Fonte: orçamento liquidado (Relatório da Despesa 8050, SETI/SEFA) &#247; matrículas ativas (INEP, Censo da Educação Superior).</li><li style="margin-top:6px;"><strong>Resultado relativo</strong> &#8212; desvio do indicador de desempenho selecionado (ex: taxa de conclusão, ocupação de vagas) em relação à média do cluster. Mesmo cálculo proporcional. Fontes variam conforme o indicador exibido na coluna &#8220;Indicador usado&#8221;.</li><li style="margin-top:6px;"><strong>Classificação</strong> &#8212; combinação das duas dimensões: uma IES com gasto abaixo da média e resultado acima entrega maior eficiência relativa dentro do seu grupo de referência.</li></ul></div>';
+  const noteHtml = '<div style="margin-top:14px;padding:12px 16px;background:var(--surface-2,#f5f5f5);border-radius:8px;font-size:0.80rem;color:var(--text-secondary,#666);line-height:1.65;"><strong style="display:block;margin-bottom:6px;color:var(--text-primary,#333);">Como ler esta tabela</strong><ul style="margin:0;padding-left:18px;"><li><strong>Custo relativo</strong> &#8212; quanto a IES gasta por aluno comparado à média das universidades do mesmo cluster. Fórmula: (custo da IES &#8722; média do cluster) &#247; média do cluster &#215; 100. Fonte: orçamento liquidado (Relatório da Despesa 8050, SETI/SEFA) &#247; matrículas ativas (INEP, Censo da Educação Superior).</li><li style="margin-top:6px;"><strong>Resultado relativo</strong> &#8212; desvio do indicador de desempenho selecionado (ex: concluintes sobre matrículas, ocupação de vagas) em relação à média do cluster. Mesmo cálculo proporcional. O IND-27 compara concluintes e matrículas do mesmo ano, não uma coorte de ingresso. Fontes variam conforme o indicador exibido na coluna &#8220;Indicador usado&#8221;.</li><li style="margin-top:6px;"><strong>Classificação</strong> &#8212; combinação das duas dimensões: uma IES com gasto abaixo da média e resultado acima entrega maior eficiência relativa dentro do seu grupo de referência.</li></ul></div>';
   return `<div class="table-wrap mt-14">
       <div class="synth-table-header">
         <div class="synth-table-titles">
@@ -4523,7 +4853,7 @@ const indicatorFullNames = {
   "IND-24": "Taxa de ocupação das vagas de ingresso",
   "IND-25": "Vagas de ingresso não ocupadas",
   "IND-26": "Taxa de ocupação das vagas",
-  "IND-27": "Taxa de concluintes",
+  "IND-27": "Proporção anual de concluintes sobre matrículas",
   "IND-28": "Vagas não ocupadas",
   "IND-29": "Taxa de ocupação por grau",
   "IND-30": "Taxa de ocupação - Diurno",
@@ -5525,6 +5855,12 @@ updateScopeAvailability = function updateScopeAvailability(scope) {
 };
 window.updateScopeAvailability = updateScopeAvailability;
 
+// ⚠ CÓDIGO MORTO EM RUNTIME: esta versão de applyEfficiencyDefaults() é
+// sobrescrita pela declaração em painel-aba9-desempenho.js (carregado
+// depois no HTML). A versão que efetivamente roda — incluindo o guard
+// de isBrasilScope abaixo, replicado lá — é a de painel-aba9-desempenho.js.
+// Mantida aqui apenas como base histórica; não editar para mudar
+// comportamento (não terá efeito). Ver nota em painel-aba9-desempenho.js.
 applyEfficiencyDefaults = function applyEfficiencyDefaults() {
   if ((state.activeTab !== "efficiency" && state.activeTab !== "performance") || state.efficiencyDefaultApplied || !el.groupBy) return;
   if (isBrasilScope(state.scope)) {
@@ -5572,7 +5908,15 @@ const TABS_WITH_BRASIL = new Set(["overview","comparison","access","retention","
 function activateTab(tabId, options = {}) {
   const nextTab = tabInfo[tabId] ? tabId : "overview";
   state.activeTab = nextTab;
-  if (nextTab !== "efficiency" && nextTab !== "performance") state.efficiencyDefaultApplied = false;
+  // efficiencyDefaultApplied NÃO é mais resetado ao sair da Aba 8/9.
+  // A flag é intencionalmente "de sessão": V6 é forçado só na PRIMEIRA
+  // entrada na Aba 8/9 depois de carregar a página (ou depois de "Limpar",
+  // que já reseta a flag em resetAllFilters()). Reentradas subsequentes
+  // preservam qualquer seleção de cluster feita pelo usuário, mesmo que
+  // ele tenha só trocado de variável (groupBy) sem escolher um grupo
+  // específico (groupLevelFilter continua "all"). Opção A do conflito
+  // applyEfficiencyDefaults() — decisão de produto de 2026-07-02, aprovada
+  // por Luíza.
   const tabs = el.tabs?.length ? el.tabs : [...document.querySelectorAll(".tab-button")];
   tabs.forEach(tab => {
     const active = tab.dataset.tab === nextTab;
@@ -5613,6 +5957,7 @@ bind = function bindAuditedButtons() {
     render();
   });
   document.addEventListener("click", event => {
+    if (event.target.closest(".ind-info")) return;
     const groupButton = event.target.closest(".group-var-btn[data-group-var]");
     if (!groupButton || groupButton.disabled) return;
     setGroupByVariable(groupButton.dataset.groupVar);
@@ -5678,12 +6023,38 @@ bind = function bindAuditedButtons() {
       render();
     });
   })();
-  // ── Filter panel expand/collapse ────────────────────────────────────────
-  el.advancedToggle?.addEventListener("click", () => {
-    const expanded = el.advancedToggle.getAttribute("aria-expanded") === "true";
-    el.advancedToggle.setAttribute("aria-expanded", String(!expanded));
-    if (el.advancedFilters) el.advancedFilters.hidden = expanded;
-  });
+  // ── Cluster Específico — dropdown handlers ──────────────────────
+  (function(){
+    const btn = document.getElementById("clusterEspecificoBtn");
+    const drop = document.getElementById("clusterEspecificoDropdown");
+    const wrap = document.getElementById("clusterEspecificoWrap");
+    if (!btn || !drop) return;
+    btn.addEventListener("click", e => {
+      e.stopPropagation();
+      const open = btn.getAttribute("aria-expanded") === "true";
+      btn.setAttribute("aria-expanded", String(!open));
+      drop.hidden = open;
+    });
+    document.addEventListener("click", e => {
+      if (!wrap?.contains(e.target)) { btn.setAttribute("aria-expanded", "false"); drop.hidden = true; }
+    });
+    document.addEventListener("keydown", e => {
+      if (e.key === "Escape" && !drop.hidden) { btn.setAttribute("aria-expanded", "false"); drop.hidden = true; btn.focus(); }
+    });
+    drop.addEventListener("click", e => {
+      const item = e.target.closest(".cluster-especifico-item[data-cluster-level]");
+      if (!item) return;
+      const level = item.dataset.clusterLevel;
+      // setGroupByVariable() sempre reseta groupLevelFilter para "all" — só chamar
+      // quando "especifico" ainda não está ativo, senão o reset acontece antes de
+      // setGlobalGroupLevel() e quebra o toggle de reclicar no mesmo cluster.
+      const groupBySelect = el.groupBy || document.getElementById("groupBy");
+      if (groupBySelect?.value !== "especifico") setGroupByVariable("especifico");
+      setGlobalGroupLevel(level);
+      btn.setAttribute("aria-expanded", "false");
+      drop.hidden = true;
+    });
+  })();
 };
 window.bind = bind;
 
@@ -5693,7 +6064,7 @@ updateFooter = function updateFooter(c) {
   if (!footerCluster && !footerScope) return;
   const ctx = c || context();
   const groupName = ctx.group === "all" ? "Todos os grupos" : ctx.group;
-  if (footerCluster) footerCluster.textContent = `${ctx.f.groupBy.toUpperCase()} - ${groupName}`;
+  if (footerCluster) footerCluster.textContent = `${groupMeta[ctx.f.groupBy]?.label || ctx.f.groupBy.toUpperCase()} – ${groupName}`;
   if (footerScope) footerScope.textContent = scopeDisplayName(ctx.f.scope);
 };
 window.updateFooter = updateFooter;
@@ -5759,7 +6130,7 @@ function allGroupLabelsSet() {
 var filtersBeforeBrasilScope = filters;
 filters = function filtersWithoutBrasilClusters() {
   const f = filtersBeforeBrasilScope();
-  if (isBrasilScope(f.scope)) {
+  if (isBrasilScope(f.scope) && f.groupBy !== "especifico") {
     f.groupBy = "v1";
     f.groupLevel = "all";
     f.region = "all";
@@ -5772,7 +6143,7 @@ window.filters = filters;
 var applyFiltersBeforeBrasilScope = applyFilters;
 applyFilters = function applyFiltersWithoutBrasilGroups(f = filters(), source = null) {
   const normalized = { ...f };
-  if (isBrasilScope(normalized.scope)) {
+  if (isBrasilScope(normalized.scope) && normalized.groupBy !== "especifico") {
     normalized.groupLevel = "all";
     normalized.region = "all";
     normalized.municipality = "all";
@@ -5784,7 +6155,7 @@ window.applyFilters = applyFilters;
 var contextBeforeBrasilScope = context;
 context = function contextWithoutBrasilClusters() {
   const f = filters();
-  if (!isBrasilScope(f.scope)) return contextBeforeBrasilScope();
+  if (!isBrasilScope(f.scope) || f.groupBy === "especifico") return contextBeforeBrasilScope();
 
   const all = scopeUniverse(f.scope).map(u => byYear(u, f.year));
   const selected = Array.isArray(f.university) ? all.find(u => u.id === f.university[0]) || null : null;
@@ -5808,19 +6179,21 @@ window.context = context;
 
 function setBrasilClusterControlsState(isBR) {
   const groupControl = el.groupBy || document.getElementById("groupBy");
+  const especificoActive = groupControl?.value === "especifico";
+  const hideForBR = isBR && !especificoActive;
   const groupShell = closestFilterShell(groupControl);
   if (groupShell) {
-    groupShell.hidden = isBR;
-    groupShell.setAttribute("aria-hidden", String(isBR));
-    groupShell.title = isBR ? "Agrupamentos disponíveis apenas no escopo Paraná" : "";
-    if (!isBR) groupShell.removeAttribute("title");
+    groupShell.hidden = hideForBR;
+    groupShell.setAttribute("aria-hidden", String(hideForBR));
+    groupShell.title = hideForBR ? "Agrupamentos disponíveis apenas no escopo Paraná" : "";
+    if (!hideForBR) groupShell.removeAttribute("title");
   }
   if (groupControl) {
-    if (isBR) setSelectValue(groupControl, "v1");
-    setScopedControlState(groupControl, isBR, "Agrupamentos disponíveis apenas no escopo Paraná");
+    if (isBR && !especificoActive) setSelectValue(groupControl, "v1");
+    setScopedControlState(groupControl, hideForBR, "Agrupamentos disponíveis apenas no escopo Paraná");
   }
   if (el.groupLevelFilter) {
-    el.groupLevelFilter.value = "all";
+    if (isBR && !especificoActive) el.groupLevelFilter.value = "all";
     setScopedControlState(el.groupLevelFilter, isBR, "Grupos disponíveis apenas no escopo Paraná");
   }
   const chips = el.quartilChips || document.getElementById("quartilChips");
@@ -5836,9 +6209,15 @@ function setBrasilClusterControlsState(isBR) {
   }
   const groupButtons = el.groupVariableButtons || document.getElementById("groupVariableButtons");
   if (groupButtons) {
-    groupButtons.hidden = isBR;
-    groupButtons.setAttribute("aria-hidden", String(isBR));
-    if (isBR) groupButtons.innerHTML = "";
+    groupButtons.hidden = hideForBR;
+    groupButtons.setAttribute("aria-hidden", String(hideForBR));
+    if (hideForBR) groupButtons.innerHTML = "";
+  }
+  // Cluster Específico fica sempre disponível (Paraná e Brasil).
+  const especificoWrap = document.getElementById("clusterEspecificoWrap");
+  if (especificoWrap) {
+    especificoWrap.hidden = false;
+    especificoWrap.setAttribute("aria-hidden", "false");
   }
   const row = document.getElementById("activeClustersRow");
   if (row) row.setAttribute("aria-label", isBR ? "Referências de comparação ativas" : "Clusters de comparação ativos");
@@ -5849,8 +6228,8 @@ updateScopeAvailability = function updateScopeAvailabilityWithoutBrasilClusters(
   updateScopeAvailabilityBeforeBrasilScope(scope);
   const isBR = isBrasilScope(scope);
   if (isBR) {
-    if (el.groupBy) setSelectValue(el.groupBy, "v1");
-    if (el.groupLevelFilter) el.groupLevelFilter.value = "all";
+    if (el.groupBy && el.groupBy.value !== "especifico") setSelectValue(el.groupBy, "v1");
+    if (el.groupLevelFilter && el.groupBy?.value !== "especifico") el.groupLevelFilter.value = "all";
     state.localFilters = {};
     state.synthTableGroup = "all";
     state.comparisonShowOnlyCluster = false;
@@ -5867,14 +6246,15 @@ setScope = function setScopeWithoutBrasilClusters(value, options = {}) {
     state.localFilters = {};
     state.synthTableGroup = "all";
     if (state.radarReference === "cluster") state.radarReference = "brasil";
-    if (el.groupBy) el.groupBy.value = "v1";
-    if (el.groupLevelFilter) el.groupLevelFilter.value = "all";
-    updateGroupOptions("v1");
+    if (el.groupBy && el.groupBy.value !== "especifico") el.groupBy.value = "v1";
+    if (el.groupLevelFilter && el.groupBy?.value !== "especifico") el.groupLevelFilter.value = "all";
+    updateGroupOptions(el.groupBy?.value === "especifico" ? "especifico" : "v1");
   } else {
     if (state.radarReference === "brasil") state.radarReference = "cluster";
     updateGroupOptions(el.groupBy?.value || "v1");
   }
   setScopeBeforeBrasilScope(normalized, options);
+  renderGroupVariableButtons();
 };
 window.setScope = setScope;
 
@@ -5887,7 +6267,7 @@ updateGroupOptions = function updateGroupOptionsWithoutBrasilClusters(variable) 
     });
     if (isBR && PR_ONLY_GROUPS.has(el.groupBy.value)) el.groupBy.value = "v1";
   }
-  if (isBR) {
+  if (isBR && variable !== "especifico") {
     if (el.groupLevelFilter) {
       el.groupLevelFilter.innerHTML = `<option value="all" selected>Referência Brasil</option>`;
       el.groupLevelFilter.value = "all";
@@ -5936,7 +6316,7 @@ window.quartilChipStrip = quartilChipStrip;
 
 var setGlobalGroupLevelBeforeBrasilScope = setGlobalGroupLevel;
 setGlobalGroupLevel = function setGlobalGroupLevelWithoutBrasilClusters(value) {
-  if (isBrasilScope(state.scope)) {
+  if (isBrasilScope(state.scope) && el.groupBy?.value !== "especifico") {
     if (el.groupLevelFilter) el.groupLevelFilter.value = "all";
     state.localFilters = {};
     render();
@@ -5948,7 +6328,7 @@ window.setGlobalGroupLevel = setGlobalGroupLevel;
 
 var setLocalFilterBeforeBrasilScope = setLocalFilter;
 setLocalFilter = function setLocalFilterWithoutBrasilClusters(chartId, value) {
-  if (isBrasilScope(state.scope)) {
+  if (isBrasilScope(state.scope) && el.groupBy?.value !== "especifico") {
     state.localFilters = {};
     render();
     return;
@@ -5998,7 +6378,7 @@ window.activeScopeLabel = activeScopeLabel;
 
 var updateActiveClusterLabelBeforeBrasilScope = updateActiveClusterLabel;
 updateActiveClusterLabel = function updateActiveClusterLabelWithoutBrasilClusters(c) {
-  if (isBrasilContext(c)) {
+  if (isBrasilContext(c) && c.f.groupBy !== "especifico") {
     if (el.activeClusterLabel) el.activeClusterLabel.textContent = `${nationalReferenceLabel()} · ${nationalMeanLabel()}`;
     updateFooter(c);
     return;
@@ -6007,22 +6387,23 @@ updateActiveClusterLabel = function updateActiveClusterLabelWithoutBrasilCluster
 };
 window.updateActiveClusterLabel = updateActiveClusterLabel;
 
-function setSidePanelScopeText(isBR) {
+function setSidePanelScopeText(isBR, groupBy) {
   const firstCard = el.groupTitle?.closest?.(".side-card");
   const breakdownCard = el.groupBreakdown?.closest?.(".side-card");
   const firstEyebrow = firstCard?.querySelector?.(".eyebrow");
   const breakdownEyebrow = breakdownCard?.querySelector?.(".eyebrow");
-  if (firstEyebrow) firstEyebrow.textContent = isBR ? "Comparativo nacional" : "Agrupamento dinâmico";
-  if (breakdownEyebrow) breakdownEyebrow.textContent = isBR ? "Referências nacionais" : "Grupos do agrupamento ativo";
+  const especifico = groupBy === "especifico";
+  if (firstEyebrow) firstEyebrow.textContent = especifico ? "Cluster Específico" : isBR ? "Comparativo nacional" : "Cluster Multidimensional";
+  if (breakdownEyebrow) breakdownEyebrow.textContent = isBR && !especifico ? "Referências nacionais" : "Grupos do cluster ativo";
 }
 
 var renderSideBeforeBrasilScope = renderSide;
 renderSide = function renderSideWithoutBrasilClusters(c) {
-  if (!isBrasilContext(c)) {
-    setSidePanelScopeText(false);
+  if (!isBrasilContext(c) || c.f.groupBy === "especifico") {
+    setSidePanelScopeText(isBrasilContext(c), c.f.groupBy);
     return renderSideBeforeBrasilScope(c);
   }
-  setSidePanelScopeText(true);
+  setSidePanelScopeText(true, c.f.groupBy);
   if (el.groupTitle) el.groupTitle.textContent = nationalReferenceLabel();
   if (el.criteriaList) {
     el.criteriaList.innerHTML = `
@@ -6045,7 +6426,7 @@ updateFooter = function updateFooterWithoutBrasilClusters(c) {
   const ctx = c || context();
   const footerCluster = document.getElementById("footerClusterLabel");
   const footerScope = document.getElementById("footerScopeLabel");
-  if (isBrasilContext(ctx)) {
+  if (isBrasilContext(ctx) && ctx.f.groupBy !== "especifico") {
     // sem cálculo de cluster no escopo Brasil
     if (footerCluster) footerCluster.textContent = nationalMeanLabel();
     if (footerScope) footerScope.textContent = "Brasil";
@@ -6179,8 +6560,8 @@ function sanitizeBrasilClusterCopy(root) {
     [/grupo selecionado/g, "recorte selecionado"],
     [/Grupo selecionado/g, "Recorte selecionado"],
     [/grupo de comparação ativo/g, "comparativo nacional"],
-    [/agrupamento dinâmico/g, "referência nacional"],
-    [/Agrupamento dinâmico/g, "Referência nacional"],
+    [/cluster multidimensional/gi, "referência nacional"],
+    [/Cluster Multidimensional/g, "Referência nacional"],
     [/Comparação por cluster/g, "Comparativo nacional"],
     [/Mostrar apenas cluster/g, "Mostrar referência nacional"],
     [/Média Brasil/g, nationalMeanLabel()],

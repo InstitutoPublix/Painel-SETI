@@ -39,7 +39,7 @@ O painel é composto por:
 |------|-------------|-------|---------|
 | Total de estudantes | Soma de `students` do recorte | INEP/Base Cursos | Número inteiro |
 | Taxa de ocupação das vagas | Média ponderada de `occupancy` (peso: `vacancies`) | INEP calculado | % com 1 decimal |
-| Taxa de concluintes | Média ponderada de `completion` (peso: `entrants`) | INEP calculado | % com 1 decimal |
+| Concluintes sobre matrículas | Média ponderada de `completion` (peso: `students`, equivalente a `QT_CONC / QT_MAT × 100` no recorte) | INEP calculado | % com 1 decimal |
 | Docentes com doutorado | Média ponderada de `doctors` (peso: `students`) | INEP/Base IES | % com 1 decimal |
 | Captação CNPq | Soma de `cnpq` | Base CNPq | R$ X,X mi |
 | Inserção no Paraná | Média ponderada de `employment` (peso: `graduates`) | CBO2/RAIS | % com 1 decimal |
@@ -171,7 +171,7 @@ Colunas: IEES | Cursos | Vagas | Ocupação | Vagas não ocupadas | Custo por es
 | ind12 | Total de estudantes | `sum(QT_MAT)` |
 | ind13 | Total de ingressantes | `sum(QT_ING)` |
 | ind14 | Total de concluintes | `sum(QT_CONC)` |
-| ind27 | Taxa de concluintes | `QT_CONC / QT_MAT × 100` |
+| ind27 | Proporção anual de concluintes sobre matrículas | `QT_CONC / QT_MAT × 100` |
 
 ### Visualizações
 
@@ -181,7 +181,7 @@ Colunas: IEES | Cursos | Vagas | Ocupação | Vagas não ocupadas | Custo por es
   - Ingressantes: `sum(QT_ING)` — Base Cursos INEP
   - Estudantes: `sum(QT_MAT)` — Base Cursos INEP
   - Concluintes: `sum(QT_CONC)` — Base Cursos INEP
-- **Taxas exibidas:** % permanência (estudantes/ingressantes) e % conclusão (`completion`)
+- **Medidas exibidas:** % permanência (estudantes/ingressantes) e proporção anual de concluintes sobre matrículas (`completion`)
 - A largura de cada triângulo é proporcional ao volume relativo
 
 #### 4.2 Gráfico de barras: Desvinculação discente
@@ -189,9 +189,10 @@ Colunas: IEES | Cursos | Vagas | Ocupação | Vagas não ocupadas | Custo por es
 - **Dado:** `QT_SIT_DESVINCULADO / QT_MAT × 100`
 - Valores mais altos indicam maior evasão
 
-#### 4.3 Gráfico de barras: Taxa de concluintes
+#### 4.3 Gráfico de barras: Concluintes sobre matrículas
 - **O que mostra:** `completion` por IEES
 - **Dado:** `QT_CONC / QT_MAT × 100`
+- **Nota metodológica:** numerador = total de concluintes no ano; denominador = total de matrículas no mesmo ano. Não acompanha coortes de ingresso.
 
 #### 4.4 Gráfico de barras: Custo por concluinte
 - **O que mostra:** eficiência orçamentária por formado
@@ -410,7 +411,7 @@ Alertas automáticos contextuais por aba:
 | Cursos | `courses` | Base Cursos - Brasil.xlsx / `QT_CURSO` | 40 IES |
 | Ocupação | `occupancy` | Calculado: `QT_ING / QT_VG_TOTAL × 100` | 40 IES |
 | Evasão | `dropout` | Calculado: `QT_SIT_DESVINCULADO / QT_MAT × 100` | 40 IES |
-| Conclusão | `completion` | Calculado: `QT_CONC / QT_MAT × 100` | 40 IES |
+| Concluintes sobre matrículas | `completion` | Calculado: `QT_CONC / QT_MAT × 100` | 40 IES |
 | Doutores | `doctors` | Base IES - Brasil.xlsx / "Proporção de docentes com doutorado" × 100 | 40 IES |
 | CNPq | `cnpq` | Base CNPq - Brasil.xlsx / soma por IES (R$ mi) | 7 PR (match por nome) |
 | CAPES | `capes` | Base CAPES / conceito médio por IES | 40 IES |

@@ -2151,6 +2151,71 @@ for _ies in IEES_PR:
 print(_SEP16, file=sys.stderr)
 
 
+# ── Seção 17 — Cluster Específico (C1–C8) ─────────────────────────────────────
+# Fonte: Clusterização específica.xlsx / Planilha1
+# Colunas: [0]=Cluster (C1..C8) [1]=Nome do cluster [2]=Perfil do grupo
+#          [3]=Variáveis consideradas [4]=IEES (siglas separadas por vírgula)
+# Atribuição estática (curadoria manual do Instituto Publix), não recalculada por ano.
+# Cobre as 40 IES (7 PR + 33 BR); disponível nos escopos Paraná e Brasil.
+# Segue o mesmo padrão de clusters_raw usado para V1–V8: a chave "c_especifico"
+# entra em clusters_raw[sigla] e flui naturalmente para precomputed["clusters"].
+
+wb_ce = openpyxl.load_workbook(
+    DATA_DIR / "Clusterização específica.xlsx", read_only=True, data_only=True
+)
+ws_ce = wb_ce["Planilha1"]
+next(ws_ce.iter_rows(min_row=1, max_row=1))  # skip header
+
+clusters_especificos_catalog = []
+_sigla_to_cluster = {}
+
+for row in ws_ce.iter_rows(min_row=2, values_only=True):
+    codigo = row[0] if row else None
+    if not codigo or not str(codigo).strip().upper().startswith("C"):
+        continue  # ignora linha de nota metodológica no rodapé da planilha
+    codigo = str(codigo).strip()
+    nome    = str(row[1]).strip() if len(row) > 1 and row[1] else None
+    perfil  = str(row[2]).strip() if len(row) > 2 and row[2] else None
+    varis   = str(row[3]).strip() if len(row) > 3 and row[3] else None
+    ies_str = str(row[4]).strip() if len(row) > 4 and row[4] else ""
+    siglas  = [s.strip() for s in ies_str.split(",") if s.strip()]
+
+    clusters_especificos_catalog.append({
+        "codigo": codigo,
+        "nome": nome,
+        "perfil": perfil,
+        "variaveis": varis,
+        "ies": siglas,
+    })
+    for s in siglas:
+        _sigla_to_cluster[s.upper()] = {"codigo": codigo, "nome": nome, "perfil": perfil}
+
+wb_ce.close()
+
+_SRC_CE = "Clusterização específica.xlsx / Planilha1 / atribuição estática C1–C8"
+for iees in IEES:
+    key = iees.lower()
+    info = _sigla_to_cluster.get(iees.upper())
+    if info is None:
+        continue
+    label = f"{info['codigo']} - {info['nome']}"
+    results[key]["clusterEspecificoCodigo"] = info["codigo"]
+    results[key]["clusterEspecificoPerfil"] = info["perfil"]
+    sources[key]["clusterEspecificoCodigo"] = _SRC_CE
+    if iees in clusters_raw:
+        clusters_raw[iees]["c_especifico"] = label
+    else:
+        clusters_raw[iees] = {"c_especifico": label}
+
+# Validação — confere se as 40 IES foram classificadas
+_nao_classificadas = [i for i in IEES if i.upper() not in _sigla_to_cluster]
+if _nao_classificadas:
+    print(
+        f"[AVISO] IES sem Cluster Específico atribuído: {', '.join(_nao_classificadas)}",
+        file=sys.stderr,
+    )
+
+
 # ── Saída stdout (retrocompatível) ────────────────────────────────────────────
 
 print(json.dumps({"results": results, "sources": sources}, indent=2, ensure_ascii=False))
@@ -2168,6 +2233,7 @@ precomputed = {
     "sources":    {iees: sources[iees.lower()] for iees in IEES},
     "clusters":   {iees: clusters_raw.get(iees, {}) for iees in IEES},
     "quartiRefs": quartis_ref,
+    "clustersEspecificos": clusters_especificos_catalog,
     "composicaoFontes": composicaoFontes,
     # byYear: 2024 = todos os indicadores para as 40 IES;
     # 2025/2026 = apenas campos D8050 para as 7 IES-PR

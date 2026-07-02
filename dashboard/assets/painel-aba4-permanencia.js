@@ -76,7 +76,7 @@ function formationFunnel(title, rows, c) {
   const connectors = [
     { label: `Taxa de ocupação das vagas`, value: `${fmt1(occRate)}%`,  low: occRate < 70 },
     { label: `Matrículas por ingressante`, value: stockRatio.toFixed(1).replace(".", ","), low: false },
-    { label: `Taxa de concluintes`,        value: `${fmt1(gradRate)}%`, low: gradRate < 15 }
+    { label: `Concluintes sobre matrículas`, value: `${fmt1(gradRate)}%`, low: gradRate < 15 }
   ];
 
   // Blocos com largura uniforme; a proporção entre etapas é mostrada pela
@@ -111,7 +111,7 @@ function formationFunnel(title, rows, c) {
     <div class="ff-kpi-grid">
       ${kpi("Vagas ociosas", formatNumber(idleVacancies), ffIcons.idle)}
       ${kpi("Ocupação das vagas", fmt1(occRate) + "%", ffIcons.gauge)}
-      ${kpi("Taxa de concluintes", fmt1(gradRate) + "%", ffIcons.grad)}
+      ${kpi("Concluintes sobre matrículas", fmt1(gradRate) + "%", ffIcons.grad)}
       ${kpi("Matrículas por ingressante", stockRatio.toFixed(1).replace(".", ","), ffIcons.ratio)}
     </div>
     <div class="ff-howto">
@@ -133,7 +133,7 @@ function formationFunnel(title, rows, c) {
   </article>`;
 }
 
-// ── 2. Taxas de desvinculação e concluintes ─────────────────────────────────
+// ── 2. Desvinculação e proporção anual de concluintes ───────────────────────
 function dropoutTone(v) {
   if (v > 10) return "occ-red";
   if (v > 7)  return "occ-yellow";
@@ -151,8 +151,8 @@ function retentionRatesBlock(c) {
   const dropLegend = rateLegendChips([["occ-red", "> 10%"], ["occ-yellow", "7–10%"], ["occ-green", "≤ 7%"]]);
   const compLegend = rateLegendChips([["occ-green", "> 75%"], ["occ-yellow", "60–75%"], ["occ-red", "< 60%"]]);
   return `<div class="chart-grid">
-    ${!act || act === "ind5" ? `<article class="visual-card"><h3>IND-5 · Taxa anual de desvinculação</h3><p class="card-subtitle">Ordenado da maior para menor taxa.</p>${dropLegend}${quartilChipStrip("retentionRateBarsDropout", c.f.groupBy, c.base, c)}${retentionRateBars(c, "dropout")}</article>` : ""}
-    ${!act || act === "ind27" ? `<article class="visual-card"><h3>IND-27 · Taxa de concluintes</h3><p class="card-subtitle">Ordenado da maior para menor taxa.</p>${compLegend}${quartilChipStrip("retentionRateBarsCompletion", c.f.groupBy, c.base, c)}${retentionRateBars(c, "completion")}</article>` : ""}
+    ${!act || act === "ind5" ? `<article class="visual-card"><h3>IND-5 · Taxa anual de desvinculação</h3><p class="card-subtitle">Ordenado do maior para o menor percentual.</p>${dropLegend}${quartilChipStrip("retentionRateBarsDropout", c.f.groupBy, c.base, c)}${retentionRateBars(c, "dropout")}</article>` : ""}
+    ${!act || act === "ind27" ? `<article class="visual-card"><h3>Concluintes sobre matrículas</h3><p class="card-subtitle">Ordenado da maior para a menor proporção. Numerador: concluintes do ano; denominador: matrículas do mesmo ano.</p>${compLegend}${quartilChipStrip("retentionRateBarsCompletion", c.f.groupBy, c.base, c)}${retentionRateBars(c, "completion")}</article>` : ""}
   </div>`;
 }
 
@@ -190,7 +190,7 @@ function retentionYearRankingBlock(c) {
   if (actEvo) state.rankingMetric = metric;
   const yr = state.rankingYear || "2024";
   const metricDefs = [
-    { key: "completion", label: "Taxa de concluintes" },
+    { key: "completion", label: "Concluintes sobre matrículas" },
     { key: "dropout",    label: "Taxa anual de desvinculação discente" },
     { key: "graduates",  label: "Total de estudantes concluintes" }
   ];
@@ -345,7 +345,7 @@ function retentionScatterBlock(c) {
   const qLabels =
     `<span style="position:absolute;left:6px;top:6px;font-size:10px;font-weight:700;color:#16a34a;opacity:0.55;z-index:1;pointer-events:none;">Alta retenção</span>` +
     `<span style="position:absolute;right:6px;top:6px;font-size:10px;font-weight:700;color:#ca8a04;opacity:0.55;z-index:1;pointer-events:none;">Evasão elevada</span>` +
-    `<span style="position:absolute;left:6px;bottom:6px;font-size:10px;font-weight:700;color:#64748b;opacity:0.55;z-index:1;pointer-events:none;">Baixa conclusão</span>` +
+    `<span style="position:absolute;left:6px;bottom:6px;font-size:10px;font-weight:700;color:#64748b;opacity:0.55;z-index:1;pointer-events:none;">IND-27 baixo</span>` +
     `<span style="position:absolute;right:6px;bottom:6px;font-size:10px;font-weight:700;color:#dc2626;opacity:0.55;z-index:1;pointer-events:none;">Risco crítico</span>`;
 
   const ptMap = {};
@@ -363,7 +363,7 @@ function retentionScatterBlock(c) {
     let quad;
     if (pt.dropout < avgDrop && pt.completion >= avgComp)       quad = 'Alta retenção';
     else if (pt.dropout >= avgDrop && pt.completion >= avgComp) quad = 'Evasão elevada';
-    else if (pt.dropout < avgDrop && pt.completion < avgComp)   quad = 'Baixa conclusão';
+    else if (pt.dropout < avgDrop && pt.completion < avgComp)   quad = 'IND-27 baixo';
     else                                                          quad = 'Risco crítico';
     document.getElementById('pdtQuadrante').textContent = quad;
     panelEl.style.display = 'block';
@@ -385,7 +385,7 @@ function retentionScatterBlock(c) {
     const x = toX(u.dropout);
     const y = toY(u.completion);
     const half = Math.round(size / 2);
-    const tooltip = `${u.sigla}: desvinculação ${formatPercent(u.dropout)}; conclusão ${formatPercent(u.completion)}`;
+    const tooltip = `${u.sigla}: desvinculação ${formatPercent(u.dropout)}; concluintes/matrículas ${formatPercent(u.completion)}`;
     return `<div class="scatter-item" style="position:absolute;left:${x}%;bottom:${y}%;width:0;height:0;z-index:2;">` +
       `<button class="scatter-point ${clusterIds.has(u.id) ? "in-cluster" : "out-cluster"} ${isUniSelected(c.f, u.id) ? "selected" : ""}" ` +
       `style="position:absolute;left:-${half}px;bottom:-${half}px;width:${size}px;height:${size}px;display:flex;align-items:center;justify-content:center;font-size:${fontSize.toFixed(1)}px;font-weight:700;white-space:nowrap;background:${col};border-color:${col}cc;color:#fff;text-shadow:0 1px 2px rgba(0,0,0,0.4);letter-spacing:0;" ` +
@@ -401,7 +401,7 @@ function retentionScatterBlock(c) {
     `</div>` +
     `<table style="width:100%;border-collapse:collapse;">` +
     `<tr><td style="padding:3px 0;color:var(--text-secondary,#666);">Taxa anual de desvinculação (IND-5)</td><td style="text-align:right;font-weight:600;" id="pdtDesvinc"></td></tr>` +
-    `<tr><td style="padding:3px 0;color:var(--text-secondary,#666);">Taxa de concluintes (IND-27)</td><td style="text-align:right;font-weight:600;" id="pdtConclui"></td></tr>` +
+    `<tr><td style="padding:3px 0;color:var(--text-secondary,#666);">Concluintes sobre matrículas (IND-27)</td><td style="text-align:right;font-weight:600;" id="pdtConclui"></td></tr>` +
     `<tr><td style="padding:3px 0;color:var(--text-secondary,#666);">Matrículas ativas</td><td style="text-align:right;font-weight:600;" id="pdtMatric"></td></tr>` +
     `<tr><td style="padding:3px 0;color:var(--text-secondary,#666);">Posição no quadrante</td><td style="text-align:right;font-weight:600;" id="pdtQuadrante"></td></tr>` +
     `</table>` +
@@ -410,15 +410,15 @@ function retentionScatterBlock(c) {
 
   const legend =
     `<div style="display:flex;gap:14px;flex-wrap:wrap;margin-top:10px;font-size:0.78rem;color:var(--text-secondary,#555);">` +
-    `<span><span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:rgba(34,197,94,0.3);margin-right:4px;"></span>Alta retenção — baixa evasão e alta conclusão</span>` +
-    `<span><span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:rgba(234,179,8,0.3);margin-right:4px;"></span>Evasão elevada — alta desvinculação com conclusão alta</span>` +
-    `<span><span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:rgba(148,163,184,0.3);margin-right:4px;"></span>Baixa conclusão — baixa evasão mas conclusão abaixo da média</span>` +
-    `<span><span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:rgba(220,38,38,0.3);margin-right:4px;"></span>Risco crítico — alta evasão e baixa conclusão</span>` +
+    `<span><span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:rgba(34,197,94,0.3);margin-right:4px;"></span>Alta retenção — baixa evasão e alta proporção anual</span>` +
+    `<span><span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:rgba(234,179,8,0.3);margin-right:4px;"></span>Evasão elevada — alta desvinculação com proporção anual alta</span>` +
+    `<span><span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:rgba(148,163,184,0.3);margin-right:4px;"></span>Baixa proporção anual — baixa evasão mas IND-27 abaixo da média</span>` +
+    `<span><span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:rgba(220,38,38,0.3);margin-right:4px;"></span>Risco crítico — alta evasão e baixa proporção anual</span>` +
     `</div>`;
 
   const fonte =
     `<p style="font-size:0.78rem;color:var(--text-secondary,#777);margin-top:10px;">` +
-    `<strong>Fonte:</strong> INEP — Censo da Educação Superior / Base Cursos - Brasil.xlsx · IND-5: QT_SIT_DESVINCULADO / QT_MAT × 100 · IND-27: QT_CONCLUINTE / QT_MAT × 100</p>`;
+    `<strong>Fonte:</strong> INEP — Censo da Educação Superior / Base Cursos - Brasil.xlsx · IND-5: QT_SIT_DESVINCULADO / QT_MAT × 100 · IND-27: QT_CONC / QT_MAT × 100</p>`;
 
   const fmtAxis = v => v.toFixed(1).replace(".", ",") + "%";
   const axisLabels =
@@ -428,7 +428,7 @@ function retentionScatterBlock(c) {
     `<span class="scatter-axis-tick" style="left:-6px;top:2px;transform:translateX(-100%);">${fmtAxis(yMax)}</span>`;
 
   return `<article class="visual-card"><h3>IND-5 × IND-27 · Dispersão formação</h3>
-    <p class="card-subtitle">X = desvinculação (→ pior); Y = taxa de concluintes (↑ melhor); tamanho = matrículas · Quadrantes definidos pela média do grupo · Eixos ajustados ao intervalo dos dados · Clique em uma bolha para detalhar</p>
+    <p class="card-subtitle">X = desvinculação (→ pior); Y = concluintes sobre matrículas (↑ melhor); tamanho = matrículas · Quadrantes definidos pela média do grupo · Eixos ajustados ao intervalo dos dados · Clique em uma bolha para detalhar</p>
     <div class="retention-scatter faculty-scatter" style="background:var(--surface-1,#fff);overflow:visible;margin-left:42px;margin-bottom:20px;">${quadBg}${refLines}${qLabels}${axisLabels}${dots}</div>
     ${legend}${fonte}${painel}
   </article>`;
@@ -501,21 +501,20 @@ function retentionCourseRankingBlock(c) {
     'de alunos desvinculados em relação ao total de matrículas ativas ' +
     '(QT_SIT_DESVINCULADO ÷ QT_MAT × 100). ' +
     '<strong>Valores mais altos indicam maior evasão</strong> e devem ser analisados em conjunto ' +
-    'com a taxa de conclusão: uma IES pode ter alta conclusão e alta desvinculação se houver ' +
-    'grande volume de ingressantes. ' +
+    'com o IND-27, que mede concluintes sobre matrículas no mesmo ano e não acompanha coortes de ingresso. ' +
     'Fonte: INEP — Censo da Educação Superior / Base Cursos - Brasil.xlsx.</div></div>';
   const chipStrip = `<div class="qchip-strip" style="margin-bottom:12px">${chips}</div>`;
   const legend = `<div class="crk-legend">
     <span><i class="crk-drop"></i>Taxa de desvinculação</span>
-    <span><i class="crk-comp"></i>Taxa de concluintes</span>
+    <span><i class="crk-comp"></i>Concluintes sobre matrículas</span>
   </div>`;
   const heading = active === "all" ? "Todos os graus" : active;
   const hasRealGrau = active !== "all" && rows.some(u => courseTypeMetrics(u, active).real);
   const subtitle = active === "all"
-    ? "Indicadores calculados sobre a totalidade dos cursos · ordenado pela taxa de concluintes dentro do cluster ativo."
+    ? "Indicadores calculados sobre a totalidade dos cursos · ordenado por concluintes sobre matrículas dentro do cluster ativo."
     : hasRealGrau
-      ? `Cursos de ${active} — dados reais por grau acadêmico (INEP, Base Cursos) · ordenado pela taxa de concluintes dentro do cluster ativo.`
-      : `Estimativa para cursos de ${active} · ordenado pela taxa de concluintes dentro do cluster ativo.`;
+      ? `Cursos de ${active} — dados reais por grau acadêmico (INEP, Base Cursos) · ordenado por concluintes sobre matrículas dentro do cluster ativo.`
+      : `Estimativa para cursos de ${active} · ordenado por concluintes sobre matrículas dentro do cluster ativo.`;
   return `<div class="course-ranking-filter">${chipStrip}${infoNote}
     <article class="visual-card"><h3>Ranking por curso — ${heading}</h3><p class="card-subtitle">${subtitle}</p>${legend}${courseTypeRanking(rows, active, c)}</article>
   </div>`;
@@ -557,23 +556,23 @@ function retentionCrossBlock(c) {
 
   const side = `<div class="cx-side">
     <div class="cx-kpis">
-      <div class="cx-kpi"><span>Média de conclusão (IND-27)</span><strong>${formatPercent(avgComp)}</strong></div>
+      <div class="cx-kpi"><span>Média IND-27</span><strong>${formatPercent(avgComp)}</strong></div>
       <div class="cx-kpi"><span>Média de inserção (IND-37)</span><strong>${avgEmployment != null ? formatPercent(avgEmployment) : "—"}</strong></div>
     </div>
     ${diagnostics ? `<div class="cx-diag-list"><strong class="cx-diag-title">Diagnóstico</strong>${diagnostics}</div>` : ""}
     <div class="ff-howto">
       <strong>Como interpretar</strong>
-      <p>Compara a taxa de concluintes (IND-27, azul) com a taxa de inserção formal no Paraná (IND-37, verde). IES com as duas barras acima das médias apresentam bom alinhamento entre formação e mercado de trabalho.</p>
+      <p>Compara a proporção anual de concluintes sobre matrículas (IND-27, azul) com a taxa de inserção formal no Paraná (IND-37, verde). O IND-27 usa concluintes e matrículas do mesmo ano e não mede conclusão por coorte.</p>
     </div>
   </div>`;
 
   const note = hasEmployment ? "" : `<p class="card-subtitle">Indicador de inserção (IND-37) disponível apenas para as IEES do Paraná (base RAIS-PR).</p>`;
 
   return `<article class="visual-card">
-    <h3>Conclusão × inserção profissional</h3>
-    <p class="card-subtitle">IND-27 (azul) e IND-37 (verde) por IEES, escala 0–100% · ordenado pela taxa de concluintes.</p>
+    <h3>IND-27 × inserção profissional</h3>
+    <p class="card-subtitle">IND-27 (azul) e IND-37 (verde) por IEES, escala 0–100% · ordenado por concluintes sobre matrículas.</p>
     ${note}
-    <div class="cx-legend"><span><i class="cx-comp"></i>Taxa de conclusão</span><span><i class="cx-emp"></i>Taxa de inserção</span></div>
+    <div class="cx-legend"><span><i class="cx-comp"></i>Concluintes sobre matrículas</span><span><i class="cx-emp"></i>Taxa de inserção</span></div>
     <div class="cx-layout"><div class="cx-chart">${barRows}</div>${side}</div>
   </article>`;
 }
@@ -582,7 +581,7 @@ function crossFormationEmployment(u, avgComp, avgEmployment) {
   const compGood = u.completion >= avgComp;
   const empGood = avgEmployment != null && u.employment >= avgEmployment;
   const cls = compGood && empGood ? "alert-ok" : compGood && !empGood ? "alert-warn" : !compGood && empGood ? "alert-info" : "alert-danger";
-  const msg = compGood && !empGood ? "Conclui bem, mas insere abaixo da referência" : !compGood && empGood ? "Insere bem, mas conclui abaixo da referência" : compGood ? "Bom alinhamento formação-mercado" : "Baixa conclusão e baixa inserção";
+  const msg = compGood && !empGood ? "IND-27 acima da referência, inserção abaixo" : !compGood && empGood ? "Inserção acima da referência, IND-27 abaixo" : compGood ? "Bom alinhamento formação-mercado" : "IND-27 e inserção abaixo da referência";
   return { cls, msg };
 }
 

@@ -204,7 +204,7 @@
             </div>
 
             <label class="filter-inline-group filter-mini-card" for="groupBy" hidden>
-              <span class="filter-inline-label">Agrupar por</span>
+              <span class="filter-inline-label">Cluster Multidimensional</span>
               <select class="filter-inline-select" id="groupBy">
                 <option value="none">Não agrupar</option>
                 <option value="v1" selected>Porte institucional</option>
@@ -215,10 +215,26 @@
                 <option value="v6" title="Disponível apenas para escopo Paraná">Dinâmica orçamentária (PR)</option>
                 <option value="v7" title="Disponível apenas para escopo Paraná">Renda do Território Atendido (PR)</option>
                 <option value="v8" title="Disponível apenas para escopo Paraná">IDH do Território Atendido (PR)</option>
+                <option value="especifico">Cluster Específico</option>
               </select>
             </label>
 
             <div class="group-variable-buttons" id="groupVariableButtons" aria-label="Selecionar variável de agrupamento"></div>
+
+            <div class="iees-multi-wrap cluster-especifico-wrap filter-inline-group" id="clusterEspecificoWrap">
+              <span class="filter-inline-label">Cluster Específico</span>
+              <button type="button" class="iees-multi-btn cluster-especifico-btn" id="clusterEspecificoBtn" aria-haspopup="listbox" aria-expanded="false">
+                <span id="clusterEspecificoLabel">Todos os grupos</span>
+                <span class="iees-multi-arrow" aria-hidden="true">▾</span>
+              </button>
+              <div class="iees-multi-dropdown cluster-especifico-dropdown" id="clusterEspecificoDropdown" hidden>
+                <button type="button" class="iees-multi-item iees-meta-item cluster-especifico-item" data-cluster-level="all">
+                  Todos os grupos
+                </button>
+                <hr class="iees-multi-sep" aria-hidden="true">
+                <div id="clusterEspecificoList"></div>
+              </div>
+            </div>
           </div>
 
           <div class="filter-bar-right">
@@ -240,21 +256,16 @@
           <span class="fbs-iees-count" id="fbsIeesCount"></span>
         </div>
 
-        <div class="filter-expanded-panel" id="advancedFilters" hidden>
-          <div class="filter-expanded-grid">
-            <div class="filter-expanded-group">
-              <span class="filter-expanded-section-label">Grupo de referência</span>
-              <div class="filter-expanded-row">
-                <div class="filter-mini-card">
-                  <label for="groupLevelFilter">Nível de grupo</label>
-                  <select id="groupLevelFilter">
-                    <option value="all">Todos os grupos</option>
-                  </select>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
+        <!-- #groupLevelFilter: estado interno do nível de grupo ativo (V1-V8
+             e Cluster Específico). O painel expansível #advancedFilters e o
+             botão #advancedToggle que o abriria foram removidos por serem
+             código morto (o botão nunca existiu no HTML; a mesma função já
+             é coberta pelos chips de #sideGroupFilter e pelo dropdown do
+             Cluster Específico). O <select> abaixo é mantido oculto como
+             armazenamento de estado — não deve virar visível novamente. -->
+        <select id="groupLevelFilter" hidden aria-hidden="true" tabindex="-1">
+          <option value="all">Todos os grupos</option>
+        </select>
       </section>
 
       <section class="dashboard-layout">
@@ -281,7 +292,7 @@
         <aside class="side-panel" aria-label="Painel lateral com critérios do agrupamento">
           <div class="side-group-filter" id="sideGroupFilter" aria-label="Filtrar por grupo"></div>
           <div class="side-card accent-card">
-            <p class="eyebrow">Agrupamento dinâmico</p>
+            <p class="eyebrow">Cluster Multidimensional</p>
             <h2 id="groupTitle">V1 - Porte institucional</h2>
             <div id="criteriaList" class="criteria-list"></div>
           </div>

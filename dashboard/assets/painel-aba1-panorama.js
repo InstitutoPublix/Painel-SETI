@@ -74,7 +74,7 @@ var overviewMetricOptions = Object.fromEntries([
   ["ind24", "IND-24", "Taxa de ocupação das vagas de ingresso"],
   ["ind25", "IND-25", "Vagas de ingresso não ocupadas"],
   ["ind26", "IND-26", "Taxa de ocupação das vagas"],
-  ["ind27", "IND-27", "Taxa de concluintes"],
+  ["ind27", "IND-27", "Concluintes sobre matrículas"],
   ["ind28", "IND-28", "Vagas não ocupadas"],
   ["ind29", "IND-29", "Taxa de ocupação por grau"],
   ["ind30", "IND-30", "Taxa de ocupação - Diurno"],
@@ -142,9 +142,9 @@ var overviewMetricOptions = Object.fromEntries([
   ["ind92", "IND-92", "Participação de Investimentos em Obras e Instalações no Orçamento Total"],
   ["ind93", "IND-93", "Participação de Investimentos em Equipamentos e Material Permanente no Orçamento Total"],
   ["ind94", "IND-94", "Percentual de variação da dotação orçamentária em relação à LOA inicial"],
-  ["ind95", "IND-95", "Percentual de execução de liquidação do Orçamento Inicial"],
-  ["ind96", "IND-96", "Percentual de execução de liquidação do Orçamento Disponível"],
-  ["ind97", "IND-97", "Percentual de execução de liquidação do Orçamento Atualizado"]
+  ["ind95orc", "IND-95", "Percentual de execução de liquidação do Orçamento Inicial"],
+  ["ind96orc", "IND-96", "Percentual de execução de liquidação do Orçamento Disponível"],
+  ["ind97orc", "IND-97", "Percentual de execução de liquidação do Orçamento Atualizado"]
 ].map(([key, code, label]) => [key, overviewMetricOption(key, code, label)]));
 
 // ── KPI cards do panorama ────────────────────────────────────────────────────
@@ -158,7 +158,7 @@ var overviewKpiDefinitions = [
   { code: "IND-26", title: "Taxa de ocupação das vagas",           source: "INEP",        formula: "QT_MAT / QT_VG_TOTAL × 100",                  polarity: "↑", mode: "pp",  benchmark: () => formatPercent(brazil.result.occupancy),  get: a => a.occupancy,          fmt: formatPercent },
   { code: "IND-24", title: "Taxa de ocupação das vagas de ingresso", source: "INEP",      formula: "QT_ING / QT_VG_NOVA × 100",                   polarity: "↑", mode: "pp",  get: a => a.ingressOccupancy,    fmt: formatPercent },
   { code: "IND-5",  title: "Taxa anual de desvinculação discente", source: "INEP",        formula: "QT_DESVINCULADO / QT_MAT × 100",               polarity: "↓", mode: "pp",  benchmark: () => formatPercent(100 - brazil.result.permanence), get: a => a.dropout, fmt: formatPercent },
-  { code: "IND-27", title: "Taxa de concluintes",                  source: "INEP",        formula: "QT_CONC / QT_VG_NOVA × 100",                  polarity: "↑", mode: "pp",  benchmark: () => formatPercent(brazil.result.completion),  get: a => a.completionByVacancy, fmt: formatPercent },
+  { code: "IND-27", title: "Concluintes sobre matrículas",         source: "INEP",        formula: "QT_CONC / QT_MAT × 100",                  polarity: "↑", mode: "pp",  benchmark: () => formatPercent(brazil.result.completion),  get: a => a.completion, fmt: formatPercent },
   { code: "IND-6",  title: "Docentes com doutorado",               source: "INEP",        formula: "QT_DOC_EX_DOUT / QT_DOC_EXE × 100",           polarity: "↑", mode: "pp",  benchmark: () => formatPercent(brazil.result.doctorate),   get: a => a.doctors,            fmt: formatPercent },
   { code: "IND-37", title: "Inserção de egressos no Paraná",       source: "SETI / RAIS", formula: "Egressos PR / Total egressos × 100",           polarity: "↑", mode: "pp",  benchmark: () => formatPercent(brazil.result.employment),  get: a => a.employment,         fmt: formatPercent },
   { code: "IND-40", title: "Média salarial dos egressos",          source: "SETI / RAIS", formula: "Média salarial PR + CBO2",                     polarity: "↑", mode: "pct", benchmark: () => formatCurrency(brazil.result.salary),     get: a => a.salary,             fmt: formatCurrency },
@@ -205,7 +205,6 @@ function overviewAgg(d) {
     courses: sum(d, u => u.courses),
     dropout: wavg(d, u => u.dropout, u => u.students),
     ingressOccupancy: (() => { const vn = d.some(u => u.vacanciesNova != null) ? Math.max(1, sum(d, u => u.vacanciesNova != null ? u.vacanciesNova : 0)) : vacancyBase; return sum(d, u => u.entrants) / vn * 100; })(),
-    completionByVacancy: sum(d, u => u.graduates) / vacancyBase * 100,
     salary: wavg(d, u => panelEmploymentSalary(u), u => u.graduates),
     facultyOcc: wavg(d, u => u.facultyOcc, u => u.students)
   };
@@ -302,7 +301,7 @@ function renderDefaultKpis(c) {
   ] : [
     ["Total de estudantes", formatNumber(a.students), `${formatNumber(a.entrants)} ingressantes`, "+2,1%"],
     ["Taxa de ocupação das vagas", formatPercent(a.occupancy), `${formatNumber(a.vacancies)} vagas`, badge(a.occupancy, 88, 80)],
-    ["Taxa de concluintes", formatPercent(a.completion), `${formatNumber(a.graduates)} concluintes`, badge(a.completion, 62, 56)],
+    ["Concluintes sobre matrículas", formatPercent(a.completion), `${formatNumber(a.graduates)} concluintes no ano`, badge(a.completion, 62, 56)],
     ["Docentes com doutorado", formatPercent(a.doctors), "proporção no corpo docente", badge(a.doctors, 86, 80)],
     ["Captação CNPq", formatCurrencyMillions(a.cnpq), "recursos captados", "+4,4%"],
     ["Inserção no Paraná", formatPercent(a.employment), "egressos no mercado formal", badge(a.employment, 72, 67)],

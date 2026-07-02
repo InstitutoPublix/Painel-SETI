@@ -68,7 +68,12 @@ function buildComparisonIndicatorSets() {
   const sets = {};
   Object.entries(INDICATOR_CATALOG || {}).forEach(([key, indicator]) => {
     const code = `IND-${Number(indicator.codigo)}`;
-    const getter = IND_FIELD_MAP[comparisonCatalogKeyForCode(code)] || IND_FIELD_MAP[key];
+    // Prioriza a chave literal do catálogo (key) sobre a derivada do campo
+    // "codigo" (comparisonCatalogKeyForCode(code)): ind95orc/96orc/97orc têm
+    // codigo:95/96/97 preservado (só a chave JS foi renomeada ao acomodar os
+    // novos indicadores de pós-graduação 95-108), então a chave derivada do
+    // código apontaria para o getter errado (ex.: "ind95" → pgMestrado).
+    const getter = IND_FIELD_MAP[key] || IND_FIELD_MAP[comparisonCatalogKeyForCode(code)];
     if (!getter) return;
     const label = String(indicator.categoria || "Geral").trim() || "Geral";
     const dimKey = comparisonDimensionSlug(label);

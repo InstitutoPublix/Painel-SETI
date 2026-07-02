@@ -487,45 +487,45 @@ function pg5bBlocks(rows5b, c) {
   return `
   <article class="visual-card mt-14">
     <h3>Programas por nível</h3>
-    <p class="card-subtitle">Programas stricto sensu distintos por grau (NM_GRAU_CURSO, Base_Cursos CAPES, AN_BASE mais recente). Programas com dois graus são contados em cada categoria correspondente.</p>
+    <p class="card-subtitle">IND-95/96/97 · Contagem de NM_PROGRAMA_IES distintos por NM_GRAU_CURSO — Mestrado, Mestrado Profissional e Doutorado/Doutorado Profissional, AN_BASE mais recente por IES (CAPES – Base Pós-Graduação).</p>
     ${pgNivelBars(rows5b)}
   </article>
   <article class="visual-card mt-14">
     <h3>Distribuição por grande área do conhecimento</h3>
-    <p class="card-subtitle">Programas distintos por NM_GRANDE_AREA_CONHECIMENTO (Base_Cursos CAPES, AN_BASE mais recente). Selecione a IES abaixo.</p>
+    <p class="card-subtitle">IND-98 · Contagem de NM_PROGRAMA_IES distintos agrupados por NM_GRANDE_AREA_CONHECIMENTO, AN_BASE mais recente por IES (CAPES – Base Pós-Graduação). Selecione a IES abaixo.</p>
     ${pgGrandeAreaChart(rows5b, c)}
   </article>
   <article class="visual-card mt-14">
     <h3>Conceitos CAPES — destaque de excelência</h3>
-    <p class="card-subtitle">% de programas com CD_CONCEITO_PROGRAMA ≥ 6 sobre o total de programas distintos da IES (Base_Discentes CAPES, AN_BASE=2024).</p>
+    <p class="card-subtitle">IND-108 · Para cada programa distinto, considera-se o maior CD_CONCEITO_PROGRAMA registrado no AN_BASE mais recente; pctExcelencia = (programas com conceito ≥ 6) ÷ (total de programas com conceito informado) × 100 (CAPES – Base Pós-Graduação).</p>
     ${pgExcelenciaBars(rows5b)}
     <p style="margin-top:8px;font-size:11px;color:#64748b;font-style:italic">⚠ Excelência = programas com CD_CONCEITO_PROGRAMA ≥ 6 (Base_Discentes). Métrica distinta do conceito por curso (CD_CONCEITO_CURSO) usado em pgTop/capes acima — não comparar diretamente.</p>
   </article>
   <article class="visual-card mt-14">
     <h3>Discentes matriculados em pós-graduação</h3>
-    <p class="card-subtitle">set(ID_PESSOA) com NM_SITUACAO_DISCENTE = "MATRICULADO" por grau (Base_Discentes CAPES, AN_BASE=2024). Cada discente conta uma vez por grau.</p>
+    <p class="card-subtitle">IND-99/100 · set(ID_PESSOA) distintos com NM_SITUACAO_DISCENTE = MATRICULADO, por DS_GRAU_ACADEMICO_DISCENTE (Mestrado/Doutorado), AN_BASE mais recente por IES (CAPES – Base Pós-Graduação).</p>
     ${discMatriculadosBars(rows5b)}
   </article>
   <article class="visual-card mt-14">
     <h3>Titulados por ano-base</h3>
-    <p class="card-subtitle">set(ID_PESSOA) com NM_SITUACAO_DISCENTE = "TITULADO" por grau (Base_Discentes CAPES, AN_BASE=2024).</p>
+    <p class="card-subtitle">IND-101/102 · set(ID_PESSOA) distintos com NM_SITUACAO_DISCENTE = TITULADO, por DS_GRAU_ACADEMICO_DISCENTE (Mestrado/Doutorado), no AN_BASE mais recente por IES (CAPES – Base Pós-Graduação).</p>
     ${tituladosBars(rows5b)}
     <p style="margin-top:8px;font-size:11px;color:#64748b;font-style:italic">Ano de referência = AN_BASE (ano-base CAPES), não necessariamente o ano civil de defesa.</p>
   </article>
   <article class="visual-card mt-14">
     <h3>Corpo docente da pós-graduação</h3>
-    <p class="card-subtitle">set(ID_PESSOA) por DS_CATEGORIA_DOCENTE (Base_Docentes CAPES, AN_BASE=2024). Docentes em múltiplos programas da mesma IES são contados uma única vez.</p>
+    <p class="card-subtitle">IND-103/104/105 · set(ID_PESSOA) distintos por DS_CATEGORIA_DOCENTE (Permanente/Colaborador/Visitante), AN_BASE mais recente por IES (CAPES – Base Pós-Graduação). Docentes em múltiplos programas da mesma IES são contados uma única vez.</p>
     ${docCorpoPosBars(rows5b)}
   </article>
   <article class="visual-card mt-14">
     <h3>Razão discente / docente permanente</h3>
-    <p class="card-subtitle">Fórmula: (discMestrado + discDoutorado) ÷ docPermanentes. Valores menores indicam maior capacidade de orientação por docente.</p>
+    <p class="card-subtitle">IND-106 · (discMestrado + discDoutorado) ÷ docPermanentes, por IES; discentes usam o AN_BASE mais recente de Base_Discentes e docentes o de Base_Docentes (CAPES – Base Pós-Graduação). Valores menores indicam maior capacidade de orientação por docente.</p>
     ${razaoBars(rows5b)}
     <p style="margin-top:8px;font-size:11px;color:#64748b;font-style:italic">Fórmula: (discentes mestrado matriculados + discentes doutorado matriculados) ÷ docentes permanentes. Fonte: Base_Discentes + Base_Docentes, AN_BASE=2024.</p>
   </article>
   <article class="visual-card mt-14">
     <h3>Capilaridade dos programas</h3>
-    <p class="card-subtitle">Municípios distintos com programas de pós-graduação da IES (NM_MUNICIPIO_PROGRAMA_IES, Base_Cursos CAPES, AN_BASE mais recente).</p>
+    <p class="card-subtitle">IND-107 · Contagem de NM_MUNICIPIO_PROGRAMA_IES distintos, AN_BASE mais recente por IES (CAPES – Base Pós-Graduação).</p>
     ${pgCapilaridadeCards(rows5b)}
   </article>`;
 }
