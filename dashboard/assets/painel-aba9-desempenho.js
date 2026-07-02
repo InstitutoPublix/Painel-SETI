@@ -297,11 +297,18 @@ updateScopeAvailability = function(scope) {
 
 function applyEfficiencyDefaults() {
   if ((state.activeTab !== "efficiency" && state.activeTab !== "performance") || state.efficiencyDefaultApplied || !el.groupBy) return;
-  const v6Option = el.groupBy.querySelector('option[value="v6"]');
-  if (v6Option) v6Option.disabled = false;
-  el.groupBy.value = "v6";
-  updateGroupOptions("v6");
-  if (el.groupLevelFilter) el.groupLevelFilter.value = "all";
+
+  const hasActiveClusterSelection =
+    el.groupLevelFilter && el.groupLevelFilter.value && el.groupLevelFilter.value !== "all";
+
+  if (!hasActiveClusterSelection) {
+    const v6Option = el.groupBy.querySelector('option[value="v6"]');
+    if (v6Option) v6Option.disabled = false;
+    el.groupBy.value = "v6";
+    updateGroupOptions("v6");
+    if (el.groupLevelFilter) el.groupLevelFilter.value = "all";
+  }
+
   state.efficiencyDefaultApplied = true;
 }
 
@@ -426,7 +433,7 @@ updateFooter = function(c) {
   if (!footerCluster && !footerScope) return previousUpdateFooterEfficiency(c);
   const ctx = c || context();
   const groupName = ctx.group === "all" ? "Todos os grupos" : ctx.group;
-  if (footerCluster) footerCluster.textContent = `${ctx.f.groupBy.toUpperCase()} – ${groupName}`;
+  if (footerCluster) footerCluster.textContent = `${groupMeta[ctx.f.groupBy]?.label || ctx.f.groupBy.toUpperCase()} – ${groupName}`;
   if (footerScope) footerScope.textContent = state.activeTab === "faculty" ? "Paraná (SETI/LGU)" : (state.activeTab === "efficiency" || state.activeTab === "performance") ? "Paraná (Despesa 8050)" : ctx.f.scope;
 };
 
@@ -444,7 +451,8 @@ updateContextBar = function(c) {
   const row = document.getElementById("activeClustersRow");
   if (row) {
     const groupName = c.group === "all" ? "Todos os grupos" : c.group;
-    row.innerHTML = `<span class="cluster-badge c-${c.f.groupBy}"><span class="c-dim">${c.f.groupBy.toUpperCase()}</span> ${groupName}</span>`;
+    const dimLabel = (groupMeta[c.f.groupBy]?.label || c.f.groupBy.toUpperCase()).replace(/^V\d+\s*[–-]\s*/, "");
+    row.innerHTML = `<span class="cluster-badge c-${c.f.groupBy}"><span class="c-dim">${dimLabel}</span> ${groupName}</span>`;
   }
   updateFooter(c);
 };
