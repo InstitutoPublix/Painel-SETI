@@ -5,6 +5,33 @@
    já está fundido diretamente nestas funções — sem re-execução de chains.
    ========================================================================== */
 
+// ── Tooltip de fórmula (ⓘ) — mapa de alias label → indicador do catálogo ────
+// Cobre só os KPIs globais (overviewKpiDefinitions) e os score-cards do corpo
+// da Aba 1. Validado manualmente contra "5. Relação de Indicadores das
+// Universidades.xlsx" — ver Etapa 1 do diagnóstico registrado no README.
+// FORA DESTE MAPA (propositalmente): "Ranking de IEES por ${metric.label}"
+// (título dinâmico, precisa casar por metric.code, não por texto) e "Síntese
+// dos indicadores estruturais por IEES" (tabela composta, sem fórmula única).
+const ABA1_LABEL_TO_IND = {
+  "Matrículas de graduação": "ind2",                        // Número de Matrículas de Graduação da Rede Pública
+  "Estudantes ingressantes": "ind13",                        // Total de estudantes ingressantes
+  "Estudantes concluintes": "ind14",                         // Total de estudantes concluintes
+  "Total de cursos": "ind10",                                // Total de cursos
+  "Total de vagas": "ind11",                                 // Total de vagas
+  "Taxa de ocupação das vagas": "ind26",                     // Taxa de ocupação das vagas
+  "Taxa de ocupação das vagas de ingresso": "ind24",         // Taxa de ocupação das vagas de ingresso
+  "Taxa anual de desvinculação discente": "ind5",            // Taxa anual de desvinculação discente
+  "Concluintes sobre matrículas": "ind27",                   // Proporção anual de concluintes sobre matrículas
+  "Docentes com doutorado": "ind6",                          // Proporção de docentes com doutorado
+  "Taxa de retenção de egressos pelo Estado do Paraná": "ind37", // Taxa de retenção de egressos pelo Estado do Paraná
+  "Média salarial dos egressos": "ind40",                    // Média salarial dos egressos inseridos no mercado de trabalho do Paraná aderentes ao CBO2
+  "Captação de recursos do CNPq": "ind60",                   // Captação de recursos do CNPq
+  "Taxa de execução orçamentária": "ind81",                  // Taxa de Execução Orçamentária (Empenho)
+  "Desvinculação": "ind5",                                   // score-card — Taxa anual de desvinculação discente
+  "Retenção PR": "ind37",                                    // score-card — Taxa de retenção de egressos pelo Estado do Paraná
+  "Execução orçamentária": "ind81"                           // score-card — Taxa de Execução Orçamentária (Empenho)
+};
+
 // ── Universo para métricas do painel de acesso ───────────────────────────────
 
 function overviewMetricUniverseRows() {
@@ -32,12 +59,38 @@ function overviewMetricMunicipalityTotal(u, getter) {
 
 function overviewMetricValue(getter) {
   return u => {
-    const value = Number(getter ? getter(u) : 0);
-    return Number.isFinite(value) ? value : 0;
+    const raw = getter ? getter(u) : null;
+    if (raw == null || raw === "") return null;
+    const value = Number(raw);
+    return Number.isFinite(value) ? value : null;
   };
 }
 
-function overviewMetricFormat(code) {
+const overviewPostgraduateIndicatorKeys = [
+  "ind95", "ind96", "ind97", "ind98", "ind99", "ind100", "ind101",
+  "ind102", "ind103", "ind104", "ind105", "ind106", "ind107", "ind108"
+];
+
+function overviewMetricCatalogFormatter(key) {
+  const indicator = INDICATOR_CATALOG && INDICATOR_CATALOG[key];
+  if (!indicator) return null;
+  const text = String(`${indicator.unidade || ""} ${indicator.nome || ""}`)
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase();
+  if (text.includes("percentual") || text.includes("taxa") || text.includes("proporcao") || text.includes("participacao")) return formatPercent;
+  if (text.includes("reais") || text.includes("r$") || text.includes("salario") || text.includes("captacao")) return formatCurrency;
+  if (text.includes("hora")) return v => `${Number(v || 0).toFixed(1).replace(".", ",")}h`;
+  if (text.includes("razao") || text.includes("indice") || text.includes("conceito") || text.includes("media")) return v => Number(v || 0).toFixed(1).replace(".", ",");
+  return formatNumber;
+}
+
+function overviewMetricFormat(code, key) {
+  if (["ind95orc", "ind96orc", "ind97orc"].includes(key)) return formatPercent;
+  if (overviewPostgraduateIndicatorKeys.includes(key)) {
+    const catalogFormatter = overviewMetricCatalogFormatter(key);
+    if (catalogFormatter) return catalogFormatter;
+  }
   if (code === "IND-40") return formatCurrency;
   if (code === "IND-60") return formatCurrencyMillions;
   if (overviewMetricPercentCodes.has(code)) return formatPercent;
@@ -47,7 +100,7 @@ function overviewMetricFormat(code) {
 
 function overviewMetricOption(key, code, label) {
   const getter = IND_FIELD_MAP[key];
-  return { label, code, get: overviewMetricValue(getter), fmt: overviewMetricFormat(code) };
+  return { label, code, get: overviewMetricValue(getter), fmt: overviewMetricFormat(code, key) };
 }
 
 var overviewMetricOptions = Object.fromEntries([
@@ -68,13 +121,15 @@ var overviewMetricOptions = Object.fromEntries([
   ["ind15", "IND-15", "Média de vagas por curso"],
   ["ind16", "IND-16", "Participação da IEES no total de vagas"],
   ["ind17", "IND-17", "Participação do município no total de vagas"],
+  ["ind19", "IND-19", "Participação da IEES no total de cursos"],
   ["ind20", "IND-20", "Participação do município no total de cursos"],
   ["ind21", "IND-21", "Média de estudantes por curso"],
+  ["ind22", "IND-22", "Participação da IEES no total de estudantes"],
   ["ind23", "IND-23", "Relação estudantes por vaga"],
   ["ind24", "IND-24", "Taxa de ocupação das vagas de ingresso"],
   ["ind25", "IND-25", "Vagas de ingresso não ocupadas"],
   ["ind26", "IND-26", "Taxa de ocupação das vagas"],
-  ["ind27", "IND-27", "Concluintes sobre matrículas"],
+  ["ind27", "IND-27", "Proporção anual de concluintes sobre matrículas"],
   ["ind28", "IND-28", "Vagas não ocupadas"],
   ["ind29", "IND-29", "Taxa de ocupação por grau"],
   ["ind30", "IND-30", "Taxa de ocupação - Diurno"],
@@ -84,7 +139,7 @@ var overviewMetricOptions = Object.fromEntries([
   ["ind34", "IND-34", "Egressos inseridos no mercado de trabalho formal (Região Sul)"],
   ["ind35", "IND-35", "Taxa de inserção de egressos (Região Sul)"],
   ["ind36", "IND-36", "Egressos inseridos no mercado de trabalho formal (Paraná)"],
-  ["ind37", "IND-37", "Taxa de inserção de egressos no mercado de trabalho no Paraná"],
+  ["ind37", "IND-37", "Taxa de retenção de egressos pelo Estado do Paraná"],
   ["ind38", "IND-38", "Egressos aderentes ao filtro CBO2 inseridos no mercado de trabalho (Paraná)"],
   ["ind39", "IND-39", "Percentual de egressos empregados no Paraná em ocupações aderentes ao CBO2"],
   ["ind40", "IND-40", "Média salarial dos egressos inseridos no mercado de trabalho do Paraná aderentes ao CBO2"],
@@ -117,17 +172,17 @@ var overviewMetricOptions = Object.fromEntries([
   ["ind67", "IND-67", "Taxa de Ocupação de Vagas por Tipo de Curso"],
   ["ind68", "IND-68", "Índice de Especialização da Oferta Acadêmica"],
   ["ind69", "IND-69", "Proporção de Cursos de Licenciatura na Oferta"],
-  ["ind70", "IND-70", "Indicador sem cadastro na relação oficial de indicadores"],
-  ["ind71", "IND-71", "Egressos inseridos no mercado formal por município de vínculo"],
-  ["ind72", "IND-72", "Participação do município na inserção formal dos egressos"],
-  ["ind73", "IND-73", "Egressos inseridos no mercado formal por curso padronizado"],
-  ["ind74", "IND-74", "Participação do curso na inserção formal dos egressos"],
-  ["ind75", "IND-75", "Egressos inseridos no mercado formal por tipo de curso"],
-  ["ind76", "IND-76", "Diversidade ocupacional dos egressos por curso"],
-  ["ind77", "IND-77", "Distribuição dos egressos por grande grupo ocupacional CBO2"],
-  ["ind78", "IND-78", "Participação dos grandes grupos ocupacionais CBO2 na inserção dos egressos"],
-  ["ind79", "IND-79", "Municípios de destino profissional dos egressos por curso"],
-  ["ind80", "IND-80", "Índice de dispersão territorial dos egressos por curso"],
+  ["ind70", "IND-70", "Egressos inseridos no mercado formal por município de vínculo"],
+  ["ind71", "IND-71", "Participação do município na inserção formal dos egressos"],
+  ["ind72", "IND-72", "Egressos inseridos no mercado formal por curso padronizado"],
+  ["ind73", "IND-73", "Participação do curso na inserção formal dos egressos"],
+  ["ind74", "IND-74", "Egressos inseridos no mercado formal por tipo de curso"],
+  ["ind75", "IND-75", "Diversidade ocupacional dos egressos por curso"],
+  ["ind76", "IND-76", "Distribuição dos egressos por grande grupo ocupacional CBO2"],
+  ["ind77", "IND-77", "Participação dos grandes grupos ocupacionais CBO2 na inserção dos egressos"],
+  ["ind78", "IND-78", "Municípios de destino profissional dos egressos por curso"],
+  ["ind79", "IND-79", "Índice de dispersão territorial dos egressos por curso"],
+  ["ind80", "IND-80", "Índice de inserção territorial"],
   ["ind81", "IND-81", "Taxa de Execução Orçamentária (Empenho)"],
   ["ind82", "IND-82", "Taxa de Liquidação"],
   ["ind83", "IND-83", "Taxa de Pagamento sobre Liquidado"],
@@ -137,15 +192,23 @@ var overviewMetricOptions = Object.fromEntries([
   ["ind87", "IND-87", "Participação de Outras Despesas Correntes no Total"],
   ["ind88", "IND-88", "Proporção Despesas Correntes vs. Despesas de Capital"],
   ["ind89", "IND-89", "Participação de Recursos Livres (Tesouro Estadual) no Orçamento Total"],
-  ["ind90", "IND-90", "Participação de Recursos Próprios no Orçamento Total"],
+  ["ind90", "IND-90", "Participação da Fonte da Despesa \"501 - Arrecadação Própria\" no Orçamento Atualizado"],
   ["ind91", "IND-91", "Participação de Recursos de Transferências (Federal/Convênios)"],
   ["ind92", "IND-92", "Participação de Investimentos em Obras e Instalações no Orçamento Total"],
   ["ind93", "IND-93", "Participação de Investimentos em Equipamentos e Material Permanente no Orçamento Total"],
   ["ind94", "IND-94", "Percentual de variação da dotação orçamentária em relação à LOA inicial"],
-  ["ind95orc", "IND-95", "Percentual de execução de liquidação do Orçamento Inicial"],
-  ["ind96orc", "IND-96", "Percentual de execução de liquidação do Orçamento Disponível"],
-  ["ind97orc", "IND-97", "Percentual de execução de liquidação do Orçamento Atualizado"]
+  ["ind95orc", "ORC-95", "Percentual de execução de liquidação do Orçamento Inicial"],
+  ["ind96orc", "ORC-96", "Percentual de execução de liquidação do Orçamento Disponível"],
+  ["ind97orc", "ORC-97", "Percentual de execução de liquidação do Orçamento Atualizado"]
 ].map(([key, code, label]) => [key, overviewMetricOption(key, code, label)]));
+
+overviewPostgraduateIndicatorKeys.forEach(key => {
+  const indicator = INDICATOR_CATALOG && INDICATOR_CATALOG[key];
+  const getter = IND_FIELD_MAP[key];
+  if (!indicator || !getter) return;
+  const code = `IND-${Number(indicator.codigo)}`;
+  overviewMetricOptions[key] = overviewMetricOption(key, code, indicator.nome || code);
+});
 
 // ── KPI cards do panorama ────────────────────────────────────────────────────
 
@@ -160,7 +223,7 @@ var overviewKpiDefinitions = [
   { code: "IND-5",  title: "Taxa anual de desvinculação discente", source: "INEP",        formula: "QT_DESVINCULADO / QT_MAT × 100",               polarity: "↓", mode: "pp",  benchmark: () => formatPercent(100 - brazil.result.permanence), get: a => a.dropout, fmt: formatPercent },
   { code: "IND-27", title: "Concluintes sobre matrículas",         source: "INEP",        formula: "QT_CONC / QT_MAT × 100",                  polarity: "↑", mode: "pp",  benchmark: () => formatPercent(brazil.result.completion),  get: a => a.completion, fmt: formatPercent },
   { code: "IND-6",  title: "Docentes com doutorado",               source: "INEP",        formula: "QT_DOC_EX_DOUT / QT_DOC_EXE × 100",           polarity: "↑", mode: "pp",  benchmark: () => formatPercent(brazil.result.doctorate),   get: a => a.doctors,            fmt: formatPercent },
-  { code: "IND-37", title: "Inserção de egressos no Paraná",       source: "SETI / RAIS", formula: "Egressos PR / Total egressos × 100",           polarity: "↑", mode: "pp",  benchmark: () => formatPercent(brazil.result.employment),  get: a => a.employment,         fmt: formatPercent },
+  { code: "IND-37", title: "Taxa de retenção de egressos pelo Estado do Paraná", source: "SETI / RAIS", formula: "Egressos PR / Total egressos × 100",           polarity: "↑", mode: "pp",  benchmark: () => formatPercent(brazil.result.employment),  get: a => a.employment,         fmt: formatPercent },
   { code: "IND-40", title: "Média salarial dos egressos",          source: "SETI / RAIS", formula: "Média salarial PR + CBO2",                     polarity: "↑", mode: "pct", benchmark: () => formatCurrency(brazil.result.salary),     get: a => a.salary,             fmt: formatCurrency },
   { code: "IND-60", title: "Captação de recursos do CNPq",         source: "CNPq",        formula: "Bolsas, auxílios e projetos",                  polarity: "↑", mode: "pct", get: a => a.cnpq,               fmt: formatCurrencyMillions },
   { code: "IND-81", title: "Taxa de execução orçamentária",        source: "Relatório 8050", formula: "Empenhado / Orçamento atualizado × 100",    polarity: "↑", mode: "pp",  get: a => a.execution,           fmt: formatPercent }
@@ -304,7 +367,7 @@ function renderDefaultKpis(c) {
     ["Concluintes sobre matrículas", formatPercent(a.completion), `${formatNumber(a.graduates)} concluintes no ano`, badge(a.completion, 62, 56)],
     ["Docentes com doutorado", formatPercent(a.doctors), "proporção no corpo docente", badge(a.doctors, 86, 80)],
     ["Captação CNPq", formatCurrencyMillions(a.cnpq), "recursos captados", "+4,4%"],
-    ["Inserção no Paraná", formatPercent(a.employment), "egressos no mercado formal", badge(a.employment, 72, 67)],
+    ["Retenção no Paraná", formatPercent(a.employment), "egressos no mercado formal", badge(a.employment, 72, 67)],
     ["Orçamento liquidado", formatCurrencyMillions(a.budget), "grupo selecionado", "+6,8%"],
     ["Execução orçamentária", formatPercent(a.execution), "média ponderada", badge(a.execution, 93, 90)]
   ];
@@ -315,7 +378,7 @@ function renderDefaultKpis(c) {
     if (text.includes("concluintes")) return d(a.completion, aPrev?.completion, "higher", "pp", label);
     if (text.includes("doutorado")) return d(a.doctors, aPrev?.doctors, "higher", "pp", label);
     if (text.includes("cnpq") || text.includes("capta")) return d(a.cnpq, aPrev?.cnpq, "higher", "pct", label);
-    if (text.includes("inser")) return d(a.employment, aPrev?.employment, "higher", "pp", label);
+    if (text.includes("retenção")) return d(a.employment, aPrev?.employment, "higher", "pp", label);
     if (text.includes("execu")) return d(ar.execution, arPrev?.execution, "higher", "pp", label);
     if (text.includes("taxa") && text.includes("liquida")) return d(ar.liquidation, arPrev?.liquidation, "higher", "pp", label);
     if (text.includes("liquida")) return d(ar.budget, arPrev?.budget, "higher", "pct", label);
@@ -410,7 +473,7 @@ function overview(c) {
   <div class="score-grid mt-14">
     ${score("Ocupação das vagas", formatPercent(a.occupancy), "Média nacional", a.occupancy)}
     ${score("Desvinculação", formatPercent(a.dropout), "Média nacional", a.dropout)}
-    ${score("Inserção PR", formatPercent(a.employment), "Comparativo nacional", a.employment)}
+    ${score("Retenção PR", formatPercent(a.employment), "Comparativo nacional", a.employment)}
     ${score("Execução orçamentária", formatPercent(a.execution), "Comparativo nacional", a.execution)}
   </div>
   <div class="table-wrap mt-14">
@@ -497,7 +560,7 @@ function overview(c) {
   <div class="score-grid mt-14">
     ${score("Ocupação das vagas", formatPercent(a.occupancy), "IND-26", a.occupancy)}
     ${score("Desvinculação", formatPercent(a.dropout), "IND-5", a.dropout)}
-    ${score("Inserção PR", formatPercent(a.employment), "IND-37", a.employment)}
+    ${score("Retenção PR", formatPercent(a.employment), "IND-37", a.employment)}
     ${score("Execução orçamentária", formatPercent(a.execution), "IND-81", a.execution)}
   </div>
   ${(() => {
@@ -574,6 +637,75 @@ function overview(c) {
 }
 window.overview = overview;
 
+// ── Tooltip de fórmula (ⓘ) — KPIs globais + score-cards da Aba 1 ────────────
+// Não é chamada a partir de dentro de renderKpis()/overview(): overview(c) só
+// RETORNA uma string de HTML — quem grava no DOM (el.tabContent.innerHTML) é o
+// código de painel.js, executado DEPOIS que overview(c) retorna. Injetar a
+// partir de dentro de overview() acharia ainda o DOM da renderização anterior
+// (o novo HTML nem foi inserido), atrasando o tooltip em um ciclo de render.
+// renderKpis() já muta o DOM direto (el.kpiGrid.innerHTML = ...) então não tem
+// esse problema, mas por simplicidade os dois casos são tratados juntos, num
+// hook único acionado depois que o ciclo de render() inteiro já rodou — mesmo
+// padrão usado por _injectAnnotations() em painel.js.
+function _injectAba1FormulaTooltips() {
+  // Guard obrigatório: .score-card é reaproveitada por outras abas (ex.: Aba 3
+  // usa "score-card access-card" com <h3>Total de vagas</h3> — mesmo texto do
+  // KPI global de Aba 1, colisão real confirmada via Playwright). Sem este
+  // guard, o seletor global abaixo vazaria ícone de fórmula para cards de
+  // outras abas sempre que o label coincidisse por acaso.
+  if (state.activeTab !== "overview") return;
+  document.querySelectorAll(".kpi-card:not([data-formula-done])").forEach(card => {
+    const labelEl = card.querySelector(".kpi-label");
+    if (!labelEl) return;
+    const key = ABA1_LABEL_TO_IND[labelEl.textContent.trim()];
+    if (!key) return;
+    card.setAttribute("data-formula-done", "1");
+    injectFormulaTooltip(labelEl, key);
+  });
+  document.querySelectorAll(".score-card:not([data-formula-done])").forEach(card => {
+    const h3 = card.querySelector("h3");
+    if (!h3) return;
+    const key = ABA1_LABEL_TO_IND[h3.textContent.trim()];
+    if (!key) return;
+    card.setAttribute("data-formula-done", "1");
+    injectFormulaTooltip(h3, key);
+  });
+}
+
+// NÃO usamos o patch de render() (padrão do _injectAnnotations em painel.js)
+// para acionar isso. Motivo, confirmado via Playwright antes de escrever este
+// código: render() foi envolvido por camadas assíncronas — renderWithVisualStates()
+// (painel.js ~5755) mostra um skeleton e adia o render real via
+// requestAnimationFrame, e renderWithBrasilScopeDomCleanup() (painel.js ~6732)
+// adia limpezas via requestAnimationFrame + setTimeout. render() portanto
+// RETORNA antes do conteúdo real existir no DOM. Qualquer código encadeado
+// synchronamente logo após a chamada de render() — inclusive o próprio
+// _injectAnnotations() já existente — roda em cima do skeleton, não do
+// conteúdo final; comprovado empiricamente: em produção, `.ind-info` nunca
+// aparece após um load normal, mesmo com os cards já pintados na tela (ver
+// nota no README, seção "Tooltips de Fórmula (ⓘ)"). Em vez de encadear em
+// render(), observamos diretamente os containers onde o conteúdo real é
+// escrito — funciona não importa quantas camadas de adiamento existam.
+//
+// Usa document.getElementById() em vez de el.kpiGrid/el.tabContent: este
+// script roda de forma síncrona durante o parsing do HTML (script no fim do
+// <body>, antes de "DOMContentLoaded"), mas o objeto "el" só é populado por
+// cache() dentro do listener de DOMContentLoaded em painel.js — ou seja,
+// el.kpiGrid ainda é undefined neste ponto, mesmo os elementos #kpiGrid e
+// #tabContent já existindo no HTML (eles vêm antes das tags <script> no DOM).
+(function () {
+  function start() {
+    var kpiGrid = document.getElementById("kpiGrid");
+    var tabContent = document.getElementById("tabContent");
+    if (!kpiGrid && !tabContent) return;
+    var observer = new MutationObserver(function () { _injectAba1FormulaTooltips(); });
+    if (kpiGrid) observer.observe(kpiGrid, { childList: true });
+    if (tabContent) observer.observe(tabContent, { childList: true });
+  }
+  start();
+  _injectAba1FormulaTooltips(); // cobre o caso do DOM inicial já estar pronto no load
+}());
+
 // ── Barras de cluster do panorama ────────────────────────────────────────────
 
 function overviewClusterBars(c, metric) {
@@ -582,26 +714,32 @@ function overviewClusterBars(c, metric) {
   const clusterData = isBR ? (c.display.length ? c.display : c.ref) : overviewDataSet(c);
   const clusterIds = new Set(clusterData.map(u => u.id));
   const chartData = clusterData;
-  const sorted = [...chartData].sort((a, b) => metric.get(b) - metric.get(a));
-  const max = Math.max(...sorted.map(metric.get), 1);
-  const ref = mean(clusterData, metric.get);
-  const refPos = clamp(ref / max * 100, 0, 100);
+  const metricValue = u => {
+    const raw = metric.get(u);
+    if (raw == null || raw === "") return null;
+    const n = Number(raw);
+    return Number.isFinite(n) ? n : null;
+  };
+  const sorted = [...chartData].sort((a, b) => (metricValue(b) ?? -Infinity) - (metricValue(a) ?? -Infinity));
+  const values = sorted.map(metricValue).filter(v => v != null);
+  const max = Math.max(...values, 1);
+  const ref = values.length ? values.reduce((total, value) => total + value, 0) / values.length : null;
+  const refPos = ref != null ? clamp(ref / max * 100, 0, 100) : 0;
   const refLabel = isBR ? "Média nacional" : (clusterActive ? "Média do cluster" : "Média do sistema");
   const ieesColors = { UEL: "#1f72b8", UEM: "#e05c00", UEPG: "#14804a", UNIOESTE: "#8b2fc9", UNICENTRO: "#c43f3a", UENP: "#af7a00", UNESPAR: "#0f6e56" };
   const palette = ["#1f72b8", "#e05c00", "#14804a", "#8b2fc9", "#c43f3a", "#af7a00", "#0f6e56", "#2563eb", "#0f766e", "#9333ea", "#ca8a04", "#dc2626"];
-  return `<div class="bars-reference-note"><span>${refLabel}: <strong>${metric.fmt(ref)}</strong></span></div>
-  <div class="bars overview-cluster-bars" style="--ref-pos:${refPos}%; position:relative;">
-    <div aria-hidden="true" style="position:absolute;top:0;bottom:0;left:${refPos}%;width:2px;background:#f28c28;box-shadow:0 0 0 3px rgba(242,140,40,0.18);border-radius:999px;pointer-events:none;z-index:2;"></div>
+  return `<div class="bars-reference-note"><span>${refLabel}: <strong>${ref != null ? metric.fmt(ref) : "sem dados"}</strong></span></div>
+  <div class="bars overview-cluster-bars" style="--ref-pos:${refPos}%;">
     ${sorted.map((u, i) => {
-      const value = metric.get(u);
+      const value = metricValue(u);
       const inCluster = clusterIds.has(u.id);
       const selected = isUniSelected(c.f, u.id);
       const barColor = ieesColors[u.sigla] || palette[i % palette.length] || "var(--blue-700)";
-      const isTop = i === 0;
+      const isTop = i === 0 && value != null;
       return `<div class="bar-row ${inCluster ? "in-cluster" : "out-cluster"} ${selected ? "selected" : ""} ${isTop ? "top-value" : ""}">
         <span class="bar-name" title="${u.nome}">${u.sigla}${isTop ? '<span class="top-value-badge">↑ maior</span>' : ""}</span>
-        <span class="bar-track"><span class="bar-fill" style="width:${clamp(value / max * 100, 4, 100)}%; background:${barColor}"></span></span>
-        <span class="bar-value">${metric.fmt(value)}</span>
+        <span class="bar-track"><span class="bar-fill" style="width:${value != null ? clamp(value / max * 100, 4, 100) : 0}%; background:${barColor}"></span>${ref != null ? '<span class="bar-reference" aria-hidden="true"></span>' : ""}</span>
+        <span class="bar-value">${value != null ? metric.fmt(value) : "sem dados"}</span>
       </div>`;
     }).join("")}
   </div>`;

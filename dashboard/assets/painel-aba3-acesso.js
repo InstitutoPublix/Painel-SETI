@@ -11,6 +11,44 @@
 //   paranaIeesGeoCoords, paranaIeesLabelOffsets, PARANA_PATH, ieesMapCoords
 // ═══════════════════════════════════════════════════════════════════════════
 
+// ── Tooltip de fórmula (ⓘ) — mapa de alias label → indicador do catálogo ────
+// Validado manualmente na Etapa de diagnóstico (ver README, "Tooltips de
+// Fórmula (ⓘ)"). Cobre os cards de accessCard() (score-card) e os h3 de
+// .visual-card com código "IND-N ·" embutido no próprio título.
+// ACHADO DURANTE A IMPLEMENTAÇÃO (não previsto no diagnóstico, que leu só o
+// código-fonte): expandIndicatorCodes() (painel.js ~5009), acionada a cada
+// render(), varre todo o document.body e substitui qualquer trecho "IND-N"
+// pelo nome cheio do indicador (via indicatorName()) — inclusive dentro do
+// próprio h3. Ou seja, "IND-26 · Taxa de ocupação por IEES" NUNCA aparece
+// assim na tela: renderiza como "Taxa de ocupação das vagas · Taxa de
+// ocupação por IEES". Confirmado via Playwright que essa expansão sempre
+// roda ANTES do MutationObserver disparar (expandIndicatorCodes é síncrona
+// dentro do mesmo ciclo de render que escreve o DOM; o callback do
+// MutationObserver só roda depois, como microtask) — comportamento
+// determinístico, não é uma corrida. Por isso as chaves abaixo usam o texto
+// PÓS-expansão, não o "IND-N" literal do código-fonte. Isso também
+// invalida as entradas "IND-N · ..." levantadas no diagnóstico das Abas 4,
+// 5 e 6 — precisam da mesma correção quando forem implementadas.
+// LIMITAÇÃO CONHECIDA: os títulos de accessCard() e os dois h3 "... por
+// IEES" têm um sufixo dinâmico "typeLabel" (ex.: " · Presencial") quando o
+// filtro de tipo de curso está ativo. O match por texto exato só funciona
+// com o filtro no estado padrão (typeLabel vazio); quando o filtro muda, o
+// texto sai do mapa e o ícone simplesmente some — sem erro, sem dado
+// errado, só sem tooltip. Não corrigido nesta rodada.
+// EXCLUÍDO DE PROPÓSITO: "Municípios com oferta" (o código "IND-17" usado no
+// fonte não bate com o indicador ind17 real do catálogo — ver README).
+const ABA3_LABEL_TO_IND = {
+  "Total de vagas": "ind11",                                              // accessCard — Total de vagas
+  "Cursos ativos": "ind10",                                               // accessCard — Total de cursos
+  "Participação nas vagas": "ind16",                                      // accessCard — Participação da IEES no total de vagas
+  "Vagas por curso": "ind15",                                             // accessCard — Média de vagas por curso
+  "Taxa de ocupação das vagas · Taxa de ocupação por IEES": "ind26",      // visual-card, PR — pós expandIndicatorCodes (fonte: "IND-26 · Taxa de ocupação por IEES")
+  "Total de vagas · Total de vagas por IEES": "ind11",                    // visual-card, PR — pós expansão (fonte: "IND-11 · Total de vagas por IEES")
+  "Total de cursos · Total de cursos por IEES": "ind10",                  // visual-card, PR — pós expansão (fonte: "IND-10 · Total de cursos por IEES")
+  "Total de vagas · Total de vagas — Ranking Brasil": "ind11",            // visual-card, BR — pós expansão (fonte: "IND-11 · Total de vagas — Ranking Brasil")
+  "Total de cursos · Total de cursos — Ranking Brasil": "ind10"           // visual-card, BR — pós expansão (fonte: "IND-10 · Total de cursos — Ranking Brasil")
+};
+
 // ── Dispatcher principal da aba ─────────────────────────────────────────────
 function accessBlock(title, c) {
   if (typeof isBrasilContext === "function" && isBrasilContext(c)) {
@@ -116,23 +154,32 @@ function occupancyBars(c) {
 }
 
 // ── Timeline de ocupação ────────────────────────────────────────────────────
-var _TIMELINE_COLORS = ["#185fa5","#0f6e56","#b86b00","#534ab7","#1a6b5c","#7a3010"];
+var _TIMELINE_COLORS = ["#1f77b4","#d62728","#ff7f0e","#9467bd","#2ca02c","#8c564b","#17becf","#e377c2"];
 
 function occupancyTimeline(c) {
   const yr = state.comparisonYear || Number(c.f.year) || 2024;
   const rows = clusterRowsFor(c);
   const years = [2020, 2021, 2022, 2023, 2024];
   const selIdx = years.indexOf(yr);
-  const width = 420, height = 200, left = 40, top = 16, plotW = 355, plotH = 148;
+  const width = 420, height = 214, left = 40, top = 16, plotW = 355, plotH = 148;
   const allUniversities = scopeUniverse(c.f.scope);
   const series = rows.map(u => ({ sigla: u.sigla, points: years.map(y => byYear(allUniversities.find(x => x.id === u.id), String(y)).occupancy) }));
   const avg = years.map((y, i) => mean(series, s => s.points[i]));
-  const allValues = series.flatMap(s => s.points).concat(avg);
-  const minV = Math.max(40, Math.floor(Math.min(...allValues) / 5) * 5 - 5);
-  const maxV = Math.min(100, Math.ceil(Math.max(...allValues) / 5) * 5 + 5);
+  const allValues = series.flatMap(s => s.points).concat(avg).filter(v => v != null);
+  const minV = allValues.length ? Math.max(0, Math.floor(Math.min(...allValues) / 5) * 5 - 5) : 0;
+  const maxV = allValues.length ? Math.min(100, Math.ceil(Math.max(...allValues) / 5) * 5 + 5) : 100;
   const toX = i => left + i * (plotW / (years.length - 1));
   const toY = v => top + (maxV - v) / Math.max(maxV - minV, 1) * plotH;
   const poly = values => values.map((v, i) => `${toX(i)},${toY(v)}`).join(" ");
+  const buildLinePath = values => {
+    let d = "", started = false;
+    values.forEach((v, i) => {
+      if (v == null) { started = false; return; }
+      d += (started ? " L " : "M ") + `${toX(i)},${toY(v)}`;
+      started = true;
+    });
+    return d;
+  };
   const selX = selIdx >= 0 ? toX(selIdx) : -1;
 
   const yTicks = [minV, Math.round((minV + maxV) / 2), maxV].map(v =>
@@ -146,7 +193,8 @@ function occupancyTimeline(c) {
   const selLine = selIdx >= 0 ? `<line class="timeline-select-line" x1="${selX}" y1="${top}" x2="${selX}" y2="${top + plotH}" />` : "";
 
   const selDots = selIdx >= 0 ? series.map((s, i) => {
-    return `<circle class="timeline-select-dot line-${i % 6}" cx="${selX}" cy="${toY(s.points[selIdx])}" r="4"><title>${s.sigla}: ${formatPercent(s.points[selIdx])}</title></circle>`;
+    if (s.points[selIdx] == null) return "";
+    return `<circle class="timeline-select-dot line-${i % _TIMELINE_COLORS.length}" cx="${selX}" cy="${toY(s.points[selIdx])}" r="4"><title>${s.sigla}: ${formatPercent(s.points[selIdx])}</title></circle>`;
   }).join("") : "";
 
   const avgDots = years.map((y, i) =>
@@ -162,19 +210,23 @@ function occupancyTimeline(c) {
     return `<rect class="tl-hit" x="${x0.toFixed(1)}" y="${top}" width="${(x1 - x0).toFixed(1)}" height="${plotH}" fill="transparent" data-year="${y}" data-avg="${formatPercent(avg[i])}" data-vals="${encodeURIComponent(vals)}" />`;
   }).join("");
 
+  const clipId = `tl-plot-clip-${Math.random().toString(36).slice(2, 9)}`;
   const svgContent = `<div class="tl-wrap"><svg class="timeline-svg" viewBox="0 0 ${width} ${height}" role="img" aria-label="Evolução da taxa de ocupação 2020 a 2024">
+    <defs><clipPath id="${clipId}"><rect x="${left}" y="${top}" width="${plotW}" height="${plotH}" /></clipPath></defs>
     <line class="timeline-axis" x1="${left}" y1="${top + plotH}" x2="${left + plotW}" y2="${top + plotH}" />
     ${yTicks}
-    ${years.map((y, i) => `<text class="timeline-label${i === selIdx ? " timeline-label-active" : ""}" x="${toX(i)}" y="${top + plotH + 16}">${y}</text>`).join("")}
+    ${years.map((y, i) => `<text class="timeline-label${i === selIdx ? " timeline-label-active" : ""}" x="${toX(i)}" y="${top + plotH + 24}">${y}</text>`).join("")}
     ${selLine}
-    ${series.map((s, i) => `<polyline class="timeline-line line-${i % 6}" points="${poly(s.points)}"><title>${s.sigla}: ${s.points.map(formatPercent).join(' · ')}</title></polyline>`).join("")}
-    <polyline class="timeline-average" points="${poly(avg)}" />
+    <g clip-path="url(#${clipId})">
+      ${series.map((s, i) => `<path class="timeline-line line-${i % _TIMELINE_COLORS.length}" fill="none" d="${buildLinePath(s.points)}"><title>${s.sigla}: ${s.points.map(v => v == null ? "Sem dado" : formatPercent(v)).join(' · ')}</title></path>`).join("")}
+      <polyline class="timeline-average" points="${poly(avg)}" />
+    </g>
     ${avgDots}${selDots}
     ${hitAreas}
   </svg><div class="tl-tooltip" hidden></div></div>`;
 
   const legendItems = series.map((s, i) =>
-    `<span class="tl-legend-item"><i style="background:${_TIMELINE_COLORS[i % 6]}"></i>${s.sigla}</span>`
+    `<span class="tl-legend-item"><i style="background:${_TIMELINE_COLORS[i % _TIMELINE_COLORS.length]}"></i>${s.sigla}</span>`
   ).join("");
   const legend = `<div class="tl-legend"><span class="tl-legend-item tl-avg"><i></i>Média do cluster</span>${legendItems}</div>`;
 
@@ -182,12 +234,21 @@ function occupancyTimeline(c) {
 }
 
 // ── Indicadores de ocupação (matriz) ────────────────────────────────────────
-// Ocupação real do grau acadêmico predominante da IES (grauMix vem agregado
-// da Base Cursos INEP pelo pipeline). null quando não há dado real.
+// Ocupação real do grau acadêmico predominante da IES, agregada de
+// u.cursosDetalhado (Base Cursos - Brasil.xlsx, pipeline Seção 2b/Fase 6).
+// Substitui grauMix (nunca populado em produção — mesmo diagnóstico das
+// Fases 1-3, mas aqui alimentando IND-29 e IND-67, indicadores oficiais do
+// catálogo, não apenas cards exploratórios). null quando não há dado real.
+// PRESSUPOSTO HERDADO DO CÓDIGO ORIGINAL: u.type usa os mesmos rótulos de
+// grauAcademico ("Bacharelado"/"Licenciatura"/"Tecnólogo") — não confirmado
+// nesta rodada, mas já era a mesma suposição do código anterior.
 function grauOccupancy(u) {
-  const g = u.grauMix && u.grauMix[u.type];
-  if (g && g.vacancies > 0 && g.entrants != null) return clamp(g.entrants / g.vacancies * 100, 0, 100);
-  return null;
+  if (!u.cursosDetalhado || !u.cursosDetalhado.length || !u.type) return null;
+  const groups = u.cursosDetalhado.filter(g => g.grauAcademico === u.type && g.vacancies > 0);
+  const totalVac = sum(groups, g => g.vacancies);
+  if (totalVac <= 0) return null;
+  const totalEnt = sum(groups, g => g.entrants || 0);
+  return clamp(totalEnt / totalVac * 100, 0, 100);
 }
 
 var accessOccupancyIndicators = [
@@ -245,19 +306,23 @@ function accessOccupancy(c) {
     </article>
   </div>` : ""}
   <div class="table-wrap mt-14 access-occupancy-table">
-    <h3>Matriz de ocupação e ociosidade</h3>
+    <h3>Matriz de ocupação e vagas não ocupadas</h3>
     <p class="card-subtitle">Indicadores calculados por IEES dentro do recorte/cluster ativo.${act ? " Exibindo apenas o indicador selecionado no filtro acima." : ""}</p>
     <table class="data-table"><thead><tr><th>IEES</th>${matrixCols.map(ind => `<th><span class="indicator-code">${ind.code}</span>${indicatorName(ind.code)}</th>`).join("")}</tr></thead><tbody>${clusterRows.map(u => `<tr><td><strong>${u.sigla}</strong><br><span>${u.groups[c.f.groupBy]}</span></td>${matrixCols.map(ind => `<td>${ind.fmt(ind.get(u))}</td>`).join("")}</tr>`).join("")}</tbody></table>
   </div>`;
 }
 
 // ── Composição de oferta por tipo de curso ──────────────────────────────────
-// Usa a composição REAL por grau acadêmico (grauMix, agregada da Base Cursos
-// INEP pelo pipeline) quando disponível; a fórmula abaixo fica só como
-// fallback para registros sem dado real.
+// Usa a composição REAL por grau acadêmico, agregada de u.cursosDetalhado
+// (Base Cursos - Brasil.xlsx, via pipeline/assemble_final.py Seção 2b — ver
+// diagnóstico das Fases 1-2: o campo antigo "grauMix" nunca foi populado em
+// nenhuma camada do sistema e caía sempre no fallback estimado abaixo).
+// ATENÇÃO: cursosDetalhado é uma fotografia do ano mais recente disponível
+// por IES (mesma seleção de ano da Seção 2 original) — NÃO varia com o
+// filtro de Ano do cabeçalho. Ver nota "Ano de referência" no card.
 function courseMix(u) {
-  if (u.grauMix) {
-    const vac = key => (u.grauMix[key] && u.grauMix[key].vacancies) || 0;
+  if (u.cursosDetalhado && u.cursosDetalhado.length) {
+    const vac = label => sum(u.cursosDetalhado.filter(g => g.grauAcademico === label), g => g.vacancies);
     const b = vac("Bacharelado"), l = vac("Licenciatura"), t = vac("Tecnólogo");
     const total = b + l + t;
     if (total > 0) return { bach: b / total, lic: l / total, tech: t / total };
@@ -286,6 +351,75 @@ function averageMix(rows) {
     lic: sum(rows, u => u.vacancies * courseMix(u).lic) / total,
     tech: sum(rows, u => u.vacancies * courseMix(u).tech) / total
   };
+}
+
+// ── Distribuição por Grande Área CINE ───────────────────────────────────────
+// Fonte: u.cursosDetalhado (Base Cursos - Brasil.xlsx, pipeline Seção 2b).
+// % de vagas da IES concentradas na área CINE selecionada (mesma semântica
+// de "oferta" usada em courseMix — vagas, não matrículas).
+// Lista de áreas é montada dinamicamente a partir do dado real, não
+// hardcoded, para não divergir se o Censo trouxer uma área nova/renomeada.
+function cineAreaSharePct(u, area) {
+  if (!u.cursosDetalhado || !u.cursosDetalhado.length) return 0;
+  const total = sum(u.cursosDetalhado, g => g.vacancies);
+  if (!total) return 0;
+  const inArea = sum(u.cursosDetalhado.filter(g => g.cineArea === area), g => g.vacancies);
+  return round(inArea / total * 100, 1);
+}
+
+function cineAreaOptions(rows) {
+  const areas = new Set();
+  rows.forEach(u => (u.cursosDetalhado || []).forEach(g => { if (g.cineArea) areas.add(g.cineArea); }));
+  return [...areas].sort();
+}
+
+function setCineAreaFilter(area) {
+  state.cineAreaFilter = area;
+  render();
+}
+window.setCineAreaFilter = setCineAreaFilter;
+
+function cineAreaCard(c) {
+  const rows = clusterRowsFor(c);
+  const areas = cineAreaOptions(rows);
+  if (!areas.length) return `<p class="card-subtitle">Sem dados de Grande Área CINE disponíveis para este cluster.</p>`;
+  const active = state.cineAreaFilter && areas.includes(state.cineAreaFilter) ? state.cineAreaFilter : areas[0];
+  const selectOpts = areas.map(a => `<option value="${a}"${a === active ? " selected" : ""}>${a}</option>`).join("");
+  const selectHtml = `<div style="margin-bottom:10px;display:flex;align-items:center;gap:8px">
+    <label style="font-size:12px;font-weight:600;color:var(--gray-600)">Grande área CINE:</label>
+    <select style="font-size:12px;padding:4px 8px;border-radius:6px;border:1px solid #d9e1ec" onchange="setCineAreaFilter(this.value)">${selectOpts}</select>
+  </div>`;
+  const get = u => cineAreaSharePct(u, active);
+  const fmt = v => formatPercent(v);
+  return `${selectHtml}${accessClusterBars(c, get, fmt)}`;
+}
+
+// ── Distribuição por Modalidade de Ensino ───────────────────────────────────
+// Fonte: u.cursosDetalhado, mesmo padrão de cineAreaSharePct/cineAreaCard,
+// mas só 2 categorias (Presencial/EaD) — toggle de botões em vez de select.
+function modalidadeSharePct(u, modalidade) {
+  if (!u.cursosDetalhado || !u.cursosDetalhado.length) return 0;
+  const total = sum(u.cursosDetalhado, g => g.vacancies);
+  if (!total) return 0;
+  const inModalidade = sum(u.cursosDetalhado.filter(g => g.modalidade === modalidade), g => g.vacancies);
+  return round(inModalidade / total * 100, 1);
+}
+
+function setModalidadeFilter(modalidade) {
+  state.modalidadeFilter = modalidade;
+  render();
+}
+window.setModalidadeFilter = setModalidadeFilter;
+
+function modalidadeCard(c) {
+  const active = state.modalidadeFilter === "EaD" ? "EaD" : "Presencial";
+  const btns = `<div class="stack-legend" style="margin-bottom:10px">
+    <button class="stack-type-btn${active === "Presencial" ? " active" : ""}" type="button" onclick="setModalidadeFilter('Presencial')">Presencial</button>
+    <button class="stack-type-btn${active === "EaD" ? " active" : ""}" type="button" onclick="setModalidadeFilter('EaD')">EaD</button>
+  </div>`;
+  const get = u => modalidadeSharePct(u, active);
+  const fmt = v => formatPercent(v);
+  return `${btns}${accessClusterBars(c, get, fmt)}`;
 }
 
 function offerSpecialization(u) {
@@ -325,7 +459,8 @@ function stackedCourseBars(c) {
   const clusterRow = `<tr class="cmix-cluster-row"><td><strong>Média do cluster</strong></td><td>${mixBar(avg)}</td><td>${occBadge(avgOcc)}</td></tr>`;
   const rowsHtml = sorted.map(u => `<tr class="${isUniSelected(c.f, u.id) ? "selected" : ""}"><td><strong>${u.sigla}</strong></td><td title="${u.sigla}: Bach. ${formatPercent(courseMix(u).bach*100)} · Lic. ${formatPercent(courseMix(u).lic*100)} · Tecn. ${formatPercent(courseMix(u).tech*100)}">${mixBar(courseMix(u))}</td><td>${occBadge(u.occupancy)}</td></tr>`).join("");
   const typeBtns = `<div class="stack-legend" style="margin-bottom:10px"><button class="stack-type-btn${activeType === "bach" ? " active" : ""}" type="button" onclick="setDistributionCourseType('bach')"><i class="cmix-bach-dot"></i>Bacharelado</button><button class="stack-type-btn${activeType === "lic" ? " active" : ""}" type="button" onclick="setDistributionCourseType('lic')"><i class="cmix-lic-dot"></i>Licenciatura</button><button class="stack-type-btn${activeType === "tech" ? " active" : ""}" type="button" onclick="setDistributionCourseType('tech')"><i class="cmix-tech-dot"></i>Tecnólogo</button></div>`;
-  return `${typeBtns}<table class="cmix-table"><thead><tr><th>IEES</th><th>Composição</th><th>Ocupação</th></tr></thead><tbody>${clusterRow}${rowsHtml}</tbody></table>`;
+  const refYearNote = `<p class="cmix-ref-note" style="font-size:12px;color:var(--text-secondary,#666);margin:0 0 8px">Composição por grau acadêmico refere-se ao ano mais recente disponível na Base Cursos, podendo diferir do ano selecionado no filtro.</p>`;
+  return `${refYearNote}${typeBtns}<table class="cmix-table"><thead><tr><th>IEES</th><th>Composição</th><th>Ocupação</th></tr></thead><tbody>${clusterRow}${rowsHtml}</tbody></table>`;
 }
 
 // ── Diurno/Noturno (versão ativa — com filtro e label dinâmico) ─────────────
@@ -636,6 +771,8 @@ function accessTerritory(c) {
   return `${accessInteractiveCatalog()}
   <div class="chart-grid mt-14">
     ${accessIndShow(act, ["ind67", "ind68", "ind69"]) ? `<article class="visual-card" id="accessMixCard"><h3>Composição da oferta por tipo de curso</h3><p class="card-subtitle">IND-67, IND-68 e IND-69 · Barras 100% por IEES no cluster ativo.</p>${stackedCourseBars(c)}</article>` : ""}
+    ${accessIndShow(act, ["ind67", "ind68", "ind69"]) ? `<article class="visual-card" id="accessCineAreaCard"><h3>Distribuição por Grande Área CINE</h3><p class="card-subtitle">% de vagas da IEES concentradas na área CINE selecionada, dentro do cluster ativo. Sem código de indicador — quebra exploratória adicional (não faz parte do catálogo oficial).</p>${cineAreaCard(c)}</article>` : ""}
+    ${accessIndShow(act, ["ind67", "ind68", "ind69"]) ? `<article class="visual-card" id="accessModalidadeCard"><h3>Distribuição por Modalidade de Ensino</h3><p class="card-subtitle">% de vagas da IEES na modalidade selecionada, dentro do cluster ativo. Sem código de indicador — quebra exploratória adicional (não faz parte do catálogo oficial).</p>${modalidadeCard(c)}</article>` : ""}
     ${!act ? `<article class="visual-card" id="accessIeesMapCard"><h3>Mapa das IEES estaduais — Ocupação de vagas</h3><p class="card-subtitle">IND-26 · Tamanho e cor dos círculos representam a taxa de ocupação de vagas por IEES no cluster ativo.</p>${paranaIeesMap(c)}</article>` : ""}
   </div>
   ${!act ? `<article class="visual-card mt-14" id="accessDayNightCard"><h3>IND-30 e IND-31 · Ocupação diurno/noturno</h3><p class="card-subtitle">Barras agrupadas por IEES; linhas de referência calculadas no cluster.</p>${dayNightBars(c)}</article>` : ""}
@@ -983,3 +1120,47 @@ function brasilAccessOccupancyBlock(c) {
     </article>
   </div>`;
 }
+
+// ── Tooltip de fórmula (ⓘ) — cards de accessCard() + h3 de .visual-card ─────
+// Guard obrigatório: .score-card/.visual-card são reaproveitadas por outras
+// abas (vazamento real já visto na Aba 1 com "Total de vagas" batendo em um
+// score-card da própria Aba 3 — motivo pelo qual esse guard existe aqui
+// também, na direção oposta).
+function _injectAba3FormulaTooltips() {
+  if (state.activeTab !== "access") return;
+  document.querySelectorAll(".score-card:not([data-formula-done])").forEach(card => {
+    const h3 = card.querySelector("h3");
+    if (!h3) return;
+    const key = ABA3_LABEL_TO_IND[h3.textContent.trim()];
+    if (!key) return;
+    card.setAttribute("data-formula-done", "1");
+    injectFormulaTooltip(h3, key);
+  });
+  document.querySelectorAll(".visual-card:not([data-formula-done])").forEach(card => {
+    const h3 = card.querySelector("h3");
+    if (!h3) return;
+    const key = ABA3_LABEL_TO_IND[h3.textContent.trim()];
+    if (!key) return;
+    card.setAttribute("data-formula-done", "1");
+    injectFormulaTooltip(h3, key);
+  });
+}
+
+// Mesmo padrão validado na Aba 1: NÃO usar patch de render() (retorna antes
+// do conteúdo real existir no DOM, por causa de renderWithVisualStates() e
+// renderWithBrasilScopeDomCleanup() em painel.js). MutationObserver direto
+// nos containers reais, via document.getElementById (não via "el", que só é
+// populado por cache() no listener de DOMContentLoaded — este script roda
+// antes disso).
+(function () {
+  function start() {
+    const kpiGrid = document.getElementById("kpiGrid");
+    const tabContent = document.getElementById("tabContent");
+    if (!kpiGrid && !tabContent) return;
+    const observer = new MutationObserver(function () { _injectAba3FormulaTooltips(); });
+    if (kpiGrid) observer.observe(kpiGrid, { childList: true });
+    if (tabContent) observer.observe(tabContent, { childList: true });
+  }
+  start();
+  _injectAba3FormulaTooltips();
+}());

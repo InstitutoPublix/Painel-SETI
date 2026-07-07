@@ -1,9 +1,30 @@
 /* ==========================================================================
-   ABA 5 — Qualidade, Pesquisa e Pós-Graduação
+   ABA 5 — Qualificação docente, Pesquisa e Pós-Graduação
    Redefine as funções desta aba carregando-as após painel.js.
    Constantes definidas em painel.js (brasil, brVal, etc.) são acessadas
    como globais — não redeclaradas aqui.
    ========================================================================== */
+
+// ── Tooltip de fórmula (ⓘ) — mapa de alias label → indicador do catálogo ────
+// O código "IND-N" às vezes está no próprio <h3> e às vezes só no
+// card-subtitle (ex.: "IND-98 · ..." dentro de <p class="card-subtitle">).
+// A chave do mapa é sempre o texto do <h3> REALMENTE renderizado (único
+// elemento estável para ancorar o ícone) — a validação de qual indicador
+// pode ter vindo do subtítulo, mas quem ancora é o h3.
+// Confirmado via Playwright (não presumido): quando o h3 no código-fonte já
+// tem "IND-N · <nome idêntico ao catálogo>", expandIndicatorCodes()
+// (painel.js ~5009) duplica o nome ("nome · nome"), não só substitui o
+// código — comportamento diferente do visto nas Abas 3/4, onde o texto após
+// "· " era um sufixo diferente do nome puro.
+const ABA5_LABEL_TO_IND = {
+  "Proporção de docentes com doutorado · Proporção de docentes com doutorado": "ind6",              // pós expansão (fonte: "IND-6 · Proporção de docentes com doutorado")
+  "Captação de recursos do CNPq · Captação de recursos do CNPq": "ind60",                            // pós expansão (fonte: "IND-60 · Captação de recursos do CNPq")
+  "Número de vínculos de fomento do CNPq · Número de vínculos de fomento do CNPq": "ind61",          // pós expansão (fonte: "IND-61 · Número de vínculos de fomento do CNPq")
+  "Distribuição por grande área do conhecimento": "ind98",                                           // sem "IND-N" no h3 — código confirmado no card-subtitle ("IND-98 · ...")
+  "Conceitos CAPES — destaque de excelência": "ind108",                                               // idem — subtitle "IND-108 · ..."
+  "Razão discente / docente permanente": "ind106",                                                    // idem — subtitle "IND-106 · ..."
+  "Capilaridade dos programas": "ind107"                                                              // idem — subtitle "IND-107 · ..."
+};
 
 function qualityBlock(title, c) {
   // try/catch defensivo: uma exceção em um bloco (ex.: campo nulo no escopo
@@ -668,3 +689,36 @@ function pgCapilaridadeCards(rows) {
     ${sorted.map(u => `<div class="bar-row"><span class="bar-name" title="${u.nome}">${u.sigla}</span><span class="bar-track"><span class="bar-fill ${tone(u.pgMunicipiosDistintos)}" style="width:${clamp(u.pgMunicipiosDistintos/max*100,4,100).toFixed(1)}%"></span></span><span class="bar-value">${u.pgMunicipiosDistintos} munic.</span></div>`).join("")}
   </div>`;
 }
+
+// ── Tooltip de fórmula (ⓘ) — h3 de .visual-card ─────────────────────────────
+// Todos os 7 cards mapeados são .visual-card (confirmado via grep antes de
+// editar). Guard obrigatório: mesma classe reaproveitada por outras abas.
+function _injectAba5FormulaTooltips() {
+  if (state.activeTab !== "quality") return;
+  document.querySelectorAll(".visual-card:not([data-formula-done])").forEach(card => {
+    const h3 = card.querySelector("h3");
+    if (!h3) return;
+    const key = ABA5_LABEL_TO_IND[h3.textContent.trim()];
+    if (!key) return;
+    card.setAttribute("data-formula-done", "1");
+    injectFormulaTooltip(h3, key);
+    injectLagTooltip(h3, key);
+  });
+}
+
+// Mesmo padrão validado nas Abas 1, 3 e 4: NÃO usar patch de render().
+// MutationObserver direto nos containers reais, via document.getElementById
+// (não via "el", que só é populado por cache() no listener de
+// DOMContentLoaded — este script roda antes disso).
+(function () {
+  function start() {
+    const kpiGrid = document.getElementById("kpiGrid");
+    const tabContent = document.getElementById("tabContent");
+    if (!kpiGrid && !tabContent) return;
+    const observer = new MutationObserver(function () { _injectAba5FormulaTooltips(); });
+    if (kpiGrid) observer.observe(kpiGrid, { childList: true });
+    if (tabContent) observer.observe(tabContent, { childList: true });
+  }
+  start();
+  _injectAba5FormulaTooltips();
+}());

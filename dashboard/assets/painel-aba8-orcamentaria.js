@@ -380,12 +380,7 @@ function renderOrcEvolucao(c) {
     });
   });
 
-  // SVG layout
-  var W = 620, H = 300, PL = 70, PR = 60, PT = 20, PB = 44;
-  var CW = W - PL - PR, CH = H - PT - PB;
-  var xPos = ANOS.map(function(_, i) { return PL + i * (CW / (ANOS.length - 1)); });
-
-  // Escala Y esquerda (R$M)
+  // Escala compartilhada (R$M) — máximo entre orc/liq de todas as IES do filtro, nos 3 anos
   var allRm = [];
   selectedIES.forEach(function(s) {
     ANOS.forEach(function(yr) {
@@ -395,108 +390,103 @@ function renderOrcEvolucao(c) {
     });
   });
   var maxRm = allRm.length ? Math.ceil(Math.max.apply(null, allRm) * 1.1 / 100) * 100 : 1000;
-  var sy = function(v) { return PT + (1 - v / maxRm) * CH; };
 
-  // Escala Y direita (%)
-  var syR = function(v) { return PT + (1 - v / 100) * CH; };
+  // Ano exibido nos cards — segue o #yearFilter global
+  var selYear = ANOS.indexOf(String(c.f.year)) >= 0 ? String(c.f.year) : "2024";
 
-  // Grid lines
-  var grid = "";
-  for (var gi = 0; gi <= 4; gi++) {
-    var gy = PT + gi * (CH / 4);
-    grid += '<line x1="' + PL + '" y1="' + gy.toFixed(1) + '" x2="' + (W-PR) + '" y2="' + gy.toFixed(1) + '" stroke="#e5e7eb" stroke-width="1"/>';
-  }
+  // Cards por IES: Orç. Atualizado (tom claro) vs. Liquidado (tom escuro), mesma cor-base de IES_COLORS
+  var cardsHtml = selectedIES.map(function(sig) {
+    var d = DATA_YEARS[sig][selYear];
+    var col = IES_COLORS[sig] || "#555";
+    var orcPct = d.orc != null ? clamp(d.orc / maxRm * 100, 0, 100) : 0;
+    var liqPct = d.liq != null ? clamp(d.liq / maxRm * 100, 0, 100) : 0;
+    var pctLiq = d.txLiq != null ? d.txLiq : ((d.orc > 0 && d.liq != null) ? d.liq / d.orc * 100 : null);
+    var texto = (d.orc != null && d.liq != null)
+      ? _fmtM(d.orc) + ' → ' + _fmtM(d.liq) + ' · ' + _fmtP(pctLiq) + ' liquidado'
+      : 'Dados insuficientes para ' + selYear;
+    return '<div style="border:1px solid rgba(215,221,231,0.92);border-radius:10px;padding:12px 14px;background:var(--white,#fff)">' +
+           '<div style="font-weight:800;font-size:13px;margin-bottom:8px;color:' + col + '">' + sig + '</div>' +
+           '<div class="bars" style="gap:6px">' +
+           '<div>' +
+           '<div style="display:flex;justify-content:space-between;font-size:11px;color:var(--gray-600,#6b7280);margin-bottom:3px"><span>Atual.</span><span>' + _fmtM(d.orc) + '</span></div>' +
+           '<span class="bar-track" style="display:block"><span class="bar-fill" style="display:block;width:' + orcPct.toFixed(1) + '%;background:' + col + ';opacity:0.35"></span></span>' +
+           '</div>' +
+           '<div>' +
+           '<div style="display:flex;justify-content:space-between;font-size:11px;color:var(--gray-600,#6b7280);margin-bottom:3px"><span>Liquid.</span><span>' + _fmtM(d.liq) + '</span></div>' +
+           '<span class="bar-track" style="display:block"><span class="bar-fill" style="display:block;width:' + liqPct.toFixed(1) + '%;background:' + col + ';opacity:1"></span></span>' +
+           '</div>' +
+           '</div>' +
+           '<p class="card-subtitle" style="margin:6px 0 0;font-size:11px">' + texto + '</p>' +
+           '</div>';
+  }).join("");
 
-  // Y labels left
-  var yLabL = "";
-  for (var li = 0; li <= 4; li++) {
-    var lv = maxRm * (1 - li / 4);
-    var ly = PT + li * (CH / 4);
-    yLabL += '<text x="' + (PL-5).toFixed(1) + '" y="' + (ly+4).toFixed(1) + '" text-anchor="end" fill="#6d7a8a" font-size="9.5">R$' + lv.toFixed(0) + 'M</text>';
-  }
+  // Elemento 2: linha de Taxa de Liquidação por IES (eixo único 0-100%)
+  var TL_W = 620, TL_H = 220, TL_PL = 40, TL_PR = 20, TL_PT = 16, TL_PB = 36;
+  var TL_CW = TL_W - TL_PL - TL_PR, TL_CH = TL_H - TL_PT - TL_PB;
+  var tlX = function(i) { return TL_PL + i * (TL_CW / (ANOS.length - 1)); };
+  var tlY = function(v) { return TL_PT + (1 - v / 100) * TL_CH; };
+  var tlBuildPath = function(values) {
+    var d = "", started = false;
+    values.forEach(function(v, i) {
+      if (v == null) { started = false; return; }
+      d += (started ? " L " : "M ") + tlX(i).toFixed(1) + "," + tlY(v).toFixed(1);
+      started = true;
+    });
+    return d;
+  };
 
-  // Y labels right
-  var yLabR = "";
-  for (var ri = 0; ri <= 4; ri++) {
-    var rv = 100 * (1 - ri / 4);
-    var ry = PT + ri * (CH / 4);
-    yLabR += '<text x="' + (W-PR+5).toFixed(1) + '" y="' + (ry+4).toFixed(1) + '" text-anchor="start" fill="#9ca3af" font-size="9.5">' + rv.toFixed(0) + '%</text>';
-  }
-
-  // X axis labels
-  var xLab = "";
-  var XLAB = ["2024", "2025", "2026 (parcial)"];
-  ANOS.forEach(function(yr, i) {
-    var px = xPos[i].toFixed(1);
-    xLab += '<line x1="' + px + '" y1="' + PT + '" x2="' + px + '" y2="' + (H-PB) + '" stroke="#e5e7eb" stroke-width="1"/>';
-    xLab += '<text x="' + px + '" y="' + (H-PB+16).toFixed(1) + '" text-anchor="middle" fill="#374151" font-size="11">' + XLAB[i] + '</text>';
+  var tlGrid = "";
+  [0, 25, 50, 75, 100].forEach(function(v) {
+    var gy = tlY(v);
+    tlGrid += '<line x1="' + TL_PL + '" y1="' + gy.toFixed(1) + '" x2="' + (TL_W - TL_PR) + '" y2="' + gy.toFixed(1) + '" stroke="#e5e7eb" stroke-width="1"/>' +
+              '<text x="' + (TL_PL - 6) + '" y="' + (gy + 3.5).toFixed(1) + '" text-anchor="end" fill="#6d7a8a" font-size="9.5">' + v + '%</text>';
   });
 
-  // Lines per IES
-  var linesHtml = "";
+  var TL_XLAB = ["2024", "2025", "2026 (parcial)"];
+  var tlXAxis = "";
+  ANOS.forEach(function(yr, i) {
+    var anchor = i === 0 ? "start" : (i === ANOS.length - 1 ? "end" : "middle");
+    tlXAxis += '<text x="' + tlX(i).toFixed(1) + '" y="' + (TL_H - TL_PB + 16) + '" text-anchor="' + anchor + '" fill="#374151" font-size="11">' + TL_XLAB[i] + '</text>';
+  });
+
+  var tlAxes = '<line x1="' + TL_PL + '" y1="' + TL_PT + '" x2="' + TL_PL + '" y2="' + (TL_H-TL_PB) + '" stroke="#9ca3af" stroke-width="1.5"/>' +
+               '<line x1="' + TL_PL + '" y1="' + (TL_H-TL_PB) + '" x2="' + (TL_W-TL_PR) + '" y2="' + (TL_H-TL_PB) + '" stroke="#9ca3af" stroke-width="1.5"/>';
+
+  var tlLinesHtml = "";
   selectedIES.forEach(function(sig) {
     var col = IES_COLORS[sig] || "#555";
-    var dYear = DATA_YEARS[sig];
-
-    // Orçamento (solid, full opacity)
-    var orcPts = ANOS.map(function(yr, i) {
-      var v = dYear[yr].orc; return v != null ? xPos[i].toFixed(1) + "," + sy(v).toFixed(1) : null;
-    }).filter(Boolean);
-    if (orcPts.length >= 2) linesHtml += '<polyline points="' + orcPts.join(" ") + '" fill="none" stroke="' + col + '" stroke-width="2.5" stroke-linejoin="round"/>';
-    ANOS.forEach(function(yr, i) {
-      var v = dYear[yr].orc; if (v == null) return;
-      linesHtml += '<circle cx="' + xPos[i].toFixed(1) + '" cy="' + sy(v).toFixed(1) + '" r="5" fill="' + col + '" stroke="white" stroke-width="1.5"><title>' + sig + ' ' + yr + ': Orç. R$' + v.toFixed(1) + 'M</title></circle>';
-    });
-
-    // Liquidado (dashed, same color slightly transparent)
-    var liqPts = ANOS.map(function(yr, i) {
-      var v = dYear[yr].liq; return v != null ? xPos[i].toFixed(1) + "," + sy(v).toFixed(1) : null;
-    }).filter(Boolean);
-    if (liqPts.length >= 2) linesHtml += '<polyline points="' + liqPts.join(" ") + '" fill="none" stroke="' + col + '" stroke-width="1.8" stroke-dasharray="7,4" stroke-linejoin="round" opacity="0.8"/>';
-    ANOS.forEach(function(yr, i) {
-      var v = dYear[yr].liq; if (v == null) return;
-      linesHtml += '<rect x="' + (xPos[i]-4).toFixed(1) + '" y="' + (sy(v)-4).toFixed(1) + '" width="8" height="8" fill="' + col + '" stroke="white" stroke-width="1.5" opacity="0.8"><title>' + sig + ' ' + yr + ': Liq. R$' + v.toFixed(1) + 'M</title></rect>';
-    });
-
-    // Tx Liquidação (dotted, right axis, lighter)
-    var txPts = ANOS.map(function(yr, i) {
-      var v = dYear[yr].txLiq; return v != null ? xPos[i].toFixed(1) + "," + syR(v).toFixed(1) : null;
-    }).filter(Boolean);
-    if (txPts.length >= 2) linesHtml += '<polyline points="' + txPts.join(" ") + '" fill="none" stroke="' + col + '" stroke-width="1.2" stroke-dasharray="2,4" stroke-linejoin="round" opacity="0.6"/>';
-    ANOS.forEach(function(yr, i) {
-      var v = dYear[yr].txLiq; if (v == null) return;
-      linesHtml += '<polygon points="' + xPos[i].toFixed(1) + ',' + (syR(v)-5).toFixed(1) + ' ' + (xPos[i]+4.5).toFixed(1) + ',' + (syR(v)+3).toFixed(1) + ' ' + (xPos[i]-4.5).toFixed(1) + ',' + (syR(v)+3).toFixed(1) + '" fill="' + col + '" opacity="0.6"><title>' + sig + ' ' + yr + ': Tx.Liq. ' + v.toFixed(1) + '%</title></polygon>';
+    var vals = ANOS.map(function(yr) { return DATA_YEARS[sig][yr].txLiq; });
+    var path = tlBuildPath(vals);
+    if (path) tlLinesHtml += '<path d="' + path + '" fill="none" stroke="' + col + '" stroke-width="2.2" stroke-linejoin="round"/>';
+    vals.forEach(function(v, i) {
+      if (v == null) return;
+      tlLinesHtml += '<circle cx="' + tlX(i).toFixed(1) + '" cy="' + tlY(v).toFixed(1) + '" r="4.5" fill="' + col + '" stroke="white" stroke-width="1.5"><title>' + sig + ': ' + _fmtP(v) + ' em ' + ANOS[i] + '</title></circle>';
     });
   });
 
-  // Axes
-  var axes = '<line x1="' + PL + '" y1="' + PT + '" x2="' + PL + '" y2="' + (H-PB) + '" stroke="#9ca3af" stroke-width="1.5"/>' +
-             '<line x1="' + (W-PR) + '" y1="' + PT + '" x2="' + (W-PR) + '" y2="' + (H-PB) + '" stroke="#c0c8d6" stroke-width="1" stroke-dasharray="3,2"/>' +
-             '<line x1="' + PL + '" y1="' + (H-PB) + '" x2="' + (W-PR) + '" y2="' + (H-PB) + '" stroke="#9ca3af" stroke-width="1.5"/>';
+  var tlLegendHtml = selectedIES.map(function(sig) {
+    var col = IES_COLORS[sig] || "#555";
+    return '<span class="tl-legend-item"><i style="background:' + col + '"></i>' + sig + '</span>';
+  }).join("");
 
-  // Axis titles
-  var axisTitles = '<text x="' + (PL-44).toFixed(1) + '" y="' + (PT+CH/2).toFixed(1) + '" text-anchor="middle" fill="#374151" font-size="10" transform="rotate(-90 ' + (PL-44).toFixed(1) + ' ' + (PT+CH/2).toFixed(1) + ')">← R$ Milhões</text>' +
-                   '<text x="' + (W-PR+48).toFixed(1) + '" y="' + (PT+CH/2).toFixed(1) + '" text-anchor="middle" fill="#9ca3af" font-size="10" transform="rotate(90 ' + (W-PR+48).toFixed(1) + ' ' + (PT+CH/2).toFixed(1) + ')">% Liquidação →</text>';
-
-  // Legend (styles)
-  var legendY = H - 4;
-  var legend = '<g transform="translate(' + PL + ',' + legendY + ')" font-size="9.5" fill="#374151">' +
-               '<line x1="0" y1="-5" x2="16" y2="-5" stroke="#666" stroke-width="2.5"/><text x="19" y="-1">Orç. Atualizado (eixo esq.)</text>' +
-               '<g transform="translate(145,0)"><line x1="0" y1="-5" x2="16" y2="-5" stroke="#666" stroke-width="1.8" stroke-dasharray="7,4"/><text x="19" y="-1">Liquidado (eixo esq.)</text></g>' +
-               '<g transform="translate(270,0)"><line x1="0" y1="-5" x2="16" y2="-5" stroke="#999" stroke-width="1.2" stroke-dasharray="2,4"/><text x="19" y="-1" fill="#9ca3af">Tx. Liquidação % (eixo dir.)</text></g>' +
-               '</g>';
+  var txLiquidacaoHtml = '<div style="margin-top:18px">' +
+    '<p class="card-subtitle" style="margin-bottom:6px;font-weight:700;color:var(--text-primary,#222)">Taxa de liquidação por IES</p>' +
+    '<svg viewBox="0 0 ' + TL_W + ' ' + TL_H + '" width="100%" style="display:block;overflow:visible;font-family:DM Sans,sans-serif">' +
+    tlGrid + tlAxes + tlXAxis + tlLinesHtml +
+    '</svg>' +
+    '<div class="tl-legend">' + tlLegendHtml + '</div>' +
+    '</div>';
 
   return '<article class="visual-card">' +
          '<div class="visual-card-header"><div>' +
          '<h3>Evolução Orçamentária 2024–2026</h3>' +
-         '<p class="card-subtitle">Orçamento Atualizado, Liquidado (eixo esq.) e Taxa de Liquidação % (eixo dir.) · Fonte: Relatório da Despesa 8050</p>' +
+         '<p class="card-subtitle">Orçamento Atualizado × Liquidado, e Taxa de Liquidação por IEES · ' + selYear + ' · Fonte: Relatório da Despesa 8050</p>' +
          '</div></div>' +
          '<div style="margin:6px 0 10px;line-height:1.8">' + checkHtml +
          '<button onclick="window.limparOrcEvolucao()" style="margin-left:12px;padding:3px 12px;border-radius:14px;border:1px solid #94a3b8;background:transparent;color:var(--text-secondary,#666);font-size:0.80rem;cursor:pointer;vertical-align:middle;" title="Desselecionar todas as IES">Limpar</button></div>' +
-         '<svg viewBox="0 0 ' + W + ' ' + H + '" width="100%" style="display:block;overflow:visible;font-family:DM Sans,sans-serif">' +
-         grid + axes + axisTitles + xLab + yLabL + yLabR + linesHtml + legend +
-         '</svg>' +
-         '<p class="card-subtitle" style="margin-top:4px;font-size:11px">2026 = Dados parciais do exercício em curso · Clique nos checkboxes para selecionar ou desselecionar IES</p>' +
+         '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px">' + cardsHtml + '</div>' +
+         txLiquidacaoHtml +
+         '<p class="card-subtitle" style="margin-top:8px;font-size:11px">Escala de barras compartilhada entre as IEES exibidas · 2026 = dados parciais do exercício em curso · Clique nos checkboxes para selecionar ou desselecionar IES</p>' +
          '</article>';
 }
 
@@ -531,7 +521,7 @@ function costPerPgTop(u) {
 var TAB8_SCATTER_Y_OPTIONS = {
   occupancy:  { label: "Taxa de ocupação de vagas",  get: u => u.occupancy,   fmt: formatPercent },
   completion: { label: "Concluintes sobre matrículas", get: u => u.completion,  fmt: formatPercent },
-  employment: { label: "Inserção profissional (PR)", get: u => u.employment,  fmt: formatPercent },
+  employment: { label: "Retenção de egressos (PR)", get: u => u.employment,  fmt: formatPercent },
   capes:      { label: "Conceito CAPES médio",       get: u => u.capes,       fmt: v => Number(v || 0).toFixed(1).replace(".", ",") + " pts" },
   doctors:    { label: "% Docentes c/ doutorado",   get: u => u.doctors,     fmt: formatPercent },
 };
@@ -694,7 +684,7 @@ var _COMP_INDS = [
     get: function(u) { return u.occupancy;  }, fmt: _fmtP, higher: true },
   { key: "completion", label: "Concluintes sobre matrículas",
     get: function(u) { return u.completion; }, fmt: _fmtP, higher: true },
-  { key: "employment", label: "Inserção profissional",
+  { key: "employment", label: "Retenção de egressos (PR)",
     get: function(u) { return u.employment; }, fmt: _fmtP, higher: true },
   { key: "capes",      label: "Conceito CAPES médio",
     get: function(u) { return u.capes; },

@@ -1,11 +1,31 @@
 /* ==========================================================================
-   ABA 7 — Inserção Profissional
+   ABA 7 — Retenção Profissional
    Redefine as funções desta aba carregando-as após painel.js.
    ========================================================================== */
 
+// ── Tooltip de fórmula (ⓘ) — mapa de alias label → indicador do catálogo ────
+// Confirmado antes de editar: o comentário "/* ACTIVE definition (line 7415
+// in painel.js overrides line 7051) */" logo acima de employmentGeneralBlock
+// está DESATUALIZADO — employmentGeneralBlock não existe em painel.js (grep
+// no arquivo inteiro não retornou nenhuma ocorrência), só aqui. A versão
+// deste arquivo é a única que existe, logo a única que roda. Comentário
+// provavelmente sobrou de uma refatoração anterior; não editei painel.js.
+// Os 6 h3 mapeados são ${indicatorName(N)} puro (sem sufixo) — texto
+// renderizado idêntico ao campo "nome" do catálogo, sem necessidade de
+// confirmar via Playwright (diferente das Abas 3/5/6, onde o sufixo após
+// "IND-N ·" causava duplicação/expansão).
+const ABA7_LABEL_TO_IND = {
+  "Egressos IEES": "ind33",
+  "Egressos inseridos no mercado de trabalho formal (Paraná)": "ind36",
+  "Taxa de retenção de egressos pelo Estado do Paraná": "ind37",
+  "Taxa de inserção de egressos (Região Sul)": "ind35",
+  "Percentual de egressos empregados no Paraná em ocupações aderentes ao CBO2": "ind39",
+  "Média salarial dos egressos inseridos no mercado de trabalho do Paraná aderentes ao CBO2": "ind40"
+};
+
 function employmentBlock(title, c) {
   if (title.includes("Inserção geral")) return employmentGeneralBlock(c);
-  if (title.includes("Inserção PR")) return employmentRegionBlock(c);
+  if (title.includes("Retenção PR")) return employmentRegionBlock(c);
   if (title.includes("CBO2")) return employmentCboSalaryBlock(c);
   if (title.includes("Destino")) return employmentDestinationBlock(c);
   if (title.includes("Por curso")) return employmentCourseBlock(c);
@@ -169,8 +189,7 @@ function employmentRegionBlock(c) {
   return filterBtns + noteHtml + `<div class="chart-grid">
     <article class="visual-card"><h3>${indicatorName(37)} por IEES</h3><p class="card-subtitle">${sub1}</p>${employmentRateBars(c, u => employmentMetrics(u).prRate, formatPercent, filterFn)}</article>
     <article class="visual-card"><h3>${indicatorName(35)} por IEES</h3><p class="card-subtitle">${sub2}</p>${employmentRateBars(c, u => employmentMetrics(u).southRate, formatPercent, filterFn)}</article>
-  </div>
-  <article class="visual-card mt-14"><h3>Retenção local de talentos</h3><p class="card-subtitle">${indicatorName(42)}. IEES com alta dispersão territorial tendem a distribuir egressos em mais municípios; use comparação com os dados da dimensão 'Oferta de Cursos' para análise completa.</p>${localTalentCards(c)}</article>`;
+  </div>`;
 }
 
 function employmentRateBars(c, getter, fmt, filterFn) {
@@ -189,19 +208,8 @@ function employmentRateBars(c, getter, fmt, filterFn) {
   }).join("")}</div><div class="bars-reference-note"><span>Média do cluster: <strong>${fmt(ref)}</strong></span></div>`;
 }
 
-function localTalentCards(c) {
-  const rows = employmentRows(c);
-  const clusterRows = employmentClusterRows(c);
-  const avg = mean(clusterRows, u => employmentMetrics(u).localRate);
-  return `<div class="local-talent-grid">${rows.map(u => {
-    const m = employmentMetrics(u);
-    const tone = m.localRate >= avg ? "alert-ok" : m.localRate >= avg - 7 ? "alert-warn" : "alert-info";
-    return `<article class="local-talent-card ${tone}"><strong>${u.sigla}</strong><span>${formatPercent(m.localRate)} na cidade-sede</span><em>${m.localRate >= avg ? "acima" : "abaixo"} da média do cluster (${formatPercent(avg)})</em></article>`;
-  }).join("")}</div>`;
-}
-
 function employmentCboSalaryBlock(c) {
-  return `<article class="visual-card"><h3>${indicatorName(37)} × ${indicatorName(40)}</h3><p class="card-subtitle">Tamanho da bolha = ${indicatorName(33)}.</p>${employmentScatter(c, u => employmentMetrics(u).prRate, u => employmentMetrics(u).salary, u => employmentMetrics(u).totalEgress, "Inserção PR", "Salário")}</article>
+  return `<article class="visual-card"><h3>${indicatorName(37)} × ${indicatorName(40)}</h3><p class="card-subtitle">Tamanho da bolha = ${indicatorName(33)}.</p>${employmentScatter(c, u => employmentMetrics(u).prRate, u => employmentMetrics(u).salary, u => employmentMetrics(u).totalEgress, "Retenção PR", "Salário")}</article>
   <article class="visual-card mt-14"><h3>Aderência formação-trabalho</h3><p class="card-subtitle">${indicatorName(39)} por IEES versus média do cluster.</p>${employmentAdherenceCards(c)}</article>`;
 }
 
@@ -416,7 +424,7 @@ function employmentCourseTable(c, rows) {
     acc[row.type] = (acc[row.type] || 0) + row.inserted;
     return acc;
   }, {});
-  return `<div class="table-wrap employment-course-table"><table class="data-table"><thead><tr><th>Curso</th><th>IEES</th><th>Tipo de curso</th><th>${indicatorName(73)}</th><th>${indicatorName(74)}</th><th>${indicatorName(75)}</th><th>Taxa de inserção</th><th>Comparação com cluster</th></tr></thead><tbody>${bodyRows.map(r => {
+  return `<div class="table-wrap employment-course-table"><table class="data-table"><thead><tr><th>Curso</th><th>IEES</th><th>Tipo de curso</th><th>${indicatorName(73)}</th><th>${indicatorName(74)}</th><th>${indicatorName(75)}</th><th>Taxa de retenção</th><th>Comparação com cluster</th></tr></thead><tbody>${bodyRows.map(r => {
     const diff = r.rate - r.avg;
     const cls = diff >= 4 ? "cell-good" : diff >= -4 ? "cell-mid" : "cell-risk";
     return `<tr class="${cls}" title="Média do cluster para ${r.type}: ${formatPercent(r.avg)}"><td><strong>${r.course}</strong></td><td>${r.u.sigla}</td><td>${r.type}</td><td>${formatNumber(r.inserted)}</td><td>${formatPercent(r.inserted / Math.max(sum(bodyRows.filter(x => x.u.id === r.u.id), x => x.inserted), 1) * 100)}</td><td>${formatNumber(typeTotals[r.type] || 0)}</td><td>${formatPercent(r.rate)}</td><td>${diff >= 0 ? "+" : ""}${diff.toFixed(1).replace(".", ",")} p.p.</td></tr>`;
@@ -468,3 +476,35 @@ function occupationalDiversityCards(c) {
     return `<article class="occupational-card ${cls}"><strong>${u.sigla}</strong><span>${formatNumber(v)} ocupações distintas</span><em>${indicatorName(76)} · média do cluster ${formatNumber(avg)}</em></article>`;
   }).join("")}</div>`;
 }
+
+// ── Tooltip de fórmula (ⓘ) — h3 de .score-card.employment-kpi-card ─────────
+// Guard obrigatório: .score-card é reaproveitada por outras abas.
+function _injectAba7FormulaTooltips() {
+  if (state.activeTab !== "employment") return;
+  document.querySelectorAll(".score-card:not([data-formula-done])").forEach(card => {
+    const h3 = card.querySelector("h3");
+    if (!h3) return;
+    const key = ABA7_LABEL_TO_IND[h3.textContent.trim()];
+    if (!key) return;
+    card.setAttribute("data-formula-done", "1");
+    injectFormulaTooltip(h3, key);
+    injectLagTooltip(h3, key);
+  });
+}
+
+// Mesmo padrão validado nas Abas 1, 3, 4, 5 e 6: NÃO usar patch de render().
+// MutationObserver direto nos containers reais, via document.getElementById
+// (não via "el", que só é populado por cache() no listener de
+// DOMContentLoaded — este script roda antes disso).
+(function () {
+  function start() {
+    const kpiGrid = document.getElementById("kpiGrid");
+    const tabContent = document.getElementById("tabContent");
+    if (!kpiGrid && !tabContent) return;
+    const observer = new MutationObserver(function () { _injectAba7FormulaTooltips(); });
+    if (kpiGrid) observer.observe(kpiGrid, { childList: true });
+    if (tabContent) observer.observe(tabContent, { childList: true });
+  }
+  start();
+  _injectAba7FormulaTooltips();
+}());

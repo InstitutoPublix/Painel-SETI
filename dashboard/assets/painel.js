@@ -1,4 +1,8 @@
 ﻿// Catálogo embutido gerado originalmente de '5. Relação de Indicadores das Universidades.xlsx' — 96 indicadores. A planilha é fonte de referência/catalogação, não é carregada em runtime.
+// Atenção: ind95orc/ind96orc/ind97orc são legados orçamentários preservados
+// para compatibilidade e não representam os IND-95/96/97 oficiais da CAPES.
+// O bloco ind80..ind94 mantém deslocamentos históricos e não deve ser
+// renomeado sem validação metodológica dos respectivos dados/getters.
 const INDICATOR_CATALOG = {
   "ind1": {
     "codigo": 1,
@@ -14,7 +18,7 @@ const INDICATOR_CATALOG = {
     "serie": "2020-2024",
     "atualizacao": "2026-04-01",
     "ocde": "Participação no ensino terciário",
-    "uso": "Permite avaliar o grau de ocupação da oferta existente, comparando o volume de matrículas (QT_MAT) com o total de vagas oferecidas (QT_VG_TOTAL) e identificando possíveis situações de ociosidade relativa da oferta.",
+    "uso": "Permite avaliar o grau de ocupação da oferta existente, comparando o volume de matrículas (QT_MAT) com o total de vagas oferecidas (QT_VG_TOTAL) e identificando possíveis taxas relevantes de vagas não ocupadas pelos interessados.",
     "link": "https://www.gov.br/inep/pt-br/acesso-a-informacao/dados-abertos/microdados/censo-da-educacao-superior",
     "observacoes": ""
   },
@@ -446,7 +450,7 @@ const INDICATOR_CATALOG = {
     "serie": "2020-2024",
     "atualizacao": "2026-04-01",
     "ocde": "Sem correspondência direta",
-    "uso": "Mede o volume de ociosidade inicial da oferta.",
+    "uso": "Mede o volume inicial de vagas não ocupadas pelos interessados.",
     "link": "https://www.gov.br/inep/pt-br/acesso-a-informacao/dados-abertos/microdados/censo-da-educacao-superior",
     "observacoes": ""
   },
@@ -500,7 +504,7 @@ const INDICATOR_CATALOG = {
     "serie": "2020-2024",
     "atualizacao": "2026-04-01",
     "ocde": "Sem correspondência direta",
-    "uso": "Mede o estoque de ociosidade global da oferta.",
+    "uso": "Mede o estoque global de vagas não ocupadas pelos interessados.",
     "link": "https://www.gov.br/inep/pt-br/acesso-a-informacao/dados-abertos/microdados/censo-da-educacao-superior",
     "observacoes": ""
   },
@@ -579,7 +583,7 @@ const INDICATOR_CATALOG = {
   "ind33": {
     "codigo": 33,
     "nome": "Egressos IEES",
-    "categoria": "Inserção Profissional",
+    "categoria": "Retenção Profissional",
     "formula": "Somatório do número de egressos",
     "unidade": "Número",
     "periodicidade": "Anual",
@@ -597,7 +601,7 @@ const INDICATOR_CATALOG = {
   "ind34": {
     "codigo": 34,
     "nome": "Egressos inseridos no mercado de trabalho formal (Região Sul)",
-    "categoria": "Inserção Profissional",
+    "categoria": "Retenção Profissional",
     "formula": "Somatório do número de egressos encontrados nas RAIS (Sul)",
     "unidade": "Número",
     "periodicidade": "Anual",
@@ -615,7 +619,7 @@ const INDICATOR_CATALOG = {
   "ind35": {
     "codigo": 35,
     "nome": "Taxa de inserção de egressos (Região Sul)",
-    "categoria": "Inserção Profissional",
+    "categoria": "Retenção Profissional",
     "formula": "Egressos encontrados na região Sul  / Egressos x 100",
     "unidade": "Percentual",
     "periodicidade": "Anual",
@@ -633,7 +637,7 @@ const INDICATOR_CATALOG = {
   "ind36": {
     "codigo": 36,
     "nome": "Egressos inseridos no mercado de trabalho formal (Paraná)",
-    "categoria": "Inserção Profissional",
+    "categoria": "Retenção Profissional",
     "formula": "Egressos encontrados no Paraná",
     "unidade": "Número",
     "periodicidade": "Anual",
@@ -650,8 +654,8 @@ const INDICATOR_CATALOG = {
   },
   "ind37": {
     "codigo": 37,
-    "nome": "Taxa de inserção de egressos no mercado de trabalho no Paraná",
-    "categoria": "Inserção Profissional",
+    "nome": "Taxa de retenção de egressos pelo Estado do Paraná",
+    "categoria": "Retenção Profissional",
     "formula": "Egressos encontrados no Paraná / Somatório do número de egressos x 100",
     "unidade": "Percentual",
     "periodicidade": "Anual",
@@ -669,7 +673,7 @@ const INDICATOR_CATALOG = {
   "ind38": {
     "codigo": 38,
     "nome": "Egressos aderentes ao filtro CBO2 inseridos no mercado de trabalho (Paraná)",
-    "categoria": "Inserção Profissional",
+    "categoria": "Retenção Profissional",
     "formula": "Egressos encontrados no Paraná + CBO2",
     "unidade": "Número",
     "periodicidade": "Anual",
@@ -687,7 +691,7 @@ const INDICATOR_CATALOG = {
   "ind39": {
     "codigo": 39,
     "nome": "Percentual de egressos empregados no Paraná em ocupações aderentes ao CBO2",
-    "categoria": "Inserção Profissional",
+    "categoria": "Retenção Profissional",
     "formula": "Egressos encontrados no Paraná + CBO2 / Egressos encontrados no Paraná x 100",
     "unidade": "Percentual",
     "periodicidade": "Anual",
@@ -705,7 +709,7 @@ const INDICATOR_CATALOG = {
   "ind40": {
     "codigo": 40,
     "nome": "Média salarial dos egressos inseridos no mercado de trabalho do Paraná aderentes ao CBO2",
-    "categoria": "Inserção Profissional",
+    "categoria": "Retenção Profissional",
     "formula": "Média salarial do grupo Paraná + CBO2",
     "unidade": "Número",
     "periodicidade": "Anual",
@@ -723,7 +727,7 @@ const INDICATOR_CATALOG = {
   "ind41": {
     "codigo": 41,
     "nome": "Egressos inseridos no mercado formal na cidade-sede da IES",
-    "categoria": "Inserção Profissional",
+    "categoria": "Retenção Profissional",
     "formula": "Egressos encontrados na cidade-sede da IES",
     "unidade": "Número",
     "periodicidade": "Anual",
@@ -741,7 +745,7 @@ const INDICATOR_CATALOG = {
   "ind42": {
     "codigo": 42,
     "nome": "Taxa de egressos empregados formalmente na cidade-sede da IES",
-    "categoria": "Inserção Profissional",
+    "categoria": "Retenção Profissional",
     "formula": "Egressos encontrados na cidade-sede da IES / Somatório do número de egressos x 100",
     "unidade": "Percentual",
     "periodicidade": "Anual",
@@ -1245,7 +1249,7 @@ const INDICATOR_CATALOG = {
   "ind71": {
     "codigo": 71,
     "nome": "Egressos inseridos no mercado formal por município de vínculo",
-    "categoria": "Inserção Profissional",
+    "categoria": "Retenção Profissional",
     "formula": "Contagem de registros da base RAIS por município de vínculo",
     "unidade": "Número",
     "periodicidade": "Anual",
@@ -1263,7 +1267,7 @@ const INDICATOR_CATALOG = {
   "ind72": {
     "codigo": 72,
     "nome": "Participação do município na inserção formal dos egressos",
-    "categoria": "Inserção Profissional",
+    "categoria": "Retenção Profissional",
     "formula": "Egressos encontrados no município / total de egressos encontrados na RAIS × 100",
     "unidade": "Percentual",
     "periodicidade": "Anual",
@@ -1281,7 +1285,7 @@ const INDICATOR_CATALOG = {
   "ind73": {
     "codigo": 73,
     "nome": "Egressos inseridos no mercado formal por curso padronizado",
-    "categoria": "Inserção Profissional",
+    "categoria": "Retenção Profissional",
     "formula": "Contagem de registros da base RAIS por curso padronizado",
     "unidade": "Número",
     "periodicidade": "Anual",
@@ -1299,7 +1303,7 @@ const INDICATOR_CATALOG = {
   "ind74": {
     "codigo": 74,
     "nome": "Participação do curso na inserção formal dos egressos",
-    "categoria": "Inserção Profissional",
+    "categoria": "Retenção Profissional",
     "formula": "Egressos encontrados no curso / total de egressos encontrados na RAIS × 100",
     "unidade": "Percentual",
     "periodicidade": "Anual",
@@ -1317,7 +1321,7 @@ const INDICATOR_CATALOG = {
   "ind75": {
     "codigo": 75,
     "nome": "Egressos inseridos no mercado formal por tipo de curso",
-    "categoria": "Inserção Profissional",
+    "categoria": "Retenção Profissional",
     "formula": "Contagem de registros da base RAIS por tipo de curso — excluindo registros com classificação \"Não identificado\"",
     "unidade": "Número",
     "periodicidade": "Anual",
@@ -1335,7 +1339,7 @@ const INDICATOR_CATALOG = {
   "ind76": {
     "codigo": 76,
     "nome": "Diversidade ocupacional dos egressos por curso",
-    "categoria": "Inserção Profissional",
+    "categoria": "Retenção Profissional",
     "formula": "Contagem distinta de ocupações CBO por curso padronizado",
     "unidade": "Número",
     "periodicidade": "Anual",
@@ -1353,7 +1357,7 @@ const INDICATOR_CATALOG = {
   "ind77": {
     "codigo": 77,
     "nome": "Distribuição dos egressos por grande grupo ocupacional CBO2",
-    "categoria": "Inserção Profissional",
+    "categoria": "Retenção Profissional",
     "formula": "Contagem de registros da base RAIS por grande grupo CBO2",
     "unidade": "Número",
     "periodicidade": "Anual",
@@ -1371,7 +1375,7 @@ const INDICATOR_CATALOG = {
   "ind78": {
     "codigo": 78,
     "nome": "Participação dos grandes grupos ocupacionais CBO2 na inserção dos egressos",
-    "categoria": "Inserção Profissional",
+    "categoria": "Retenção Profissional",
     "formula": "Egressos no grupo CBO2 / total de egressos encontrados na RAIS × 100",
     "unidade": "Percentual",
     "periodicidade": "Anual",
@@ -1389,7 +1393,7 @@ const INDICATOR_CATALOG = {
   "ind79": {
     "codigo": 79,
     "nome": "Municípios de destino profissional dos egressos por curso",
-    "categoria": "Inserção Profissional",
+    "categoria": "Retenção Profissional",
     "formula": "Contagem distinta de municípios com egressos encontrados na RAIS por curso padronizado",
     "unidade": "Número",
     "periodicidade": "Anual",
@@ -1407,7 +1411,7 @@ const INDICATOR_CATALOG = {
   "ind80": {
     "codigo": 80,
     "nome": "Índice de dispersão territorial dos egressos por curso",
-    "categoria": "Inserção Profissional",
+    "categoria": "Retenção Profissional",
     "formula": "Número de municípios distintos com egressos do curso / total de egressos encontrados no curso",
     "unidade": "Razão",
     "periodicidade": "Anual",
@@ -1586,9 +1590,9 @@ const INDICATOR_CATALOG = {
   },
   "ind90": {
     "codigo": 90,
-    "nome": "Participação de Recursos Próprios no Orçamento Total",
-    "categoria": "Autonomia e Diversificação de Recursos",
-    "formula": "Soma do Orçamento Atualizado (Tipo Fonte = 'Recursos Próprios') / Soma do Orçamento Atualizado Total × 100",
+    "nome": "Participação da Fonte da Despesa \"501 - Arrecadação Própria\" no Orçamento Atualizado",
+    "categoria": "Fonte da Despesa",
+    "formula": "Soma do Orçamento Atualizado (501 - Arrecadação Própria) / Soma do Orçamento Atualizado × 100",
     "unidade": "Percentual",
     "periodicidade": "Anual",
     "polaridade": "Quanto maior, melhor",
@@ -1598,9 +1602,9 @@ const INDICATOR_CATALOG = {
     "serie": "2018– Abril 2026",
     "atualizacao": "2026-04-10",
     "ocde": "Sem correspondência direta",
-    "uso": "Recursos próprios (taxas, prestação de serviços, convênios) ampliam a autonomia gestora. Correlacionar com indicadores de extensão e transferência de tecnologia do piloto.",
-    "link": "Dados internos da SETI /  SEFA / https://www.transparencia.pr.gov.br",
-    "observacoes": "Recursos arrecadados por fundações de apoio vinculadas às IES não são capturados por esta base. O indicador subestima a autonomia real em IES com forte apoio fundacional."
+    "uso": "Mensura a capacidade da IES de gerar e aplicar recursos próprios (taxas, prestação de serviços, convênios com empresas). Indicador de autonomia e diversificação de receitas.",
+    "link": "Dados internos da SETI / SEFA / https://www.transparencia.pr.gov.br",
+    "observacoes": "Percentuais crescentes ao longo do tempo indicam avanço na geração de receita própria. Deve ser analisado em conjunto com o indicador 89 (Tesouro)."
   },
   "ind91": {
     "codigo": 91,
@@ -1982,6 +1986,51 @@ const INDICATOR_CATALOG = {
   }
 };
 
+// ── Tooltip de fórmula (ⓘ) — utilitária genérica reaproveitável por qualquer aba ──
+// Injeta um ícone "ⓘ" com a fórmula do indicador (INDICATOR_CATALOG[indKey].formula)
+// dentro do elemento de label informado. Não decide QUAL indicador — cada aba define
+// seu próprio mapa "label → ind_key" (ex.: ABA1_LABEL_TO_IND em painel-aba1-panorama.js)
+// e chama esta função por elemento já casado.
+function injectFormulaTooltip(labelEl, indKey) {
+  if (!labelEl || !indKey || !INDICATOR_CATALOG[indKey]) return;
+  if (labelEl.querySelector(".ind-formula-info")) return; // evita duplicar
+  const formula = INDICATOR_CATALOG[indKey].formula;
+  if (!formula) return;
+  const icon = document.createElement("span");
+  icon.className = "ind-formula-info";
+  icon.setAttribute("tabindex", "0");
+  icon.setAttribute("aria-label", "Fórmula: " + formula);
+  icon.innerHTML = "ⓘ<span class='ind-formula-tooltip'><strong>Fórmula</strong><br>" + formula + "</span>";
+  labelEl.appendChild(icon);
+}
+window.injectFormulaTooltip = injectFormulaTooltip;
+
+// LAG_NOTES — Fase 1 (6 indicadores com defasagem temporal confirmada e
+// infraestrutura de tooltip já existente). Ver docs/notas-defasagem-temporal
+// e coluna "Observações / Limitações Metodológicas" do catálogo oficial.
+const LAG_NOTES = {
+  ind5: "Reflete trajetória acumulada ao longo da permanência do estudante, não apenas o ano corrente.",
+  ind27: "Reflete estudantes que ingressaram, em média, 4 a 6 anos antes do ano de referência.",
+  ind6: "Reflete política de qualificação docente acumulada ao longo de vários anos, não o exercício corrente.",
+  ind35: "Depende do cruzamento com a RAIS de anos posteriores à colação de grau; reflete uma janela específica (coorte × ano-base RAIS).",
+  ind37: "Depende do cruzamento com a RAIS de anos posteriores à colação de grau; reflete uma janela específica (coorte × ano-base RAIS).",
+  ind39: "Depende do cruzamento com a RAIS de anos posteriores à colação de grau; reflete uma janela específica (coorte × ano-base RAIS).",
+  ind40: "Depende do cruzamento com a RAIS de anos posteriores à colação de grau; reflete uma janela específica (coorte × ano-base RAIS)."
+};
+
+function injectLagTooltip(labelEl, indKey) {
+  if (!labelEl || !indKey || !LAG_NOTES[indKey]) return;
+  if (labelEl.querySelector(".ind-lag-info")) return; // evita duplicar
+  const note = LAG_NOTES[indKey];
+  const icon = document.createElement("span");
+  icon.className = "ind-lag-info";
+  icon.setAttribute("tabindex", "0");
+  icon.setAttribute("aria-label", "Nota de temporalidade: " + note);
+  icon.innerHTML = "⏳<span class='ind-lag-tooltip'><strong>Leitura temporal</strong><br>" + note + "</span>";
+  labelEl.appendChild(icon);
+}
+window.injectLagTooltip = injectLagTooltip;
+
 // Fonte dos dados reais:
 // students/entrants/graduates/courses/vacancies/dropout/completion → Base Cursos - Brasil.xlsx (INEP 2024)
 // doctors → Base IES - Brasil.xlsx (INEP 2024)
@@ -2064,7 +2113,7 @@ const raw = [
    54.2,3475,70.5,84.4,83,
    ["Médio-baixo","Médio-alto","Alto","Baixo","Baixo","Baixo","Médio-baixo","Baixo"]]
 ];
-const CLUSTER_ESPECIFICO_NOTA = "Classificação fixa definida pelo Instituto Publix, combinando simultaneamente múltiplas variáveis (porte institucional, oferta de cursos, oferta territorial, qualificação docente e estrutura acadêmica composta). Diferente do Cluster Multidimensional (V1–V8), que agrupa por uma variável isolada por vez, o Cluster Específico atribui cada IES a um grupo único e fixo. Variáveis de orçamento, renda territorial e IDH não compõem esta classificação — permanecem como filtros complementares específicos do Paraná (V6-V8).";
+const CLUSTER_ESPECIFICO_NOTA = "Classificação fixa definida pelo Instituto Publix, combinando simultaneamente múltiplas variáveis (porte institucional, oferta de cursos, oferta territorial, qualificação docente e estrutura acadêmica composta). Diferente do agrupamento por variável isolada (V1–V8), que agrupa por um único critério de cada vez, esta classificação atribui cada IES a um grupo único e fixo. Variáveis de orçamento, renda territorial e IDH não compõem esta classificação — permanecem como filtros complementares específicos do Paraná (V6-V8).";
 
 // Cluster Específico (C1-C8): fonte única agora é o pipeline (assemble_final.py →
 // seti_precomputed.json → clustersEspecificos → window.SETI_CLUSTERS_ESPECIFICOS).
@@ -2316,7 +2365,7 @@ const groupMeta = {
   v3:{label:"V3 - Territorialização da oferta",getter:u=>u.territory,format:v=>`${v.toFixed(1)} pts`,criteria:[["Baixo","Presença territorial concentrada"],["Médio-baixo","Presença em poucos polos"],["Médio-alto","Rede multicampi"],["Alto","Alta capilaridade territorial"]]},
   v4:{label:"V4 - Qualificação docente",getter:u=>u.doctors,format:formatPercent,criteria:[["Baixo","Até 78%"],["Médio-baixo","78% a 84%"],["Médio-alto","84% a 89%"],["Alto","Acima de 89%"]]},
   v5:{label:"V5 - Estrutura acadêmica e pós-graduação",getter:u=>u.pg*u.capes,format:v=>`${v.toFixed(0)} pts`,criteria:[["Baixo","Pós-graduação inicial"],["Médio-baixo","Estrutura em consolidação"],["Médio-alto","Pós-graduação consolidada"],["Alto","Alta maturidade acadêmica"]]},
-  v6:{label:"V6 - Perfil de inserção profissional",getter:u=>u.employment,format:formatPercent,criteria:[["Baixo","Inserção abaixo da rede"],["Médio-baixo","Inserção moderada"],["Médio-alto","Inserção consistente"],["Alto","Alta inserção profissional"]]},
+  v6:{label:"V6 - Perfil de retenção de egressos (PR)",getter:u=>u.employment,format:formatPercent,criteria:[["Baixo","Retenção abaixo da rede"],["Médio-baixo","Retenção moderada"],["Médio-alto","Retenção consistente"],["Alto","Alta retenção de egressos"]]},
   v7:{label:"V7 - Renda do território (PR)",getter:u=>u.territoryIncome,format:v=>v==null?"N/D":formatCurrency(v),criteria:[]},
   v8:{label:"V8 - IDHM (PR)",getter:u=>u.idhmRegional,format:v=>v==null?"N/D":Number(v).toFixed(3).replace(".",","),criteria:[]}
 };
@@ -2328,7 +2377,7 @@ const resultIndicators = {
   doctorate:{label:"Proporção de docentes com doutorado",get:u=>u.doctors,format:formatPercent},
   cnpq:{label:"Captação CNPq por estudante",get:u=>u.cnpq*1000000/u.students,format:formatCurrency},
   capes:{label:"Conceito médio CAPES",get:u=>u.capes,format:v=>v.toFixed(1)},
-  employment:{label:"Taxa de inserção profissional no Paraná",get:u=>panelEmploymentRate(u),format:formatPercent},
+  employment:{label:"Taxa de retenção de egressos pelo Estado do Paraná",get:u=>panelEmploymentRate(u),format:formatPercent},
   salary:{label:"Média salarial dos egressos",get:u=>panelEmploymentSalary(u),format:formatCurrency}
 };
 const effortIndicators = {
@@ -2342,12 +2391,12 @@ const effortIndicators = {
 };
 const tabInfo = {
   overview:["Visão integrada","Panorama Executivo","Como está o sistema universitário estadual? Síntese dos resultados acadêmicos, profissionais e orçamentários."],
-  comparison:["Comparação entre pares","Comparação entre IEES","Com quem cada universidade deve ser comparada? A leitura usa média Paraná, referência Brasil e média do cluster multidimensional."],
-  access:["Acesso, oferta e ociosidade","Acesso e Oferta","Onde há demanda, ocupação e ociosidade? Escala da oferta, ocupação, territorialização e eficiência da oferta."],
+  comparison:["Indicador-síntese por dimensão","Comparação entre IEES","Como cada universidade se posiciona por dimensão? A leitura é um indicador-síntese por dimensão — média Paraná, referência Brasil e média do agrupamento ativo —, sem presumir que as IEES do agrupamento sejam semelhantes entre si; cada instituição mantém sua singularidade."],
+  access:["Acesso, oferta e vagas não ocupadas","Acesso e Oferta","Onde há demanda, ocupação e vagas não ocupadas? Escala da oferta, ocupação, territorialização e eficiência da oferta."],
   retention:["Permanência e formação","Permanência e Formação","Os estudantes permanecem e concluem? Funil de ingressantes, matrículas e concluintes com custos associados."],
-  quality:["Qualidade acadêmica e ciência","Qualidade, Pesquisa e Pós-Graduação","Onde está a maturidade acadêmica e científica? Qualificação docente, CAPES, CNPq e internacionalização."],
+  quality:["Qualidade acadêmica e ciência","Qualificação docente, Pesquisa e Pós-Graduação","Onde está a maturidade acadêmica e científica? Qualificação docente, CAPES, CNPq e internacionalização."],
   faculty:["Capacidade operacional","Corpo Docente e Capacidade Operacional","Há capacidade operacional suficiente? Quadro legal, ocupação docente, TIDE, CRES e alertas."],
-  employment:["Egressos e mercado","Inserção Profissional","Os egressos se inserem bem no mercado? Inserção no Paraná, aderência CBO2 e salários."],
+  employment:["Egressos e mercado","Retenção Profissional","Os egressos se inserem bem no mercado? Retenção no Paraná, aderência CBO2 e salários."],
   efficiency:["Execução","Execução Orçamentária","Dados do Relatório da Despesa 8050: execução, liquidação, composição e evolução orçamentária das universidades estaduais do Paraná."],
   performance:["Desempenho","Desempenho e Eficiência Relativa","Orçamento maior está associado a melhor desempenho? Resposta ao piloto, cruzamentos de desempenho e matriz de oportunidades das IEES."]
 };
@@ -2519,8 +2568,40 @@ function renderClusterEspecificoControl() {
 
   const allBtn = document.querySelector('#clusterEspecificoDropdown .cluster-especifico-item[data-cluster-level="all"]');
   if (allBtn) allBtn.classList.toggle("is-active", isActive && activeLevel === "all");
+
+  renderGroupByControl();
 }
 window.renderClusterEspecificoControl = renderClusterEspecificoControl;
+
+// Cluster Multidimensional (V1-V8) — dropdown customizado, mesmo padrão
+// visual do Cluster Específico (C1-C8). Lê as <option> do <select
+// id="groupBy"> oculto diretamente (texto, disabled, hidden) em vez de
+// duplicar essa informação — updateScopeAvailability() já calcula
+// disabled/hidden para V6-V8 em escopo Brasil sobre o select real.
+function renderGroupByControl() {
+  const select = el.groupBy || document.getElementById("groupBy");
+  const btn = document.getElementById("groupByBtn");
+  const label = document.getElementById("groupByLabel");
+  const list = document.getElementById("groupByList");
+  if (!select || !btn || !list) return;
+  const current = select.value;
+
+  if (label) {
+    const currentOption = [...select.options].find(o => o.value === current);
+    label.textContent = currentOption && current !== "especifico" ? currentOption.textContent.trim() : "Porte institucional";
+  }
+
+  list.innerHTML = [...select.options]
+    .filter(o => o.value !== "especifico")
+    .map(o => {
+      const itemActive = o.value === current;
+      return `<button type="button" class="iees-multi-item group-by-item${itemActive ? " is-active" : ""}"
+                data-group-by-value="${o.value}" ${o.disabled ? "disabled" : ""} title="${(o.title || "").replace(/"/g, "&quot;")}">
+                ${o.textContent.trim()}
+              </button>`;
+    }).join("");
+}
+window.renderGroupByControl = renderGroupByControl;
 
 function setGroupByVariable(value) {
   const select = el.groupBy || document.getElementById("groupBy");
@@ -2542,7 +2623,7 @@ const groupOptionNotes = Object.fromEntries(groupKeys.map(k => [k, {}]));
 Object.entries(groupOptions).forEach(([key,labels])=>{if(groupMeta[key]) groupMeta[key].criteria=labels.map(label=>[label,groupOptionNotes[key][label]||""]);});
 groupOptions.especifico = [];
 groupMeta.especifico = {
-  label: "Cluster Específico",
+  label: "Cluster Multidimensional",
   getter: u => CLUSTER_ESPECIFICO_CATALOG.find(c => c.grupoLabel === u.groups?.especifico)?.variaveis || "",
   format: v => v,
   criteria: []
@@ -2635,16 +2716,16 @@ const TAB_SUMMARIES = {
   overview:   { icon:"📊", title:"Panorama Executivo",
                 text:"Síntese geral do sistema, reunindo os principais indicadores, dimensões de análise, visão por agrupamentos e sinais de desempenho das instituições." },
   comparison: { icon:"⚖️", title:"Comparação entre IEES",
-                text:"Compare instituições dentro de grupos semelhantes, destacando diferenças de desempenho, médias de referência e posicionamento relativo." },
+                text:"Indicador-síntese por dimensão: compara as instituições apenas nas dimensões retratadas, sem presumir semelhança entre elas — cada IEES mantém sua singularidade institucional —, destacando diferenças de desempenho, médias de referência e posicionamento relativo." },
   access:     { icon:"📋", title:"Acesso e Oferta",
                 text:"Análises sobre cursos, vagas, matrículas, ocupação e distribuição territorial da oferta educacional." },
   retention:  { icon:"🎓", title:"Permanência e Formação",
                 text:"Indicadores de trajetória acadêmica, retenção, concluintes, evasão e desempenho dos cursos ao longo do tempo." },
-  quality:    { icon:"🔬", title:"Qualidade, Pesquisa e Pós-Graduação",
+  quality:    { icon:"🔬", title:"Qualificação docente, Pesquisa e Pós-Graduação",
                 text:"Qualidade acadêmica, produção científica, programas de pós-graduação, titulação docente e capacidades de pesquisa." },
   faculty:    { icon:"👥", title:"Corpo Docente e Capacidade Operacional",
                 text:"Estrutura do corpo docente, regimes de trabalho, dedicação, capacidade instalada e sinais de equilíbrio operacional." },
-  employment: { icon:"💼", title:"Inserção Profissional",
+  employment: { icon:"💼", title:"Retenção Profissional",
                 text:"Relação entre formação acadêmica, aderência ocupacional, empregabilidade, inserção regional e conexão com o mercado de trabalho." },
   efficiency: { icon:"💰", title:"Orçamento e Eficiência",
                 text:"Indicadores orçamentários, execução financeira, desempenho relativo e eficiência no uso dos recursos." }
@@ -2919,7 +3000,7 @@ function context(){
   if(f.attention&&hasOfficialQuadrants()){const ids=matrixRows(ref,f).filter(r=>r.resultRel<100&&r.effortRel>100).map(r=>r.id);ref=ref.filter(u=>ids.includes(u.id));display=display.filter(u=>ids.includes(u.id));}
   return {f,all,base,ref,display,selected,group};
 }
-function byYear(u,year){const [vol,bud,delta]=yearAdj[year]||yearAdj[2024];const c={...u,groups:{...u.groups},coursesFocus:[...u.coursesFocus]};["students","entrants","graduates","vacancies"].forEach(k=>c[k]=Math.round(c[k]*vol));c.budget=round(c.budget*bud,1);const cnpqReal=CNPQ_DATA[u.id]?.[Number(year)];if(cnpqReal){c.cnpq=round(cnpqReal.captacao,2);c.vinculos=cnpqReal.vinculos;}else{c.cnpq=round(c.cnpq*(.9+bud*.1),1);c.vinculos=null;}c.supplementation=round(c.supplementation+(1-bud)*3,1);["occupancy","completion","doctors","employment","facultyOcc","cres","execution","liquidation"].forEach(k=>c[k]=clamp(round(c[k]+delta,1),0,100));c.dropout=clamp(round(c.dropout-delta*.25,1),0,100);c.salary=Math.round(c.salary*(.88+bud*.12));const _rc=getRealIndicators(u.sigla,year);if(_rc&&_rc.cursosStudents!=null){if(_rc.cursosStudents!=null)c.students=_rc.cursosStudents;if(_rc.cursosEntrants!=null)c.entrants=_rc.cursosEntrants;if(_rc.cursosGraduates!=null)c.graduates=_rc.cursosGraduates;if(_rc.cursosCourses!=null)c.courses=_rc.cursosCourses;if(_rc.cursosVacancies!=null)c.vacancies=_rc.cursosVacancies;if(_rc.cursosOccupancy!=null)c.occupancy=_rc.cursosOccupancy;if(_rc.cursosDropout!=null)c.dropout=_rc.cursosDropout;if(_rc.cursosCompletion!=null)c.completion=_rc.cursosCompletion;c.vacanciesNova=_rc.cursosVacanciesNova??null;c.vacanciesDay=_rc.cursosVacanciesDay??null;c.vacanciesNight=_rc.cursosVacanciesNight??null;c.matDay=_rc.cursosMatDay??null;c.matNight=_rc.cursosMatNight??null;c.ingressOccupancy=_rc.cursosIngressOccupancy??null;c.vacanciesUnfilled=_rc.cursosVacanciesUnfilled??null;c.vacanciesNovaUnfilled=_rc.cursosVacanciesNovaUnfilled??null;c.mobility=_rc.cursosMobility??null;c.publicSchool=_rc.cursosPublicSchool??null;c.occDay=_rc.cursosOccupancyDay??null;c.occNight=_rc.cursosOccupancyNight??null;}if(_rc){if(_rc.iesDocDout!=null)c.doctors=_rc.iesDocDout;c.docForeign=_rc.iesDocForeign??null;c.capesPortal=_rc.iesCapesPortal??null;if(_rc.docTaxaOcup!=null)c.facultyOcc=_rc.docTaxaOcup;if(_rc.docCresTaxa!=null)c.cres=_rc.docCresTaxa;c.docVagasTotais=_rc.docVagasTotais??null;c.docVagasDisp=_rc.docVagasDisp??null;c.docVagasOcupadas=_rc.docVagasOcupadas??null;c.docTaxaUtil=_rc.docTaxaUtil??null;c.docVagasCond=_rc.docVagasCond??null;c.docPctCond=_rc.docPctCond??null;c.docTideAtrib=_rc.docTideAtrib??null;c.docTidePartic=_rc.docTidePartic??null;c.docTidePctNaoAtrib=_rc.docTidePctNaoAtrib??null;c.docChMedia=_rc.docChMedia??null;c.docCresAut=_rc.docCresAut??null;c.docCresUtil=_rc.docCresUtil??null;c.docCresSaldo=_rc.docCresSaldo??null;c.docCresOciosidade=_rc.docCresOciosidade??null;c.docCresPartic=_rc.docCresPartic??null;if(_rc.capesConceito!=null)c.capes=_rc.capesConceito;if(_rc.pg!=null)c.pg=_rc.pg;if(_rc.pgTop!=null)c.pgTop=_rc.pgTop;c.capesPct567=_rc.capesPct567??null;c.capesDocPermanentes=_rc.capesDocPermanentes??null;c.capesDocEstrangeiros=_rc.capesDocEstrangeiros??null;c.capesDocBolsa=_rc.capesDocBolsa??null;c.docTotal=_rc.docTotal??null;c.docExe=_rc.docExe??null;c.grauMix=_rc.grauMix??null;c.cbo2Profile=_rc.cbo2Profile??null;c.cbo2Diversity=_rc.cbo2Diversity??null;c.cbo2MunDestino=_rc.cbo2MunDestino??null;c.muniOccupancy=_rc.muniOccupancy??null;c.pgMestrado=_rc.pgMestrado??null;c.pgMestradoProf=_rc.pgMestradoProf??null;c.pgDoutorado=_rc.pgDoutorado??null;c.pgPorGrandeArea=_rc.pgPorGrandeArea??null;c.discMestrado=_rc.discMestrado??null;c.discDoutorado=_rc.discDoutorado??null;c.tituladosMestrado=_rc.tituladosMestrado??null;c.tituladosDoutorado=_rc.tituladosDoutorado??null;c.docPermanentes=_rc.docPermanentes??null;c.docColaboradores=_rc.docColaboradores??null;c.docVisitantes=_rc.docVisitantes??null;c.razaoDocenteDiscente=_rc.razaoDocenteDiscente??null;c.pgMunicipiosDistintos=_rc.pgMunicipiosDistintos??null;c.pctExcelencia=_rc.pctExcelencia??null;}if(_rc){c.budget=_rc.budget??_rc.liquidado??c.budget;c.execution=_rc.execution??_rc.tx_execucao_empenho??c.execution;c.liquidation=_rc.liquidation??_rc.tx_liquidacao??c.liquidation;c.supplementation=_rc.supplementation??_rc.var_dotacao_loa??c.supplementation;c.personnel=_rc.personnel??_rc.part_pessoal??c.personnel;if(_rc.cnpqCaptacao!=null){c.cnpq=_rc.cnpqCaptacao;}if(_rc.cnpqVinculos!=null){c.vinculos=_rc.cnpqVinculos;}c.dotacao_inicial=_rc.dotacao_inicial??c.dotacao_inicial??null;c.orcamento_atualizado=_rc.orcamento_atualizado??c.orcamento_atualizado??null;c.empenhado=_rc.empenhado??c.empenhado??null;c.liquidado=_rc.liquidado??c.liquidado??null;c.pago=_rc.pago??c.pago??null;c.tx_execucao_empenho=_rc.tx_execucao_empenho??c.tx_execucao_empenho??null;c.tx_liquidacao=_rc.tx_liquidacao??c.tx_liquidacao??null;c.tx_pagamento_liq=_rc.tx_pagamento_liq??c.tx_pagamento_liq??null;c.grau_contingenciamento=_rc.grau_contingenciamento??c.grau_contingenciamento??null;c.var_dotacao_loa=_rc.var_dotacao_loa??c.var_dotacao_loa??null;c.part_pessoal=_rc.part_pessoal??c.part_pessoal??null;c.part_outras_correntes=_rc.part_outras_correntes??c.part_outras_correntes??null;c.part_capital=_rc.part_capital??c.part_capital??null;c.ind81=_rc.ind81??c.ind81??null;c.ind82=_rc.ind82??c.ind82??null;c.ind83=_rc.ind83??c.ind83??null;c.ind84=_rc.ind84??c.ind84??null;c.ind85=_rc.ind85??c.ind85??null;c.ind86=_rc.ind86??c.ind86??null;c.ind87=_rc.ind87??c.ind87??null;c.ind88=_rc.ind88??c.ind88??null;c.ind95orc=_rc.ind95orc??c.ind95orc??null;}if(_rc){c.insertionRatePR=_rc.insertionRatePR??null;c.egressosMunicipios=_rc.egressosMunicipios??_rc.raisMunCount??null;c.territoryIncome=_rc.territoryIncome??c.territoryIncome??null;c.idhmRegional=_rc.idhmRegional??c.idhmRegional??null;}if(window.SETI_CLUSTERS&&window.SETI_CLUSTERS[u.sigla]){const cl=window.SETI_CLUSTERS[u.sigla];groupKeys.forEach(k=>{c.groups[k]=cl[k]!=null?cl[k]:null;});}return c;}
+function byYear(u,year){const [vol,bud,delta]=yearAdj[year]||yearAdj[2024];const c={...u,groups:{...u.groups},coursesFocus:[...u.coursesFocus]};["students","entrants","graduates","vacancies"].forEach(k=>c[k]=Math.round(c[k]*vol));c.budget=round(c.budget*bud,1);const cnpqReal=CNPQ_DATA[u.id]?.[Number(year)];if(cnpqReal){c.cnpq=round(cnpqReal.captacao,2);c.vinculos=cnpqReal.vinculos;}else{c.cnpq=round(c.cnpq*(.9+bud*.1),1);c.vinculos=null;}c.supplementation=round(c.supplementation+(1-bud)*3,1);["occupancy","completion","doctors","employment","facultyOcc","cres","execution","liquidation"].forEach(k=>{if(c[k]==null)return;c[k]=clamp(round(c[k]+delta,1),0,100);});c.dropout=clamp(round(c.dropout-delta*.25,1),0,100);c.salary=Math.round(c.salary*(.88+bud*.12));const _rc=getRealIndicatorsExact(u.sigla,year);if(_rc&&_rc.cursosStudents!=null){if(_rc.cursosStudents!=null)c.students=_rc.cursosStudents;if(_rc.cursosEntrants!=null)c.entrants=_rc.cursosEntrants;if(_rc.cursosGraduates!=null)c.graduates=_rc.cursosGraduates;if(_rc.cursosCourses!=null)c.courses=_rc.cursosCourses;if(_rc.cursosVacancies!=null)c.vacancies=_rc.cursosVacancies;if(_rc.cursosOccupancy!=null)c.occupancy=_rc.cursosOccupancy;if(_rc.cursosDropout!=null)c.dropout=_rc.cursosDropout;if(_rc.cursosCompletion!=null)c.completion=_rc.cursosCompletion;c.vacanciesNova=_rc.cursosVacanciesNova??null;c.vacanciesDay=_rc.cursosVacanciesDay??null;c.vacanciesNight=_rc.cursosVacanciesNight??null;c.matDay=_rc.cursosMatDay??null;c.matNight=_rc.cursosMatNight??null;c.ingressOccupancy=_rc.cursosIngressOccupancy??null;c.vacanciesUnfilled=_rc.cursosVacanciesUnfilled??null;c.vacanciesNovaUnfilled=_rc.cursosVacanciesNovaUnfilled??null;c.mobility=_rc.cursosMobility??null;c.publicSchool=_rc.cursosPublicSchool??null;c.occDay=_rc.cursosOccupancyDay??null;c.occNight=_rc.cursosOccupancyNight??null;}if(_rc){if(_rc.iesDocDout!=null)c.doctors=_rc.iesDocDout;c.docForeign=_rc.iesDocForeign??null;c.capesPortal=_rc.iesCapesPortal??null;if(_rc.docTaxaOcup!=null)c.facultyOcc=_rc.docTaxaOcup;if(_rc.docCresTaxa!=null)c.cres=_rc.docCresTaxa;c.docVagasTotais=_rc.docVagasTotais??null;c.docVagasDisp=_rc.docVagasDisp??null;c.docVagasOcupadas=_rc.docVagasOcupadas??null;c.docTaxaUtil=_rc.docTaxaUtil??null;c.docVagasCond=_rc.docVagasCond??null;c.docPctCond=_rc.docPctCond??null;c.docTideAtrib=_rc.docTideAtrib??null;c.docTidePartic=_rc.docTidePartic??null;c.docTidePctNaoAtrib=_rc.docTidePctNaoAtrib??null;c.docChMedia=_rc.docChMedia??null;c.docCresAut=_rc.docCresAut??null;c.docCresUtil=_rc.docCresUtil??null;c.docCresSaldo=_rc.docCresSaldo??null;c.docCresOciosidade=_rc.docCresOciosidade??null;c.docCresPartic=_rc.docCresPartic??null;if(_rc.capesConceito!=null)c.capes=_rc.capesConceito;if(_rc.pg!=null)c.pg=_rc.pg;if(_rc.pgTop!=null)c.pgTop=_rc.pgTop;c.capesPct567=_rc.capesPct567??null;c.capesDocPermanentes=_rc.capesDocPermanentes??null;c.capesDocEstrangeiros=_rc.capesDocEstrangeiros??null;c.capesDocBolsa=_rc.capesDocBolsa??null;c.docTotal=_rc.docTotal??null;c.docExe=_rc.docExe??null;c.grauMix=_rc.grauMix??null;c.cbo2Profile=_rc.cbo2Profile??null;c.cbo2Diversity=_rc.cbo2Diversity??null;c.cbo2MunDestino=_rc.cbo2MunDestino??null;c.muniOccupancy=_rc.muniOccupancy??null;c.pgMestrado=_rc.pgMestrado??null;c.pgMestradoProf=_rc.pgMestradoProf??null;c.pgDoutorado=_rc.pgDoutorado??null;c.pgPorGrandeArea=_rc.pgPorGrandeArea??null;c.discMestrado=_rc.discMestrado??null;c.discDoutorado=_rc.discDoutorado??null;c.tituladosMestrado=_rc.tituladosMestrado??null;c.tituladosDoutorado=_rc.tituladosDoutorado??null;c.docPermanentes=_rc.docPermanentes??null;c.docColaboradores=_rc.docColaboradores??null;c.docVisitantes=_rc.docVisitantes??null;c.razaoDocenteDiscente=_rc.razaoDocenteDiscente??null;c.pgMunicipiosDistintos=_rc.pgMunicipiosDistintos??null;c.pctExcelencia=_rc.pctExcelencia??null;}if(_rc){c.budget=_rc.budget??_rc.liquidado??c.budget;c.execution=_rc.execution??_rc.tx_execucao_empenho??c.execution;c.liquidation=_rc.liquidation??_rc.tx_liquidacao??c.liquidation;c.supplementation=_rc.supplementation??_rc.var_dotacao_loa??c.supplementation;c.personnel=_rc.personnel??_rc.part_pessoal??c.personnel;if(_rc.cnpqCaptacao!=null){c.cnpq=_rc.cnpqCaptacao;}if(_rc.cnpqVinculos!=null){c.vinculos=_rc.cnpqVinculos;}c.dotacao_inicial=_rc.dotacao_inicial??c.dotacao_inicial??null;c.orcamento_atualizado=_rc.orcamento_atualizado??c.orcamento_atualizado??null;c.empenhado=_rc.empenhado??c.empenhado??null;c.liquidado=_rc.liquidado??c.liquidado??null;c.pago=_rc.pago??c.pago??null;c.tx_execucao_empenho=_rc.tx_execucao_empenho??c.tx_execucao_empenho??null;c.tx_liquidacao=_rc.tx_liquidacao??c.tx_liquidacao??null;c.tx_pagamento_liq=_rc.tx_pagamento_liq??c.tx_pagamento_liq??null;c.grau_contingenciamento=_rc.grau_contingenciamento??c.grau_contingenciamento??null;c.var_dotacao_loa=_rc.var_dotacao_loa??c.var_dotacao_loa??null;c.part_pessoal=_rc.part_pessoal??c.part_pessoal??null;c.part_outras_correntes=_rc.part_outras_correntes??c.part_outras_correntes??null;c.part_capital=_rc.part_capital??c.part_capital??null;c.ind80=_rc.ind80??c.ind80??null;c.ind81=_rc.ind81??c.ind81??null;c.ind82=_rc.ind82??c.ind82??null;c.ind83=_rc.ind83??c.ind83??null;c.ind84=_rc.ind84??c.ind84??null;c.ind85=_rc.ind85??c.ind85??null;c.ind86=_rc.ind86??c.ind86??null;c.ind87=_rc.ind87??c.ind87??null;c.ind88=_rc.ind88??c.ind88??null;c.ind95orc=_rc.ind95orc??c.ind95orc??null;}if(_rc){c.insertionRatePR=_rc.insertionRatePR??null;c.egressosMunicipios=_rc.egressosMunicipios??_rc.raisMunCount??null;c.territoryIncome=_rc.territoryIncome??c.territoryIncome??null;c.idhmRegional=_rc.idhmRegional??c.idhmRegional??null;}if(window.SETI_CLUSTERS&&window.SETI_CLUSTERS[u.sigla]){const cl=window.SETI_CLUSTERS[u.sigla];groupKeys.forEach(k=>{c.groups[k]=cl[k]!=null?cl[k]:null;});}if(window.SETI_CURSOS_DETALHADO&&window.SETI_CURSOS_DETALHADO[u.sigla]){c.cursosDetalhado=window.SETI_CURSOS_DETALHADO[u.sigla];}else{c.cursosDetalhado=null;}return c;}
 // Selo visual para valores estimados (fallback de fórmula quando a base não
 // cobre a IES/ano). Usar junto ao valor ou no título do gráfico.
 function estBadge(reason){
@@ -3058,7 +3139,7 @@ function renderKpis(c){
   const cards=state.activeTab==="efficiency"?[
     ["Orçamento liquidado do grupo",formatCurrencyMillions(ar.budget),`${ref.length} IEES no grupo`,"+6,8%",d(ar.budget,arPrev?.budget,"neutral","pct")],["Execução orçamentária média",formatPercent(ar.execution),"empenho sobre disponível",badge(ar.execution,93,90),d(ar.execution,arPrev?.execution,"higher","pp")],["Taxa de liquidação",formatPercent(ar.liquidation),"liquidado sobre empenhado",badge(ar.liquidation,91,88),d(ar.liquidation,arPrev?.liquidation,"higher","pp")],[eff.label,eff.format(mean(ref,eff.get)),"média do grupo","ref.",null],["Resultado médio do grupo",res.format(mean(ref,res.get)),res.label,"grupo",null],["Resultado relativo",selectedRow?`${selectedRow.resultRel.toFixed(1)}%`:`${mean(rows,r=>r.resultRel).toFixed(1)}%`,"base grupo = 100",selectedRow?selectedRow.resultLabel:"média",null],["Esforço relativo",selectedRow?`${selectedRow.effortRel.toFixed(1)}%`:`${mean(rows,r=>r.effortRel).toFixed(1)}%`,"base grupo = 100",selectedRow?selectedRow.effortLabel:"média",null],["Quadrante oficial",selectedRow?selectedRow.quadrant:summarize(rows),"planilha de estratificação",`${rows.length} pontos`,null]
   ]:[
-    ["Total de estudantes",formatNumber(a.students),`${formatNumber(a.entrants)} ingressantes`,"+2,1%",d(a.students,aPrev?.students,"higher","pct")],["Taxa de ocupação das vagas",formatPercent(a.occupancy),`${formatNumber(a.vacancies)} vagas`,badge(a.occupancy,88,80),d(a.occupancy,aPrev?.occupancy,"higher","pp")],["Concluintes sobre matrículas",formatPercent(a.completion),`${formatNumber(a.graduates)} concluintes no ano`,badge(a.completion,62,56),d(a.completion,aPrev?.completion,"higher","pp")],["Docentes com doutorado",formatPercent(a.doctors),"proporção no corpo docente",badge(a.doctors,86,80),d(a.doctors,aPrev?.doctors,"higher","pp")],["Captação CNPq",formatCurrencyMillions(a.cnpq),"recursos captados","+4,4%",d(a.cnpq,aPrev?.cnpq,"higher","pct")],["Inserção no Paraná",formatPercent(a.employment),"egressos no mercado formal",badge(a.employment,72,67),d(a.employment,aPrev?.employment,"higher","pp")],["Orçamento liquidado",formatCurrencyMillions(a.budget),"grupo selecionado","+6,8%",d(a.budget,aPrev?.budget,"neutral","pct")],["Execução orçamentária",formatPercent(a.execution),"média ponderada",badge(a.execution,93,90),d(a.execution,aPrev?.execution,"higher","pp")]
+    ["Total de estudantes",formatNumber(a.students),`${formatNumber(a.entrants)} ingressantes`,"+2,1%",d(a.students,aPrev?.students,"higher","pct")],["Taxa de ocupação das vagas",formatPercent(a.occupancy),`${formatNumber(a.vacancies)} vagas`,badge(a.occupancy,88,80),d(a.occupancy,aPrev?.occupancy,"higher","pp")],["Concluintes sobre matrículas",formatPercent(a.completion),`${formatNumber(a.graduates)} concluintes no ano`,badge(a.completion,62,56),d(a.completion,aPrev?.completion,"higher","pp")],["Docentes com doutorado",formatPercent(a.doctors),"proporção no corpo docente",badge(a.doctors,86,80),d(a.doctors,aPrev?.doctors,"higher","pp")],["Captação CNPq",formatCurrencyMillions(a.cnpq),"recursos captados","+4,4%",d(a.cnpq,aPrev?.cnpq,"higher","pct")],["Retenção no Paraná",formatPercent(a.employment),"egressos no mercado formal",badge(a.employment,72,67),d(a.employment,aPrev?.employment,"higher","pp")],["Orçamento liquidado",formatCurrencyMillions(a.budget),"grupo selecionado","+6,8%",d(a.budget,aPrev?.budget,"neutral","pct")],["Execução orçamentária",formatPercent(a.execution),"média ponderada",badge(a.execution,93,90),d(a.execution,aPrev?.execution,"higher","pp")]
   ];
   el.kpiGrid.innerHTML=cards.map(([label,value,meta,trend,delta])=>{const cls=kpiClass(label,trend);return `<article class="kpi-card ${cls}"><div class="kpi-head"><div class="kpi-label">${label}</div><div class="kpi-icon" aria-hidden="true">${kpiIcon(label)}</div></div><div class="kpi-value">${value}</div></article>`;}).join("");
 }
@@ -3077,7 +3158,7 @@ function kpiClass(label, trend){
   const text = `${label} ${trend}`.toLowerCase();
   if(text.includes("crítico") || text.includes("alerta")) return "kpi-alert";
   if(text.includes("orçamento") || text.includes("orçament") || text.includes("esforço") || text.includes("custo") || text.includes("liquidação") || text.includes("execução")) return "kpi-budget";
-  if(text.includes("ocupação") || text.includes("concluintes") || text.includes("doutorado") || text.includes("inserção") || text.includes("resultado")) return "kpi-positive";
+  if(text.includes("ocupação") || text.includes("concluintes") || text.includes("doutorado") || text.includes("inserção") || text.includes("retenção") || text.includes("resultado")) return "kpi-positive";
   return "kpi-default";
 }
 function trendClass(trend){
@@ -3101,7 +3182,7 @@ const _ca=[
 const sideContext={
   overview:{analyticalNote:"Os KPIs resumem o sistema. Universo de comparação é o cluster ativo. Outliers acima de 2 desvios-padrão são sinalizados em vermelho.",alertRules:[..._ca]},
   comparison:{analyticalNote:"A tabela ordena por desvio da média do cluster. IEES acima da média em todos os indicadores são candidatas a referência de boas práticas.",alertRules:[..._ca]},
-  access:{analyticalNote:"Taxa de ocupação abaixo de 70% sinaliza ociosidade estrutural. Compare com o porte institucional antes de concluir.",alertRules:[..._ca]},
+  access:{analyticalNote:"Taxa de ocupação abaixo de 70% sinaliza alta taxa estrutural de vagas não ocupadas. Compare com o porte institucional antes de concluir.",alertRules:[..._ca]},
   retention:{analyticalNote:"Taxa de desvinculação acima de 10% é alerta crítico. Correlacione com oferta noturna e perfil socioeconômico do território.",alertRules:[..._ca]},
   quality:{analyticalNote:"Conceito CAPES abaixo de 4 em mais de 30% dos programas indica fragilidade da pós-graduação.",alertRules:[..._ca]},
   faculty:{analyticalNote:"Taxa de utilização da CRES abaixo de 60% sugere capacidade ociosa. Taxa acima de 95% sugere pressão sobre o quadro efetivo.",alertRules:[..._ca,c=>c.f.scope==="Brasil"?{level:"warning",message:"Dados LGU (CRES, TIDE, ocupação docente) disponíveis apenas no escopo Paraná. Resultados desta aba podem estar incompletos."}:null]},
@@ -3146,11 +3227,11 @@ function sideAlertHtml(a){
 function renderTab(c){const map={overview,comparison,access,retention,quality,faculty,employment,efficiency};el.tabContent.innerHTML=map[state.activeTab](c);}
 function overview(c){const d=c.ref,res=resultIndicators[c.f.result];if(!d.length)return empty();const a=agg(d);return `<div class="insight-grid"><article class="visual-card card-primary"><h3>Resultado institucional por IEES</h3><p class="card-subtitle">Indicador selecionado: ${res.label}</p>${bars(d,res.get,res.format)}</article><article class="visual-card card-support"><h3>Ranking executivo do recorte</h3><p class="card-subtitle">Ordenado pelo resultado relativo ao grupo selecionado</p>${rank(matrixRows(d,c.f).sort((a,b)=>b.resultRel-a.resultRel).slice(0,5),r=>`${r.resultRel.toFixed(1)}%`,"resultLabel")}</article></div><div class="chart-grid mt-14"><article class="score-card"><h3>Selo de abrangência</h3><p class="card-subtitle">Referência comparativa ativa</p><div class="score-value">${c.f.scope}</div><div class="score-meter"><span style="width:${c.f.scope==="Brasil"?100:72}%"></span></div></article><article class="score-card"><h3>Orçamento para resultados</h3><p class="card-subtitle">Resultado composto x execução orçamentária</p><div class="score-value">${formatPercent((a.execution+a.completion)/2)}</div><div class="score-meter"><span style="width:${clamp((a.execution+a.completion)/2,0,100)}%"></span></div></article></div>${metricTable(d,[["IEES",u=>`<strong>${u.sigla}</strong><br><span>${u.nome}</span>`],["Estudantes",u=>formatNumber(u.students)],["Cursos",u=>formatNumber(u.courses)],["Ocupação",u=>formatPercent(u.occupancy)],["Concluintes",u=>formatNumber(u.graduates)],["Orçamento",u=>formatCurrencyMillions(u.budget)],["Grupo",u=>u.groups[c.f.groupBy]]],"Síntese por IEES")}`;}
 function comparison(c){const d=c.ref,res=resultIndicators[c.f.result],eff=effortIndicators[c.f.effort],rows=matrixRows(d,c.f).sort((a,b)=>b.resultRel-a.resultRel),g=mean(d,res.get),p=mean(c.all,res.get),br=brazil.result[c.f.result];if(!d.length)return empty();return `<div class="architecture-message">O agrupamento é dinâmico e depende da variável selecionada. A mesma IEES pode pertencer a grupos diferentes conforme o critério de comparação.</div><div class="insight-grid"><article class="visual-card card-primary"><h3>IEES x média do grupo</h3><p class="card-subtitle">${res.label}</p>${bars(d,res.get,res.format)}</article><article class="visual-card card-support"><h3>Posição relativa</h3><p class="card-subtitle">Resultado relativo e esforço orçamentário relativo</p>${rank(rows,r=>`${r.resultRel.toFixed(1)}%`,"quadrant")}</article></div><div class="table-wrap mt-14"><h3>Tabela comparativa das IEES</h3><p class="card-subtitle">Grupo: ${c.group==="all"?"todos":c.group} | Esforço: ${eff.label}</p><table class="data-table"><thead><tr><th>IEES</th><th>Resultado</th><th>Média grupo</th><th>Média Paraná</th><th>Média Brasil</th><th>Esforço relativo</th><th>Classificação</th></tr></thead><tbody>${rows.map(r=>`<tr><td><strong>${r.sigla}</strong><br><span>${r.region}</span></td><td>${res.format(r.result)}</td><td>${res.format(g)}</td><td>${res.format(p)}</td><td>${res.format(br)}</td><td>${r.effortRel.toFixed(1)}%</td><td>${status(r.quadrant,r.tone)}</td></tr>`).join("")}</tbody></table></div>`;}
-function access(c){const d=c.ref,a=agg(d),unfilled=Math.max(0,a.vacancies-Math.round(a.vacancies*a.occupancy/100));if(!d.length)return empty();return `<div class="score-grid">${score("Escala da oferta",formatNumber(a.vacancies),"Total de vagas",pct(a.vacancies,52000))}${score("Ocupação e ociosidade",formatPercent(a.occupancy),`${formatNumber(unfilled)} vagas não ocupadas`,a.occupancy)}${score("Eficiência da oferta",formatCurrency(mean(d,effortIndicators.costOccupiedVacancy.get)),"Custo por vaga ocupada",74)}</div><div class="chart-grid mt-14"><article class="visual-card card-primary"><h3>Taxa de ocupação por IEES</h3><p class="card-subtitle">Demanda, ocupação e ociosidade</p>${bars(d,u=>u.occupancy,formatPercent)}</article><article class="visual-card card-support"><h3>Participação na oferta</h3><p class="card-subtitle">Total de vagas no recorte selecionado</p>${bars(d,u=>u.vacancies,formatNumber)}</article></div>${metricTable(d,[["IEES",u=>`<strong>${u.sigla}</strong><br><span>${u.municipality}</span>`],["Cursos",u=>formatNumber(u.courses)],["Vagas",u=>formatNumber(u.vacancies)],["Ocupação",u=>formatPercent(u.occupancy)],["Vagas não ocupadas",u=>formatNumber(Math.max(0,Math.round(u.vacancies*(1-u.occupancy/100))))],["Custo por estudante",u=>formatCurrency(effortIndicators.budgetPerStudent.get(u))]],"Escala, ocupação e custo da oferta")}`;}
+function access(c){const d=c.ref,a=agg(d),unfilled=Math.max(0,a.vacancies-Math.round(a.vacancies*a.occupancy/100));if(!d.length)return empty();return `<div class="score-grid">${score("Escala da oferta",formatNumber(a.vacancies),"Total de vagas",pct(a.vacancies,52000))}${score("Ocupação e vagas não ocupadas",formatPercent(a.occupancy),`${formatNumber(unfilled)} vagas não ocupadas`,a.occupancy)}${score("Eficiência da oferta",formatCurrency(mean(d,effortIndicators.costOccupiedVacancy.get)),"Custo por vaga ocupada",74)}</div><div class="chart-grid mt-14"><article class="visual-card card-primary"><h3>Taxa de ocupação por IEES</h3><p class="card-subtitle">Demanda, ocupação e vagas não ocupadas</p>${bars(d,u=>u.occupancy,formatPercent)}</article><article class="visual-card card-support"><h3>Participação na oferta</h3><p class="card-subtitle">Total de vagas no recorte selecionado</p>${bars(d,u=>u.vacancies,formatNumber)}</article></div>${metricTable(d,[["IEES",u=>`<strong>${u.sigla}</strong><br><span>${u.municipality}</span>`],["Cursos",u=>formatNumber(u.courses)],["Vagas",u=>formatNumber(u.vacancies)],["Ocupação",u=>formatPercent(u.occupancy)],["Vagas não ocupadas",u=>formatNumber(Math.max(0,Math.round(u.vacancies*(1-u.occupancy/100))))],["Custo por estudante",u=>formatCurrency(effortIndicators.budgetPerStudent.get(u))]],"Escala, ocupação e custo da oferta")}`;}
 function retention(c){const d=c.ref,a=agg(d);if(!d.length)return empty();return `<div class="insight-grid"><article class="visual-card card-primary"><h3>Funil formativo</h3><p class="card-subtitle">Ingressantes → estudantes → concluintes</p>${(()=>{const W=280,CX=160,ent=Math.max(a.entrants,1),w2=clamp(a.students/ent*W,60,W),w3=clamp(a.graduates/ent*W,30,w2),l=w=>(160-w/2).toFixed(1),r=w=>(160+w/2).toFixed(1),rate1=(a.students/ent*100).toFixed(1).replace('.',','),rate2=(a.completion||0).toFixed(1).replace('.',','),w3b=Math.max(w3*0.85,30);return '<svg viewBox="0 0 320 220" width="100%" style="max-width:340px;margin:0 auto;display:block"><polygon points="'+l(W)+',10 '+r(W)+',10 '+r(w2)+',60 '+l(w2)+',60" fill="var(--blue-700)" opacity="0.9"/><text x="'+CX+'" y="32" text-anchor="middle" fill="white" font-size="13" font-weight="600">'+formatNumber(a.entrants)+'</text><text x="'+CX+'" y="50" text-anchor="middle" fill="white" font-size="10">Ingressantes</text><text x="'+CX+'" y="76" text-anchor="middle" fill="var(--gray-600)" font-size="11">→ '+rate1+'% permaneceram</text><polygon points="'+l(w2)+',83 '+r(w2)+',83 '+r(w3)+',133 '+l(w3)+',133" fill="var(--blue-700)" opacity="0.75"/><text x="'+CX+'" y="105" text-anchor="middle" fill="white" font-size="13" font-weight="600">'+formatNumber(a.students)+'</text><text x="'+CX+'" y="123" text-anchor="middle" fill="white" font-size="10">Matrículas ativas</text><text x="'+CX+'" y="149" text-anchor="middle" fill="var(--gray-600)" font-size="11">→ '+rate2+'% concluintes/matrículas</text><polygon points="'+l(w3)+',157 '+r(w3)+',157 '+r(w3b)+',207 '+l(w3b)+',207" fill="var(--blue-700)" opacity="0.6"/><text x="'+CX+'" y="179" text-anchor="middle" fill="white" font-size="13" font-weight="600">'+formatNumber(a.graduates)+'</text><text x="'+CX+'" y="197" text-anchor="middle" fill="white" font-size="10">Concluintes</text></svg>';})()}</article><article class="visual-card card-support"><h3>Desvinculação discente</h3><p class="card-subtitle">Barras por IEES</p>${bars(d,u=>u.dropout,formatPercent)}</article></div><div class="chart-grid mt-14"><article class="visual-card card-support"><h3>Concluintes sobre matrículas</h3><p class="card-subtitle">Proporção anual: concluintes do ano / matrículas do mesmo ano</p>${bars(d,u=>u.completion,formatPercent)}</article><article class="visual-card card-support"><h3>Custo por concluinte</h3><p class="card-subtitle">Cruzamento orçamentário prioritário</p>${bars(d,effortIndicators.costGraduate.get,formatCurrency)}</article></div>`;}
 function quality(c){const d=c.ref;if(!d.length)return empty();return `<div class="score-grid">${score("Qualificação docente",formatPercent(mean(d,u=>u.doctors)),"Docentes com doutorado",mean(d,u=>u.doctors))}${score("Pesquisa e CNPq",formatCurrencyMillions(sum(d,u=>u.cnpq)),"Captação no recorte",78)}${score("Pós-graduação CAPES",mean(d,u=>u.capes).toFixed(1),"Conceito médio dos programas",mean(d,u=>u.capes)*18)}</div><div class="chart-grid mt-14"><article class="visual-card card-primary"><h3>Docentes com doutorado</h3><p class="card-subtitle">Qualificação docente por IEES</p>${bars(d,u=>u.doctors,formatPercent)}</article><article class="visual-card card-support"><h3>Captação CNPq por estudante</h3><p class="card-subtitle">Eficiência acadêmico-científica</p>${bars(d,resultIndicators.cnpq.get,formatCurrency)}</article></div>${metricTable(d,[["IEES",u=>`<strong>${u.sigla}</strong><br><span>${u.profile}</span>`],["Programas PG",u=>formatNumber(u.pg)],["CAPES",u=>u.capes.toFixed(1)],["CAPES 5, 6 e 7",u=>formatNumber(u.pgTop)],["Doutores",u=>formatPercent(u.doctors)],["CNPq",u=>formatCurrencyMillions(u.cnpq)]],"Qualidade acadêmica, pós-graduação e pesquisa")}`;}
 function faculty(c){const d=c.ref;if(!d.length)return empty();return `<div class="chart-grid"><article class="visual-card card-primary"><h3>Taxa de ocupação do quadro docente</h3><p class="card-subtitle">Vagas efetivas ocupadas sobre disponíveis</p>${bars(d,u=>u.facultyOcc,formatPercent)}</article><article class="visual-card card-support"><h3>Utilização da CRES</h3><p class="card-subtitle">Carga horária CRES utilizada sobre autorizada</p>${bars(d,u=>u.cres,formatPercent)}</article></div>${metricTable(d,[["IEES",u=>`<strong>${u.sigla}</strong><br><span>${u.region}</span>`],["Ocupação docente",u=>formatPercent(u.facultyOcc)],["TIDE estimado",u=>formatPercent((u.facultyOcc+u.doctors)/2)],["CRES",u=>formatPercent(u.cres)],["Despesa pessoal",u=>formatPercent(u.personnel)],["Estudantes/docente",u=>(u.students/Math.max(1,Math.round(u.students/15))).toFixed(1)]],"Quadro docente, TIDE e capacidade operacional")}`;}
-function employment(c){const d=c.ref;if(!d.length)return empty();return `<div class="score-grid">${score("Inserção no Paraná",formatPercent(mean(d,u=>u.employment)),"Egressos no mercado formal",mean(d,u=>u.employment))}${score("Aderência CBO2",formatPercent(mean(d,u=>u.employment-5)),"Ocupações aderentes à formação",mean(d,u=>u.employment-5))}${score("Média salarial",formatCurrency(mean(d,u=>u.salary)),"Egressos aderentes ao CBO2",76)}</div><div class="chart-grid mt-14"><article class="visual-card card-primary"><h3>Inserção profissional no Paraná</h3><p class="card-subtitle">Taxa de egressos empregados no estado</p>${bars(d,u=>u.employment,formatPercent)}</article><article class="visual-card card-support"><h3>Média salarial dos egressos</h3><p class="card-subtitle">Egressos aderentes ao filtro CBO2</p>${bars(d,u=>u.salary,formatCurrency)}</article></div>${metricTable(d,[["IEES",u=>`<strong>${u.sigla}</strong><br><span>${u.municipality}</span>`],["Paraná",u=>formatPercent(u.employment)],["Região Sul",u=>formatPercent(u.employment+5)],["Cidade-sede",u=>formatPercent(Math.max(25,u.employment-34))],["Aderência CBO2",u=>formatPercent(u.employment-5)],["Dispersão territorial",u=>`${u.territory} pts`]],"Inserção profissional, território e aderência ocupacional")}`;}
+function employment(c){const d=c.ref;if(!d.length)return empty();return `<div class="score-grid">${score("Retenção no Paraná",formatPercent(mean(d,u=>u.employment)),"Egressos no mercado formal",mean(d,u=>u.employment))}${score("Aderência CBO2",formatPercent(mean(d,u=>u.employment-5)),"Ocupações aderentes à formação",mean(d,u=>u.employment-5))}${score("Média salarial",formatCurrency(mean(d,u=>u.salary)),"Egressos aderentes ao CBO2",76)}</div><div class="chart-grid mt-14"><article class="visual-card card-primary"><h3>Retenção de egressos no Paraná</h3><p class="card-subtitle">Taxa de egressos empregados no estado</p>${bars(d,u=>u.employment,formatPercent)}</article><article class="visual-card card-support"><h3>Média salarial dos egressos</h3><p class="card-subtitle">Egressos aderentes ao filtro CBO2</p>${bars(d,u=>u.salary,formatCurrency)}</article></div>${metricTable(d,[["IEES",u=>`<strong>${u.sigla}</strong><br><span>${u.municipality}</span>`],["Paraná",u=>formatPercent(u.employment)],["Região Sul",u=>formatPercent(u.employment+5)],["Cidade-sede",u=>formatPercent(Math.max(25,u.employment-34))],["Aderência CBO2",u=>formatPercent(u.employment-5)],["Dispersão territorial",u=>`${u.territory} pts`]],"Retenção de egressos, território e aderência ocupacional")}`;}
 
 // ── Mini gráfico de linhas SVG — série histórica ind81–87 ───────────────────
 function svgLines(series, years, W, H) {
@@ -3211,38 +3292,57 @@ function historicalChart(u, precomp) {
     {label:'Pessoal (86)', color:'#ef4444', values: years.map(y => precomp[y]?.ind86 ?? null)},
   ].filter(s => s.values.some(v => v != null));
   if (!series.length) return '';
-  const chart = svgLines(series, years, 340, 120);
+  const chart = svgLines(series, years, 620, 220);
   const legend = series.map(s =>
     `<span><span class="orc-dot" style="background:${s.color}"></span>${s.label}</span>`
   ).join('');
   return `<div class="orc-sub-block">
-    <div class="orc-sub-header"><strong>Evolução 2024–2026 · ${u.sigla}</strong><span class="orc-ref-note">Hover nos pontos para valor exato</span></div>
+    <div class="orc-sub-header"><strong>Evolução 2024–2026 · ${u.sigla}</strong></div>
     <div style="overflow-x:auto">${chart}</div>
     <div class="orc-bar-legend" style="margin-top:.4rem">${legend}</div>
   </div>`;
 }
+function historicalPrecompForSigla(sigla) {
+  return window.SETI_BYEAR?.[sigla]
+    ?? ((typeof getRealIndicators === 'function') ? {
+      '2024': getRealIndicators(sigla, '2024') || {},
+      '2025': getRealIndicators(sigla, '2025') || {},
+      '2026': getRealIndicators(sigla, '2026') || {}
+    } : null);
+}
+function renderSelectedHistoricalChart(sigla) {
+  const u = { sigla };
+  return historicalChart(u, historicalPrecompForSigla(sigla)) || '';
+}
+function setOrcHistoryIES(sigla) {
+  state.orcHistoryIES = sigla;
+  const chart = document.getElementById('orcHistoryChart');
+  if (chart) chart.innerHTML = renderSelectedHistoricalChart(sigla);
+}
+window.setOrcHistoryIES = setOrcHistoryIES;
 function trendBlock(c) {
   if (c.f.scope !== 'Paraná') return '';
   const ies = c.display.length ? c.display : [...c.ref];
   if (!ies.length) return '';
-  const charts = ies.map(u => {
-    const precomp = window.SETI_BYEAR?.[u.sigla]
-      ?? ((typeof getRealIndicators === 'function') ? {
-          '2024': getRealIndicators(u.sigla, '2024') || {},
-          '2025': getRealIndicators(u.sigla, '2025') || {},
-          '2026': getRealIndicators(u.sigla, '2026') || {}
-        } : null);
-    return historicalChart(u, precomp) || '';
-  }).filter(Boolean).join('');
-  if (!charts) return '';
+  const available = ies
+    .map(u => u.sigla)
+    .filter(sigla => renderSelectedHistoricalChart(sigla));
+  if (!available.length) return '';
+  const globallySelected = c.selected && available.includes(c.selected.sigla) ? c.selected.sigla : null;
+  const selected = globallySelected
+    || (available.includes(state.orcHistoryIES) ? state.orcHistoryIES : available[0]);
+  state.orcHistoryIES = selected;
+  const options = available.map(sigla =>
+    `<option value="${sigla}"${sigla === selected ? ' selected' : ''}>${sigla}</option>`
+  ).join('');
   return `<article class="visual-card" style="margin-top:1.5rem">
     <h3>Evolução dos indicadores orçamentários (2024–2026)</h3>
     <p class="card-subtitle">Fonte: Relatório da Despesa 8050 · SETI/SEFA · Dados reais — 2026 parcial</p>
-    <div class="metodologia-note" style="margin-bottom:1rem">
-      <span class="metodologia-icon">ⓘ</span>
-      Apenas indicadores com série histórica oficial são exibidos. Indicadores acadêmicos não constam por ausência de série real para anos anteriores.
-    </div>
-    <div class="orc-charts-grid">${charts}</div>
+    <label class="orc-history-selector">
+      <span>IEES analisada</span>
+      <select onchange="setOrcHistoryIES(this.value)">${options}</select>
+    </label>
+    <div id="orcHistoryChart" class="orc-history-chart">${renderSelectedHistoricalChart(selected)}</div>
   </article>`;
 }
 
@@ -3385,7 +3485,7 @@ function orcamentarioKpis(u) {
     ${estrutura}
     ${autonomiaBlock(u)}
     ${investimentoBlock(u)}
-    ${(()=>{const c80=ind80Card(u);return c80?`<div class="orc-sub-block"><div class="orc-sub-header"><strong>Inserção Profissional — Dispersão Territorial</strong></div><div class="orc-kpis-row">${c80}</div></div>`:'';})()} 
+    ${(()=>{const c80=ind80Card(u);return c80?`<div class="orc-sub-block"><div class="orc-sub-header"><strong>Retenção Profissional — Dispersão Territorial</strong></div><div class="orc-kpis-row">${c80}</div></div>`:'';})()} 
     ${(()=>{try{const _precomp=window.SETI_BYEAR&&window.SETI_BYEAR[u.sigla];return historicalChart(u,_precomp);}catch(e){return '';}})()}
   </article>`;
 }
@@ -3437,7 +3537,7 @@ function investimentoBlock(u) {
       ${icard('IND-88','Razão Correntes/Capital',e88,'neutral',0,0,'Quanto maior, menor capacidade de investimento', fmt88)}
       ${icard('IND-92','Obras (Elem. 51)',e92,'up',3,1,'↑ melhor · % do Orçamento Atualizado',null)}
       ${icard('IND-93','Equipamentos (Elem. 52)',e93,'up',3,1,'↑ melhor · % do Orçamento Atualizado',null)}
-      ${icard('IND-95','Execução/LOA Inicial',e95,'up',85,70,'Referência ≥ 85%',null)}
+      ${icard('ind95orc','Execução/LOA Inicial',e95,'up',85,70,'Referência ≥ 85%',null)}
     </div>
   </div>`;
 }
@@ -3459,7 +3559,7 @@ function orcamentarioTable(rows) {
   const tbody = rows.map(u=>`<tr>${cols.map(([,val,col])=>`<td ${col?col(u):''}>${val(u)}</td>`).join('')}</tr>`).join('');
   return `<article class="visual-card orc-block">
     <h3>Eficiência e Estrutura Orçamentária — Comparação</h3>
-    <p class="card-subtitle">Indicadores 81–87, 88 e 95 — Relatório da Despesa 8050. Verde ≥ 90%, amarelo ≥ 75%, vermelho &lt; 75% (IND 81–83). IND-84 invertido (↓ melhor). IND-95: verde ≥ 85%.</p>
+    <p class="card-subtitle">Indicadores 81–87, 88 e legado ind95orc — Relatório da Despesa 8050. Verde ≥ 90%, amarelo ≥ 75%, vermelho &lt; 75% (IND 81–83). IND-84 invertido (↓ melhor). ind95orc: verde ≥ 85%.</p>
     <div style="overflow-x:auto"><table class="data-table"><thead><tr>${hd}</tr></thead><tbody>${tbody}</tbody></table></div>
   </article>`;
 }
@@ -3525,7 +3625,7 @@ function matrixRows(d,f){if(!d.length)return [];const res=resultIndicators[f.res
 function composite(u){return u.occupancy*.15+u.completion*.15+(100-u.dropout)*.12+u.doctors*.14+norm(resultIndicators.cnpq.get(u),900,1900)*.12+norm(u.capes,3.2,5)*.1+panelEmploymentRate(u)*.12+norm(panelEmploymentSalary(u),4500,6500)*.1;}
 function summarize(rows){const top=rows.reduce((b,r)=>r.resultRel>(b?.resultRel||0)?r:b,null);return top?top.quadrant:"sem dados";}
 function badge(v,g,w){return v>=g?"adequado":v>=w?"atenção":"crítico";}
-function pct(v,m){return clamp(v/m*100,0,100);}function relpos(v){return clamp(((v-70)/60)*84+8,8,92);}function norm(v,min,max){return clamp((v-min)/(max-min)*100,0,100);}function uniq(v){return [...new Set(v)].sort((a,b)=>a.localeCompare(b,"pt-BR"));}function sum(d,get){return d.reduce((t,x)=>t+get(x),0);}function mean(d,get){return d.length?sum(d,get)/d.length:0;}function wavg(d,get,w){const tw=sum(d,w);return tw?sum(d,x=>get(x)*w(x))/tw:mean(d,get);}function percentile(v,p){if(!v.length)return 0;const i=(v.length-1)*p/100,l=Math.floor(i),u=Math.ceil(i);return l===u?v[l]:v[l]+(v[u]-v[l])*(i-l);}function clamp(v,min,max){return Math.min(Math.max(v,min),max);}function round(v,d=0){const f=10**d;return Math.round(v*f)/f;}
+function pct(v,m){return clamp(v/m*100,0,100);}function relpos(v){return clamp(((v-70)/60)*84+8,8,92);}function norm(v,min,max){return clamp((v-min)/(max-min)*100,0,100);}function uniq(v){return [...new Set(v)].sort((a,b)=>a.localeCompare(b,"pt-BR"));}function sum(d,get){return d.reduce((t,x)=>{const v=get(x);return v==null?t:t+v;},0);}function mean(d,get){const vals=d.map(get).filter(v=>v!=null);return vals.length?vals.reduce((t,v)=>t+v,0)/vals.length:0;}function wavg(d,get,w){const tw=sum(d,w);return tw?sum(d,x=>get(x)*w(x))/tw:mean(d,get);}function percentile(v,p){if(!v.length)return 0;const i=(v.length-1)*p/100,l=Math.floor(i),u=Math.ceil(i);return l===u?v[l]:v[l]+(v[u]-v[l])*(i-l);}function clamp(v,min,max){return Math.min(Math.max(v,min),max);}function round(v,d=0){const f=10**d;return Math.round(v*f)/f;}
 function formatNumber(v){return new Intl.NumberFormat("pt-BR",{maximumFractionDigits:0}).format(v||0);}function formatPercent(v){return `${new Intl.NumberFormat("pt-BR",{minimumFractionDigits:1,maximumFractionDigits:1}).format(v||0)}%`;}function formatCurrency(v){return new Intl.NumberFormat("pt-BR",{style:"currency",currency:"BRL",maximumFractionDigits:0}).format(v||0);}function formatCurrencyMillions(v){return `R$ ${new Intl.NumberFormat("pt-BR",{maximumFractionDigits:1}).format(v||0)} mi`;}
 
 // ── Helpers de sinalização de bases reais ─────────────────────────────
@@ -3550,7 +3650,7 @@ function brBenchmarkTag(def) {
   if (!def || typeof def.benchmark !== "function") return "";
   const val = def.benchmark();
   if (!val) return "";
-  // Benchmarks de inserção (IND-37) e salário (IND-40) não têm fonte nacional
+  // Benchmarks de retenção (IND-37) e salário (IND-40) não têm fonte nacional
   // (RAIS cobre só o PR) — permanecem como referência estimada.
   const est = (def.code === "IND-37" || def.code === "IND-40")
     ? estBadge("Referência nacional estimada — RAIS cobre apenas o Paraná, sem equivalente nacional")
@@ -3622,11 +3722,11 @@ const decisoryQuestions = {
 
 const tabBlocks = {
   comparison: ["Tabela comparativa", "Ranking", "Radar"],
-  access: ["Escala da oferta", "Ocupação e ociosidade", "Catálogo de indicadores e Distribuição territorial"],
-  retention: ["Funil", "Taxas", "Evolução do ranking por ano", "Dispersão", "Ranking por curso", "IND-27 × inserção profissional"],
+  access: ["Escala da oferta", "Ocupação e vagas não ocupadas", "Catálogo de indicadores e Distribuição territorial"],
+  retention: ["Funil", "Taxas", "Evolução do ranking por ano", "Dispersão", "Ranking por curso"],
   quality: ["Qualificação docente", "Pós-grad e CAPES", "Pesquisa e CNPq", "Internacionalização"],
   faculty: ["Quadro legal", "Vagas disponíveis e condicionadas", "TIDE", "CRES e esforço"],
-  employment: ["Inserção geral", "Inserção PR e Sul", "CBO2 e salário", "Destino territorial", "Por curso", "Perfil ocupacional"],
+  employment: ["Inserção geral", "Retenção PR e Sul", "CBO2 e salário", "Destino territorial", "Por curso", "Perfil ocupacional"],
   efficiency: ["Perfil da movimentação", "Composição crédito e despesa"],
   performance: ["Resposta ao Piloto", "Cruzamento desempenho acadêmico", "Cruzamento corpo docente", "Matriz de oportunidades e alertas"]
 };
@@ -3646,7 +3746,7 @@ const tabIndicators = {
     { code:"ind6",  label:"Proporção de docentes com doutorado" },
     { code:"ind26", label:"Taxa de ocupação das vagas" },
     { code:"ind27", label:"Concluintes sobre matrículas" },
-    { code:"ind37", label:"Taxa de inserção de egressos no PR" },
+    { code:"ind37", label:"Taxa de retenção de egressos no PR" },
     { code:"ind81", label:"Taxa de execução orçamentária" }
   ],
   access: [
@@ -3695,7 +3795,7 @@ const tabIndicators = {
   employment: [
     { code:"ind33", label:"Egressos IEES" },
     { code:"ind35", label:"Taxa de inserção – Região Sul" },
-    { code:"ind37", label:"Taxa de inserção no mercado PR" },
+    { code:"ind37", label:"Taxa de retenção no mercado PR" },
     { code:"ind39", label:"Egressos em ocupações aderentes CBO2" },
     { code:"ind40", label:"Média salarial dos egressos no PR" },
     { code:"ind42", label:"Taxa de egressos empregados na cidade-sede" },
@@ -3710,7 +3810,7 @@ const tabIndicators = {
     { code:"ind85", label:"Variação da dotação orçamentária" },
     { code:"ind86", label:"Participação de pessoal no total da despesa" },
     { code:"ind89", label:"Participação de recursos livres" },
-    { code:"ind90", label:"Participação de recursos próprios" },
+    { code:"ind90", label:"Fonte 501 - arrecadação própria" },
     { code:"ind95orc", label:"Execução sobre orçamento inicial" },
     { code:"ind96orc", label:"Execução sobre orçamento disponível" },
     { code:"ind97orc", label:"Execução sobre orçamento atualizado" }
@@ -3733,8 +3833,10 @@ const IND_FIELD_MAP = {
   ind15: u=>u.courses?+(u.vacancies/u.courses).toFixed(1):null,
   ind16: u=>u.vacancies/overviewMetricUniverseTotal(x=>x.vacancies)*100,
   ind17: u=>overviewMetricMunicipalityTotal(u,x=>x.vacancies)/overviewMetricUniverseTotal(x=>x.vacancies)*100,
+  ind19: u=>u.courses/overviewMetricUniverseTotal(x=>x.courses)*100,
   ind20: u=>overviewMetricMunicipalityTotal(u,x=>x.courses)/overviewMetricUniverseTotal(x=>x.courses)*100,
   ind21: u=>u.students/Math.max(u.courses,1),
+  ind22: u=>u.students/overviewMetricUniverseTotal(x=>x.students)*100,
   ind23: u=>u.students/Math.max(u.vacancies,1),
   ind24: u=>u.occupancy,
   ind25: u=>u.vacanciesNovaUnfilled!=null?u.vacanciesNovaUnfilled:Math.max(0,Math.round((u.vacanciesNova!=null?u.vacanciesNova:u.vacancies*.82)-u.entrants)),
@@ -3812,7 +3914,27 @@ const IND_FIELD_MAP = {
   ind95orc: u=>budgetMetrics(u).execInitial,
   ind96orc: u=>budgetMetrics(u).execAvailable,
   ind97orc: u=>budgetMetrics(u).execUpdated,
+  ind95: u=>u.pgMestrado,
+  ind96: u=>u.pgMestradoProf,
+  ind97: u=>u.pgDoutorado,
+  ind98: u=>indicatorDistributionTotal(u.pgPorGrandeArea),
+  ind99: u=>u.discMestrado,
+  ind100: u=>u.discDoutorado,
+  ind101: u=>u.tituladosMestrado,
+  ind102: u=>u.tituladosDoutorado,
+  ind103: u=>u.docPermanentes,
+  ind104: u=>u.docColaboradores,
+  ind105: u=>u.docVisitantes,
+  ind106: u=>u.razaoDocenteDiscente,
+  ind107: u=>u.pgMunicipiosDistintos,
+  ind108: u=>u.pctExcelencia,
 };
+
+function indicatorDistributionTotal(value) {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return null;
+  const values = Object.values(value).map(Number).filter(Number.isFinite);
+  return values.length ? values.reduce((total, current) => total + current, 0) : null;
+}
 
 IND_FIELD_MAP["students"]  = IND_FIELD_MAP["ind2"];
 IND_FIELD_MAP["courses"]   = IND_FIELD_MAP["ind10"];
@@ -3865,7 +3987,7 @@ const tabBlockIndMap = {
   },
   access: {
     "Escala da oferta":         ["ind10","ind11","ind15","ind16","ind17"],
-    "Ocupação e ociosidade":    ["ind1","ind3","ind24","ind26","ind29","ind67"],
+    "Ocupação e vagas não ocupadas":    ["ind1","ind3","ind24","ind26","ind29","ind67"],
     "Catálogo de indicadores e Distribuição territorial": ["ind4","ind67","ind68","ind69"]
   },
   retention: {
@@ -3873,8 +3995,7 @@ const tabBlockIndMap = {
     "Taxas":                       ["ind5","ind27"],
     "Evolução do ranking por ano": ["ind5","ind14","ind27"],
     "Dispersão":                   ["ind5","ind12","ind27"],
-    "Ranking por curso":           ["ind5","ind27"],
-    "IND-27 × inserção profissional": ["ind27"]
+    "Ranking por curso":           ["ind5","ind27"]
   },
   quality: {
     "Qualificação docente": ["ind6","ind7","ind8","ind9"],
@@ -3890,7 +4011,7 @@ const tabBlockIndMap = {
   },
   employment: {
     "Inserção geral":    ["ind33","ind37","ind39"],
-    "Inserção PR e Sul": ["ind35","ind37"],
+    "Retenção PR e Sul": ["ind35","ind37"],
     "CBO2 e salário":    ["ind39","ind40","ind76"],
     "Destino territorial": ["ind42","ind80"],
     "Por curso":         ["ind33"],
@@ -4062,7 +4183,7 @@ function tabMiniKpis(tabId, c) {
     const unfilled = Math.max(0, a.vacancies - Math.round(a.vacancies * a.occupancy / 100));
     kpis = miniKpi("Vagas totais", formatNumber(a.vacancies))
          + miniKpi("Ocupação média", formatPercent(a.occupancy))
-         + miniKpi("Vagas ociosas", formatNumber(unfilled));
+         + miniKpi("Vagas não ocupadas", formatNumber(unfilled));
   } else if (tabId === "retention") {
     kpis = miniKpi("Ingressantes", formatNumber(a.entrants))
          + miniKpi("Concluintes sobre matrículas", formatPercent(a.completion))
@@ -4076,7 +4197,7 @@ function tabMiniKpis(tabId, c) {
          + miniKpi("Utilização CRES", formatPercent(mean(d, u => u.cres)))
          + miniKpi("Despesa pessoal", formatPercent(mean(d, u => u.personnel)));
   } else if (tabId === "employment") {
-    kpis = miniKpi("Inserção média", formatPercent(mean(d, u => panelEmploymentRate(u))))
+    kpis = miniKpi("Retenção média PR", formatPercent(mean(d, u => panelEmploymentRate(u))))
          + miniKpi("Salário médio", formatCurrency(mean(d, u => panelEmploymentSalary(u))))
          + miniKpi("Aderência CBO2", formatPercent(mean(d, u => u.employment - 5)));
   } else if (tabId === "efficiency") {
@@ -4141,7 +4262,7 @@ function renderBlockContent(tabId, title, c) {
   }
   if (tabId === "quality") return title.includes("Docente") ? `<article class="visual-card">${brRefBars(d, u => u.doctors, formatPercent, "doctorate")}</article>` : title.includes("CAPES") ? `<article class="visual-card">${brRefBars(d, u => u.capes, v => v.toFixed(1), "capes")}</article>` : title.includes("CNPq") ? `<article class="visual-card">${bars(d, u => u.cnpq, formatCurrencyMillions)}</article>` : metricTable(d, [["IEES", u => u.sigla], ["CAPES", u => u.capes.toFixed(1)], ["PG", u => formatNumber(u.pg)], ["CAPES 5-7", u => formatNumber(u.pgTop)]], "Internacionalização e maturidade");
   if (tabId === "faculty") return title.includes("CRES") ? `<article class="visual-card">${bars(d, u => u.cres, formatPercent)}</article>${prOnly ? nationalUnavailableNote("Capacidade Residual de Expansão (CRES)") : ""}` : title.includes("Alertas") ? `<div class="system-alerts-list">${document.getElementById("systemAlerts")?.innerHTML || ""}</div>` : metricTable(d, [["IEES", u => u.sigla], ["Ocupação docente", u => formatPercent(u.facultyOcc)], ["TIDE estimado", u => formatPercent((u.facultyOcc + u.doctors) / 2)], ["Pessoal", u => formatPercent(u.personnel)]], title);
-  if (tabId === "employment") return title.includes("salário") ? `<article class="visual-card">${prOnly ? barsWithBrRef(d, u => u.salary, formatCurrency, brVal("salary"), false) : barsWithBrRef(d, u => u.salary, formatCurrency, null, true)}</article>${prOnly ? nationalUnavailableNote("distribuição regional de egressos") : ""}` : title.includes("Inserção") ? `<article class="visual-card">${brRefBars(d, u => u.employment, formatPercent, "employment")}</article>` : metricTable(d, [["IEES", u => u.sigla], ["Município", u => u.municipality], ["Inserção PR", u => formatPercent(u.employment)], ["Dispersão", u => `${u.territory} pts`]], title);
+  if (tabId === "employment") return title.includes("salário") ? `<article class="visual-card">${prOnly ? barsWithBrRef(d, u => u.salary, formatCurrency, brVal("salary"), false) : barsWithBrRef(d, u => u.salary, formatCurrency, null, true)}</article>${prOnly ? nationalUnavailableNote("distribuição regional de egressos") : ""}` : title.includes("Inserção") ? `<article class="visual-card">${brRefBars(d, u => u.employment, formatPercent, "employment")}</article>` : metricTable(d, [["IEES", u => u.sigla], ["Município", u => u.municipality], ["Retenção PR", u => formatPercent(u.employment)], ["Dispersão", u => `${u.territory} pts`]], title);
   if (tabId === "efficiency" && title.includes("Matriz")) return efficiency(c);
   if (tabId === "efficiency" && title.includes("Composição")) return `${metricTable(d, [["IEES", u => u.sigla], ["Orçamento", u => formatCurrencyMillions(u.budget)], ["Pessoal", u => formatPercent(u.personnel)], ["Suplementação", u => formatPercent(u.supplementation)]], title)}${prOnly ? nationalUnavailableNote("execução orçamentária") : ""}`;
   if (tabId === "efficiency") return `<div class="chart-grid">
@@ -4243,7 +4364,7 @@ state.overviewMetric = state.overviewMetric || "students";
 
 const overviewMetricPercentCodes = new Set([
   "IND-1","IND-3","IND-4","IND-5","IND-6","IND-7","IND-8","IND-9",
-  "IND-16","IND-17","IND-20","IND-24","IND-26","IND-27","IND-29","IND-30",
+  "IND-16","IND-17","IND-19","IND-20","IND-22","IND-24","IND-26","IND-27","IND-29","IND-30",
   "IND-31","IND-32","IND-35","IND-37","IND-39","IND-42","IND-46","IND-47",
   "IND-49","IND-51","IND-52","IND-56","IND-58","IND-59","IND-63","IND-64","IND-65","IND-66",
   "IND-67","IND-68","IND-69","IND-71","IND-73","IND-77","IND-79","IND-80",
@@ -4267,7 +4388,7 @@ var overviewKpiDefinitions = [
   { code: "IND-5", title: "Taxa anual de desvinculação discente", source: "INEP", formula: "QT_DESVINCULADO / QT_MAT × 100", polarity: "↓", mode: "pp", benchmark: () => formatPercent(100 - brazil.result.permanence), get: a => a.dropout, fmt: formatPercent },
   { code: "IND-27", title: "Concluintes sobre matrículas", source: "INEP", formula: "QT_CONC / QT_MAT × 100", polarity: "↑", mode: "pp", benchmark: () => formatPercent(brazil.result.completion), get: a => a.completion, fmt: formatPercent },
   { code: "IND-6", title: "Docentes com doutorado", source: "INEP", formula: "QT_DOC_EX_DOUT / QT_DOC_EXE × 100", polarity: "↑", mode: "pp", benchmark: () => formatPercent(brazil.result.doctorate), get: a => a.doctors, fmt: formatPercent },
-  { code: "IND-37", title: "Inserção de egressos no Paraná", source: "SETI / RAIS", formula: "Egressos PR / Total egressos × 100", polarity: "↑", mode: "pp", benchmark: () => formatPercent(brazil.result.employment), get: a => a.employment, fmt: formatPercent },
+  { code: "IND-37", title: "Taxa de retenção de egressos pelo Estado do Paraná", source: "SETI / RAIS", formula: "Egressos PR / Total egressos × 100", polarity: "↑", mode: "pp", benchmark: () => formatPercent(brazil.result.employment), get: a => a.employment, fmt: formatPercent },
   { code: "IND-40", title: "Média salarial dos egressos", source: "SETI / RAIS", formula: "Média salarial PR + CBO2", polarity: "↑", mode: "pct", benchmark: () => formatCurrency(brazil.result.salary), get: a => a.salary, fmt: formatCurrency },
   { code: "IND-60", title: "Captação de recursos do CNPq", source: "CNPq", formula: "Bolsas, auxílios e projetos", polarity: "↑", mode: "pct", get: a => a.cnpq, fmt: formatCurrencyMillions },
   { code: "IND-81", title: "Taxa de execução orçamentária", source: "Relatório 8050", formula: "Empenhado / Orçamento atualizado × 100", polarity: "↑", mode: "pp", get: a => a.execution, fmt: formatPercent }
@@ -4379,7 +4500,7 @@ function overview(c) {
   <div class="score-grid mt-14">
     ${score("Ocupação das vagas", formatPercent(a.occupancy), "IND-26", a.occupancy, brVal("occupancy"))}
     ${score("Desvinculação", formatPercent(a.dropout), "IND-5", 100 - a.dropout, brVal("permanence"))}
-    ${score("Inserção PR", formatPercent(a.employment), "IND-37", a.employment, brVal("employment"))}
+    ${score("Retenção PR", formatPercent(a.employment), "IND-37", a.employment, brVal("employment"))}
     ${score("Execução orçamentária", formatPercent(a.execution), "IND-81", a.execution)}
   </div>
   ${(() => {
@@ -4503,7 +4624,7 @@ function renderSystemAlerts(c) {
       "Vale verificar se a ociosidade reflete vagas condicionadas à autorização governamental ou vacância por concurso não realizado — os dois casos pedem respostas diferentes. Cruzar com a Taxa de Utilização da CRES pode ajudar a dimensionar a margem disponível e orientar uma eventual redistribuição de carga entre campi."
     ]);
     if (u.employment < avgEmployment - 5) alerts.push(["alert-warn", "⚠", u.sigla,
-      `Taxa de Inserção de Egressos no Mercado Formal (Paraná): ${formatPercent(u.employment)} — abaixo da média ${refType} (${formatPercent(avgEmployment)}).`,
+      `Taxa de Retenção de Egressos pelo Estado do Paraná: ${formatPercent(u.employment)} — abaixo da média ${refType} (${formatPercent(avgEmployment)}).`,
       "Pode valer analisar quais cursos concentram os menores índices de inserção, cruzando com o perfil CBO2 e o território de atuação dos egressos. Baixas taxas podem refletir saturação regional de certas ocupações ou oportunidades de atualização curricular — um diálogo com o setor produtivo local pode ajudar a identificar caminhos."
     ]);
   });
@@ -4532,14 +4653,14 @@ comparisonIndicatorSets = typeof buildComparisonIndicatorSets === "function" ? b
 // Eixo Permanência (retenção):100-u.dropout      → IND-5↑ → Base Cursos INEP       (real)   → BR: brazil.result.permanence = 88.1 (benchmark estimado)
 // Eixo Qualidade:             u.doctors          → IND-6  → Base IES INEP          (real)   → BR: brazil.result.doctorate  = 82.6 (benchmark estimado)
 // Eixo Pesquisa:              u.cnpq*1e6/students→ IND-60 → Base CNPq              (real)   → BR: brazil.result.cnpq       = 1700 R$/est. (benchmark estimado)
-// Eixo Inserção:              u.employment       → IND-37 → Base RAIS Egressos     (real)   → BR: brazil.result.employment = 68.4 (benchmark estimado)
+// Eixo Retenção:              u.employment       → IND-37 → Base RAIS Egressos     (real)   → BR: brazil.result.employment = 68.4 (benchmark estimado)
 // Eixo Orçamento:             u.execution        → IND-81 → Relatório Despesa 8050 (real)   → BR: INDISPONÍVEL — sem campo em brazil.result; não comparável com IEES nacionais
 var radarAxes = [
   { label: "Acesso",                 code: "IND-26", get: u => u.occupancy,                 br: () => brazil.result.occupancy  },
   { label: "Permanência (retenção)", code: "IND-5",  get: u => 100 - u.dropout,             br: () => brazil.result.permanence },
   { label: "Qualidade",              code: "IND-6",  get: u => u.doctors,                   br: () => brazil.result.doctorate  },
   { label: "Pesquisa",               code: "IND-60", get: u => resultIndicators.cnpq.get(u),br: () => brazil.result.cnpq       },
-  { label: "Inserção",               code: "IND-37", get: u => u.employment,                br: () => brazil.result.employment },
+  { label: "Retenção PR",             code: "IND-37", get: u => u.employment,                br: () => brazil.result.employment },
   { label: "Orçamento",              code: "IND-81", get: u => u.execution,                 br: () => null, brUnavailable: true }
 ];
 
@@ -4755,7 +4876,7 @@ window.exportAccessTerritoryCSV = function() {
   URL.revokeObjectURL(url);
 };
 
-/* Aba 5 - Qualidade, Pesquisa e Pós-Graduação */
+/* Aba 5 - Qualificação docente, Pesquisa e Pós-Graduação */
 var previousRenderBlockContentQuality = renderBlockContent;
 renderBlockContent = function(tabId, title, c) {
   if (tabId === "quality") return qualityBlock(title, c);
@@ -4863,7 +4984,7 @@ const indicatorFullNames = {
   "IND-34": "Egressos inseridos no mercado de trabalho formal (Região Sul)",
   "IND-35": "Taxa de inserção de egressos (Região Sul)",
   "IND-36": "Egressos inseridos no mercado de trabalho formal (Paraná)",
-  "IND-37": "Taxa de inserção de egressos no mercado de trabalho no Paraná",
+  "IND-37": "Taxa de retenção de egressos pelo Estado do Paraná",
   "IND-38": "Egressos aderentes ao filtro CBO2 inseridos no mercado de trabalho (Paraná)",
   "IND-39": "Percentual de egressos empregados no Paraná em ocupações aderentes ao CBO2",
   "IND-40": "Média salarial dos egressos inseridos no mercado de trabalho do Paraná aderentes ao CBO2",
@@ -4896,17 +5017,17 @@ const indicatorFullNames = {
   "IND-67": "Taxa de Ocupação de Vagas por Tipo de Curso",
   "IND-68": "Índice de Especialização da Oferta Acadêmica",
   "IND-69": "Proporção de Cursos de Licenciatura na Oferta",
-  "IND-70": "Indicador sem cadastro na relação oficial de indicadores",
-  "IND-71": "Egressos inseridos no mercado formal por município de vínculo",
-  "IND-72": "Participação do município na inserção formal dos egressos",
-  "IND-73": "Egressos inseridos no mercado formal por curso padronizado",
-  "IND-74": "Participação do curso na inserção formal dos egressos",
-  "IND-75": "Egressos inseridos no mercado formal por tipo de curso",
-  "IND-76": "Diversidade ocupacional dos egressos por curso",
-  "IND-77": "Distribuição dos egressos por grande grupo ocupacional CBO2",
-  "IND-78": "Participação dos grandes grupos ocupacionais CBO2 na inserção dos egressos",
-  "IND-79": "Municípios de destino profissional dos egressos por curso",
-  "IND-80": "Índice de dispersão territorial dos egressos por curso",
+  "IND-70": "Egressos inseridos no mercado formal por município de vínculo",
+  "IND-71": "Participação do município na inserção formal dos egressos",
+  "IND-72": "Egressos inseridos no mercado formal por curso padronizado",
+  "IND-73": "Participação do curso na inserção formal dos egressos",
+  "IND-74": "Egressos inseridos no mercado formal por tipo de curso",
+  "IND-75": "Diversidade ocupacional dos egressos por curso",
+  "IND-76": "Distribuição dos egressos por grande grupo ocupacional CBO2",
+  "IND-77": "Participação dos grandes grupos ocupacionais CBO2 na inserção dos egressos",
+  "IND-78": "Municípios de destino profissional dos egressos por curso",
+  "IND-79": "Índice de dispersão territorial dos egressos por curso",
+  "IND-80": "Índice de inserção territorial",
   "IND-81": "Taxa de Execução Orçamentária (Empenho)",
   "IND-82": "Taxa de Liquidação",
   "IND-83": "Taxa de Pagamento sobre Liquidado",
@@ -4916,15 +5037,36 @@ const indicatorFullNames = {
   "IND-87": "Participação de Outras Despesas Correntes no Total",
   "IND-88": "Proporção Despesas Correntes vs. Despesas de Capital",
   "IND-89": "Participação de Recursos Livres (Tesouro Estadual) no Orçamento Total",
-  "IND-90": "Participação de Recursos Próprios no Orçamento Total",
+  "IND-90": "Participação da Fonte da Despesa \"501 - Arrecadação Própria\" no Orçamento Atualizado",
   "IND-91": "Participação de Recursos de Transferências (Federal/Convênios)",
   "IND-92": "Participação de Investimentos em Obras e Instalações no Orçamento Total",
   "IND-93": "Participação de Investimentos em Equipamentos e Material Permanente no Orçamento Total",
   "IND-94": "Percentual de variação da dotação orçamentária em relação à LOA inicial",
-  "IND-95": "Percentual de execução de liquidação do Orçamento Inicial",
-  "IND-96": "Percentual de execução de liquidação do Orçamento Disponível",
-  "IND-97": "Percentual de execução de liquidação do Orçamento Atualizado"
+  "IND-95": "Programas de Mestrado Acadêmico (contagem)",
+  "IND-96": "Programas de Mestrado Profissional (contagem)",
+  "IND-97": "Programas de Doutorado (contagem)",
+  "IND-98": "Distribuição de Programas por Grande Área do Conhecimento",
+  "IND-99": "Discentes Matriculados em Mestrado",
+  "IND-100": "Discentes Matriculados em Doutorado",
+  "IND-101": "Titulados em Mestrado (ano-base)",
+  "IND-102": "Titulados em Doutorado (ano-base)",
+  "IND-103": "Docentes Permanentes da Pós-Graduação (contagem)",
+  "IND-104": "Docentes Colaboradores da Pós-Graduação (contagem)",
+  "IND-105": "Docentes Visitantes da Pós-Graduação (contagem)",
+  "IND-106": "Razão Discente/Docente Permanente da Pós-Graduação",
+  "IND-107": "Capilaridade Territorial dos Programas de Pós-Graduação",
+  "IND-108": "Proporção de Programas com Conceito CAPES 6-7"
 };
+
+const legacyBudgetIndicatorFullNames = {
+  ind95orc: "Percentual de execução de liquidação do Orçamento Inicial",
+  ind96orc: "Percentual de execução de liquidação do Orçamento Disponível",
+  ind97orc: "Percentual de execução de liquidação do Orçamento Atualizado"
+};
+
+function legacyBudgetIndicatorName(key) {
+  return legacyBudgetIndicatorFullNames[String(key || "").toLowerCase()] || "Indicador orçamentário legado sem nome cadastrado";
+}
 
 function indicatorName(code) {
   const normalized = `IND-${Number(String(code).replace(/\D/g, ""))}`;
@@ -4941,6 +5083,11 @@ function expandIndicatorCodes(root) {
     acceptNode(node) {
       const parentName = node.parentElement?.tagName?.toLowerCase();
       if (["script", "style", "noscript"].includes(parentName)) return NodeFilter.FILTER_REJECT;
+      // Coluna de código do catálogo de indicadores (.ind-option-code) tem seu
+      // próprio formato de exibição (formatCatalogCodeLabel) e não deve ser
+      // expandida para o nome completo — senão duplica o nome já mostrado em
+      // .ind-option-title ao lado.
+      if (node.parentElement?.closest(".ind-option-code")) return NodeFilter.FILTER_REJECT;
       return /\bIND-\d{1,3}\b/.test(node.nodeValue) ? NodeFilter.FILTER_ACCEPT : NodeFilter.FILTER_SKIP;
     }
   });
@@ -4964,7 +5111,7 @@ document.addEventListener("DOMContentLoaded", () => {
   window.setTimeout(() => expandIndicatorCodes(document.body), 0);
 });
 
-/* Aba 7 - Inserção Profissional: blocos analíticos por cluster */
+/* Aba 7 - Retenção Profissional: blocos analíticos por cluster */
 var previousRenderBlockContentEmployment = renderBlockContent;
 renderBlockContent = function(tabId, title, c) {
   if (tabId === "employment") return employmentBlock(title, c);
@@ -5219,16 +5366,16 @@ const indicatorCatalogMeta = {
   "IND-30": {category:"Acesso e Inclusão", unit:"Percentual"},
   "IND-31": {category:"Acesso e Inclusão", unit:"Percentual"},
   "IND-32": {category:"Oferta e Territorialização", unit:"Percentual"},
-  "IND-33": {category:"Inserção Profissional", unit:"Número"},
-  "IND-34": {category:"Inserção Profissional", unit:"Número"},
-  "IND-35": {category:"Inserção Profissional", unit:"Percentual"},
-  "IND-36": {category:"Inserção Profissional", unit:"Número"},
-  "IND-37": {category:"Inserção Profissional", unit:"Percentual"},
-  "IND-38": {category:"Inserção Profissional", unit:"Número"},
-  "IND-39": {category:"Inserção Profissional", unit:"Percentual"},
-  "IND-40": {category:"Inserção Profissional", unit:"Número"},
-  "IND-41": {category:"Inserção Profissional", unit:"Número"},
-  "IND-42": {category:"Inserção Profissional", unit:"Percentual"},
+  "IND-33": {category:"Retenção Profissional", unit:"Número"},
+  "IND-34": {category:"Retenção Profissional", unit:"Número"},
+  "IND-35": {category:"Retenção Profissional", unit:"Percentual"},
+  "IND-36": {category:"Retenção Profissional", unit:"Número"},
+  "IND-37": {category:"Retenção Profissional", unit:"Percentual"},
+  "IND-38": {category:"Retenção Profissional", unit:"Número"},
+  "IND-39": {category:"Retenção Profissional", unit:"Percentual"},
+  "IND-40": {category:"Retenção Profissional", unit:"Número"},
+  "IND-41": {category:"Retenção Profissional", unit:"Número"},
+  "IND-42": {category:"Retenção Profissional", unit:"Percentual"},
   "IND-43": {category:"Qualidade Acadêmica", unit:"Número"},
   "IND-44": {category:"Qualidade Acadêmica", unit:"Número"},
   "IND-45": {category:"Corpo Docente", unit:"Número"},
@@ -5256,16 +5403,16 @@ const indicatorCatalogMeta = {
   "IND-67": {category:"Acesso e Inclusão", unit:"Percentual"},
   "IND-68": {category:"Oferta e Territorialização", unit:"Índice (0 a 1)"},
   "IND-69": {category:"Oferta e Territorialização", unit:"Percentual"},
-  "IND-71": {category:"Inserção Profissional", unit:"Número"},
-  "IND-72": {category:"Inserção Profissional", unit:"Percentual"},
-  "IND-73": {category:"Inserção Profissional", unit:"Número"},
-  "IND-74": {category:"Inserção Profissional", unit:"Percentual"},
-  "IND-75": {category:"Inserção Profissional", unit:"Número"},
-  "IND-76": {category:"Inserção Profissional", unit:"Número"},
-  "IND-77": {category:"Inserção Profissional", unit:"Número"},
-  "IND-78": {category:"Inserção Profissional", unit:"Percentual"},
-  "IND-79": {category:"Inserção Profissional", unit:"Número"},
-  "IND-80": {category:"Inserção Profissional", unit:"Razão"},
+  "IND-71": {category:"Retenção Profissional", unit:"Número"},
+  "IND-72": {category:"Retenção Profissional", unit:"Percentual"},
+  "IND-73": {category:"Retenção Profissional", unit:"Número"},
+  "IND-74": {category:"Retenção Profissional", unit:"Percentual"},
+  "IND-75": {category:"Retenção Profissional", unit:"Número"},
+  "IND-76": {category:"Retenção Profissional", unit:"Número"},
+  "IND-77": {category:"Retenção Profissional", unit:"Número"},
+  "IND-78": {category:"Retenção Profissional", unit:"Percentual"},
+  "IND-79": {category:"Retenção Profissional", unit:"Número"},
+  "IND-80": {category:"Retenção Profissional", unit:"Razão"},
   "IND-81": {category:"Eficiência Orçamentária", unit:"Percentual"},
   "IND-82": {category:"Eficiência Orçamentária", unit:"Percentual"},
   "IND-83": {category:"Eficiência Orçamentária", unit:"Percentual"},
@@ -5280,9 +5427,20 @@ const indicatorCatalogMeta = {
   "IND-92": {category:"Capacidade de Investimento", unit:"Percentual"},
   "IND-93": {category:"Capacidade de Investimento", unit:"Percentual"},
   "IND-94": {category:"Eficiência Orçamentária", unit:"Percentual"},
-  "IND-95": {category:"Eficiência Orçamentária", unit:"Percentual"},
-  "IND-96": {category:"Eficiência Orçamentária", unit:"Percentual"},
-  "IND-97": {category:"Eficiência Orçamentária", unit:"Percentual"}
+  "IND-95": {category:"Oferta e Territorialização", unit:"Número"},
+  "IND-96": {category:"Oferta e Territorialização", unit:"Número"},
+  "IND-97": {category:"Oferta e Territorialização", unit:"Número"},
+  "IND-98": {category:"Oferta e Territorialização", unit:"Número"},
+  "IND-99": {category:"Acesso e Inclusão", unit:"Número"},
+  "IND-100": {category:"Acesso e Inclusão", unit:"Número"},
+  "IND-101": {category:"Permanência e Conclusão", unit:"Número"},
+  "IND-102": {category:"Permanência e Conclusão", unit:"Número"},
+  "IND-103": {category:"Corpo Docente", unit:"Número"},
+  "IND-104": {category:"Corpo Docente", unit:"Número"},
+  "IND-105": {category:"Corpo Docente", unit:"Número"},
+  "IND-106": {category:"Corpo Docente", unit:"Razão"},
+  "IND-107": {category:"Oferta e Territorialização", unit:"Número"},
+  "IND-108": {category:"Qualidade Acadêmica", unit:"Percentual"}
 };
 
 const tabIndicatorCatalog = {
@@ -5293,10 +5451,11 @@ const tabIndicatorCatalog = {
   quality:[6,7,8,9,60,61,62,63,64,65,66],
   faculty:[43,44,45,46,47,48,49,50,51,52,53,54,55,56,57,58,59,63],
   employment:[33,34,35,36,37,38,39,40,41,42,71,72,73,74,75,76,77,78,79,80],
-  efficiency:[81,82,83,84,85,86,87,88,89,90,91,92,93,94,95,96,97]
+  efficiency:[81,82,83,84,85,86,87,88,89,90,91,92,93,94,"ind95orc","ind96orc","ind97orc"]
 };
 
 function indicatorCode(num) {
+  if (typeof num === "string" && /^ind\d+orc$/i.test(num)) return num.toLowerCase();
   return `IND-${Number(num)}`;
 }
 
@@ -5323,16 +5482,18 @@ function buildCatalogItems(tabId) {
     }
   }
   return codes.map(code => {
+    const catalogKey = indCatalogKey(code);
+    const catalogEntry = (typeof INDICATOR_CATALOG !== "undefined" && catalogKey) ? INDICATOR_CATALOG[catalogKey] : null;
     const def = overviewKpiDefinitions.find(d => d.code === code);
     const meta = indicatorCatalogMeta[code] || {};
     return {
       code,
-      title: def ? def.title : indicatorName(code),
-      category: meta.category || "Geral",
-      unit: meta.unit || "—",
-      source: def ? (def.source || "—") : "INEP / IEES",
-      formula: def ? (def.formula || "—") : "—",
-      polarity: def ? (def.polarity === "↑" ? "Quanto maior, melhor (↑)" : def.polarity === "↓" ? "Quanto menor, melhor (↓)" : "—") : "—"
+      title: def ? def.title : (catalogEntry ? catalogEntry.nome : indicatorName(code)),
+      category: meta.category || catalogEntry?.categoria || "Geral",
+      unit: meta.unit || catalogEntry?.unidade || "—",
+      source: def ? (def.source || "—") : (catalogEntry?.fonte || "INEP / IEES"),
+      formula: def ? (def.formula || "—") : (catalogEntry?.formula || "—"),
+      polarity: def ? (def.polarity === "↑" ? "Quanto maior, melhor (↑)" : def.polarity === "↓" ? "Quanto menor, melhor (↓)" : "—") : (catalogEntry?.polaridade || "—")
     };
   });
 }
@@ -5341,6 +5502,20 @@ function indCatalogKey(code) {
   if (!code) return null;
   // "IND-1" → "ind1",  "IND-27" → "ind27",  "ind1" → "ind1" (passthrough)
   return String(code).toLowerCase().replace(/^ind-/, "ind");
+}
+
+// Rótulo visual do código no catálogo de indicadores (coluna azul da lista).
+// Não altera item.code (usado em data-code/checkbox value/seleção/filtros) —
+// só formata o texto exibido: "IND-27" → "IND 27 -"; legado "ind95orc" →
+// "ORC-95 -" (mantém o número original do código legado, só troca o prefixo
+// "ind"/sufixo "orc" pelo rótulo ORC-N já usado no restante do painel).
+function formatCatalogCodeLabel(code) {
+  const str = String(code || "");
+  const legacy = /^ind(\d+)orc$/i.exec(str);
+  if (legacy) return `ORC-${legacy[1]} -`;
+  const numeric = /^IND-(\d+)$/i.exec(str);
+  if (numeric) return `IND ${numeric[1]} -`;
+  return str;
 }
 
 function renderIndicatorCard(key) {
@@ -5395,7 +5570,7 @@ function renderCustomCatalog(tabId, tabLabel) {
     <label class="ind-option" data-code="${item.code}" data-title="${item.title.replace(/"/g, '&quot;')}" data-cat="${item.category}">
       <input type="checkbox" value="${item.code}" aria-label="${item.title}">
       <span class="ind-option-body">
-        <span class="ind-option-code">${item.code}</span>
+        <span class="ind-option-code">${formatCatalogCodeLabel(item.code)}</span>
         <span class="ind-option-title">${item.title}</span>
         <span class="ind-option-cat">${item.category}</span>
       </span>
@@ -5474,10 +5649,14 @@ function bindCustomCatalog(tabId) {
   });
 
   if (searchInp && list) {
+    // Normaliza hífen/espaço para que buscas como "IND 1" ou "IND-1" encontrem
+    // o mesmo item, já que o código interno usa hífen (data-code="IND-1") mas
+    // o rótulo visível agora usa espaço ("IND 1 -").
+    const normalizeSearch = s => String(s || "").toLowerCase().replace(/[-\s]+/g, " ").trim();
     searchInp.addEventListener("input", () => {
-      const term = searchInp.value.toLowerCase().trim();
+      const term = normalizeSearch(searchInp.value);
       list.querySelectorAll(".ind-option").forEach(opt => {
-        const text = (opt.dataset.title + " " + opt.dataset.code + " " + opt.dataset.cat).toLowerCase();
+        const text = normalizeSearch(opt.dataset.title + " " + opt.dataset.code + " " + opt.dataset.cat);
         opt.style.display = !term || text.includes(term) ? "" : "none";
       });
       const visible = [...list.querySelectorAll(".ind-option")].filter(o => o.style.display !== "none");
@@ -5592,8 +5771,8 @@ function indicatorCatalogBlock(tabId, c) {
   // Para demais abas: usar o dropdown customizado genérico
   const tabLabels = {
     comparison:"Comparação entre IEES", retention:"Permanência e Formação",
-    quality:"Qualidade, Pesquisa e Pós-Graduação", faculty:"Corpo Docente e Capacidade Operacional",
-    employment:"Inserção Profissional", efficiency:"Orçamento e Eficiência"
+    quality:"Qualificação docente, Pesquisa e Pós-Graduação", faculty:"Corpo Docente e Capacidade Operacional",
+    employment:"Retenção Profissional", efficiency:"Orçamento e Eficiência"
   };
   return renderCustomCatalog(tabId, tabLabels[tabId] || tabId);
 }
@@ -5840,8 +6019,8 @@ updateScopeAvailability = function updateScopeAvailability(scope) {
     setScopedControlState(control, isBR, "Filtro territorial disponível apenas para o escopo Paraná");
   });
 
-  // Disable groupBy .filter-mini-card visually when Brasil scope (PR-only options are hidden)
-  const groupByShell = closestFilterShell(el.groupBy);
+  // Disable groupByWrap visualmente quando Brasil scope (opções PR-only ficam ocultas)
+  const groupByShell = document.getElementById("groupByWrap");
   if (groupByShell) {
     groupByShell.classList.toggle("is-disabled", isBR);
     groupByShell.toggleAttribute("data-scope-disabled", isBR);
@@ -6055,6 +6234,32 @@ bind = function bindAuditedButtons() {
       drop.hidden = true;
     });
   })();
+  // ── Cluster Multidimensional (V1-V8) — dropdown handlers ─────────
+  (function(){
+    const btn = document.getElementById("groupByBtn");
+    const drop = document.getElementById("groupByDropdown");
+    const wrap = document.getElementById("groupByWrap");
+    if (!btn || !drop) return;
+    btn.addEventListener("click", e => {
+      e.stopPropagation();
+      const open = btn.getAttribute("aria-expanded") === "true";
+      btn.setAttribute("aria-expanded", String(!open));
+      drop.hidden = open;
+    });
+    document.addEventListener("click", e => {
+      if (!wrap?.contains(e.target)) { btn.setAttribute("aria-expanded", "false"); drop.hidden = true; }
+    });
+    document.addEventListener("keydown", e => {
+      if (e.key === "Escape" && !drop.hidden) { btn.setAttribute("aria-expanded", "false"); drop.hidden = true; btn.focus(); }
+    });
+    drop.addEventListener("click", e => {
+      const item = e.target.closest(".group-by-item[data-group-by-value]");
+      if (!item || item.disabled) return;
+      setGroupByVariable(item.dataset.groupByValue);
+      btn.setAttribute("aria-expanded", "false");
+      drop.hidden = true;
+    });
+  })();
 };
 window.bind = bind;
 
@@ -6181,7 +6386,7 @@ function setBrasilClusterControlsState(isBR) {
   const groupControl = el.groupBy || document.getElementById("groupBy");
   const especificoActive = groupControl?.value === "especifico";
   const hideForBR = isBR && !especificoActive;
-  const groupShell = closestFilterShell(groupControl);
+  const groupShell = document.getElementById("groupByWrap");
   if (groupShell) {
     groupShell.hidden = hideForBR;
     groupShell.setAttribute("aria-hidden", String(hideForBR));
@@ -6393,7 +6598,7 @@ function setSidePanelScopeText(isBR, groupBy) {
   const firstEyebrow = firstCard?.querySelector?.(".eyebrow");
   const breakdownEyebrow = breakdownCard?.querySelector?.(".eyebrow");
   const especifico = groupBy === "especifico";
-  if (firstEyebrow) firstEyebrow.textContent = especifico ? "Cluster Específico" : isBR ? "Comparativo nacional" : "Cluster Multidimensional";
+  if (firstEyebrow) firstEyebrow.textContent = especifico ? "Cluster Multidimensional" : isBR ? "Comparativo nacional" : "Cluster Específico";
   if (breakdownEyebrow) breakdownEyebrow.textContent = isBR && !especifico ? "Referências nacionais" : "Grupos do cluster ativo";
 }
 
@@ -6500,7 +6705,7 @@ overview = function overviewWithoutBrasilGroups(c) {
   <div class="score-grid mt-14">
     ${score("Ocupação das vagas", formatPercent(a.occupancy), "Média nacional", a.occupancy)}
     ${score("Desvinculação", formatPercent(a.dropout), "Média nacional", 100 - a.dropout)}
-    ${score("Inserção PR", formatPercent(a.employment), "Comparativo nacional", a.employment)}
+    ${score("Retenção PR", formatPercent(a.employment), "Comparativo nacional", a.employment)}
     ${score("Execução orçamentária", formatPercent(a.execution), "Comparativo nacional", a.execution)}
   </div>
   <div class="table-wrap mt-14">
@@ -6560,8 +6765,6 @@ function sanitizeBrasilClusterCopy(root) {
     [/grupo selecionado/g, "recorte selecionado"],
     [/Grupo selecionado/g, "Recorte selecionado"],
     [/grupo de comparação ativo/g, "comparativo nacional"],
-    [/cluster multidimensional/gi, "referência nacional"],
-    [/Cluster Multidimensional/g, "Referência nacional"],
     [/Comparação por cluster/g, "Comparativo nacional"],
     [/Mostrar apenas cluster/g, "Mostrar referência nacional"],
     [/Média Brasil/g, nationalMeanLabel()],
@@ -6574,6 +6777,16 @@ function sanitizeBrasilClusterCopy(root) {
     acceptNode(node) {
       const parentName = node.parentElement?.tagName?.toLowerCase();
       if (["script", "style", "noscript"].includes(parentName)) return NodeFilter.FILTER_REJECT;
+      // O rótulo "Cluster Multidimensional" do <select id="groupBy"> é um controle
+      // vivo (não texto de apoio) — nunca deve virar texto sanitizado em escopo
+      // Brasil quando este seletor legado reaparece.
+      if (node.parentElement?.closest('label[for="groupBy"]')) return NodeFilter.FILTER_REJECT;
+      // Mesma proteção para a pílula do Cluster Específico (C1-C8) — rótulo de
+      // controle vivo, não texto de apoio. Preventivo: com a Edição 2b, nenhuma
+      // regra atual bate no texto desta pílula, mas isso evita que uma regra
+      // futura volte a capturá-la silenciosamente (mesma classe de risco que já
+      // afetou este elemento antes da Edição 2b).
+      if (node.parentElement?.closest('.cluster-especifico-wrap')) return NodeFilter.FILTER_REJECT;
       return /cluster|Cluster|grupo|Grupo|agrupamento|Agrupamento|Média Brasil|Sistema Brasil/.test(node.nodeValue) ? NodeFilter.FILTER_ACCEPT : NodeFilter.FILTER_SKIP;
     }
   });
@@ -6763,7 +6976,7 @@ window.runAudit = async function runAudit(options = {}) {
   ok("S4-06 quartilChips ocultos",                   Boolean(q("#quartilChips")?.hidden));
   ok("S4-07 filtros territoriais bloqueados",        PR_ONLY_FILTERS.every(id => document.getElementById(id)?.disabled));
   ok("S4-08 context().group é all",                  context().group === "all",            context().group);
-  ok("S4-09 groupBy shell tem is-disabled",          Boolean(closestFilterShell(el.groupBy)?.classList.contains("is-disabled")));
+  ok("S4-09 groupBy shell tem is-disabled",          Boolean(document.getElementById("groupByWrap")?.classList.contains("is-disabled")));
   ok("S4-10 scopeBadge = Brasil",                    val("scopeBadge") === "Brasil",       val("scopeBadge"));
   ok("S4-11 footerScopeLabel = Brasil",              val("footerScopeLabel") === "Brasil", val("footerScopeLabel"));
   ok("S4-12 footerClusterLabel = Média nacional",    val("footerClusterLabel") === "Média nacional", val("footerClusterLabel"));
@@ -6776,7 +6989,7 @@ window.runAudit = async function runAudit(options = {}) {
   await waitForButtonAuditRender();
   ok("S5-01 botão Paraná ativo",                     q("#scopeBtnPR")?.classList.contains("active"));
   ok("S5-02 PR-only options liberadas",              ["v6","v7","v8"].every(v => !optDisabled(v)));
-  ok("S5-03 groupBy shell sem is-disabled",          !closestFilterShell(el.groupBy)?.classList.contains("is-disabled"));
+  ok("S5-03 groupBy shell sem is-disabled",          !document.getElementById("groupByWrap")?.classList.contains("is-disabled"));
   ok("S5-04 activeClustersRow começa com Paraná · Cluster",
     val("activeClustersRow").startsWith("Paraná · Cluster"), val("activeClustersRow"));
 
@@ -6938,7 +7151,7 @@ document.addEventListener("DOMContentLoaded", () => {
       "MTE/RAIS 2023–2024 (Paraná)",
       "Média salarial dos egressos com vínculo formal de emprego aderente ao CBO2 da área de formação, dois anos após a conclusão do curso."],
 
-    [/inserção.*profis|profis.*inser|inserção.*paran|egressos.*empregados|inserção no paran/i,
+    [/inserção.*profis|profis.*inser|inserção.*paran|egressos.*empregados|inserção no paran|retenção.*egressos|retenção.*paran/i,
       "MTE/RAIS 2023–2024 (Paraná)",
       "Percentual de egressos com vínculo formal de emprego no estado do Paraná, calculado dois anos após a conclusão do curso (base RAIS, filtro CBO2 por área de formação)."],
 
@@ -6971,7 +7184,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     [/IND-26|ocupa.*vagas|vagas.*ocupa|taxa.*ocup/i,
       "INEP 2024 (Censo da Educação Superior — Cursos)",
-      "Relação entre ingressantes efetivos e vagas ofertadas no período de referência. Mede o aproveitamento da capacidade instalada; valores abaixo de 70% indicam ociosidade relevante."],
+      "Relação entre ingressantes efetivos e vagas ofertadas no período de referência. Mede o aproveitamento da capacidade instalada; valores abaixo de 70% indicam alta taxa de vagas não ocupadas pelos interessados."],
 
     [/escala.*oferta|participa.*oferta|total.*vagas/i,
       "INEP 2024 (Censo da Educação Superior — Cursos)",

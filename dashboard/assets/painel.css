@@ -462,7 +462,6 @@ input:focus-visible {
 
 .kpi-card {
   position: relative;
-  overflow: hidden;
   min-height: 136px;
   padding: 17px;
 }
@@ -475,6 +474,11 @@ input:focus-visible {
   right: 0;
   height: 4px;
   background: linear-gradient(90deg, var(--blue-800), var(--orange-600));
+  /* .kpi-card não tem mais overflow:hidden (removido — estava cortando o
+     tooltip de fórmula, que abre para cima do card); a barra precisa dos
+     próprios cantos arredondados em vez de depender do clip do pai. */
+  border-top-left-radius: inherit;
+  border-top-right-radius: inherit;
 }
 
 .kpi-card .kpi-label {
@@ -2665,6 +2669,7 @@ body {
   border-radius: 999px;
   background: #f28c28;
   box-shadow: 0 0 0 3px rgba(242, 140, 40, 0.16);
+  pointer-events: none;
 }
 
 .overview-cluster-bars .bar-row {
@@ -2733,8 +2738,25 @@ body {
   color: var(--blue-950);
 }
 
+/* Tabela de ranking da Aba 2 (Comparação entre IEES) — pode listar até
+   40 IES (escopo Brasil), o que sem limite de altura empurra o resto
+   da página para baixo. Scroll vertical interno mantém a tabela num
+   tamanho previsível, com o cabeçalho de colunas fixo no topo durante
+   a rolagem (útil já que os nomes das colunas são longos e o usuário
+   precisa deles visíveis ao rolar pelas 40 linhas). */
 .comparison-table-wrap {
   overflow: auto;
+  /* 820px comporta o caso comum (Paraná, 7 IEES = ~783px medido com
+     cabeçalho quebrado em múltiplas linhas + rodapé) sem disparar
+     scroll; o scroll continua ativo no caso extremo (Brasil, até 40
+     IEES), que é o cenário que motivou esta mudança. */
+  max-height: 820px;
+}
+.comparison-table-wrap thead th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background: var(--white);
 }
 
 .comparison-table {
@@ -3061,12 +3083,27 @@ body {
   opacity: 0.8;
 }
 
-.timeline-line.line-0 { stroke: #185fa5; }
-.timeline-line.line-1 { stroke: #0f6e56; }
-.timeline-line.line-2 { stroke: #b86b00; }
-.timeline-line.line-3 { stroke: #534ab7; }
-.timeline-line.line-4 { stroke: #1a6b5c; }
-.timeline-line.line-5 { stroke: #7a3010; }
+.timeline-line.line-0 { stroke: #1f77b4; }
+.timeline-line.line-1 { stroke: #d62728; }
+.timeline-line.line-2 { stroke: #ff7f0e; }
+.timeline-line.line-3 { stroke: #9467bd; }
+.timeline-line.line-4 { stroke: #2ca02c; }
+.timeline-line.line-5 { stroke: #8c564b; }
+.timeline-line.line-6 { stroke: #17becf; }
+.timeline-line.line-7 { stroke: #e377c2; }
+
+/* .timeline-select-dot (ponto destacado do ano selecionado) usa as mesmas
+   classes line-N das linhas, mas .timeline-line.line-N só define stroke —
+   sem essas regras, os pontos ficavam sem fill correspondente (preto padrão
+   do SVG), não batendo com a cor da IEES na legenda/linha. */
+.timeline-select-dot.line-0 { fill: #1f77b4; }
+.timeline-select-dot.line-1 { fill: #d62728; }
+.timeline-select-dot.line-2 { fill: #ff7f0e; }
+.timeline-select-dot.line-3 { fill: #9467bd; }
+.timeline-select-dot.line-4 { fill: #2ca02c; }
+.timeline-select-dot.line-5 { fill: #8c564b; }
+.timeline-select-dot.line-6 { fill: #17becf; }
+.timeline-select-dot.line-7 { fill: #e377c2; }
 
 .timeline-average {
   fill: none;
@@ -3768,7 +3805,7 @@ body {
   }
 }
 
-/* Aba 5 - Qualidade, Pesquisa e Pós-Graduação */
+/* Aba 5 - Qualificação docente, Pesquisa e Pós-Graduação */
 .quality-context-grid {
   grid-template-columns: repeat(4, minmax(170px, 1fr));
 }
@@ -3842,6 +3879,44 @@ body {
 .orc-bar-col { flex: 1 1 200px; display: flex; flex-direction: column; gap: .5rem; justify-content: center; }
 .orc-sub-block { border-top: 1px solid var(--gray-200,#e5e7eb); margin-top: 1rem; padding-top: .75rem; }
 .orc-sub-header { font-size: .82rem; margin-bottom: .6rem; color: var(--gray-700,#374151); }
+.orc-history-selector {
+  display: flex;
+  align-items: center;
+  gap: .75rem;
+  margin: 0 0 1rem;
+  color: var(--gray-700, #374151);
+  font-size: .82rem;
+  font-weight: 700;
+}
+.orc-history-selector select {
+  width: 220px;
+  min-width: 180px;
+}
+.orc-history-chart .orc-sub-block {
+  margin-top: 0;
+}
+.orc-history-chart svg {
+  width: 100%;
+  max-width: 680px;
+  height: auto;
+  display: block;
+}
+@media (max-width: 680px) {
+  .orc-history-selector {
+    display: grid;
+    gap: .4rem;
+  }
+  .orc-history-selector select {
+    width: 100%;
+    max-width: calc(100vw - 64px);
+    min-width: 0;
+  }
+  .orc-history-chart,
+  .orc-history-chart .orc-sub-block,
+  .orc-history-chart svg {
+    max-width: calc(100vw - 64px);
+  }
+}
 
 /* ── Composição de Fontes de Despesa (pizza charts) ─────────────────────── */
 .cf-card { margin-top: 1.5rem; }
@@ -4393,7 +4468,7 @@ body {
   background: #fae8dc;
 }
 
-/* Aba 7 - Inserção Profissional */
+/* Aba 7 - Retenção Profissional */
 .employment-kpi-grid {
   grid-template-columns: repeat(3, minmax(180px, 1fr));
 }
@@ -4464,7 +4539,6 @@ body {
   color: #dc2626;
 }
 
-.local-talent-grid,
 .adherence-grid,
 .occupational-grid {
   display: grid;
@@ -4472,7 +4546,6 @@ body {
   gap: 10px;
 }
 
-.local-talent-card,
 .adherence-card,
 .occupational-card {
   border: 1px solid #d9e1ec;
@@ -4483,20 +4556,17 @@ body {
   gap: 5px;
 }
 
-.local-talent-card strong,
 .adherence-card strong,
 .occupational-card strong {
   color: var(--blue-950);
 }
 
-.local-talent-card span,
 .adherence-card span,
 .occupational-card span {
   color: var(--blue-800);
   font-weight: 900;
 }
 
-.local-talent-card em,
 .adherence-card em,
 .occupational-card em {
   color: var(--gray-600);
@@ -4504,21 +4574,18 @@ body {
   font-style: normal;
 }
 
-.local-talent-card.alert-ok,
 .adherence-card.alert-ok,
 .occupational-card.alert-ok {
   border-color: #bce6d7;
   background: #f5fcf8;
 }
 
-.local-talent-card.alert-warn,
 .adherence-card.alert-warn,
 .occupational-card.alert-warn {
   border-color: #f7d98a;
   background: #fffbee;
 }
 
-.local-talent-card.alert-info,
 .adherence-card.alert-info,
 .occupational-card.alert-info {
   border-color: #b8d7f0;
@@ -5697,6 +5764,21 @@ body {
   display: flex; align-items: center; gap: 9px;
   padding: 6px 14px; font-size: 13px; cursor: pointer;
   user-select: none; line-height: 1.35;
+  /* Reset de aparência nativa — necessário porque os itens do dropdown
+     Cluster Multidimensional (.cluster-especifico-item) são elementos
+     <button>, que o navegador renderiza com borda 3D e fundo cinza por
+     padrão quando nenhuma regra explícita zera isso. Os itens do
+     dropdown de IEES (<label>) nunca precisaram disso, por isso o bug
+     ficou invisível até agora. Aplicado na classe base .iees-multi-item
+     para cobrir qualquer item futuro, seja <button> ou <label>. */
+  width: 100%;
+  text-align: left;
+  border: none;
+  background: transparent;
+  appearance: none;
+  -webkit-appearance: none;
+  color: var(--gray-950);
+  border-radius: 0;
 }
 .iees-multi-item:hover { background: var(--blue-50, #eff4fb); }
 .iees-meta-item { font-weight: 700; color: var(--blue-700, #2a5198); }
@@ -5714,6 +5796,25 @@ body {
 }
 .cluster-especifico-item.is-active:hover {
   background: var(--blue-700);
+}
+
+/* Cluster Multidimensional (V1-V8) — mesmo padrão visual do dropdown
+   Cluster Específico (C1-C8), reaproveitando .iees-multi-item como base
+   (ver Edição HTML: .group-by-item é só um marcador para o JS/click
+   delegation, todo o visual vem de .iees-multi-item herdado). */
+.group-by-item.is-active {
+  background: var(--blue-700);
+  color: var(--white);
+}
+.group-by-item.is-active:hover {
+  background: var(--blue-700);
+}
+.group-by-item:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+.group-by-item:disabled:hover {
+  background: transparent;
 }
 
 .filter-active-status {
@@ -7189,6 +7290,261 @@ details.ind-detail-accordion .catalog-card { border: none; border-radius: 0; mar
 }
 /* ── fim fontes e definições ─────────────────────────────────────────────── */
 
+/* ── Tooltip de fórmula do indicador (ⓘ) — sistema separado de .ind-info,      */
+/* usado para mostrar só o campo "formula" do INDICATOR_CATALOG. Regras         */
+/* copiadas de .ind-info/.ind-tooltip (não herdadas) para não colidir com o     */
+/* sistema de _SRC_RULES existente. Cor do ícone levemente diferente (roxo em   */
+/* vez de cinza/azul) só para diferenciar visualmente os dois sistemas ao       */
+/* depurar — mesmo comportamento de hover/focus. ────────────────────────────── */
+.ind-formula-info {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  margin-left: 5px;
+  color: var(--purple-500, #8b2fc9);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: help;
+  vertical-align: middle;
+  line-height: 1;
+  transition: color 0.12s;
+}
+
+.ind-formula-info:hover,
+.ind-formula-info:focus {
+  color: var(--purple-700, #6b21a8);
+  outline: none;
+}
+
+.ind-formula-tooltip {
+  position: absolute;
+  bottom: calc(100% + 8px);
+  left: 50%;
+  z-index: 220;
+  width: 260px;
+  padding: 9px 11px;
+  border-radius: 8px;
+  background: var(--gray-950, #152033);
+  color: #ffffff;
+  font-size: 12px;
+  font-weight: 400;
+  line-height: 1.5;
+  text-align: left;
+  white-space: normal;
+  box-shadow: 0 8px 24px rgba(21, 32, 51, 0.22);
+  opacity: 0;
+  pointer-events: none;
+  transform: translateX(-50%) translateY(5px);
+  transition: opacity 0.15s ease, transform 0.15s ease;
+}
+
+.ind-formula-tooltip::after {
+  content: "";
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  border: 5px solid transparent;
+  border-top-color: var(--gray-950, #152033);
+}
+
+.ind-formula-info:hover .ind-formula-tooltip,
+.ind-formula-info:focus .ind-formula-tooltip {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+
+/* ── Tooltip de defasagem temporal (⏳) — terceiro sistema, análogo a           */
+/* .ind-formula-info/.ind-formula-tooltip, mas para LAG_NOTES em vez de         */
+/* INDICATOR_CATALOG[].formula. Cor âmbar para diferenciar do roxo (fórmula)    */
+/* e do padrão original (.ind-info). Mesmo comportamento hover/focus. ───────── */
+.ind-lag-info {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  margin-left: 5px;
+  color: var(--amber-500, #d97706);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: help;
+  vertical-align: middle;
+  line-height: 1;
+  transition: color 0.12s;
+}
+
+.ind-lag-info:hover,
+.ind-lag-info:focus {
+  color: var(--amber-700, #b45309);
+  outline: none;
+}
+
+.ind-lag-tooltip {
+  position: absolute;
+  bottom: calc(100% + 8px);
+  left: 50%;
+  z-index: 220;
+  width: 260px;
+  padding: 9px 11px;
+  border-radius: 8px;
+  background: var(--gray-950, #152033);
+  color: #ffffff;
+  font-size: 12px;
+  font-weight: 400;
+  line-height: 1.5;
+  text-align: left;
+  white-space: normal;
+  box-shadow: 0 8px 24px rgba(21, 32, 51, 0.22);
+  opacity: 0;
+  pointer-events: none;
+  transform: translateX(-50%) translateY(5px);
+  transition: opacity 0.15s ease, transform 0.15s ease;
+}
+
+.ind-lag-tooltip::after {
+  content: "";
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  border: 5px solid transparent;
+  border-top-color: var(--gray-950, #152033);
+}
+
+.ind-lag-info:hover .ind-lag-tooltip,
+.ind-lag-info:focus .ind-lag-tooltip {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+
+/* Cards da 1ª linha do #kpiGrid (Aba 1, overview): o tooltip abriria para cima
+   e seria coberto pela barra de filtros (.filter-bar-compact, position:sticky,
+   z-index:40 — maior que o z-index:30 da elevação por :has() em 7347, que só
+   resolve conflito entre cards-irmãos, não contra a barra). Abre para baixo
+   só nesses cards; demais linhas mantêm o comportamento original (para cima).
+   "1ª linha" muda com o nº de colunas do grid responsivo (4/2/1 — ver
+   .overview-kpi-grid), por isso 3 blocos, um por breakpoint. */
+@media (min-width: 1181px) {
+  .overview-kpi-grid .overview-kpi:nth-child(-n+4) .ind-formula-tooltip {
+    top: calc(100% + 8px);
+    bottom: auto;
+    transform: translateX(-50%) translateY(-5px);
+  }
+  .overview-kpi-grid .overview-kpi:nth-child(-n+4) .ind-formula-tooltip::after {
+    top: auto;
+    bottom: 100%;
+    border-top-color: transparent;
+    border-bottom-color: var(--gray-950, #152033);
+  }
+}
+
+@media (max-width: 1180px) and (min-width: 681px) {
+  .overview-kpi-grid .overview-kpi:nth-child(-n+2) .ind-formula-tooltip {
+    top: calc(100% + 8px);
+    bottom: auto;
+    transform: translateX(-50%) translateY(-5px);
+  }
+  .overview-kpi-grid .overview-kpi:nth-child(-n+2) .ind-formula-tooltip::after {
+    top: auto;
+    bottom: 100%;
+    border-top-color: transparent;
+    border-bottom-color: var(--gray-950, #152033);
+  }
+}
+
+@media (max-width: 680px) {
+  .overview-kpi-grid .overview-kpi:nth-child(1) .ind-formula-tooltip {
+    top: calc(100% + 8px);
+    bottom: auto;
+    transform: translateX(-50%) translateY(-5px);
+  }
+  .overview-kpi-grid .overview-kpi:nth-child(1) .ind-formula-tooltip::after {
+    top: auto;
+    bottom: 100%;
+    border-top-color: transparent;
+    border-bottom-color: var(--gray-950, #152033);
+  }
+}
+
+/* Mesmo bug do .overview-kpi-grid acima, reproduzido no grid de KPIs da Aba 8
+   (Execução Orçamentária): o tooltip abre para cima e a metade superior
+   (rótulo "Fórmula") fica coberta pela barra de filtros fixa
+   (.filter-bar-compact, position:sticky, z-index:40 — maior que o z-index:30
+   da elevação por :has() mais abaixo, que só resolve conflito entre
+   cards-irmãos, não contra a barra). Abre para baixo só nos cards da 1ª linha; demais linhas
+   mantêm o comportamento original (para cima). "1ª linha" muda com o nº de
+   colunas do grid responsivo (5/2/1 — ver .efficiency-kpi-grid), por isso 3
+   blocos, um por breakpoint. */
+@media (min-width: 1101px) {
+  .efficiency-kpi-grid .kpi-card:nth-child(-n+5) .ind-formula-tooltip {
+    top: calc(100% + 8px);
+    bottom: auto;
+    transform: translateX(-50%) translateY(-5px);
+  }
+  .efficiency-kpi-grid .kpi-card:nth-child(-n+5) .ind-formula-tooltip::after {
+    top: auto;
+    bottom: 100%;
+    border-top-color: transparent;
+    border-bottom-color: var(--gray-950, #152033);
+  }
+}
+
+@media (max-width: 1100px) and (min-width: 561px) {
+  .efficiency-kpi-grid .kpi-card:nth-child(-n+2) .ind-formula-tooltip {
+    top: calc(100% + 8px);
+    bottom: auto;
+    transform: translateX(-50%) translateY(-5px);
+  }
+  .efficiency-kpi-grid .kpi-card:nth-child(-n+2) .ind-formula-tooltip::after {
+    top: auto;
+    bottom: 100%;
+    border-top-color: transparent;
+    border-bottom-color: var(--gray-950, #152033);
+  }
+}
+
+@media (max-width: 560px) {
+  .efficiency-kpi-grid .kpi-card:nth-child(1) .ind-formula-tooltip {
+    top: calc(100% + 8px);
+    bottom: auto;
+    transform: translateX(-50%) translateY(-5px);
+  }
+  .efficiency-kpi-grid .kpi-card:nth-child(1) .ind-formula-tooltip::after {
+    top: auto;
+    bottom: 100%;
+    border-top-color: transparent;
+    border-bottom-color: var(--gray-950, #152033);
+  }
+}
+
+/* .ff-kpi (mini-KPI do funil formativo, Aba 4) usa fonte de 11px no label —
+   o ícone padrão (13px) fica desproporcional ali. Só ajusta tamanho/margem,
+   não herda nem duplica o restante do estilo base. */
+.ff-kpi .ind-formula-info {
+  font-size: 10px;
+  margin-left: 3px;
+}
+
+/* Bug real reportado: o tooltip abre para cima do card (bottom: calc(100% +
+   8px)), mas cards de grid (.kpi-grid/.score-grid) são todos irmãos com
+   position:relative e z-index:auto — nenhum estabelece contexto de
+   empilhamento próprio, então o z-index do tooltip (220) não tem contra
+   quem "vencer": o card de baixo (posterior na ordem do DOM) pinta por
+   cima dele mesmo assim. Não era clipping (overflow já tinha sido
+   corrigido em .kpi-card) — era ordem de empilhamento. Fix: ao passar o
+   mouse/focar no ícone, o CARD que o contém ganha position:relative +
+   z-index próprio, criando um contexto de empilhamento que agora
+   compete (e vence) com os cards vizinhos. Cobre os dois sistemas de
+   tooltip (.ind-formula-info novo e .ind-info antigo) nos quatro tipos
+   de card usados nas 9 abas. */
+.kpi-card:has(.ind-formula-info:hover, .ind-formula-info:focus, .ind-info:hover, .ind-info:focus),
+.score-card:has(.ind-formula-info:hover, .ind-formula-info:focus, .ind-info:hover, .ind-info:focus),
+.visual-card:has(.ind-formula-info:hover, .ind-formula-info:focus, .ind-info:hover, .ind-info:focus),
+.table-wrap:has(.ind-formula-info:hover, .ind-formula-info:focus, .ind-info:hover, .ind-info:focus) {
+  position: relative;
+  z-index: 30;
+}
+/* ── fim tooltip de fórmula ───────────────────────────────────────────────── */
+
 
 /* Tabela comparativa aba 8 — células semafóricas */
 .data-table td.orc-cell-good {
@@ -8247,120 +8603,6 @@ details.ind-detail-accordion .catalog-card { border: none; border-radius: 0; mar
 .crk-seg em { font-style: normal; padding: 0 4px; white-space: nowrap; }
 
 .crk-result { width: 78px; text-align: right; font-weight: 700; color: #14804a; white-space: nowrap; }
-
-/* ── Aba 4 · Conclusão × inserção profissional ────────────────────────── */
-.cx-legend {
-  display: flex;
-  gap: 14px;
-  margin-bottom: 10px;
-  font-size: 11.5px;
-  font-weight: 600;
-  color: var(--gray-700, #374151);
-}
-
-.cx-legend span { display: inline-flex; align-items: center; gap: 5px; }
-.cx-legend i { width: 10px; height: 10px; border-radius: 3px; display: inline-block; }
-.cx-legend i.cx-comp, .cx-bar.cx-comp { background: #185fa5; }
-.cx-legend i.cx-emp,  .cx-bar.cx-emp  { background: #14804a; }
-
-.cx-layout {
-  display: grid;
-  grid-template-columns: minmax(0, 1.55fr) minmax(240px, 1fr);
-  gap: 18px;
-  align-items: start;
-}
-
-@media (max-width: 900px) {
-  .cx-layout { grid-template-columns: 1fr; }
-}
-
-.cx-row {
-  display: grid;
-  grid-template-columns: 86px minmax(0, 1fr);
-  gap: 8px;
-  align-items: center;
-  padding: 6px 0;
-  border-bottom: 1px solid #eef1f6;
-}
-
-.cx-row.selected { background: var(--accent-faint, #eef4ff); }
-
-.cx-name { font-weight: 700; font-size: 12.5px; }
-
-.cx-bars { display: flex; flex-direction: column; gap: 4px; }
-
-.cx-track {
-  position: relative;
-  height: 15px;
-  border-radius: 999px;
-  background: var(--gray-200, #e2e8f0);
-  overflow: hidden;
-}
-
-.cx-bar {
-  display: block;
-  height: 100%;
-  border-radius: 999px;
-  animation: barGrow 520ms ease both;
-}
-
-.cx-val {
-  position: absolute;
-  top: 50%;
-  right: 6px;
-  transform: translateY(-50%);
-  font-style: normal;
-  font-size: 10px;
-  font-weight: 700;
-  color: #1e293b;
-  text-shadow: 0 1px 2px rgba(255,255,255,.95), 0 -1px 2px rgba(255,255,255,.95);
-  white-space: nowrap;
-}
-
-.cx-track.cx-na .cx-val { color: var(--gray-500, #94a3b8); font-weight: 600; }
-
-.cx-side { display: flex; flex-direction: column; gap: 12px; }
-
-.cx-kpis { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-
-.cx-kpi {
-  padding: 10px 12px;
-  border: 1px solid #dde6f0;
-  border-radius: 10px;
-  background: #f8fbff;
-}
-
-.cx-kpi span { display: block; font-size: 11px; font-weight: 600; color: var(--gray-600, #475569); }
-.cx-kpi strong { font-size: 18px; color: var(--gray-800, #1e293b); }
-
-.cx-diag-list {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  max-height: 260px;
-  overflow-y: auto;
-}
-
-.cx-diag-title { font-size: 12px; color: var(--gray-700, #374151); }
-
-.cx-diag {
-  display: flex;
-  align-items: baseline;
-  gap: 8px;
-  padding: 6px 10px;
-  border-radius: 8px;
-  font-size: 11.5px;
-  background: #f7f9fc;
-  border-left: 3px solid #c9d4e3;
-}
-
-.cx-diag.alert-ok     { border-left-color: #14804a; background: #f0faf5; }
-.cx-diag.alert-warn   { border-left-color: #af7a00; background: #fffbeb; }
-.cx-diag.alert-info   { border-left-color: #185fa5; background: #eef4ff; }
-.cx-diag.alert-danger { border-left-color: #c43f3a; background: #fdf2f2; }
-
-.cx-diag strong { flex-shrink: 0; }
-.cx-diag span { color: var(--gray-600, #475569); }
 
 /* ── Aba 4 · Dispersão: rótulos dos eixos ─────────────────────────────── */
 .scatter-axis-tick {

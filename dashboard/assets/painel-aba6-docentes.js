@@ -4,6 +4,17 @@
    _SCATTER_IES_COLORS é const em painel.js (linha 11938) — acessada como global.
    ========================================================================== */
 
+// ── Tooltip de fórmula (ⓘ) — mapa de alias label → indicador do catálogo ────
+// Confirmado via Playwright antes de fechar (mesma disciplina das Abas 4/5):
+// como os h3 no código-fonte já usam o nome oficial do catálogo como sufixo
+// ("IND-46 · Taxa de ocupação do quadro docente"), expandIndicatorCodes()
+// (painel.js ~5009) duplica o nome em vez de só trocar o código — mesmo
+// padrão visto na Aba 5, diferente do "nome · sufixo distinto" das Abas 3/4.
+const ABA6_LABEL_TO_IND = {
+  "Taxa de ocupação do quadro docente · Taxa de ocupação do quadro docente": "ind46",                              // pós expansão (fonte: "IND-46 · Taxa de ocupação do quadro docente")
+  "Participação do TIDE no quadro docente disponível · Participação do TIDE no quadro docente disponível": "ind51" // pós expansão (fonte: "IND-51 · Participação do TIDE no quadro docente disponível")
+};
+
 // Respeita o filtro de IEES: com seleção ativa (c.display), restringe os
 // gráficos/cards às IEES escolhidas; sem seleção, usa o cluster/escopo.
 function facultyRows(c) {
@@ -518,7 +529,7 @@ function facultyCresScatter(c) {
     `<span><span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:rgba(34,197,94,0.3);margin-right:4px;"></span>Quadro consolidado — baixa CRES, alta ocupação</span>` +
     `<span><span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:rgba(59,130,246,0.3);margin-right:4px;"></span>Alta utilização — CRES ativa e quadro pleno</span>` +
     `<span><span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:rgba(148,163,184,0.3);margin-right:4px;"></span>Capacidade subutilizada — baixa CRES e ocupação</span>` +
-    `<span><span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:rgba(234,179,8,0.3);margin-right:4px;"></span>Dependência de CRES — vagas ociosas, CRES elevada</span>` +
+    `<span><span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:rgba(234,179,8,0.3);margin-right:4px;"></span>Dependência de CRES — vagas não ocupadas, CRES elevada</span>` +
     `</div>`;
 
   const fonte =
@@ -548,3 +559,33 @@ function facultyAlertCard(u, rows) {
   else if (m.occupationRate < 70 && m.cresParticipation > 20) { stateLabel = "Dependência de pessoal temporário"; cls = "alert-warn"; icon = "●"; trigger = `IND-46 ${formatPercent(m.occupationRate)} / IND-59 ${formatPercent(m.cresParticipation)}`; }
   return `<article class="faculty-alert-card ${cls}"><span class="faculty-alert-icon">${icon}</span><div><strong>${u.sigla}</strong><span>${stateLabel}</span><em>${trigger}</em></div></article>`;
 }
+
+// ── Tooltip de fórmula (ⓘ) — h3 de .visual-card ─────────────────────────────
+function _injectAba6FormulaTooltips() {
+  if (state.activeTab !== "faculty") return;
+  document.querySelectorAll(".visual-card:not([data-formula-done])").forEach(card => {
+    const h3 = card.querySelector("h3");
+    if (!h3) return;
+    const key = ABA6_LABEL_TO_IND[h3.textContent.trim()];
+    if (!key) return;
+    card.setAttribute("data-formula-done", "1");
+    injectFormulaTooltip(h3, key);
+  });
+}
+
+// Mesmo padrão validado nas Abas 1, 3, 4 e 5: NÃO usar patch de render().
+// MutationObserver direto nos containers reais, via document.getElementById
+// (não via "el", que só é populado por cache() no listener de
+// DOMContentLoaded — este script roda antes disso).
+(function () {
+  function start() {
+    const kpiGrid = document.getElementById("kpiGrid");
+    const tabContent = document.getElementById("tabContent");
+    if (!kpiGrid && !tabContent) return;
+    const observer = new MutationObserver(function () { _injectAba6FormulaTooltips(); });
+    if (kpiGrid) observer.observe(kpiGrid, { childList: true });
+    if (tabContent) observer.observe(tabContent, { childList: true });
+  }
+  start();
+  _injectAba6FormulaTooltips();
+}());

@@ -158,9 +158,9 @@
         <button class="tab-button" type="button" data-tab="comparison">2. Comparação entre IEES</button>
         <button class="tab-button" type="button" data-tab="access">3. Acesso e Oferta</button>
         <button class="tab-button" type="button" data-tab="retention">4. Permanência e Formação</button>
-        <button class="tab-button" type="button" data-tab="quality">5. Qualidade, Pesquisa e Pós-Graduação</button>
+        <button class="tab-button" type="button" data-tab="quality">5. Qualificação docente, Pesquisa e Pós-Graduação</button>
         <button class="tab-button" type="button" data-tab="faculty">6. Corpo Docente e Capacidade Operacional</button>
-        <button class="tab-button" type="button" data-tab="employment">7. Inserção Profissional</button>
+        <button class="tab-button" type="button" data-tab="employment">7. Retenção Profissional</button>
         <button class="tab-button" type="button" data-tab="efficiency">8. Execução Orçamentária</button>
         <button class="tab-button" type="button" data-tab="performance">9. Desempenho e Eficiência Relativa</button>
         <div class="tab-active-indicator" aria-hidden="true"></div>
@@ -203,26 +203,41 @@
               </div>
             </div>
 
-            <label class="filter-inline-group filter-mini-card" for="groupBy" hidden>
-              <span class="filter-inline-label">Cluster Multidimensional</span>
-              <select class="filter-inline-select" id="groupBy">
-                <option value="none">Não agrupar</option>
-                <option value="v1" selected>Porte institucional</option>
-                <option value="v2">Oferta de cursos</option>
-                <option value="v3">Oferta territorial</option>
-                <option value="v4">Qualificação docente</option>
-                <option value="v5">Estrutura acadêmica composta</option>
-                <option value="v6" title="Disponível apenas para escopo Paraná">Dinâmica orçamentária (PR)</option>
-                <option value="v7" title="Disponível apenas para escopo Paraná">Renda do Território Atendido (PR)</option>
-                <option value="v8" title="Disponível apenas para escopo Paraná">IDH do Território Atendido (PR)</option>
-                <option value="especifico">Cluster Específico</option>
-              </select>
-            </label>
+            <!-- #groupBy: mantido como armazenamento de estado interno
+                 (mesmo padrão já usado para #groupLevelFilter) — nunca
+                 deve virar visível. A apresentação visual do V1-V8 é
+                 feita pelo dropdown customizado #groupByWrap abaixo,
+                 que lê as options deste select diretamente (mesmo
+                 texto, mesmo disabled/hidden calculados por
+                 updateScopeAvailability para V6-V8 em escopo Brasil). -->
+            <select id="groupBy" hidden aria-hidden="true" tabindex="-1">
+              <option value="none">Não agrupar</option>
+              <option value="v1" selected>Porte institucional</option>
+              <option value="v2">Oferta de cursos</option>
+              <option value="v3">Oferta territorial</option>
+              <option value="v4">Qualificação docente</option>
+              <option value="v5">Estrutura acadêmica composta</option>
+              <option value="v6" title="Disponível apenas para escopo Paraná">Dinâmica orçamentária (PR)</option>
+              <option value="v7" title="Disponível apenas para escopo Paraná">Renda do Território Atendido (PR)</option>
+              <option value="v8" title="Disponível apenas para escopo Paraná">IDH do Território Atendido (PR)</option>
+              <option value="especifico">Cluster Multidimensional</option>
+            </select>
+
+            <div class="iees-multi-wrap group-by-wrap filter-inline-group" id="groupByWrap">
+              <span class="filter-inline-label">Cluster Específico</span>
+              <button type="button" class="iees-multi-btn group-by-btn" id="groupByBtn" aria-haspopup="listbox" aria-expanded="false">
+                <span id="groupByLabel">Porte institucional</span>
+                <span class="iees-multi-arrow" aria-hidden="true">▾</span>
+              </button>
+              <div class="iees-multi-dropdown group-by-dropdown" id="groupByDropdown" hidden>
+                <div id="groupByList"></div>
+              </div>
+            </div>
 
             <div class="group-variable-buttons" id="groupVariableButtons" aria-label="Selecionar variável de agrupamento"></div>
 
             <div class="iees-multi-wrap cluster-especifico-wrap filter-inline-group" id="clusterEspecificoWrap">
-              <span class="filter-inline-label">Cluster Específico</span>
+              <span class="filter-inline-label">Cluster Multidimensional</span>
               <button type="button" class="iees-multi-btn cluster-especifico-btn" id="clusterEspecificoBtn" aria-haspopup="listbox" aria-expanded="false">
                 <span id="clusterEspecificoLabel">Todos os grupos</span>
                 <span class="iees-multi-arrow" aria-hidden="true">▾</span>
@@ -292,7 +307,7 @@
         <aside class="side-panel" aria-label="Painel lateral com critérios do agrupamento">
           <div class="side-group-filter" id="sideGroupFilter" aria-label="Filtrar por grupo"></div>
           <div class="side-card accent-card">
-            <p class="eyebrow">Cluster Multidimensional</p>
+            <p class="eyebrow">Cluster Específico</p>
             <h2 id="groupTitle">V1 - Porte institucional</h2>
             <div id="criteriaList" class="criteria-list"></div>
           </div>
@@ -337,11 +352,11 @@
     <script src="assets/painel-aba3-acesso.js"></script>
     <!-- ABA 4 — Permanência e Formação -->
     <script src="assets/painel-aba4-permanencia.js"></script>
-    <!-- ABA 5 — Qualidade, Pesquisa e Pós-Graduação -->
+    <!-- ABA 5 — Qualificação docente, Pesquisa e Pós-Graduação -->
     <script src="assets/painel-aba5-qualidade.js"></script>
     <!-- ABA 6 — Corpo Docente e Capacidade Operacional -->
     <script src="assets/painel-aba6-docentes.js"></script>
-    <!-- ABA 7 — Inserção Profissional -->
+    <!-- ABA 7 — Retenção Profissional -->
     <script src="assets/painel-aba7-insercao.js"></script>
     <!-- ABA 8 — Orçamentária e Despesa 8050 -->
     <script src="assets/painel-aba8-orcamentaria.js"></script>

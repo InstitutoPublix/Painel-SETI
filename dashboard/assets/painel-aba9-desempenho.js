@@ -3,6 +3,43 @@
    Redefine as funções desta aba carregando-as após painel.js.
    ========================================================================== */
 
+// ── Tooltip de fórmula (ⓘ) — mapa de alias label → indicador do catálogo ────
+// Guard duplo: esta aba redefine renderKpis() tanto para tabId "performance"
+// quanto "efficiency" (rótulo na UI: "8. Execução Orçamentária" é
+// state.activeTab === "efficiency"; "9. Desempenho e Eficiência Relativa" é
+// state.activeTab === "performance" — confirmado via grep no HTML,
+// data-tab="efficiency"/"performance"). É por isso que a Aba 8
+// (painel-aba8-orcamentaria.js) não teve nenhum card vivo no diagnóstico:
+// esta aba sombreia o que seria dela para a aba "efficiency".
+//
+// legacyBudgetIndicatorName("ind95orc"/"ind96orc"/"ind97orc") ("Percentual
+// de execução de liquidação do Orçamento Inicial/Disponível/Atualizado") —
+// CORREÇÃO: uma rodada anterior
+// excluiu esses 3 por presumir colisão de numeração com CAPES/pós-graduação
+// (ind95/ind96/ind97). Engano: o catálogo já resolve essa ambiguidade com
+// chaves distintas — "ind95orc"/"ind96orc"/"ind97orc" são as entradas
+// orçamentárias corretas (confirmado via grep em painel.js: formulas contêm
+// "Liquidado / ...", nunca "NM_PROGRAMA_IES"/"CAPES"; também já usadas em
+// SCATTER_INDICATOR_OPTIONS ~3765-3767 e nos grupos de cruzamento
+// ~3975-3977). ind95/ind96/ind97 (sem sufixo) continuam sendo os de
+// CAPES/pós-graduação — não usar essas chaves aqui.
+//
+// ⚠️ Duplicata de função no próprio arquivo: budgetMovementBlock é declarada
+// 2× (linha ~1361, morta; linha ~1686, viva — confirmado via grep que só a
+// segunda declaração é alcançável). Todas as entradas abaixo foram
+// confirmadas contra a declaração viva.
+const ABA9_LABEL_TO_IND = {
+  "Taxa de Execução Orçamentária (Empenho)": "ind81",
+  "Variação da Dotação Orçamentária (Dotação Inicial vs. Atualizada)": "ind85",
+  "Grau de Contingenciamento Orçamentário": "ind84",
+  "Taxa de Liquidação": "ind82",
+  "Taxa de Pagamento sobre Liquidado": "ind83",
+  "Percentual de variação da dotação orçamentária em relação à LOA inicial": "ind94",
+  "Percentual de execução de liquidação do Orçamento Inicial": "ind95orc",
+  "Percentual de execução de liquidação do Orçamento Disponível": "ind96orc",
+  "Percentual de execução de liquidação do Orçamento Atualizado": "ind97orc"
+};
+
 /* Aba 9 - Desempenho e Eficiência Relativa (Relatório Despesa 8050) */
 state.efficiencyMode = state.efficiencyMode || "eficiencia";
 state.efficiencyResult = state.efficiencyResult || "completion";
@@ -389,6 +426,11 @@ renderTab = function renderTabCanonical(c) {
     if (typeof bindOverviewControls === "function") bindOverviewControls();
     if (typeof bindComparisonControls === "function") bindComparisonControls();
     if (typeof bindComparisonYearButtons === "function") bindComparisonYearButtons();
+    // Religa o dropdown "Selecionar indicadores" do catálogo (ex.: aba Acesso
+    // e Oferta) — esta função (definida em painel.js) parou de ser chamada
+    // quando renderTab foi reescrito aqui como renderTabCanonical, em vez de
+    // encadear a versão anterior (renderTabWithIndicatorCatalog).
+    if (typeof appendIndicatorCatalog === "function") appendIndicatorCatalog(id, c);
     window.__lastTabRenderError = null;
   } catch (error) {
     const detail = String(error && error.message ? error.message : error)
@@ -521,7 +563,7 @@ function costPerEmployed(u) {
 }
 
 // Índice de Desempenho Acadêmico (0–100)
-// Pesos: conclusão 25%, permanência 20%, ocupação 15%, qualidade 15%, inserção 15%, pesquisa 10%
+// Pesos: conclusão 25%, permanência 20%, ocupação 15%, qualidade 15%, retenção PR 15%, pesquisa 10%
 function academicPerformanceIndex(u) {
   const permanence = isValidNumber(u.dropout) ? clamp(100 - u.dropout, 0, 100) : null;
   const metrics = [
@@ -819,7 +861,7 @@ function renderEfficiencyRankingTable(rows) {
   return `<div class="table-wrap"><table class="pilot-ranking-table">
     <thead><tr><th>Pos.</th><th>IEES</th>
       <th><span class="eff-th-info" tabindex="0">Custo/aluno ⓘ<span class="eff-th-tooltip"><strong>Custo por aluno</strong><br>Orçamento total liquidado pela universidade no ano dividido pelo número de alunos com matrícula ativa. Reflete o investimento médio por estudante efetivamente matriculado — não considera vagas ofertadas.<br><br><em>Fontes: Despesa liquidada — Relatório da Despesa 8050 (SETI/SEFA, 2024); Matrículas ativas (QT_MAT) — INEP/Censo da Educação Superior (2024).</em></span></span></th>
-      <th><span class="eff-th-info" tabindex="0">Índice desempenho ⓘ<span class="eff-th-tooltip"><strong>Índice de Desempenho Acadêmico</strong><br>Score composto (0–100) calculado por média ponderada de seis indicadores:<br>• Concluintes sobre matrículas: 25% &nbsp;• Permanência (1 − evasão): 20%<br>• Ocupação de vagas: 15% &nbsp;• % Docentes doutores: 15%<br>• Inserção profissional: 15% &nbsp;• Conceito CAPES médio: 10%<br>O componente IND-27 usa QT_CONC / QT_MAT × 100 no mesmo ano, sem acompanhamento de coorte. Quando um indicador está ausente, o peso é redistribuído entre os demais.<br><br><em>Fontes: INEP/Censo da Educação Superior, CAPES/Sucupira, bases administrativas SETI/PR.</em></span></span></th>
+      <th><span class="eff-th-info" tabindex="0">Índice desempenho ⓘ<span class="eff-th-tooltip"><strong>Índice de Desempenho Acadêmico</strong><br>Score composto (0–100) calculado por média ponderada de seis indicadores:<br>• Concluintes sobre matrículas: 25% &nbsp;• Permanência (1 − evasão): 20%<br>• Ocupação de vagas: 15% &nbsp;• % Docentes doutores: 15%<br>• Retenção de egressos (PR): 15% &nbsp;• Conceito CAPES médio: 10%<br>O componente IND-27 usa QT_CONC / QT_MAT × 100 no mesmo ano, sem acompanhamento de coorte. Quando um indicador está ausente, o peso é redistribuído entre os demais.<br><br><em>Fontes: INEP/Censo da Educação Superior, CAPES/Sucupira, bases administrativas SETI/PR.</em></span></span></th>
       <th><span class="eff-th-info" tabindex="0">Índice eficiência ⓘ<span class="eff-th-tooltip"><strong>Índice de Eficiência Acadêmico-Orçamentária</strong><br>Razão entre o desempenho relativo e o custo relativo da universidade em relação à média do conjunto: <em>desempenho da IES ÷ média do grupo</em> dividido por <em>custo da IES ÷ média do grupo</em>.<br>Valores acima de 1,0 indicam que a universidade entrega desempenho proporcionalmente superior ao seu custo.<br>• Acima de 1,10 → Alta eficiência<br>• Entre 0,90 e 1,10 → Eficiência proporcional<br>• Abaixo de 0,90 → Baixa eficiência<br><br><em>Fontes: calculado internamente a partir do Índice de Desempenho e do Custo/Aluno normalizados pela média das IEES-PR do recorte.</em></span></span></th>
       <th style="text-align:center;"><span class="eff-th-info" tabindex="0">SELO ${_seloAnoTabela} ⓘ<span class="eff-th-tooltip"><strong>Nota Final SELO-PR</strong><br>Nota final SELO-PR — Sistema de Excelência em Liderança Orçamentária (DOE/SEFA). Escala 0–100.<br><br>Composta por 11 indicadores em 3 eixos: Eficiência na Execução Orçamentária (60 pts), Racionalidade na Gestão de Créditos Adicionais (20 pts) e Passivos de Exercícios Anteriores (20 pts).<br><br>A cor indica posição relativa entre as IES do recorte: verde = 1º–2º &nbsp; azul-acinzentado = posições intermediárias &nbsp; laranja = últimas posições.<br><br><em>Fonte: Base SELO — Paraná (DOE/SEFA-PR), exercício ${_seloAnoTabela}.</em></span></span></th>
       <th>Classificação</th></tr></thead>
@@ -828,7 +870,7 @@ function renderEfficiencyRankingTable(rows) {
   <div class="metodologia-ranking-note">
     <strong>Como os índices são calculados</strong>
     <p><strong>Custo/Aluno:</strong> orçamento total liquidado pela IEES no exercício (Relatório da Despesa 8050 · SEFA/SETI), dividido pelo número de estudantes com matrícula ativa (QT_MAT · INEP/Censo da Educação Superior). Expresso em reais por estudante. Não considera vagas ofertadas não preenchidas.</p>
-    <p><strong>Índice de Desempenho Acadêmico</strong> (escala 0–100): média ponderada de seis indicadores acadêmicos — concluintes sobre matrículas (peso 25%), permanência, ou seja, 100 menos a taxa de evasão (20%), taxa de ocupação de vagas (15%), proporção de docentes com doutorado (15%), taxa de inserção profissional de egressos (15%) e conceito CAPES médio dos programas de pós-graduação (10%). O componente de concluintes sobre matrículas é o IND-27: QT_CONC / QT_MAT × 100 no mesmo ano, sem acompanhamento de coorte. Quando algum indicador não está disponível para a IEES, o peso é redistribuído proporcionalmente entre os demais; o índice exige pelo menos dois indicadores com dado válido.</p>
+    <p><strong>Índice de Desempenho Acadêmico</strong> (escala 0–100): média ponderada de seis indicadores acadêmicos — concluintes sobre matrículas (peso 25%), permanência, ou seja, 100 menos a taxa de evasão (20%), taxa de ocupação de vagas (15%), proporção de docentes com doutorado (15%), taxa de retenção de egressos pelo Estado do Paraná (15%) e conceito CAPES médio dos programas de pós-graduação (10%). O componente de concluintes sobre matrículas é o IND-27: QT_CONC / QT_MAT × 100 no mesmo ano, sem acompanhamento de coorte. Quando algum indicador não está disponível para a IEES, o peso é redistribuído proporcionalmente entre os demais; o índice exige pelo menos dois indicadores com dado válido.</p>
     <p><strong>Índice de Eficiência Acadêmico-Orçamentária:</strong> razão entre o desempenho relativo e o custo relativo da IEES em relação à média do conjunto — isto é, (Índice de Desempenho da IEES ÷ média do grupo) dividido por (Custo/Aluno da IEES ÷ média do grupo). Um valor acima de 1,0 indica que a IEES entrega desempenho proporcionalmente superior ao que seu custo justificaria. Faixas de classificação: <em>Alta eficiência</em> (índice &gt; 1,10), <em>Eficiência proporcional</em> (0,90–1,10) e <em>Baixa eficiência</em> (&lt; 0,90).</p>
     <p style="margin:0"><em>Os índices têm caráter analítico-comparativo e devem ser interpretados em conjunto com o contexto institucional de cada IEES — porte, missão territorial, perfil de cursos e condições orçamentárias estruturais.</em></p>
   </div>`;
@@ -844,7 +886,7 @@ var _CD_INDS = [
     get:function(u){return u.occupancy;},  fmt:_fmtP, higher:true },
   { key:"completion", label:"Concluintes sobre matrículas",
     get:function(u){return u.completion;}, fmt:_fmtP, higher:true },
-  { key:"employment", label:"Inserção profissional",
+  { key:"employment", label:"Retenção de egressos (PR)",
     get:function(u){return u.employment;}, fmt:_fmtP, higher:true },
   { key:"capes",      label:"Conceito CAPES médio",
     get:function(u){return u.capes;},
@@ -1160,7 +1202,7 @@ function performanceRelativeBlock(title, c) {
           <p><strong>Como ler esta tabela:</strong></p>
           <ul>
             <li><strong>Custo/Aluno:</strong> orçamento liquidado da IES no ano (R$) dividido pelo total de matrículas de graduação presencial — reflete o investimento médio por estudante efetivamente matriculado (fontes: Relatório da Despesa 8050 · Base SEFA-PR; matrículas QT_MAT · INEP/Censo da Educação Superior).</li>
-            <li><strong>Índice de Desempenho:</strong> pontuação sintética de resultado acadêmico, calculada como média ponderada: ocupação de vagas (15%) + concluintes sobre matrículas (15%) + permanência — 100 menos evasão — (12%) + docentes com doutorado (14%) + captação CNPq normalizada entre 900 e 1.900 (12%) + conceito CAPES normalizado entre 3,2 e 5 (10%) + taxa de inserção profissional (12%) + salário dos egressos normalizado entre R$&nbsp;4.500 e R$&nbsp;6.500 (10%). Reúne indicadores de oferta, permanência, qualificação docente, pesquisa e inserção profissional.</li>
+            <li><strong>Índice de Desempenho:</strong> pontuação sintética de resultado acadêmico, calculada como média ponderada: ocupação de vagas (15%) + concluintes sobre matrículas (15%) + permanência — 100 menos evasão — (12%) + docentes com doutorado (14%) + captação CNPq normalizada entre 900 e 1.900 (12%) + conceito CAPES normalizado entre 3,2 e 5 (10%) + taxa de retenção de egressos pelo Estado do Paraná (12%) + salário dos egressos normalizado entre R$&nbsp;4.500 e R$&nbsp;6.500 (10%). Reúne indicadores de oferta, permanência, qualificação docente, pesquisa e inserção profissional.</li>
             <li><strong>Índice de Eficiência:</strong> razão entre o desempenho relativo e o custo relativo da IES em relação à média do grupo — <em>(desempenho IES ÷ média grupo) ÷ (custo IES ÷ média grupo)</em>. Valor acima de 1,0 indica que a IES entrega resultado acima da média com custo igual ou inferior; valor abaixo de 1,0 indica o oposto.</li>
             <li><strong>Classificação:</strong>
               <ul>
@@ -1371,9 +1413,9 @@ function budgetMovementBlock(c) {
     ${budgetScoreCard(indicatorName(83), formatPercent(a.paymentRate), "pago / orçamento atualizado")}
     ${budgetScoreCard(indicatorName(84), formatPercent(a.contingencyRate), "contingenciado / atualizado")}
     ${budgetScoreCard(indicatorName(85), formatPercent(a.variationRate), "LOA vs. atualizado")}
-    ${budgetScoreCard(indicatorName(95), formatPercent(a.execInitial), "liquidado / dotação inicial")}
-    ${budgetScoreCard(indicatorName(96), formatPercent(a.execAvailable), "liquidado / orçamento disponível")}
-    ${budgetScoreCard(indicatorName(97), formatPercent(a.execUpdated), "liquidado / orçamento atualizado")}
+    ${budgetScoreCard(legacyBudgetIndicatorName("ind95orc"), formatPercent(a.execInitial), "liquidado / dotação inicial")}
+    ${budgetScoreCard(legacyBudgetIndicatorName("ind96orc"), formatPercent(a.execAvailable), "liquidado / orçamento disponível")}
+    ${budgetScoreCard(legacyBudgetIndicatorName("ind97orc"), formatPercent(a.execUpdated), "liquidado / orçamento atualizado")}
   </div>
   <article class="visual-card mt-14"><h3>${indicatorName(81)} por IEES</h3><p class="card-subtitle">V6 é a referência natural. Verde acima de 90%; amarelo entre 80% e 90%; vermelho abaixo de 80%.</p>${budgetExecutionBars(c)}</article>`;
 }
@@ -1434,7 +1476,7 @@ function budgetWaterfall(c) {
     ["Pago",                 m.paid,             "total"]
   ];
   const maxAbs = Math.max(...steps.map(s => Math.abs(s[1])), 1);
-  return `<div class="budget-waterfall"><div class="waterfall-title"><strong>${u.sigla}</strong><span>${indicatorName(85)} ${formatPercent(m.variationRate)} · ${indicatorName(84)} ${formatPercent(m.contingencyRate)} · ${indicatorName(97)} ${formatPercent(m.execUpdated)}</span></div><div class="waterfall-bars">${steps.map(([label, value, type]) => `<div class="waterfall-step ${type}"><span class="waterfall-label">${label}</span><div class="waterfall-track"><span class="has-tip" style="width:${clamp(Math.abs(value) / maxAbs * 100, 6, 100)}%" data-tip="${label}: ${formatCurrencyMillions(Math.abs(value))}"></span></div><strong>${formatCurrencyMillions(Math.abs(value))}</strong></div>`).join("")}</div></div>`;
+  return `<div class="budget-waterfall"><div class="waterfall-title"><strong>${u.sigla}</strong><span>${indicatorName(85)} ${formatPercent(m.variationRate)} · ${indicatorName(84)} ${formatPercent(m.contingencyRate)} · ${legacyBudgetIndicatorName("ind97orc")} ${formatPercent(m.execUpdated)}</span></div><div class="waterfall-bars">${steps.map(([label, value, type]) => `<div class="waterfall-step ${type}"><span class="waterfall-label">${label}</span><div class="waterfall-track"><span class="has-tip" style="width:${clamp(Math.abs(value) / maxAbs * 100, 6, 100)}%" data-tip="${label}: ${formatCurrencyMillions(Math.abs(value))}"></span></div><strong>${formatCurrencyMillions(Math.abs(value))}</strong></div>`).join("")}</div></div>`;
 }
 
 // ── Scatter com dados reais (byYear) para seções 3 e 4 da aba 9 ─────────────
@@ -1695,9 +1737,9 @@ function budgetMovementBlock(c) {
     ${budgetScoreCard(indicatorName(84), formatPercent(a.contingencyRate), "contingenciado / atualizado")}
     ${budgetScoreCard(indicatorName(85), formatPercent(a.variationRate), "LOA vs. atualizado")}
     ${budgetScoreCard(indicatorName(94), formatPercent(a.variationRate), "variação frente à LOA inicial")}
-    ${budgetScoreCard(indicatorName(95), formatPercent(a.execInitial), "liquidado / dotação inicial")}
-    ${budgetScoreCard(indicatorName(96), formatPercent(a.execAvailable), "liquidado / orçamento disponível")}
-    ${budgetScoreCard(indicatorName(97), formatPercent(a.execUpdated), "liquidado / orçamento atualizado")}
+    ${budgetScoreCard(legacyBudgetIndicatorName("ind95orc"), formatPercent(a.execInitial), "liquidado / dotação inicial")}
+    ${budgetScoreCard(legacyBudgetIndicatorName("ind96orc"), formatPercent(a.execAvailable), "liquidado / orçamento disponível")}
+    ${budgetScoreCard(legacyBudgetIndicatorName("ind97orc"), formatPercent(a.execUpdated), "liquidado / orçamento atualizado")}
   </div>
   <article class="visual-card mt-14"><h3>${indicatorName(81)} por IEES</h3><p class="card-subtitle">V6 é a referência natural. Verde acima de 90%; amarelo entre 80% e 90%; vermelho abaixo de 80%.</p>${budgetExecutionBars(c)}</article>`;
 }
@@ -1772,3 +1814,46 @@ renderKpis = function(c) {
   renderKpisEfficiencyCleanup(c);
   appendMissingKpiDeltas(c);
 };
+
+// ── Tooltip de fórmula (ⓘ) — .kpi-card.kpi-budget + .score-card.budget-score-card ──
+// Guard duplo: cobre as duas abas que esta aba redefine (ver nota do mapa
+// acima). Dois loops — os mesmos 6 indicadores aparecem tanto no KPI global
+// (aba "efficiency") quanto nos score-cards de "Perfil da movimentação"
+// (também "efficiency"), sem colisão de dado (mesmo ind_key nos dois
+// lugares, cada card marcado e verificado independentemente).
+function _injectAba9FormulaTooltips() {
+  if (state.activeTab !== "performance" && state.activeTab !== "efficiency") return;
+  document.querySelectorAll(".kpi-card:not([data-formula-done])").forEach(card => {
+    const labelEl = card.querySelector(".kpi-label");
+    if (!labelEl) return;
+    const key = ABA9_LABEL_TO_IND[labelEl.textContent.trim()];
+    if (!key) return;
+    card.setAttribute("data-formula-done", "1");
+    injectFormulaTooltip(labelEl, key);
+  });
+  document.querySelectorAll(".score-card:not([data-formula-done])").forEach(card => {
+    const h3 = card.querySelector("h3");
+    if (!h3) return;
+    const key = ABA9_LABEL_TO_IND[h3.textContent.trim()];
+    if (!key) return;
+    card.setAttribute("data-formula-done", "1");
+    injectFormulaTooltip(h3, key);
+  });
+}
+
+// Mesmo padrão validado nas Abas 1, 3, 4, 5, 6 e 7: NÃO usar patch de
+// render(). MutationObserver direto nos containers reais, via
+// document.getElementById (não via "el", que só é populado por cache() no
+// listener de DOMContentLoaded — este script roda antes disso).
+(function () {
+  function start() {
+    const kpiGrid = document.getElementById("kpiGrid");
+    const tabContent = document.getElementById("tabContent");
+    if (!kpiGrid && !tabContent) return;
+    const observer = new MutationObserver(function () { _injectAba9FormulaTooltips(); });
+    if (kpiGrid) observer.observe(kpiGrid, { childList: true });
+    if (tabContent) observer.observe(tabContent, { childList: true });
+  }
+  start();
+  _injectAba9FormulaTooltips();
+}());

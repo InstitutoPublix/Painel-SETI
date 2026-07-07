@@ -201,7 +201,7 @@ Colunas: IEES | Cursos | Vagas | Ocupação | Vagas não ocupadas | Custo por es
 
 ---
 
-## Aba 5 — Qualidade, Pesquisa e Pós-Graduação
+## Aba 5 — Qualificação docente, Pesquisa e Pós-Graduação
 
 **Pergunta orientadora:** A pesquisa e a pós-graduação estão avançando?
 
@@ -285,7 +285,7 @@ Colunas: IEES | Ocupação docente | TIDE estimado | CRES | Despesa pessoal | Es
 
 ---
 
-## Aba 7 — Inserção Profissional
+## Aba 7 — Retenção Profissional
 
 **Pergunta orientadora:** Os egressos estão sendo absorvidos pelo mercado?
 

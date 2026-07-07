@@ -282,6 +282,83 @@ for iees in IEES:
     )
 
 
+# ── 2b. Cursos — desagregação por Grande Área CINE, Grau Acadêmico e Modalidade
+# Fonte: mesmas linhas já coletadas em cursos_data (Seção 2) — não reabre o arquivo.
+# Chave de agregação: (NO_CINE_AREA_GERAL, TP_GRAU_ACADEMICO, TP_MODALIDADE_ENSINO)
+#
+# ATENÇÃO: os rótulos de TP_GRAU_ACADEMICO e TP_MODALIDADE_ENSINO seguem o padrão
+# do dicionário do Censo da Educação Superior/INEP, mas NÃO foram confirmados
+# contra o dicionário oficial anexo ao Censo neste projeto — [CONFIRMAR NO CÓDIGO]
+# antes de expor ao usuário final. Valor 0 e None em TP_GRAU_ACADEMICO ocorrem em
+# cursos interdisciplinares (ex.: "Abi - Ciências Biológicas") e ficam como
+# "Não classificado" em vez de assumir um rótulo.
+
+_GRAU_LABELS = {
+    1: "Bacharelado",
+    2: "Licenciatura",
+    3: "Tecnólogo",     # confirmado pela Luíza — rótulo correto
+    0: "Não classificado",
+    None: "Não classificado",
+}
+_MODALIDADE_LABELS = {
+    1: "Presencial",  # [CONFIRMAR NO CÓDIGO — dicionário INEP]
+    2: "EaD",         # [CONFIRMAR NO CÓDIGO — dicionário INEP]
+}
+
+cine_col  = col_idx.get("NO_CINE_AREA_GERAL")
+grau_col  = col_idx.get("TP_GRAU_ACADEMICO")
+modal_col = col_idx.get("TP_MODALIDADE_ENSINO")
+
+cursos_detalhado = {}
+for _iees_d, _info_d in cursos_data.items():
+    _rows_d = _info_d["_rows"]
+    _grupos = {}
+    for _r in _rows_d:
+        _cine = _r[cine_col] if cine_col is not None else None
+        try:
+            _grau_int = int(_r[grau_col]) if grau_col is not None and _r[grau_col] is not None else None
+        except Exception:
+            _grau_int = None
+        try:
+            _modal_int = int(_r[modal_col]) if modal_col is not None and _r[modal_col] is not None else None
+        except Exception:
+            _modal_int = None
+        _chave = (
+            _cine or "Não informado",
+            _GRAU_LABELS.get(_grau_int, "Não classificado"),
+            _MODALIDADE_LABELS.get(_modal_int, "Não informado"),
+        )
+        if _chave not in _grupos:
+            _grupos[_chave] = {"mat": 0, "ing": 0, "conc": 0, "vgTot": 0, "cursos": 0, "desvinc": 0}
+        _g = _grupos[_chave]
+        _g["mat"]     += safe_int(_r[qt_mat])  or 0
+        _g["ing"]     += safe_int(_r[qt_ing])  or 0
+        _g["conc"]    += safe_int(_r[qt_conc]) or 0
+        _g["vgTot"]   += safe_int(_r[qt_vg])   or 0
+        _g["cursos"]  += safe_int(_r[qt_curs]) or 0
+        _g["desvinc"] += safe_int(_r[qt_desv]) or 0
+
+    _lista = []
+    for (_cine, _grau_label, _modal_label), _g in _grupos.items():
+        _occ  = round(_g["ing"]  / _g["vgTot"] * 100, 2) if _g["vgTot"] > 0 else None
+        _comp = round(_g["conc"] / _g["mat"]   * 100, 2) if _g["mat"]   > 0 else None
+        _drop = round(_g["desvinc"] / _g["mat"] * 100, 2) if _g["mat"]  > 0 else None
+        _lista.append({
+            "cineArea": _cine,
+            "grauAcademico": _grau_label,
+            "modalidade": _modal_label,
+            "students": _g["mat"],
+            "entrants": _g["ing"],
+            "graduates": _g["conc"],
+            "vacancies": _g["vgTot"],
+            "courses": _g["cursos"],
+            "occupancy": _occ,
+            "completion": _comp,
+            "dropout": _drop,
+        })
+    cursos_detalhado[_iees_d] = _lista
+
+
 # ── 3. Docentes — facultyOcc, cres, tide ─────────────────────────────────────
 # Fonte: Base Docentes - Paraná.xlsx / Base_Docentes_PR
 # Colunas (0-based):
@@ -2235,6 +2312,7 @@ precomputed = {
     "quartiRefs": quartis_ref,
     "clustersEspecificos": clusters_especificos_catalog,
     "composicaoFontes": composicaoFontes,
+    "cursosDetalhado": cursos_detalhado,
     # byYear: 2024 = todos os indicadores para as 40 IES;
     # 2025/2026 = apenas campos D8050 para as 7 IES-PR
     "byYear": {

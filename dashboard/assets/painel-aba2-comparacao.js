@@ -107,7 +107,7 @@ var radarAxes = [
   { label: "Permanência (retenção)", code: "IND-5",  get: u => 100 - u.dropout,             br: () => brazil.result.permanence },
   { label: "Qualidade",              code: "IND-6",  get: u => u.doctors,                   br: () => brazil.result.doctorate  },
   { label: "Pesquisa",               code: "IND-60", get: u => resultIndicators.cnpq.get(u),br: () => brazil.result.cnpq       },
-  { label: "Inserção",               code: "IND-37", get: u => u.employment,                br: () => brazil.result.employment },
+  { label: "Retenção PR",             code: "IND-37", get: u => u.employment,                br: () => brazil.result.employment },
   { label: "Orçamento",              code: "IND-81", get: u => u.execution,                 br: () => null, brUnavailable: true }
 ];
 
@@ -147,13 +147,13 @@ function radarAxesForDimension(key) {
   return axes;
 }
 
-function comparisonShortAxisLabel(label) {
+function comparisonShortAxisLabel(label, maxLen = 36) {
   const cleaned = String(label || "").replace(/\s*\([^)]*\)/g, "").trim();
   const words = cleaned.split(/\s+/);
   const stops = new Set(["de", "do", "da", "dos", "das", "no", "na", "nos", "nas", "por", "para", "e", "em"]);
   const meaningful = words.filter((w, i) => i === 0 || !stops.has(w.toLowerCase()));
   const short = meaningful.slice(0, 4).join(" ");
-  return short.length > 36 ? short.slice(0, 34) + "…" : short;
+  return short.length > maxLen ? short.slice(0, maxLen - 2) + "…" : short;
 }
 
 /* ── barra de dimensão e setters de estado ───────────────────────────────── */
@@ -211,7 +211,7 @@ function comparisonTable(c) {
     return `<div class="comparison-toolbar"><div><strong>Dimensão ${renderDimensionHelp()}</strong><span class="card-subtitle"> · ${dimension.label} · ${nationalReferenceLabel()}</span></div></div>
   <div class="table-wrap comparison-table-wrap">
     <table class="data-table comparison-table">
-      <thead><tr><th>Rank</th><th>IEES</th>${dimension.indicators.map(ind => { const shortName = comparisonShortAxisLabel(ind.name); return `<th title="${ind.name}" style="max-width:110px;word-break:break-word;white-space:normal;font-size:12px">${shortName}</th>`; }).join("")}</tr></thead>
+      <thead><tr><th>Rank</th><th>IEES</th>${dimension.indicators.map(ind => { const shortName = comparisonShortAxisLabel(ind.name, 200); return `<th title="${ind.name}" style="min-width:150px;word-break:break-word;white-space:normal;font-size:12px">${shortName}</th>`; }).join("")}</tr></thead>
       <tbody>${sortedRows.map(u => `<tr class="${isUniSelected(c.f, u.id) ? "selected-row" : ""}"><td><strong>${ranking.get(u.id) || "-"}º</strong></td><td><strong>${u.sigla}</strong><br><span>${u.region}</span></td>${dimension.indicators.map(ind => indicatorCell(ind, u, means[ind.code])).join("")}</tr>`).join("")}</tbody>
       <tfoot><tr><td colspan="2"><strong>${nationalMeanLabel()}</strong></td>${dimension.indicators.map(ind => `<td>${comparisonFormat(ind, means[ind.code])}</td>`).join("")}</tr></tfoot>
     </table>
@@ -233,7 +233,7 @@ function comparisonTable(c) {
   </div>
   <div class="table-wrap comparison-table-wrap">
     <table class="data-table comparison-table">
-      <thead><tr><th>Rank</th><th>IEES</th>${dimension.indicators.map(ind => { const shortName = comparisonShortAxisLabel(ind.name); return `<th title="${ind.name}" style="max-width:110px;word-break:break-word;white-space:normal;font-size:12px">${shortName}</th>`; }).join("")}</tr></thead>
+      <thead><tr><th>Rank</th><th>IEES</th>${dimension.indicators.map(ind => { const shortName = comparisonShortAxisLabel(ind.name, 200); return `<th title="${ind.name}" style="min-width:150px;word-break:break-word;white-space:normal;font-size:12px">${shortName}</th>`; }).join("")}</tr></thead>
       <tbody>${sortedRows.map(u => `<tr class="${clusterIds.has(u.id) ? "in-cluster" : "out-cluster"} ${isUniSelected(c.f, u.id) ? "selected-row" : ""}"><td><strong>${ranking.get(u.id) || "-"}º</strong></td><td><strong>${u.sigla}</strong><br><span>${u.groups[c.f.groupBy]}</span></td>${dimension.indicators.map(ind => indicatorCell(ind, u, means[ind.code])).join("")}</tr>`).join("")}</tbody>
       <tfoot>
         <tr><td colspan="2"><strong>Média do cluster</strong></td>${dimension.indicators.map(ind => `<td>${comparisonFormat(ind, means[ind.code])}</td>`).join("")}</tr>

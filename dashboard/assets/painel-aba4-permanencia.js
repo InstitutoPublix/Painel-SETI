@@ -7,6 +7,22 @@
 //   chartRowsByLocal, quartilChipStrip, panelEmploymentRate, _SCATTER_IES_COLORS
 // ═══════════════════════════════════════════════════════════════════════════
 
+// ── Tooltip de fórmula (ⓘ) — mapa de alias label → indicador do catálogo ────
+// Validado no diagnóstico e confirmado via Playwright contra o texto
+// REALMENTE renderizado (não o texto do código-fonte) — expandIndicatorCodes()
+// (painel.js ~5009) substitui qualquer "IND-N" no DOM pelo nome cheio do
+// indicador a cada render(), então o h3 "IND-5 · Taxa anual de desvinculação"
+// nunca aparece assim na tela (ver README, "Tooltips de Fórmula (ⓘ)", nota
+// da Aba 3 sobre esse achado).
+// NÃO incluídos de propósito: "Vagas não ocupadas" (ambíguo entre ind25/ind28,
+// fórmulas não batem exatamente) e "Matrículas por ingressante" (sem
+// indicador correspondente no catálogo).
+const ABA4_LABEL_TO_IND = {
+  "Taxa anual de desvinculação discente · Taxa anual de desvinculação": "ind5",  // visual-card — pós expansão (fonte: "IND-5 · Taxa anual de desvinculação")
+  "Concluintes sobre matrículas": "ind27",                                       // visual-card E .ff-kpi-label — mesma chave, texto não tem "IND-N", não é afetado pela expansão
+  "Ocupação das vagas": "ind26"                                                  // .ff-kpi-label — mesmo indicador do score-card homônimo da Aba 1 (fora do mapa validado lá)
+};
+
 // ── Dispatcher principal da aba ─────────────────────────────────────────────
 function retentionBlock(title, c) {
   if (title.includes("Funil"))    return retentionFunnelBlock(c);
@@ -14,7 +30,7 @@ function retentionBlock(title, c) {
   if (title.includes("Evolução")) return retentionYearRankingBlock(c);
   if (title.includes("Dispersão")) return retentionScatterBlock(c);
   if (title.includes("Ranking"))  return retentionCourseRankingBlock(c);
-  return retentionCrossBlock(c);
+  return empty();
 }
 
 // ── Filtro de indicadores da aba (barra "Visualizando:") ────────────────────
@@ -109,7 +125,7 @@ function formationFunnel(title, rows, c) {
 
   const side = `<div class="ff-side">
     <div class="ff-kpi-grid">
-      ${kpi("Vagas ociosas", formatNumber(idleVacancies), ffIcons.idle)}
+      ${kpi("Vagas não ocupadas", formatNumber(idleVacancies), ffIcons.idle)}
       ${kpi("Ocupação das vagas", fmt1(occRate) + "%", ffIcons.gauge)}
       ${kpi("Concluintes sobre matrículas", fmt1(gradRate) + "%", ffIcons.grad)}
       ${kpi("Matrículas por ingressante", stockRatio.toFixed(1).replace(".", ","), ffIcons.ratio)}
@@ -442,11 +458,24 @@ function setRetentionCourseType(type) {
 window.setRetentionCourseType = setRetentionCourseType;
 
 function courseTypeMetrics(u, type) {
-  // Dados REAIS por grau acadêmico (grauMix, Base Cursos INEP via pipeline);
-  // os offsets sintéticos abaixo só atuam quando o registro não tem o dado.
-  const g = u.grauMix && u.grauMix[type];
-  if (g && g.completion != null && g.dropout != null && g.students > 0) {
-    return { completion: g.completion, dropout: g.dropout, real: true };
+  // Dados REAIS por grau acadêmico, agregados de u.cursosDetalhado (Base
+  // Cursos - Brasil.xlsx, pipeline Seção 2b/Fase 6). Substitui o campo
+  // "grauMix" (nunca populado em produção — ver diagnóstico das Fases 1-3).
+  // Agregação: média de completion/dropout de cada subgrupo (cineArea ×
+  // modalidade) dentro do grau, ponderada por matrículas — equivale
+  // matematicamente a recalcular graduados/desvinculados ÷ matrículas no
+  // agregado do grau inteiro, a partir dos percentuais já calculados por
+  // subgrupo no pipeline.
+  // ATENÇÃO: cursosDetalhado é uma fotografia do ano mais recente disponível
+  // (mesma limitação já documentada na Aba 3 — não varia com o filtro de Ano).
+  if (u.cursosDetalhado && u.cursosDetalhado.length) {
+    const groups = u.cursosDetalhado.filter(g => g.grauAcademico === type && g.students > 0);
+    const totalStudents = sum(groups, g => g.students);
+    if (totalStudents > 0) {
+      const completion = sum(groups, g => (g.completion || 0) * g.students) / totalStudents;
+      const dropout = sum(groups, g => (g.dropout || 0) * g.students) / totalStudents;
+      return { completion: round(completion, 1), dropout: round(dropout, 1), real: true };
+    }
   }
   const offset = type === "Licenciatura" ? -6 : type === "Tecnólogo" ? 2 : 4;
   const dropoutOffset = type === "Licenciatura" ? 2.4 : type === "Tecnólogo" ? -0.6 : -1.2;
@@ -513,76 +542,11 @@ function retentionCourseRankingBlock(c) {
   const subtitle = active === "all"
     ? "Indicadores calculados sobre a totalidade dos cursos · ordenado por concluintes sobre matrículas dentro do cluster ativo."
     : hasRealGrau
-      ? `Cursos de ${active} — dados reais por grau acadêmico (INEP, Base Cursos) · ordenado por concluintes sobre matrículas dentro do cluster ativo.`
+      ? `Cursos de ${active} — dados reais por grau acadêmico (INEP, Base Cursos), referentes ao ano mais recente disponível na base (pode diferir do ano selecionado no filtro) · ordenado por concluintes sobre matrículas dentro do cluster ativo.`
       : `Estimativa para cursos de ${active} · ordenado por concluintes sobre matrículas dentro do cluster ativo.`;
   return `<div class="course-ranking-filter">${chipStrip}${infoNote}
     <article class="visual-card"><h3>Ranking por curso — ${heading}</h3><p class="card-subtitle">${subtitle}</p>${legend}${courseTypeRanking(rows, active, c)}</article>
   </div>`;
-}
-
-// ── 6. Conclusão × inserção profissional (barras agrupadas + diagnóstico) ────
-// Os "Alertas de formação" foram consolidados na barra lateral (ver override
-// de renderSystemAlerts no fim deste arquivo), conforme apontamento do doc.
-function retentionCrossBlock(c) {
-  const rows = clusterRowsFor(c).filter(u => u.completion != null);
-  if (!rows.length) return empty();
-  const empRows = rows.filter(u => u.employment != null && u.employment > 0);
-  const avgComp = mean(rows, u => u.completion);
-  const avgEmployment = empRows.length ? mean(empRows, u => u.employment) : null;
-  const hasEmployment = empRows.length > 0;
-
-  const sorted = [...rows].sort((a, b) => b.completion - a.completion);
-  const barRows = sorted.map(u => {
-    const compW = clamp(u.completion, 3, 100).toFixed(1);
-    const empOk = hasEmployment && u.employment != null && u.employment > 0;
-    const empW = empOk ? clamp(u.employment, 3, 100).toFixed(1) : 0;
-    const empBar = empOk
-      ? `<div class="cx-track"><span class="cx-bar cx-emp" style="width:${empW}%"></span><em class="cx-val">${formatPercent(u.employment)}</em></div>`
-      : `<div class="cx-track cx-na"><em class="cx-val">sem dado de inserção</em></div>`;
-    return `<div class="cx-row ${isUniSelected(c.f, u.id) ? "selected" : ""}">
-      <span class="cx-name" title="${u.nome}">${u.sigla}</span>
-      <div class="cx-bars">
-        <div class="cx-track"><span class="cx-bar cx-comp" style="width:${compW}%"></span><em class="cx-val">${formatPercent(u.completion)}</em></div>
-        ${empBar}
-      </div>
-    </div>`;
-  }).join("");
-
-  const diagnostics = sorted.map(u => {
-    if (!hasEmployment || u.employment == null || u.employment <= 0) return "";
-    const d = crossFormationEmployment(u, avgComp, avgEmployment);
-    return `<div class="cx-diag ${d.cls}"><strong>${u.sigla}</strong><span>${d.msg}</span></div>`;
-  }).filter(Boolean).join("");
-
-  const side = `<div class="cx-side">
-    <div class="cx-kpis">
-      <div class="cx-kpi"><span>Média IND-27</span><strong>${formatPercent(avgComp)}</strong></div>
-      <div class="cx-kpi"><span>Média de inserção (IND-37)</span><strong>${avgEmployment != null ? formatPercent(avgEmployment) : "—"}</strong></div>
-    </div>
-    ${diagnostics ? `<div class="cx-diag-list"><strong class="cx-diag-title">Diagnóstico</strong>${diagnostics}</div>` : ""}
-    <div class="ff-howto">
-      <strong>Como interpretar</strong>
-      <p>Compara a proporção anual de concluintes sobre matrículas (IND-27, azul) com a taxa de inserção formal no Paraná (IND-37, verde). O IND-27 usa concluintes e matrículas do mesmo ano e não mede conclusão por coorte.</p>
-    </div>
-  </div>`;
-
-  const note = hasEmployment ? "" : `<p class="card-subtitle">Indicador de inserção (IND-37) disponível apenas para as IEES do Paraná (base RAIS-PR).</p>`;
-
-  return `<article class="visual-card">
-    <h3>IND-27 × inserção profissional</h3>
-    <p class="card-subtitle">IND-27 (azul) e IND-37 (verde) por IEES, escala 0–100% · ordenado por concluintes sobre matrículas.</p>
-    ${note}
-    <div class="cx-legend"><span><i class="cx-comp"></i>Concluintes sobre matrículas</span><span><i class="cx-emp"></i>Taxa de inserção</span></div>
-    <div class="cx-layout"><div class="cx-chart">${barRows}</div>${side}</div>
-  </article>`;
-}
-
-function crossFormationEmployment(u, avgComp, avgEmployment) {
-  const compGood = u.completion >= avgComp;
-  const empGood = avgEmployment != null && u.employment >= avgEmployment;
-  const cls = compGood && empGood ? "alert-ok" : compGood && !empGood ? "alert-warn" : !compGood && empGood ? "alert-info" : "alert-danger";
-  const msg = compGood && !empGood ? "IND-27 acima da referência, inserção abaixo" : !compGood && empGood ? "Inserção acima da referência, IND-27 abaixo" : compGood ? "Bom alinhamento formação-mercado" : "IND-27 e inserção abaixo da referência";
-  return { cls, msg };
 }
 
 // ── Alertas de formação — consolidados na barra lateral ─────────────────────
@@ -609,3 +573,48 @@ renderSystemAlerts = function renderSystemAlertsWithRetention(c) {
   box.innerHTML = alerts.slice(0, 6).map(([cls, icon, ies, msg]) => `<div class="alert-item ${cls}"><span class="alert-icon" aria-hidden="true">${icon}</span><div class="alert-body"><strong class="alert-ies">${ies}</strong><span class="alert-msg">${msg}</span></div></div>`).join("");
 };
 window.renderSystemAlerts = renderSystemAlerts;
+
+// ── Tooltip de fórmula (ⓘ) — h3 de .visual-card + .ff-kpi-label do funil ────
+// Terceiro tipo de card coberto (além de .kpi-card e .score-card já usados
+// nas Abas 1 e 3): .ff-kpi, o mini-KPI dentro do funil formativo. Precisa de
+// um loop dedicado porque não é nem .kpi-card nem .score-card.
+// Guard obrigatório: mesmas classes são reaproveitadas por outras abas.
+function _injectAba4FormulaTooltips() {
+  if (state.activeTab !== "retention") return;
+  document.querySelectorAll(".visual-card:not([data-formula-done])").forEach(card => {
+    const h3 = card.querySelector("h3");
+    if (!h3) return;
+    const key = ABA4_LABEL_TO_IND[h3.textContent.trim()];
+    if (!key) return;
+    card.setAttribute("data-formula-done", "1");
+    injectFormulaTooltip(h3, key);
+    injectLagTooltip(h3, key);
+  });
+  document.querySelectorAll(".ff-kpi:not([data-formula-done])").forEach(card => {
+    const labelEl = card.querySelector(".ff-kpi-label");
+    if (!labelEl) return;
+    const key = ABA4_LABEL_TO_IND[labelEl.textContent.trim()];
+    if (!key) return;
+    card.setAttribute("data-formula-done", "1");
+    injectFormulaTooltip(labelEl, key);
+    injectLagTooltip(labelEl, key);
+  });
+}
+
+// Mesmo padrão validado nas Abas 1 e 3: NÃO usar patch de render() (retorna
+// antes do conteúdo real existir no DOM). MutationObserver direto nos
+// containers reais, via document.getElementById (não via "el", que só é
+// populado por cache() no listener de DOMContentLoaded — este script roda
+// antes disso).
+(function () {
+  function start() {
+    const kpiGrid = document.getElementById("kpiGrid");
+    const tabContent = document.getElementById("tabContent");
+    if (!kpiGrid && !tabContent) return;
+    const observer = new MutationObserver(function () { _injectAba4FormulaTooltips(); });
+    if (kpiGrid) observer.observe(kpiGrid, { childList: true });
+    if (tabContent) observer.observe(tabContent, { childList: true });
+  }
+  start();
+  _injectAba4FormulaTooltips();
+}());

@@ -1451,6 +1451,9 @@ async function loadPrecomputedJson() {
     if (data.clusters)   window.SETI_CLUSTERS   = data.clusters;
     if (data.quartiRefs) window.SETI_QUARTIREFS  = data.quartiRefs;
     if (data.clustersEspecificos) window.SETI_CLUSTERS_ESPECIFICOS = data.clustersEspecificos;
+    // Desagregação por Grande Área CINE / Grau Acadêmico / Modalidade de Ensino
+    // Fonte: Base Cursos - Brasil.xlsx, via pipeline/assemble_final.py (Seção 2b)
+    if (data.cursosDetalhado) window.SETI_CURSOS_DETALHADO = data.cursosDetalhado;
     // Programas de pós-graduação reais por IES (Base CAPES via enrich_capes.py)
     if (data.capesPrograms) window.SETI_CAPES_PROGRAMS = data.capesPrograms;
     // Vagas reais por município (Base Cursos via enrich_municipios.py)
