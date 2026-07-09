@@ -264,14 +264,20 @@ function facultyVacancyStack(c, avg) {
 function facultyTideBlock(c) {
   const rows = facultyRows(c);
   const metrics = rows.map(u => ({ u, m: facultyMetrics(u) }));
-  const ref = mean(rows, u => facultyMetrics(u).tideShare);
+  // Referência Geral (whitelist v1) — campo bruto docTidePartic (7 IES-PR).
+  // Site seguro: aqui a "média" só alimenta exibição (card, linha tracejada,
+  // delta textual) — a cor da barra é fixa (tide-blue), não calibrada por
+  // tone()/threshold, diferente de outros blocos desta aba.
+  const refGeral = getReferenciaGeral("docTidePartic");
+  const ref = refGeral ? refGeral.valor : mean(rows, u => facultyMetrics(u).tideShare);
+  const refCardLabel = refGeral ? `Referência (${refGeral.sigla})` : "Média do cluster";
   const maxShare = Math.max(...metrics.map(x => x.m.tideShare), 0);
   const minShare = Math.min(...metrics.map(x => x.m.tideShare), 100);
   const maxU = (metrics.find(x => x.m.tideShare === maxShare) || {u:{sigla:"—"}}).u.sigla;
   const minU = (metrics.find(x => x.m.tideShare === minShare) || {u:{sigla:"—"}}).u.sigla;
   const deltaPP = v => { const d = v - ref; return (d >= 0 ? "+" : "") + d.toFixed(1).replace(".", ",") + " p.p."; };
   const cards = `<div class="tide-summary-cards">
-    <div class="tide-card"><span>Média do cluster</span><strong>${formatPercent(ref)}</strong><small>IND-51</small></div>
+    <div class="tide-card"><span>${refCardLabel}</span><strong>${formatPercent(ref)}</strong><small>IND-51</small></div>
     <div class="tide-card tide-card-max"><span>Maior participação</span><strong>${formatPercent(maxShare)}</strong><small>${maxU}</small></div>
     <div class="tide-card tide-card-min"><span>Menor participação</span><strong>${formatPercent(minShare)}</strong><small>${minU}</small></div>
   </div>`;
@@ -285,7 +291,7 @@ function facultyTideBlock(c) {
       <span class="tide-atrib-col">${formatNumber(m.tideAssigned)} <small>TIDE atribuído</small></span>
     </div>`;
   }).join("");
-  return `<article class="visual-card">${cards}<h3>IND-51 · Participação do TIDE no quadro docente disponível</h3><p class="card-subtitle">Percentual de docentes com TIDE no quadro disponível. Linha laranja tracejada = média do cluster. À direita, a quantidade absoluta de TIDE atribuído (IND-50).</p><div class="bars-reference-note"><span>▾ Média do cluster: <strong>${formatPercent(ref)}</strong></span></div><div class="bars overview-cluster-bars tide-bars tide-bars-ranked" style="--ref-pos:${refPos}%">${rowsHtml}</div></article>`;
+  return `<article class="visual-card">${cards}<h3>IND-51 · Participação do TIDE no quadro docente disponível</h3><p class="card-subtitle">Percentual de docentes com TIDE no quadro disponível. Linha laranja tracejada = ${refCardLabel.toLowerCase()}. À direita, a quantidade absoluta de TIDE atribuído (IND-50).</p><div class="bars-reference-note"><span>▾ ${refCardLabel}: <strong>${formatPercent(ref)}</strong></span></div><div class="bars overview-cluster-bars tide-bars tide-bars-ranked" style="--ref-pos:${refPos}%">${rowsHtml}</div></article>`;
 }
 
 function facultyCresBlock(c) {

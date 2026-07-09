@@ -388,7 +388,18 @@ window.canonicalTabBlockRenderer = canonicalTabBlockRenderer;
 
 renderBlockContent = function renderBlockContentCanonical(tabId, title, c) {
   var renderer = canonicalTabBlockRenderer(tabId);
-  return renderer ? renderer(title, c) : previousRenderBlockContentEfficiency(tabId, title, c);
+  var base = renderer ? renderer(title, c) : previousRenderBlockContentEfficiency(tabId, title, c);
+  // Benchmark por Grande Área CINE (Aba 3, v1): anexado aqui, fora de
+  // accessBlock()/accessTerritory() — roda em qualquer escopo (PR ou BR).
+  // Este é o dispatcher que de fato vence em runtime para tabId "access"
+  // (carregado por último; as reatribuições intermediárias de
+  // renderBlockContent em painel.js ~4756/6731/7331 já eram código morto
+  // para "access" antes desta mudança, pois todas delegavam, direta ou
+  // indiretamente, para accessBlock() sem nunca devolver o controle).
+  if (tabId === "access" && !title.includes("Escala") && !title.includes("Ocupação") && typeof benchmarkCineBlock === "function") {
+    return base + benchmarkCineBlock(c);
+  }
+  return base;
 };
 window.renderBlockContent = renderBlockContent;
 
@@ -1421,19 +1432,25 @@ function budgetMovementBlock(c) {
 }
 
 function budgetScoreCard(title, value, subtitle) {
-  return `<article class="score-card budget-score-card"><h3>${title}</h3><p class="card-subtitle">${subtitle}</p><div class="score-value">${value}</div></article>`;
+  const subtitleHtml = subtitle ? `<p class="card-subtitle">${subtitle}</p>` : "";
+  return `<article class="score-card budget-score-card"><h3>${title}</h3>${subtitleHtml}<div class="score-value">${value}</div></article>`;
 }
 
 function budgetExecutionBars(c) {
   const clusterRows = chartRowsByLocal(c, "budgetMovementBlock", efficiencyRows(c));
   const clusterIds = new Set(clusterRows.map(u => u.id));
   const rows = efficiencyChartRows(c);
-  const ref = mean(clusterRows, u => budgetMetrics(u).executionRate);
+  // Referência Geral (whitelist v1) — tx_execucao_empenho (7 IES-PR). Site
+  // seguro: tone() usa limiares FIXOS (90/80), não a média — só o
+  // --ref-pos/rótulo de exibição usam a referência.
+  const refGeral = getReferenciaGeral("tx_execucao_empenho");
+  const ref = refGeral ? refGeral.valor : mean(clusterRows, u => budgetMetrics(u).executionRate);
+  const refLabelTxt = refGeral ? `Referência (${refGeral.sigla})` : "Média do cluster";
   return `<div class="bars budget-execution-bars" style="--ref-pos:${clamp(ref, 0, 100)}%">${[...rows].sort((a, b) => budgetMetrics(b).executionRate - budgetMetrics(a).executionRate).map(u => {
     const m = budgetMetrics(u);
     const tone = m.executionRate > 90 ? "rate-high" : m.executionRate >= 80 ? "rate-mid" : "rate-low";
     return `<div class="bar-row ${clusterIds.has(u.id) ? "in-cluster" : "out-cluster"} ${isUniSelected(c.f, u.id) ? "selected" : ""}"><span class="bar-name" title="${u.nome}">${u.sigla}</span><span class="bar-track"><span class="bar-fill ${tone}" style="width:${clamp(m.executionRate, 4, 100)}%"></span><span class="bar-reference" aria-hidden="true"></span></span><span class="bar-value">${formatPercent(m.executionRate)}</span></div>`;
-  }).join("")}</div><div class="bars-reference-note"><span>Média do cluster: <strong>${formatPercent(ref)}</strong></span></div>`;
+  }).join("")}</div><div class="bars-reference-note"><span>${refLabelTxt}: <strong>${formatPercent(ref)}</strong></span></div>`;
 }
 
 function budgetCompositionBlock(c) {
@@ -1731,15 +1748,15 @@ function budgetMovementBlock(c) {
   return `${quartilChipStrip("budgetMovementBlock", c.f.groupBy, c.base, c)}
   <div class="score-grid budget-movement-grid">
     ${budgetScoreCard("Orçamento liquidado total", formatCurrencyMillions(a.liquidated), "soma do cluster")}
-    ${budgetScoreCard(indicatorName(81), formatPercent(a.executionRate), "empenhado / orçamento atualizado")}
-    ${budgetScoreCard(indicatorName(82), formatPercent(a.liquidationRate), "liquidado / orçamento atualizado")}
-    ${budgetScoreCard(indicatorName(83), formatPercent(a.paymentRate), "pago / orçamento atualizado")}
-    ${budgetScoreCard(indicatorName(84), formatPercent(a.contingencyRate), "contingenciado / atualizado")}
-    ${budgetScoreCard(indicatorName(85), formatPercent(a.variationRate), "LOA vs. atualizado")}
-    ${budgetScoreCard(indicatorName(94), formatPercent(a.variationRate), "variação frente à LOA inicial")}
-    ${budgetScoreCard(legacyBudgetIndicatorName("ind95orc"), formatPercent(a.execInitial), "liquidado / dotação inicial")}
-    ${budgetScoreCard(legacyBudgetIndicatorName("ind96orc"), formatPercent(a.execAvailable), "liquidado / orçamento disponível")}
-    ${budgetScoreCard(legacyBudgetIndicatorName("ind97orc"), formatPercent(a.execUpdated), "liquidado / orçamento atualizado")}
+    ${budgetScoreCard(indicatorName(81), formatPercent(a.executionRate), "")}
+    ${budgetScoreCard(indicatorName(82), formatPercent(a.liquidationRate), "")}
+    ${budgetScoreCard(indicatorName(83), formatPercent(a.paymentRate), "")}
+    ${budgetScoreCard(indicatorName(84), formatPercent(a.contingencyRate), "")}
+    ${budgetScoreCard(indicatorName(85), formatPercent(a.variationRate), "")}
+    ${budgetScoreCard(indicatorName(94), formatPercent(a.variationRate), "")}
+    ${budgetScoreCard(legacyBudgetIndicatorName("ind95orc"), formatPercent(a.execInitial), "")}
+    ${budgetScoreCard(legacyBudgetIndicatorName("ind96orc"), formatPercent(a.execAvailable), "")}
+    ${budgetScoreCard(legacyBudgetIndicatorName("ind97orc"), formatPercent(a.execUpdated), "")}
   </div>
   <article class="visual-card mt-14"><h3>${indicatorName(81)} por IEES</h3><p class="card-subtitle">V6 é a referência natural. Verde acima de 90%; amarelo entre 80% e 90%; vermelho abaixo de 80%.</p>${budgetExecutionBars(c)}</article>`;
 }

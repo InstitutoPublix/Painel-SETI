@@ -109,11 +109,18 @@ function qualityFacultyBlock(c) {
     : null;
   const scopeTxt = selLabel || (isBrasilContext(c) ? "média nacional" : "média PR");
   const clusterMean = mean(rows.length ? rows : qualityRows(c), u => u.doctors);
+  // Referência Geral (whitelist v1) — só troca o card de exibição abaixo; não
+  // usada em qualityDoctorBars/qualityFacultyTable (mais abaixo neste arquivo)
+  // porque lá a mesma média também calibra tone()/cor das barras/células — um
+  // valor fixo extremo quebraria essas faixas de cor (ver changelog).
+  const refGeralDoctors = getReferenciaGeral("doctors");
   const act = qualityIndFilter(["ind6", "ind7", "ind8", "ind9"]);
 
   const cards = `<div class="score-grid quality-context-grid">
     ${score(`Doutores — ${scopeTxt}`, formatPercent(mean(selRows, u => u.doctors)), "IND-6 · recorte do filtro de IEES", mean(selRows, u => u.doctors), brVal("doctorate"))}
-    ${score("Média do cluster", formatPercent(clusterMean), `${c.f.groupBy.toUpperCase()} · ${explicitClusterActive(c) ? c.f.groupLevel : "todos"}`, clusterMean)}
+    ${refGeralDoctors
+      ? score(`Referência (${refGeralDoctors.sigla})`, formatPercent(refGeralDoctors.valor), "Melhor valor bruto entre as 40 IES (fixo)", refGeralDoctors.valor)
+      : score("Média do cluster", formatPercent(clusterMean), `${c.f.groupBy.toUpperCase()} · ${explicitClusterActive(c) ? c.f.groupLevel : "todos"}`, clusterMean)}
     ${score(`Docentes estrangeiros — ${scopeTxt}`, formatPercent(mean(selRows, foreignFacultyRate)), "IND-8 · recorte do filtro de IEES", mean(selRows, foreignFacultyRate) * 10)}
     ${score(`Portal CAPES — ${scopeTxt}`, formatPercent(mean(selRows, capesPortalAccess)), "IND-9 · % das IEES do recorte com acesso", mean(selRows, capesPortalAccess))}
   </div>`;
@@ -518,7 +525,6 @@ function pg5bBlocks(rows5b, c) {
   </article>
   <article class="visual-card mt-14">
     <h3>Conceitos CAPES — destaque de excelência</h3>
-    <p class="card-subtitle">IND-108 · Para cada programa distinto, considera-se o maior CD_CONCEITO_PROGRAMA registrado no AN_BASE mais recente; pctExcelencia = (programas com conceito ≥ 6) ÷ (total de programas com conceito informado) × 100 (CAPES – Base Pós-Graduação).</p>
     ${pgExcelenciaBars(rows5b)}
     <p style="margin-top:8px;font-size:11px;color:#64748b;font-style:italic">⚠ Excelência = programas com CD_CONCEITO_PROGRAMA ≥ 6 (Base_Discentes). Métrica distinta do conceito por curso (CD_CONCEITO_CURSO) usado em pgTop/capes acima — não comparar diretamente.</p>
   </article>
@@ -540,9 +546,9 @@ function pg5bBlocks(rows5b, c) {
   </article>
   <article class="visual-card mt-14">
     <h3>Razão discente / docente permanente</h3>
-    <p class="card-subtitle">IND-106 · (discMestrado + discDoutorado) ÷ docPermanentes, por IES; discentes usam o AN_BASE mais recente de Base_Discentes e docentes o de Base_Docentes (CAPES – Base Pós-Graduação). Valores menores indicam maior capacidade de orientação por docente.</p>
+    <p class="card-subtitle">Valores menores indicam maior capacidade de orientação por docente.</p>
     ${razaoBars(rows5b)}
-    <p style="margin-top:8px;font-size:11px;color:#64748b;font-style:italic">Fórmula: (discentes mestrado matriculados + discentes doutorado matriculados) ÷ docentes permanentes. Fonte: Base_Discentes + Base_Docentes, AN_BASE=2024.</p>
+    <p style="margin-top:8px;font-size:11px;color:#64748b;font-style:italic">Ano-base utilizado no cálculo: AN_BASE=2024.</p>
   </article>
   <article class="visual-card mt-14">
     <h3>Capilaridade dos programas</h3>

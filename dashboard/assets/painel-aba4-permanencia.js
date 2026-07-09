@@ -168,7 +168,7 @@ function retentionRatesBlock(c) {
   const compLegend = rateLegendChips([["occ-green", "> 75%"], ["occ-yellow", "60–75%"], ["occ-red", "< 60%"]]);
   return `<div class="chart-grid">
     ${!act || act === "ind5" ? `<article class="visual-card"><h3>IND-5 · Taxa anual de desvinculação</h3><p class="card-subtitle">Ordenado do maior para o menor percentual.</p>${dropLegend}${quartilChipStrip("retentionRateBarsDropout", c.f.groupBy, c.base, c)}${retentionRateBars(c, "dropout")}</article>` : ""}
-    ${!act || act === "ind27" ? `<article class="visual-card"><h3>Concluintes sobre matrículas</h3><p class="card-subtitle">Ordenado da maior para a menor proporção. Numerador: concluintes do ano; denominador: matrículas do mesmo ano.</p>${compLegend}${quartilChipStrip("retentionRateBarsCompletion", c.f.groupBy, c.base, c)}${retentionRateBars(c, "completion")}</article>` : ""}
+    ${!act || act === "ind27" ? `<article class="visual-card"><h3>Concluintes sobre matrículas</h3><p class="card-subtitle">Ordenado da maior para a menor proporção.</p>${compLegend}${quartilChipStrip("retentionRateBarsCompletion", c.f.groupBy, c.base, c)}${retentionRateBars(c, "completion")}</article>` : ""}
   </div>`;
 }
 
@@ -183,9 +183,13 @@ function retentionRateBars(c, metric) {
   let rows = chartRowsByLocal(c, filterId, clusterRowsFor(c));
   const get = metric === "dropout" ? (u => u.dropout) : (u => u.completion);
   const fmt = formatPercent;
-  const ref = mean(rows, get);
+  // Referência Geral (whitelist v1): metric já é o nome do campo bruto
+  // ("dropout"/"completion"), igual à chave em window.SETI_REFERENCIA_GERAL.
+  const refGeral = getReferenciaGeral(metric);
+  const ref = refGeral ? refGeral.valor : mean(rows, get);
+  const refFlagLabel = refGeral ? `Referência (${refGeral.sigla})` : "Média do cluster";
   const sorted = [...rows].sort((a, b) => get(b) - get(a));
-  const refFlag = `<div class="bars-ref-flag"><span>▾ Média do cluster: <strong>${fmt(ref)}</strong></span></div>`;
+  const refFlag = `<div class="bars-ref-flag"><span>▾ ${refFlagLabel}: <strong>${fmt(ref)}</strong></span></div>`;
   return `${refFlag}<div class="bars overview-cluster-bars retention-bars" style="--ref-pos:${clamp(ref,0,100)}%">${sorted.map((u, index) => `<div class="bar-row ${isUniSelected(c.f, u.id) ? "selected" : ""}"><span class="bar-name" title="${u.nome}">${u.sigla}</span><span class="bar-track"><span class="bar-fill ${metric === "dropout" ? dropoutTone(get(u)) : completionTone(get(u))}" style="width:${clamp(get(u),4,100)}%"></span><span class="bar-reference" aria-hidden="true"></span></span><span class="bar-value">${fmt(get(u))} · ${index + 1}º</span></div>`).join("")}</div>`;
 }
 
@@ -466,8 +470,9 @@ function courseTypeMetrics(u, type) {
   // matematicamente a recalcular graduados/desvinculados ÷ matrículas no
   // agregado do grau inteiro, a partir dos percentuais já calculados por
   // subgrupo no pipeline.
-  // ATENÇÃO: cursosDetalhado é uma fotografia do ano mais recente disponível
-  // (mesma limitação já documentada na Aba 3 — não varia com o filtro de Ano).
+  // Round 3b: cursosDetalhado passou a refletir o ano selecionado no filtro
+  // de Ano (mesma mudança já documentada na Aba 3), com fallback para o ano
+  // mais recente disponível por IES quando não há dado para o ano selecionado.
   if (u.cursosDetalhado && u.cursosDetalhado.length) {
     const groups = u.cursosDetalhado.filter(g => g.grauAcademico === type && g.students > 0);
     const totalStudents = sum(groups, g => g.students);
@@ -542,7 +547,7 @@ function retentionCourseRankingBlock(c) {
   const subtitle = active === "all"
     ? "Indicadores calculados sobre a totalidade dos cursos · ordenado por concluintes sobre matrículas dentro do cluster ativo."
     : hasRealGrau
-      ? `Cursos de ${active} — dados reais por grau acadêmico (INEP, Base Cursos), referentes ao ano mais recente disponível na base (pode diferir do ano selecionado no filtro) · ordenado por concluintes sobre matrículas dentro do cluster ativo.`
+      ? `Cursos de ${active} — dados reais por grau acadêmico (INEP, Base Cursos), referentes ao ano selecionado no filtro (quando disponível para a IES; caso contrário, o ano mais recente disponível) · ordenado por concluintes sobre matrículas dentro do cluster ativo.`
       : `Estimativa para cursos de ${active} · ordenado por concluintes sobre matrículas dentro do cluster ativo.`;
   return `<div class="course-ranking-filter">${chipStrip}${infoNote}
     <article class="visual-card"><h3>Ranking por curso — ${heading}</h3><p class="card-subtitle">${subtitle}</p>${legend}${courseTypeRanking(rows, active, c)}</article>

@@ -2763,7 +2763,7 @@ function renderDimensionHelp() {
 window.renderDimensionHelp = renderDimensionHelp;
 
 document.addEventListener("DOMContentLoaded", () => { cache(); populate(); bind(); render(); initSuggestedPath(); });
-function cache(){["yearFilter","universityFilter","dimensionFilter","groupBy","groupLevelFilter","quartilChips","groupVariableButtons","regionFilter","resultIndicator","effortIndicator","courseTypeFilter","municipalityFilter","courseFilter","courseAreaFilter","knowledgeAreaFilter","turnFilter","pgProgramFilter","cohortFilter","cbo2Filter","sourceFilter","periodicityFilter","creditTypeFilter","resourceOriginFilter","expenseGroupFilter","resetFilters","fbsClear","filterCountBadge","scopeLabel","activeClusterLabel","kpiGrid","activeTabKicker","activeTabTitle","activeTabDescription","periodPill","tabContent","groupTitle","criteriaList","groupBreakdown","analyticalNote","systemAlerts"].forEach(id=>el[id]=document.getElementById(id));el.tabs=[...document.querySelectorAll(".tab-button")];}
+function cache(){["yearFilter","universityFilter","dimensionFilter","groupBy","groupLevelFilter","quartilChips","groupVariableButtons","regionFilter","resultIndicator","effortIndicator","courseTypeFilter","municipalityFilter","courseFilter","courseAreaFilter","knowledgeAreaFilter","turnFilter","pgProgramFilter","cohortFilter","cbo2Filter","sourceFilter","periodicityFilter","creditTypeFilter","resourceOriginFilter","expenseGroupFilter","grauAcademicoGlobalFilter","cineAreaGlobalFilter","modalidadeEnsinoGlobalFilter","vagaRecorteGlobalFilter","resetFilters","fbsClear","filterCountBadge","scopeLabel","activeClusterLabel","kpiGrid","activeTabKicker","activeTabTitle","activeTabDescription","periodPill","tabContent","groupTitle","criteriaList","groupBreakdown","analyticalNote","systemAlerts"].forEach(id=>el[id]=document.getElementById(id));el.tabs=[...document.querySelectorAll(".tab-button")];}
 function populate(){
   const _uniCbList=document.getElementById("universityCheckboxList");if(_uniCbList){universities.forEach(u=>{const l=document.createElement("label");l.className="iees-multi-item";l.innerHTML=`<input type="checkbox" class="uni-check" value="${u.id}"> <strong>${u.sigla}</strong> <span style="color:var(--gray-500);font-size:11px;margin-left:3px">– ${u.nome}</span>`;_uniCbList.appendChild(l);});}
   uniq(universities.map(u=>u.region)).forEach(v=>el.regionFilter?.append(new Option(v,v)));
@@ -2772,15 +2772,103 @@ function populate(){
   ["Ciências Humanas","Ciências Sociais Aplicadas","Ciências da Saúde","Engenharias","Ciências Agrárias","Linguística, Letras e Artes","Ciências Exatas e da Terra","Ciências Biológicas"].forEach(v=>el.knowledgeAreaFilter?.append(new Option(v,v)));
   ["Educação","Administração","Agronomia","Direito","Enfermagem","Engenharia","Saúde Coletiva","Desenvolvimento Regional"].forEach(v=>el.pgProgramFilter?.append(new Option(v,v)));
   ["Diretores e gerentes","Profissionais das ciências e intelectuais","Técnicos de nível médio","Trabalhadores administrativos","Serviços e comércio","Agropecuária e produção florestal","Produção industrial"].forEach(v=>el.cbo2Filter?.append(new Option(v,v)));
+  populateCursoFilters();
   updateGroupOptions(el.groupBy.value);
   renderGroupVariableButtons();
   updateScopeAvailability(state.scope);
 }
+// cursosDetalhado só existe em objetos passados por byYear() (não nos arrays
+// crus universities/universitiesBrasil) — mesma fonte usada por cineAreaCard()
+// na Aba 3. Pior ainda: window.SETI_CURSOS_DETALHADO só é setado por
+// refreshPanelFromData() (data-hub.js) DEPOIS que populate() já rodou —
+// populate() executa no DOMContentLoaded de painel.js, antes do fetch
+// assíncrono do JSON pré-processado terminar. Por isso esta função é
+// idempotente (guard de options.length) e chamada de dois pontos: uma vez em
+// populate() (no-op na primeira vez, dado ainda não chegou) e de novo a cada
+// render() (que refreshPanelFromData() já dispara assim que os dados
+// chegam) — populando de fato na primeira vez em que o guard encontra dado
+// real. Round 3b: cursosDetalhado passou a variar por ano (via
+// cursosDetalhadoByYear em byYear()) — mas os RÓTULOS de grauAcademico/
+// modalidade abaixo são fixos entre anos (dicionário do pipeline), por isso
+// esta função continua podendo enumerar as opções a partir de qualquer ano
+// (ver união de anos abaixo), sem precisar refletir o ano do filtro.
+function populateCursoFilters(){
+  if (!el.grauAcademicoGlobalFilter || el.grauAcademicoGlobalFilter.options.length > 1) return;
+  if (!window.SETI_CURSOS_DETALHADO) return;
+  const _cursosUniverse = [...universities, ...universitiesBrasil].map(u=>byYear(u,"2024"));
+  // Round 3b: os rótulos de grauAcademico/modalidade são fixos (dicionário do
+  // pipeline, ver assemble_final.py _GRAU_LABELS/_MODALIDADE_LABELS) — não
+  // variam por ano, só a distribuição de matrículas varia. Por isso as
+  // OPÇÕES do select podem vir da união de todos os anos em
+  // cursosDetalhadoByYear (evita depender de 2024 ter representação de toda
+  // categoria); o VALOR agregado exibido é que passa a respeitar o Ano
+  // selecionado, via byYear() (não aqui).
+  const _todosGrupos = Object.values(window.SETI_CURSOS_DETALHADO_BY_YEAR || {})
+    .flatMap(porAno => Object.values(porAno || {}).flat());
+  uniq(_todosGrupos.map(g=>g.grauAcademico).filter(Boolean)).forEach(v=>el.grauAcademicoGlobalFilter?.append(new Option(v,v)));
+  // cineAreaGlobalFilter (Round 2a): trocado de cursosDetalhado.cineArea (por
+  // curso, Round 1) para u.areaCineGrande — V9 da Estratificação_IES_Estaduais_BR.xlsx,
+  // um valor fixo por IES (não por curso). Fonte oficial deste filtro agora é
+  // V9; cursosDetalhado deixou de alimentar este select específico. Não é
+  // afetado pelo Round 3b (não passa por cursosDetalhadoByYear).
+  uniq(_cursosUniverse.map(u=>u.areaCineGrande).filter(Boolean)).forEach(v=>el.cineAreaGlobalFilter?.append(new Option(v,v)));
+  uniq(_todosGrupos.map(g=>g.modalidade).filter(Boolean)).forEach(v=>el.modalidadeEnsinoGlobalFilter?.append(new Option(v,v)));
+}
+// Round 2b — reaproveita o placeholder #dataSourceBanner já existente no HTML
+// (v8_painel_seti_html.html, antes da nav de abas — hoje sem nenhum JS
+// escrevendo nele) e as classes .data-source-banner/.visible já usadas para
+// o aviso de "Dados parciais — 2026" (painel.js ~5297). Fica visível em
+// qualquer aba (posição é global, acima das abas), não só na Aba 3, já que
+// o filtro de Tipo de Curso agora é global.
+// Round 2c: banner único cobrindo Tipo de Curso e/ou Modalidade — mesmo
+// elemento/classes do Round 2b (#dataSourceBanner/.visible), só o texto
+// passa a listar os filtros realmente ativos (1 ou 2), sem duplicar o
+// banner nem a lógica de show/hide.
+function updateCourseTypeBanner(c){
+  const banner = document.getElementById("dataSourceBanner");
+  if (!banner) return;
+  const f = filters();
+  const hasType = f.grauAcademico && f.grauAcademico !== "all";
+  const hasModalidade = f.modalidadeEnsino && f.modalidadeEnsino !== "all";
+  // Round 5: Vagas (recorte único) ganha rótulo PRÓPRIO "Filtro de Vagas: X"
+  // em vez de entrar na lista genérica "Tipo de Curso e Modalidade de
+  // Ensino" — esse filtro só afeta 2 cards específicos da Aba Acesso/Oferta
+  // (Etapa C), não o painel inteiro como os outros dois, e o texto precisa
+  // deixar isso explícito para não sugerir que o resto do painel também mudou.
+  const hasVagaRecorte = f.vagaRecorte && f.vagaRecorte !== "all";
+  const active = hasType || hasModalidade || hasVagaRecorte;
+  banner.classList.toggle("visible", active);
+  if (!active) return;
+  const labels = [];
+  if (hasType) labels.push("Tipo de Curso");
+  if (hasModalidade) labels.push("Modalidade de Ensino");
+  const label = labels.join(" e ");
+  const vagaLabel = hasVagaRecorte ? (VAGA_RECORTE_FIELDS[f.vagaRecorte]?.label || f.vagaRecorte) : null;
+  const strong = banner.querySelector(".dsb-body strong");
+  const span = banner.querySelector(".dsb-body span");
+  const titleParts = [];
+  if (label) titleParts.push(`Filtro de ${label} ativo`);
+  if (vagaLabel) titleParts.push(`Filtro de Vagas: ${vagaLabel} ativo`);
+  if (strong) strong.textContent = titleParts.join(" · ");
+  let texto = label ? `Filtro de ${label} reflete o ano selecionado no filtro de Ano (quando disponível para a IES; caso contrário, o ano mais recente disponível).` : "";
+  if (vagaLabel) {
+    texto += `${texto ? " " : ""}Filtro de Vagas (${vagaLabel}) visível apenas nos cards "Total de vagas" e "Taxa de ocupação" da Aba 3 · Acesso e Oferta — o restante do painel (KPIs, score, rankings, demais abas) continua mostrando os dados sem esse recorte.`;
+    // Round 5: ressalva só aparece quando o recorte realmente resulta em %
+    // não calculável para pelo menos uma IES exibida (Nova/Diurno/Noturno
+    // têm numerador e só ficam sem % se a IES/ano específico não tiver vaga
+    // desse tipo; Remanescente/ProcSeletivo/ProgEspecial/EaD ficam sempre
+    // sem % nesta rodada — ver comentário em applyVagaMetricOverride).
+    if (Array.isArray(c?.display) && c.display.some(u => u._vagaMetricSemOcupacao)) {
+      texto += " Para este recorte, a taxa de ocupação (%) não é calculável em pelo menos uma IES exibida — mostrando apenas a contagem de vagas nesses casos.";
+    }
+  }
+  if (span) span.textContent = texto;
+}
 function bind(){
-  ["yearFilter","universityFilter","courseTypeFilter","municipalityFilter","courseFilter","courseAreaFilter","knowledgeAreaFilter","turnFilter","pgProgramFilter","cohortFilter","cbo2Filter","sourceFilter","periodicityFilter","creditTypeFilter","resourceOriginFilter","expenseGroupFilter"].forEach(id=>el[id]?.addEventListener("change",render));
+  ["yearFilter","universityFilter","courseTypeFilter","municipalityFilter","courseFilter","courseAreaFilter","knowledgeAreaFilter","turnFilter","pgProgramFilter","cohortFilter","cbo2Filter","sourceFilter","periodicityFilter","creditTypeFilter","resourceOriginFilter","expenseGroupFilter","grauAcademicoGlobalFilter","cineAreaGlobalFilter","modalidadeEnsinoGlobalFilter","vagaRecorteGlobalFilter"].forEach(id=>el[id]?.addEventListener("change",render));
   el.groupBy?.addEventListener("change",()=>{updateGroupOptions(el.groupBy.value);updateScopeAvailability(state.scope);render();});
   el.tabs.forEach(tab=>tab.addEventListener("click",()=>{state.activeTab=tab.dataset.tab;el.tabs.forEach(t=>t.classList.toggle("is-active",t===tab));render();trackPath(tab.dataset.tab);}));
-  el.resetFilters?.addEventListener("click",()=>{el.yearFilter.value="2024";["universityFilter","courseTypeFilter","municipalityFilter","courseFilter","courseAreaFilter","knowledgeAreaFilter","turnFilter","pgProgramFilter","cohortFilter","cbo2Filter","sourceFilter","creditTypeFilter","resourceOriginFilter","expenseGroupFilter"].forEach(id=>{if(el[id]) el[id].value="all";});if(el.periodicityFilter) el.periodicityFilter.value="anual";el.groupBy.value="v1";updateGroupOptions("v1");setScope("PR");});
+  el.resetFilters?.addEventListener("click",()=>{el.yearFilter.value="2024";["universityFilter","courseTypeFilter","municipalityFilter","courseFilter","courseAreaFilter","knowledgeAreaFilter","turnFilter","pgProgramFilter","cohortFilter","cbo2Filter","sourceFilter","creditTypeFilter","resourceOriginFilter","expenseGroupFilter","grauAcademicoGlobalFilter","cineAreaGlobalFilter","modalidadeEnsinoGlobalFilter","vagaRecorteGlobalFilter"].forEach(id=>{if(el[id]) el[id].value="all";});if(el.periodicityFilter) el.periodicityFilter.value="anual";el.groupBy.value="v1";updateGroupOptions("v1");setScope("PR");});
   document.addEventListener("click", e => {
     if (!e.target.closest(".dim-help-wrap")) {
       document.querySelectorAll(".dim-help-btn[aria-expanded='true']")
@@ -2952,7 +3040,7 @@ function filters(){
   const rawGroupBy = el.groupBy?.value || "v1";
   const groupBy = rawGroupBy === "none" ? "v1" : rawGroupBy;
   const noGroup  = rawGroupBy === "none";
-  return {year:el.yearFilter.value,university:_selectedUniversities,scope:state.scope,dimension:state.comparisonDimension||"all",groupBy,noGroup,groupLevel: noGroup ? "all" : (el.groupLevelFilter?.value || "all"),region:"all",result:"composite",effort:"budgetPerStudent",profile:"all",courseType:el.courseTypeFilter?.value||"all",municipality:el.municipalityFilter?.value||"all",course:el.courseFilter?.value||"all",courseArea:el.courseAreaFilter?.value||"all",knowledgeArea:el.knowledgeAreaFilter?.value||"all",turn:el.turnFilter?.value||"all",pgProgram:el.pgProgramFilter?.value||"all",cohort:el.cohortFilter?.value||"all",cbo2:el.cbo2Filter?.value||"all",source:el.sourceFilter?.value||"all",periodicity:el.periodicityFilter?.value||"anual",creditType:el.creditTypeFilter?.value||"all",resourceOrigin:el.resourceOriginFilter?.value||"all",expenseGroup:el.expenseGroupFilter?.value||"all",minDoctors:0,attention:false};
+  return {year:el.yearFilter.value,university:_selectedUniversities,scope:state.scope,dimension:state.comparisonDimension||"all",groupBy,noGroup,groupLevel: noGroup ? "all" : (el.groupLevelFilter?.value || "all"),region:"all",result:"composite",effort:"budgetPerStudent",profile:"all",courseType:el.courseTypeFilter?.value||"all",municipality:el.municipalityFilter?.value||"all",course:el.courseFilter?.value||"all",courseArea:el.courseAreaFilter?.value||"all",knowledgeArea:el.knowledgeAreaFilter?.value||"all",turn:el.turnFilter?.value||"all",pgProgram:el.pgProgramFilter?.value||"all",cohort:el.cohortFilter?.value||"all",cbo2:el.cbo2Filter?.value||"all",source:el.sourceFilter?.value||"all",periodicity:el.periodicityFilter?.value||"anual",creditType:el.creditTypeFilter?.value||"all",resourceOrigin:el.resourceOriginFilter?.value||"all",expenseGroup:el.expenseGroupFilter?.value||"all",grauAcademico:el.grauAcademicoGlobalFilter?.value||"all",cineArea:el.cineAreaGlobalFilter?.value||"all",modalidadeEnsino:el.modalidadeEnsinoGlobalFilter?.value||"all",vagaRecorte:el.vagaRecorteGlobalFilter?.value||"all",minDoctors:0,attention:false};
 }
 function isUniSelected(f,id){return Array.isArray(f.university)&&f.university.includes(id);}
 function uniLabel(){
@@ -2975,6 +3063,175 @@ function setUniSelection(val){
 }
 window.setUniSelection=setUniSelection;
 function scopeUniverse(scope){return (scope==="Brasil"||scope==="BR")?[...universities,...universitiesBrasil]:universities;}
+// Round 2b — recálculo de indicadores por Tipo de Curso (grauAcademico), a
+// partir de cursosDetalhado. Diferente do filtro de Grande Área (V9, Round
+// 2a — só restringe o UNIVERSO de IES): este RECALCULA
+// students/entrants/graduates/vacancies/courses/occupancy/completion/dropout
+// de cada IES somando os grupos de cursosDetalhado (combinação
+// cineArea×grauAcademico×modalidade) que têm o grauAcademico escolhido,
+// ignorando as outras duas dimensões — um mesmo grauAcademico aparece em
+// vários grupos com cineArea/modalidade diferentes (confirmado: UEL tem 9
+// grupos "Bacharelado" com 9 cineArea distintas). Mesmas fórmulas do
+// pipeline (assemble_final.py Seção 2b):
+//   occupancy  = entrants     / vacancies * 100
+//   completion = graduates    / students  * 100
+//   dropout    = dropoutCount / students  * 100
+// dropoutCount é a contagem bruta de QT_SIT_DESVINCULADO por grupo — exposta
+// especificamente porque "dropout" (já em %) não é somável entre grupos
+// (média/soma de percentuais não equivale à razão da soma dos numeradores).
+// Round 3b: cursosDetalhado agora reflete o ano selecionado no filtro de
+// Ano do cabeçalho (via byYear() → cursosDetalhadoByYear), com fallback
+// para o ano mais recente disponível por IES quando a IES não tem dado
+// para o ano selecionado (cobertura 2020-2024 não é 100% — ex.: UEPA/2020,
+// UnDF/2020-2021).
+function applyCourseTypeOverride(u, courseType) {
+  if (!courseType || courseType === "all" || !u.cursosDetalhado || !u.cursosDetalhado.length) return u;
+  const groups = u.cursosDetalhado.filter(g => g.grauAcademico === courseType);
+  const students = sum(groups, g => g.students);
+  const entrants = sum(groups, g => g.entrants);
+  const graduates = sum(groups, g => g.graduates);
+  const vacancies = sum(groups, g => g.vacancies);
+  const courses = sum(groups, g => g.courses);
+  const dropoutCount = sum(groups, g => g.dropoutCount);
+  return {
+    ...u,
+    students, entrants, graduates, vacancies, courses,
+    occupancy: vacancies > 0 ? round(entrants / vacancies * 100, 2) : null,
+    completion: students > 0 ? round(graduates / students * 100, 2) : null,
+    dropout: students > 0 ? round(dropoutCount / students * 100, 2) : null,
+    _courseTypeFiltered: true,
+  };
+}
+window.applyCourseTypeOverride = applyCourseTypeOverride;
+// Round 2c — mesmo padrão do Round 2b (applyCourseTypeOverride), agora
+// filtrando por modalidade (Presencial/EaD) em vez de grauAcademico.
+// Standalone: correta quando usada isoladamente (só Modalidade ativo), mas
+// NÃO é chamada em cadeia com applyCourseTypeOverride em produção — ver
+// applyCourseFiltersOverride() abaixo para o motivo (interseção).
+function applyModalidadeOverride(u, modalidade) {
+  if (!modalidade || modalidade === "all" || !u.cursosDetalhado || !u.cursosDetalhado.length) return u;
+  const groups = u.cursosDetalhado.filter(g => g.modalidade === modalidade);
+  const students = sum(groups, g => g.students);
+  const entrants = sum(groups, g => g.entrants);
+  const graduates = sum(groups, g => g.graduates);
+  const vacancies = sum(groups, g => g.vacancies);
+  const courses = sum(groups, g => g.courses);
+  const dropoutCount = sum(groups, g => g.dropoutCount);
+  return {
+    ...u,
+    students, entrants, graduates, vacancies, courses,
+    occupancy: vacancies > 0 ? round(entrants / vacancies * 100, 2) : null,
+    completion: students > 0 ? round(graduates / students * 100, 2) : null,
+    dropout: students > 0 ? round(dropoutCount / students * 100, 2) : null,
+    _modalidadeFiltered: true,
+  };
+}
+window.applyModalidadeOverride = applyModalidadeOverride;
+// Round 2c — applyCourseTypeOverride() e applyModalidadeOverride() NÃO podem
+// ser encadeadas via .map(a).map(b): nenhuma das duas sobrescreve
+// u.cursosDetalhado (só os campos agregados do topo), então a segunda
+// chamada sempre lê a lista ORIGINAL completa e ignora o filtro da
+// primeira — o resultado final reflete só o último filtro aplicado, não a
+// interseção. Corrigir applyCourseTypeOverride para também sobrescrever
+// cursosDetalhado quebraria a restrição de não alterar o mecanismo do
+// Round 2b já validado. Esta função aplica os dois critérios (Tipo de
+// Curso E Modalidade) numa única passada sobre cursosDetalhado — é o que
+// de fato roda em applyFilters()/context()/contextWithoutBrasilClusters();
+// as duas funções acima continuam existindo para uso standalone/futuro,
+// mas não são chamadas nesses 3 pontos.
+function applyCourseFiltersOverride(u, courseType, modalidade) {
+  const hasType = !!courseType && courseType !== "all";
+  const hasModalidade = !!modalidade && modalidade !== "all";
+  if (!u.cursosDetalhado || !u.cursosDetalhado.length) return u;
+  // Round 4: _filteredGroups é sempre exposto (mesmo sem filtro de Tipo de
+  // Curso/Modalidade ativo) para applyVagaMetricOverride somar Tipo de
+  // Vaga/Turno sobre o MESMO subconjunto de grupos já restringido por este
+  // filtro, em vez de recalcular a restrição por conta própria.
+  if (!hasType && !hasModalidade) return { ...u, _filteredGroups: u.cursosDetalhado };
+  const groups = u.cursosDetalhado.filter(g =>
+    (!hasType || g.grauAcademico === courseType) &&
+    (!hasModalidade || g.modalidade === modalidade)
+  );
+  const students = sum(groups, g => g.students);
+  const entrants = sum(groups, g => g.entrants);
+  const graduates = sum(groups, g => g.graduates);
+  const vacancies = sum(groups, g => g.vacancies);
+  const courses = sum(groups, g => g.courses);
+  const dropoutCount = sum(groups, g => g.dropoutCount);
+  return {
+    ...u,
+    students, entrants, graduates, vacancies, courses,
+    occupancy: vacancies > 0 ? round(entrants / vacancies * 100, 2) : null,
+    completion: students > 0 ? round(graduates / students * 100, 2) : null,
+    dropout: students > 0 ? round(dropoutCount / students * 100, 2) : null,
+    _courseTypeFiltered: hasType,
+    _modalidadeFiltered: hasModalidade,
+    _filteredGroups: groups,
+  };
+}
+window.applyCourseFiltersOverride = applyCourseFiltersOverride;
+
+// Round 5 — Vagas (recorte único): SELETOR DE MÉTRICA, não filtro de linha.
+// Cada curso tem QT_VG_NOVA E QT_VG_REMANESC E QT_VG_PROC_SELETIVO E
+// QT_VG_PROG_ESPECIAL E QT_VG_TOTAL_DIURNO/NOTURNO/EAD simultaneamente (não é
+// categoria mutuamente exclusiva como grauAcademico/modalidade) — por isso
+// não filtra grupos, só troca qual campo de vaga/ingresso alimenta os 2
+// cards de vagas da Aba Acesso/Oferta (ver Etapa C, painel-aba3-acesso.js).
+// Roda DEPOIS de applyCourseFiltersOverride, sobre os MESMOS grupos já
+// restringidos por Tipo de Curso/Modalidade (u._filteredGroups).
+//
+// occupancy só é calculada para "Nova" (QT_ING_VG_NOVA), "Diurno"
+// (QT_ING_DIURNO) e "Noturno" (QT_ING_NOTURNO) — únicos recortes com
+// numerador aprovado nesta rodada (ing:null abaixo). Remanescente/
+// ProgEspecial TÊM colunas de ingressantes reais na base (QT_ING_VG_REMANESC/
+// QT_ING_VG_PROG_ESPECIAL — ver diagnóstico anterior) mas ficam com
+// occupancy=null por decisão explícita desta rodada (Etapa B), não por falta
+// de dado — se isso for revisto, é só trocar o `ing:null` correspondente.
+// ProcSeletivo fica null porque a coluna é 0 em 100% das linhas da base
+// 2020-2024.
+//
+// "EaD" removido do seletor (redundante com o filtro Modalidade, que já
+// tem Presencial/EaD) — a coluna QT_VG_TOTAL_EAD/vgEad continua extraída
+// no pipeline (cursosDetalhado/cursosDetalhadoByYear), só não é mais
+// selecionável aqui. Se for reativado, é só devolver a entrada abaixo
+// (ing:null, sem numerador — não existe QT_ING_EAD na base) e o <option>
+// correspondente no <optgroup label="Turno"> do HTML.
+const VAGA_RECORTE_FIELDS = {
+  Nova:         { vg: "vgNova",         ing: "ingVgNova",  label: "Vagas Novas" },
+  Remanescente: { vg: "vgRemanesc",     ing: null,         label: "Vagas Remanescentes" },
+  ProcSeletivo: { vg: "vgProcSeletivo", ing: null,         label: "Vagas de Processo Seletivo" },
+  ProgEspecial: { vg: "vgProgEspecial", ing: null,         label: "Vagas de Programa Especial" },
+  Diurno:       { vg: "vgDiurno",       ing: "ingDiurno",  label: "Vagas Diurnas" },
+  Noturno:      { vg: "vgNoturno",      ing: "ingNoturno", label: "Vagas Noturnas" },
+};
+function applyVagaMetricOverride(u, vagaRecorte) {
+  const hasRecorte = !!vagaRecorte && vagaRecorte !== "all";
+  if (!hasRecorte) return u;
+  const spec = VAGA_RECORTE_FIELDS[vagaRecorte];
+  if (!spec) return u;
+  const groups = u._filteredGroups || u.cursosDetalhado || [];
+  if (!groups.length) return u;
+  const vacancies = sum(groups, g => g[spec.vg] || 0);
+  const entrants = spec.ing ? sum(groups, g => g[spec.ing] || 0) : 0;
+  const occupancy = (spec.ing && vacancies > 0) ? round(entrants / vacancies * 100, 2) : null;
+  // NÃO sobrescreve u.vacancies/u.occupancy: esses dois campos alimentam
+  // groupMeta.v2 (dimensão real de agrupamento "Oferta acadêmica", usa
+  // u.vacancies), composite() e costOccupiedVacancy (usam u.occupancy) —
+  // sobrescrevê-los mudaria Cluster V2/pontuação composta/custo por vaga
+  // toda vez que o filtro de Vagas estivesse ativo, o que violaria a
+  // restrição de não alterar groupBy/V1-V9/Cluster. Os valores recortados
+  // ficam em campos isolados; só os 2 cards de vagas da Aba Acesso/Oferta os
+  // leem (Etapa C) — nenhum outro componente deve ler estes campos.
+  return {
+    ...u,
+    vagaMetricVacancies: vacancies,
+    vagaMetricOccupancy: occupancy,
+    _vagaMetricFiltered: true,
+    _vagaMetricSemOcupacao: occupancy === null,
+    _vagaMetricLabel: spec.label,
+  };
+}
+window.applyVagaMetricOverride = applyVagaMetricOverride;
 function applyFilters(f=filters(),source=null){
   const rows=source||(scopeUniverse(f.scope)).map(u=>byYear(u,f.year));
   if(f.university==="none") return [];
@@ -2985,14 +3242,16 @@ function applyFilters(f=filters(),source=null){
     (f.municipality==="all"||u.municipality===f.municipality)&&
     (f.course==="all"||u.coursesFocus.includes(f.course))&&
     (f.groupLevel==="all"||u.groups[f.groupBy]===f.groupLevel)&&
+    (!f.cineArea||f.cineArea==="all"||u.areaCineGrande===f.cineArea)&&
     (f.university==="all"||Array.isArray(f.university)&&f.university.includes(u.id))&&
     u.doctors>=f.minDoctors
-  );
+  ).map(u=>applyCourseFiltersOverride(u,f.grauAcademico,f.modalidadeEnsino)).map(u=>applyVagaMetricOverride(u,f.vagaRecorte));
 }
 function context(){
   const f=filters(), all=scopeUniverse(f.scope).map(u=>byYear(u,f.year));
-  const selected=Array.isArray(f.university)?all.find(u=>u.id===f.university[0])||null:null;
-  const base=all.filter(u=>(f.region==="all"||u.region===f.region)&&(f.profile==="all"||u.profile===f.profile)&&(f.courseType==="all"||u.type===f.courseType)&&(f.municipality==="all"||u.municipality===f.municipality)&&(f.course==="all"||u.coursesFocus.includes(f.course))&&u.doctors>=f.minDoctors);
+  const selectedRaw=Array.isArray(f.university)?all.find(u=>u.id===f.university[0])||null:null;
+  const selected=selectedRaw?applyVagaMetricOverride(applyCourseFiltersOverride(selectedRaw,f.grauAcademico,f.modalidadeEnsino),f.vagaRecorte):null;
+  const base=all.filter(u=>(f.region==="all"||u.region===f.region)&&(f.profile==="all"||u.profile===f.profile)&&(f.courseType==="all"||u.type===f.courseType)&&(f.municipality==="all"||u.municipality===f.municipality)&&(f.course==="all"||u.coursesFocus.includes(f.course))&&(!f.cineArea||f.cineArea==="all"||u.areaCineGrande===f.cineArea)&&u.doctors>=f.minDoctors).map(u=>applyCourseFiltersOverride(u,f.grauAcademico,f.modalidadeEnsino)).map(u=>applyVagaMetricOverride(u,f.vagaRecorte));
   const group=f.groupLevel!=="all"?f.groupLevel:selected?selected.groups[f.groupBy]:"all";
   let ref=base.filter(u=>group==="all"||u.groups[f.groupBy]===group); if(!ref.length) ref=base;
   let display=f.university==="all"?ref:f.university==="none"?[]:ref.filter(u=>Array.isArray(f.university)&&f.university.includes(u.id));
@@ -3000,7 +3259,7 @@ function context(){
   if(f.attention&&hasOfficialQuadrants()){const ids=matrixRows(ref,f).filter(r=>r.resultRel<100&&r.effortRel>100).map(r=>r.id);ref=ref.filter(u=>ids.includes(u.id));display=display.filter(u=>ids.includes(u.id));}
   return {f,all,base,ref,display,selected,group};
 }
-function byYear(u,year){const [vol,bud,delta]=yearAdj[year]||yearAdj[2024];const c={...u,groups:{...u.groups},coursesFocus:[...u.coursesFocus]};["students","entrants","graduates","vacancies"].forEach(k=>c[k]=Math.round(c[k]*vol));c.budget=round(c.budget*bud,1);const cnpqReal=CNPQ_DATA[u.id]?.[Number(year)];if(cnpqReal){c.cnpq=round(cnpqReal.captacao,2);c.vinculos=cnpqReal.vinculos;}else{c.cnpq=round(c.cnpq*(.9+bud*.1),1);c.vinculos=null;}c.supplementation=round(c.supplementation+(1-bud)*3,1);["occupancy","completion","doctors","employment","facultyOcc","cres","execution","liquidation"].forEach(k=>{if(c[k]==null)return;c[k]=clamp(round(c[k]+delta,1),0,100);});c.dropout=clamp(round(c.dropout-delta*.25,1),0,100);c.salary=Math.round(c.salary*(.88+bud*.12));const _rc=getRealIndicatorsExact(u.sigla,year);if(_rc&&_rc.cursosStudents!=null){if(_rc.cursosStudents!=null)c.students=_rc.cursosStudents;if(_rc.cursosEntrants!=null)c.entrants=_rc.cursosEntrants;if(_rc.cursosGraduates!=null)c.graduates=_rc.cursosGraduates;if(_rc.cursosCourses!=null)c.courses=_rc.cursosCourses;if(_rc.cursosVacancies!=null)c.vacancies=_rc.cursosVacancies;if(_rc.cursosOccupancy!=null)c.occupancy=_rc.cursosOccupancy;if(_rc.cursosDropout!=null)c.dropout=_rc.cursosDropout;if(_rc.cursosCompletion!=null)c.completion=_rc.cursosCompletion;c.vacanciesNova=_rc.cursosVacanciesNova??null;c.vacanciesDay=_rc.cursosVacanciesDay??null;c.vacanciesNight=_rc.cursosVacanciesNight??null;c.matDay=_rc.cursosMatDay??null;c.matNight=_rc.cursosMatNight??null;c.ingressOccupancy=_rc.cursosIngressOccupancy??null;c.vacanciesUnfilled=_rc.cursosVacanciesUnfilled??null;c.vacanciesNovaUnfilled=_rc.cursosVacanciesNovaUnfilled??null;c.mobility=_rc.cursosMobility??null;c.publicSchool=_rc.cursosPublicSchool??null;c.occDay=_rc.cursosOccupancyDay??null;c.occNight=_rc.cursosOccupancyNight??null;}if(_rc){if(_rc.iesDocDout!=null)c.doctors=_rc.iesDocDout;c.docForeign=_rc.iesDocForeign??null;c.capesPortal=_rc.iesCapesPortal??null;if(_rc.docTaxaOcup!=null)c.facultyOcc=_rc.docTaxaOcup;if(_rc.docCresTaxa!=null)c.cres=_rc.docCresTaxa;c.docVagasTotais=_rc.docVagasTotais??null;c.docVagasDisp=_rc.docVagasDisp??null;c.docVagasOcupadas=_rc.docVagasOcupadas??null;c.docTaxaUtil=_rc.docTaxaUtil??null;c.docVagasCond=_rc.docVagasCond??null;c.docPctCond=_rc.docPctCond??null;c.docTideAtrib=_rc.docTideAtrib??null;c.docTidePartic=_rc.docTidePartic??null;c.docTidePctNaoAtrib=_rc.docTidePctNaoAtrib??null;c.docChMedia=_rc.docChMedia??null;c.docCresAut=_rc.docCresAut??null;c.docCresUtil=_rc.docCresUtil??null;c.docCresSaldo=_rc.docCresSaldo??null;c.docCresOciosidade=_rc.docCresOciosidade??null;c.docCresPartic=_rc.docCresPartic??null;if(_rc.capesConceito!=null)c.capes=_rc.capesConceito;if(_rc.pg!=null)c.pg=_rc.pg;if(_rc.pgTop!=null)c.pgTop=_rc.pgTop;c.capesPct567=_rc.capesPct567??null;c.capesDocPermanentes=_rc.capesDocPermanentes??null;c.capesDocEstrangeiros=_rc.capesDocEstrangeiros??null;c.capesDocBolsa=_rc.capesDocBolsa??null;c.docTotal=_rc.docTotal??null;c.docExe=_rc.docExe??null;c.grauMix=_rc.grauMix??null;c.cbo2Profile=_rc.cbo2Profile??null;c.cbo2Diversity=_rc.cbo2Diversity??null;c.cbo2MunDestino=_rc.cbo2MunDestino??null;c.muniOccupancy=_rc.muniOccupancy??null;c.pgMestrado=_rc.pgMestrado??null;c.pgMestradoProf=_rc.pgMestradoProf??null;c.pgDoutorado=_rc.pgDoutorado??null;c.pgPorGrandeArea=_rc.pgPorGrandeArea??null;c.discMestrado=_rc.discMestrado??null;c.discDoutorado=_rc.discDoutorado??null;c.tituladosMestrado=_rc.tituladosMestrado??null;c.tituladosDoutorado=_rc.tituladosDoutorado??null;c.docPermanentes=_rc.docPermanentes??null;c.docColaboradores=_rc.docColaboradores??null;c.docVisitantes=_rc.docVisitantes??null;c.razaoDocenteDiscente=_rc.razaoDocenteDiscente??null;c.pgMunicipiosDistintos=_rc.pgMunicipiosDistintos??null;c.pctExcelencia=_rc.pctExcelencia??null;}if(_rc){c.budget=_rc.budget??_rc.liquidado??c.budget;c.execution=_rc.execution??_rc.tx_execucao_empenho??c.execution;c.liquidation=_rc.liquidation??_rc.tx_liquidacao??c.liquidation;c.supplementation=_rc.supplementation??_rc.var_dotacao_loa??c.supplementation;c.personnel=_rc.personnel??_rc.part_pessoal??c.personnel;if(_rc.cnpqCaptacao!=null){c.cnpq=_rc.cnpqCaptacao;}if(_rc.cnpqVinculos!=null){c.vinculos=_rc.cnpqVinculos;}c.dotacao_inicial=_rc.dotacao_inicial??c.dotacao_inicial??null;c.orcamento_atualizado=_rc.orcamento_atualizado??c.orcamento_atualizado??null;c.empenhado=_rc.empenhado??c.empenhado??null;c.liquidado=_rc.liquidado??c.liquidado??null;c.pago=_rc.pago??c.pago??null;c.tx_execucao_empenho=_rc.tx_execucao_empenho??c.tx_execucao_empenho??null;c.tx_liquidacao=_rc.tx_liquidacao??c.tx_liquidacao??null;c.tx_pagamento_liq=_rc.tx_pagamento_liq??c.tx_pagamento_liq??null;c.grau_contingenciamento=_rc.grau_contingenciamento??c.grau_contingenciamento??null;c.var_dotacao_loa=_rc.var_dotacao_loa??c.var_dotacao_loa??null;c.part_pessoal=_rc.part_pessoal??c.part_pessoal??null;c.part_outras_correntes=_rc.part_outras_correntes??c.part_outras_correntes??null;c.part_capital=_rc.part_capital??c.part_capital??null;c.ind80=_rc.ind80??c.ind80??null;c.ind81=_rc.ind81??c.ind81??null;c.ind82=_rc.ind82??c.ind82??null;c.ind83=_rc.ind83??c.ind83??null;c.ind84=_rc.ind84??c.ind84??null;c.ind85=_rc.ind85??c.ind85??null;c.ind86=_rc.ind86??c.ind86??null;c.ind87=_rc.ind87??c.ind87??null;c.ind88=_rc.ind88??c.ind88??null;c.ind95orc=_rc.ind95orc??c.ind95orc??null;}if(_rc){c.insertionRatePR=_rc.insertionRatePR??null;c.egressosMunicipios=_rc.egressosMunicipios??_rc.raisMunCount??null;c.territoryIncome=_rc.territoryIncome??c.territoryIncome??null;c.idhmRegional=_rc.idhmRegional??c.idhmRegional??null;}if(window.SETI_CLUSTERS&&window.SETI_CLUSTERS[u.sigla]){const cl=window.SETI_CLUSTERS[u.sigla];groupKeys.forEach(k=>{c.groups[k]=cl[k]!=null?cl[k]:null;});}if(window.SETI_CURSOS_DETALHADO&&window.SETI_CURSOS_DETALHADO[u.sigla]){c.cursosDetalhado=window.SETI_CURSOS_DETALHADO[u.sigla];}else{c.cursosDetalhado=null;}return c;}
+function byYear(u,year){const [vol,bud,delta]=yearAdj[year]||yearAdj[2024];const c={...u,groups:{...u.groups},coursesFocus:[...u.coursesFocus]};["students","entrants","graduates","vacancies"].forEach(k=>c[k]=Math.round(c[k]*vol));c.budget=round(c.budget*bud,1);const cnpqReal=CNPQ_DATA[u.id]?.[Number(year)];if(cnpqReal){c.cnpq=round(cnpqReal.captacao,2);c.vinculos=cnpqReal.vinculos;}else{c.cnpq=round(c.cnpq*(.9+bud*.1),1);c.vinculos=null;}c.supplementation=round(c.supplementation+(1-bud)*3,1);["occupancy","completion","doctors","employment","facultyOcc","cres","execution","liquidation"].forEach(k=>{if(c[k]==null)return;c[k]=clamp(round(c[k]+delta,1),0,100);});c.dropout=clamp(round(c.dropout-delta*.25,1),0,100);c.salary=Math.round(c.salary*(.88+bud*.12));const _rc=getRealIndicatorsExact(u.sigla,year);if(_rc&&_rc.cursosStudents!=null){if(_rc.cursosStudents!=null)c.students=_rc.cursosStudents;if(_rc.cursosEntrants!=null)c.entrants=_rc.cursosEntrants;if(_rc.cursosGraduates!=null)c.graduates=_rc.cursosGraduates;if(_rc.cursosCourses!=null)c.courses=_rc.cursosCourses;if(_rc.cursosVacancies!=null)c.vacancies=_rc.cursosVacancies;if(_rc.cursosOccupancy!=null)c.occupancy=_rc.cursosOccupancy;if(_rc.cursosDropout!=null)c.dropout=_rc.cursosDropout;if(_rc.cursosCompletion!=null)c.completion=_rc.cursosCompletion;c.vacanciesNova=_rc.cursosVacanciesNova??null;c.vacanciesDay=_rc.cursosVacanciesDay??null;c.vacanciesNight=_rc.cursosVacanciesNight??null;c.matDay=_rc.cursosMatDay??null;c.matNight=_rc.cursosMatNight??null;c.ingressOccupancy=_rc.cursosIngressOccupancy??null;c.vacanciesUnfilled=_rc.cursosVacanciesUnfilled??null;c.vacanciesNovaUnfilled=_rc.cursosVacanciesNovaUnfilled??null;c.mobility=_rc.cursosMobility??null;c.publicSchool=_rc.cursosPublicSchool??null;c.occDay=_rc.cursosOccupancyDay??null;c.occNight=_rc.cursosOccupancyNight??null;}if(_rc){if(_rc.iesDocDout!=null)c.doctors=_rc.iesDocDout;c.docForeign=_rc.iesDocForeign??null;c.capesPortal=_rc.iesCapesPortal??null;if(_rc.docTaxaOcup!=null)c.facultyOcc=_rc.docTaxaOcup;if(_rc.docCresTaxa!=null)c.cres=_rc.docCresTaxa;c.docVagasTotais=_rc.docVagasTotais??null;c.docVagasDisp=_rc.docVagasDisp??null;c.docVagasOcupadas=_rc.docVagasOcupadas??null;c.docTaxaUtil=_rc.docTaxaUtil??null;c.docVagasCond=_rc.docVagasCond??null;c.docPctCond=_rc.docPctCond??null;c.docTideAtrib=_rc.docTideAtrib??null;c.docTidePartic=_rc.docTidePartic??null;c.docTidePctNaoAtrib=_rc.docTidePctNaoAtrib??null;c.docChMedia=_rc.docChMedia??null;c.docCresAut=_rc.docCresAut??null;c.docCresUtil=_rc.docCresUtil??null;c.docCresSaldo=_rc.docCresSaldo??null;c.docCresOciosidade=_rc.docCresOciosidade??null;c.docCresPartic=_rc.docCresPartic??null;if(_rc.capesConceito!=null)c.capes=_rc.capesConceito;if(_rc.pg!=null)c.pg=_rc.pg;if(_rc.pgTop!=null)c.pgTop=_rc.pgTop;c.capesPct567=_rc.capesPct567??null;c.capesDocPermanentes=_rc.capesDocPermanentes??null;c.capesDocEstrangeiros=_rc.capesDocEstrangeiros??null;c.capesDocBolsa=_rc.capesDocBolsa??null;c.docTotal=_rc.docTotal??null;c.docExe=_rc.docExe??null;c.grauMix=_rc.grauMix??null;c.cbo2Profile=_rc.cbo2Profile??null;c.cbo2Diversity=_rc.cbo2Diversity??null;c.cbo2MunDestino=_rc.cbo2MunDestino??null;c.muniOccupancy=_rc.muniOccupancy??null;c.pgMestrado=_rc.pgMestrado??null;c.pgMestradoProf=_rc.pgMestradoProf??null;c.pgDoutorado=_rc.pgDoutorado??null;c.pgPorGrandeArea=_rc.pgPorGrandeArea??null;c.discMestrado=_rc.discMestrado??null;c.discDoutorado=_rc.discDoutorado??null;c.tituladosMestrado=_rc.tituladosMestrado??null;c.tituladosDoutorado=_rc.tituladosDoutorado??null;c.docPermanentes=_rc.docPermanentes??null;c.docColaboradores=_rc.docColaboradores??null;c.docVisitantes=_rc.docVisitantes??null;c.razaoDocenteDiscente=_rc.razaoDocenteDiscente??null;c.pgMunicipiosDistintos=_rc.pgMunicipiosDistintos??null;c.pctExcelencia=_rc.pctExcelencia??null;}if(_rc){c.budget=_rc.budget??_rc.liquidado??c.budget;c.execution=_rc.execution??_rc.tx_execucao_empenho??c.execution;c.liquidation=_rc.liquidation??_rc.tx_liquidacao??c.liquidation;c.supplementation=_rc.supplementation??_rc.var_dotacao_loa??c.supplementation;c.personnel=_rc.personnel??_rc.part_pessoal??c.personnel;if(_rc.cnpqCaptacao!=null){c.cnpq=_rc.cnpqCaptacao;}if(_rc.cnpqVinculos!=null){c.vinculos=_rc.cnpqVinculos;}c.dotacao_inicial=_rc.dotacao_inicial??c.dotacao_inicial??null;c.orcamento_atualizado=_rc.orcamento_atualizado??c.orcamento_atualizado??null;c.empenhado=_rc.empenhado??c.empenhado??null;c.liquidado=_rc.liquidado??c.liquidado??null;c.pago=_rc.pago??c.pago??null;c.tx_execucao_empenho=_rc.tx_execucao_empenho??c.tx_execucao_empenho??null;c.tx_liquidacao=_rc.tx_liquidacao??c.tx_liquidacao??null;c.tx_pagamento_liq=_rc.tx_pagamento_liq??c.tx_pagamento_liq??null;c.grau_contingenciamento=_rc.grau_contingenciamento??c.grau_contingenciamento??null;c.var_dotacao_loa=_rc.var_dotacao_loa??c.var_dotacao_loa??null;c.part_pessoal=_rc.part_pessoal??c.part_pessoal??null;c.part_outras_correntes=_rc.part_outras_correntes??c.part_outras_correntes??null;c.part_capital=_rc.part_capital??c.part_capital??null;c.ind80=_rc.ind80??c.ind80??null;c.ind81=_rc.ind81??c.ind81??null;c.ind82=_rc.ind82??c.ind82??null;c.ind83=_rc.ind83??c.ind83??null;c.ind84=_rc.ind84??c.ind84??null;c.ind85=_rc.ind85??c.ind85??null;c.ind86=_rc.ind86??c.ind86??null;c.ind87=_rc.ind87??c.ind87??null;c.ind88=_rc.ind88??c.ind88??null;c.ind95orc=_rc.ind95orc??c.ind95orc??null;}if(_rc){c.insertionRatePR=_rc.insertionRatePR??null;c.egressosMunicipios=_rc.egressosMunicipios??_rc.raisMunCount??null;c.territoryIncome=_rc.territoryIncome??c.territoryIncome??null;c.idhmRegional=_rc.idhmRegional??c.idhmRegional??null;c.areaCineGrande=_rc.areaCineGrande??null;c.areaCinePct=_rc.areaCinePct??null;c.areaCineHerfindahl=_rc.areaCineHerfindahl??null;}if(window.SETI_CLUSTERS&&window.SETI_CLUSTERS[u.sigla]){const cl=window.SETI_CLUSTERS[u.sigla];groupKeys.forEach(k=>{c.groups[k]=cl[k]!=null?cl[k]:null;});}const _cdByYear=window.SETI_CURSOS_DETALHADO_BY_YEAR?.[u.sigla]?.[String(year)];if(_cdByYear){c.cursosDetalhado=_cdByYear;}else if(window.SETI_CURSOS_DETALHADO&&window.SETI_CURSOS_DETALHADO[u.sigla]){c.cursosDetalhado=window.SETI_CURSOS_DETALHADO[u.sigla];}else{c.cursosDetalhado=null;}return c;}
 // Selo visual para valores estimados (fallback de fórmula quando a base não
 // cobre a IES/ano). Usar junto ao valor ou no título do gráfico.
 function estBadge(reason){
@@ -3032,7 +3291,7 @@ function applyRealBrazilBenchmarks(){
     applyRealBrazilBenchmarks._done=true;
   }catch(err){console.error("applyRealBrazilBenchmarks:",err);}
 }
-function render(){applySETIClusters();applyRealBrazilBenchmarks();const c=context();currentFilteredCount=c.ref.length;syncScopeToggle(c.f.scope);updateScopeAvailability(c.f.scope);updateActiveTabFilters();renderTop(c);renderKpis(c);renderSide(c);renderTab(c);}
+function render(){applySETIClusters();applyRealBrazilBenchmarks();populateCursoFilters();const c=context();updateCourseTypeBanner(c);currentFilteredCount=c.ref.length;syncScopeToggle(c.f.scope);updateScopeAvailability(c.f.scope);updateActiveTabFilters();renderTop(c);renderKpis(c);renderSide(c);renderTab(c);}
 
 // ── Cobertura de anos por aba ────────────────────────────────────────────────
 // Fonte: INEP → até 2024 | SETI docentes → 2022–2026 | RAIS → 2023–2024
@@ -3619,7 +3878,7 @@ function currentCohortFilter(){try{return typeof filters==="function"?(filters()
 function realIndicatorsForUniversity(u){return typeof getRealIndicators==="function"?getRealIndicators(u.sigla,currentCohortFilter()):null;}
 function panelEmploymentRate(u){const real=realIndicatorsForUniversity(u);return real&&real.ind37!=null?clamp(Number(real.ind37)*100,0,100):u.employment;}
 function panelEmploymentSalary(u){const real=realIndicatorsForUniversity(u);return real&&real.ind40!=null?Number(real.ind40):u.salary;}
-function panelEgressosField(u,field,fallback){const real=realIndicatorsForUniversity(u);const val=real&&real[field]!=null?real[field]:null;return val!=null?val:fallback;}
+function panelEgressosField(u,field,fallback){const val=typeof getRealIndicatorField==="function"?getRealIndicatorField(u.sigla,field):null;return val!=null?val:fallback;}
 function agg(d){return {students:sum(d,u=>u.students),entrants:sum(d,u=>u.entrants),graduates:sum(d,u=>u.graduates),vacancies:sum(d,u=>u.vacancies),occupancy:wavg(d,u=>u.occupancy,u=>u.vacancies),completion:wavg(d,u=>u.completion,u=>u.students),doctors:wavg(d,u=>u.doctors,u=>u.students),cnpq:sum(d,u=>u.cnpq),employment:wavg(d,u=>panelEmploymentRate(u),u=>u.graduates),budget:sum(d,u=>u.budget),execution:wavg(d,u=>u.execution,u=>u.budget),liquidation:wavg(d,u=>u.liquidation,u=>u.budget),vinculos:sum(d,u=>u.vinculos||0)};}
 function matrixRows(d,f){if(!d.length)return [];const res=resultIndicators[f.result],eff=effortIndicators[f.effort],ra=mean(d,res.get)||1,ea=mean(d,eff.get)||1;return d.map(u=>{const result=res.get(u),effort=eff.get(u),resultRel=result/ra*100,effortRel=effort/ea*100,quad=quadrantUnavailable();return {...u,result,effort,resultRel,effortRel,quadrant:quad.label,tone:quad.tone,resultLabel:"sem quadrante oficial",effortLabel:"sem quadrante oficial"};});}
 function composite(u){return u.occupancy*.15+u.completion*.15+(100-u.dropout)*.12+u.doctors*.14+norm(resultIndicators.cnpq.get(u),900,1900)*.12+norm(u.capes,3.2,5)*.1+panelEmploymentRate(u)*.12+norm(panelEmploymentSalary(u),4500,6500)*.1;}
@@ -5918,7 +6177,11 @@ const RESET_SELECT_DEFAULTS = {
   periodicityFilter: "anual",
   creditTypeFilter: "all",
   resourceOriginFilter: "all",
-  expenseGroupFilter: "all"
+  expenseGroupFilter: "all",
+  grauAcademicoGlobalFilter: "all",
+  cineAreaGlobalFilter: "all",
+  modalidadeEnsinoGlobalFilter: "all",
+  vagaRecorteGlobalFilter: "all"
 };
 
 function normalizeScope(value) {
@@ -6122,7 +6385,9 @@ bind = function bindAuditedButtons() {
     "yearFilter", "courseTypeFilter", "municipalityFilter",
     "courseFilter", "courseAreaFilter", "knowledgeAreaFilter", "turnFilter", "pgProgramFilter",
     "cohortFilter", "cbo2Filter", "sourceFilter", "periodicityFilter", "creditTypeFilter",
-    "resourceOriginFilter", "expenseGroupFilter"
+    "resourceOriginFilter", "expenseGroupFilter",
+    "grauAcademicoGlobalFilter", "cineAreaGlobalFilter", "modalidadeEnsinoGlobalFilter",
+    "vagaRecorteGlobalFilter"
   ];
   filterIds.forEach(id => el[id]?.addEventListener("change", render));
   el.groupBy?.addEventListener("change", () => {
@@ -6328,6 +6593,20 @@ function nationalMeanLabel() {
   return "Média nacional";
 }
 
+// ── Referência Geral — melhor valor bruto de uma única IES (whitelist v1) ────
+// Fonte: window.SETI_REFERENCIA_GERAL (data.referenciaGeral, pipeline Seção 13).
+// Fixo por campo — não reage a filtro de cluster/IEES/ano nem ao #yearFilter.
+// Retorna null quando o campo não está na whitelist pré-computada; cada ponto
+// de uso deve manter o comportamento atual (média do cluster) nesse caso, sem
+// exceção — cobre automaticamente os pickers dinâmicos (Aba 1 metric.get,
+// Aba 2 ind.get/indicator.get/axis.get) sem precisar enumerar cada combinação.
+function getReferenciaGeral(campo) {
+  const ref = (window.SETI_REFERENCIA_GERAL || {})[campo];
+  if (!ref || ref.valor == null || !ref.sigla) return null;
+  return { valor: ref.valor, sigla: ref.sigla, polaridade: ref.polaridade };
+}
+window.getReferenciaGeral = getReferenciaGeral;
+
 function allGroupLabelsSet() {
   return new Set(Object.values(groupOptions || {}).flat());
 }
@@ -6363,13 +6642,15 @@ context = function contextWithoutBrasilClusters() {
   if (!isBrasilScope(f.scope) || f.groupBy === "especifico") return contextBeforeBrasilScope();
 
   const all = scopeUniverse(f.scope).map(u => byYear(u, f.year));
-  const selected = Array.isArray(f.university) ? all.find(u => u.id === f.university[0]) || null : null;
+  const selectedRaw = Array.isArray(f.university) ? all.find(u => u.id === f.university[0]) || null : null;
+  const selected = selectedRaw ? applyVagaMetricOverride(applyCourseFiltersOverride(selectedRaw, f.grauAcademico, f.modalidadeEnsino), f.vagaRecorte) : null;
   const base = all.filter(u =>
     (f.profile === "all" || u.profile === f.profile) &&
     (f.courseType === "all" || u.type === f.courseType) &&
     (f.course === "all" || u.coursesFocus.includes(f.course)) &&
+    (!f.cineArea || f.cineArea === "all" || u.areaCineGrande === f.cineArea) &&
     u.doctors >= f.minDoctors
-  );
+  ).map(u => applyCourseFiltersOverride(u, f.grauAcademico, f.modalidadeEnsino)).map(u => applyVagaMetricOverride(u, f.vagaRecorte));
   let ref = base;
   let display = f.university === "all" ? ref : f.university === "none" ? [] : ref.filter(u => Array.isArray(f.university) && f.university.includes(u.id));
   if (!display.length && f.university !== "none") display = ref;

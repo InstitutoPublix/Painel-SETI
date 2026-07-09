@@ -106,6 +106,10 @@ INDICATORS = [
     "docCresSaldo", "docCresOciosidade", "docCresPartic",
     "egressosMunicipios",
     "seloNotaFinal",
+    # Seção 12d — V9 (Estratificação_IES_Estaduais_BR.xlsx): filtro de
+    # UNIVERSO de IES por Grande Área CINE predominante. Não é variável de
+    # groupBy (V1-V8) nem entra em clusters_raw.
+    "areaCineGrande", "areaCinePct", "areaCineHerfindahl",
 ]
 
 
@@ -223,7 +227,34 @@ qt_vg   = col_idx.get("QT_VG_TOTAL")
 qt_curs = col_idx.get("QT_CURSO")
 qt_desv = col_idx.get("QT_SIT_DESVINCULADO")
 
+# Round 4 — Tipo de Vaga / Turno de Vaga (filtro global, seletor de métrica):
+# colunas confirmadas na Etapa 1 do diagnóstico (todas somam para QT_VG_TOTAL/
+# QT_ING, ver diagnóstico). QT_VG_PROC_SELETIVO / QT_ING_PROC_SELETIVO existem
+# no cabeçalho mas são 0 em 100% das linhas nesta base (2020-2024) — mantidos
+# mesmo assim para não esconder o campo caso uma base futura venha preenchida.
+# Não existe QT_ING_EAD (ingressantes por turno EaD) — occupancy de Turno=EaD
+# fica sempre null (contagem bruta), decisão confirmada com a Luíza.
+qt_vg_diurno    = col_idx.get("QT_VG_TOTAL_DIURNO")
+qt_vg_noturno   = col_idx.get("QT_VG_TOTAL_NOTURNO")
+qt_vg_ead       = col_idx.get("QT_VG_TOTAL_EAD")
+qt_vg_nova      = col_idx.get("QT_VG_NOVA")
+qt_vg_procsel   = col_idx.get("QT_VG_PROC_SELETIVO")
+qt_vg_remanesc  = col_idx.get("QT_VG_REMANESC")
+qt_vg_progesp   = col_idx.get("QT_VG_PROG_ESPECIAL")
+qt_ing_diurno   = col_idx.get("QT_ING_DIURNO")
+qt_ing_noturno  = col_idx.get("QT_ING_NOTURNO")
+qt_ing_vgnova   = col_idx.get("QT_ING_VG_NOVA")
+qt_ing_procsel  = col_idx.get("QT_ING_PROC_SELETIVO")
+qt_ing_remanesc = col_idx.get("QT_ING_VG_REMANESC")
+qt_ing_progesp  = col_idx.get("QT_ING_VG_PROG_ESPECIAL")
+
 cursos_data = {}
+# Round 3a: cursos_data_by_year retém TODAS as linhas de cada (IES, ano), em
+# paralelo a cursos_data (que só guarda o ano mais recente por IES, como
+# antes) — mesma passada única sobre a planilha, sem reabrir o arquivo.
+# Alimenta cursos_detalhado_by_year (Seção 2b) para permitir Tipo de
+# Curso/Modalidade/Grande Área combinados com o filtro de Ano (Round 3b).
+cursos_data_by_year = {}
 for row in ws.iter_rows(min_row=2, values_only=True):
     co = row[co_col]
     try:
@@ -244,6 +275,7 @@ for row in ws.iter_rows(min_row=2, values_only=True):
         if y > cursos_data[iees]["_year"]:
             cursos_data[iees] = {"_year": y, "_rows": []}
         cursos_data[iees]["_rows"].append(row)
+    cursos_data_by_year.setdefault(iees, {}).setdefault(y, []).append(row)
 wb.close()
 
 for iees in IEES:
@@ -309,9 +341,11 @@ cine_col  = col_idx.get("NO_CINE_AREA_GERAL")
 grau_col  = col_idx.get("TP_GRAU_ACADEMICO")
 modal_col = col_idx.get("TP_MODALIDADE_ENSINO")
 
-cursos_detalhado = {}
-for _iees_d, _info_d in cursos_data.items():
-    _rows_d = _info_d["_rows"]
+# Round 3a: lógica de agrupamento extraída para função — usada tanto por
+# cursos_detalhado (ano mais recente, comportamento inalterado) quanto por
+# cursos_detalhado_by_year (todos os anos, novo) para garantir fórmulas
+# idênticas entre os dois, sem duplicar a lógica.
+def _agrupar_cursos_por_grupo(_rows_d):
     _grupos = {}
     for _r in _rows_d:
         _cine = _r[cine_col] if cine_col is not None else None
@@ -329,7 +363,18 @@ for _iees_d, _info_d in cursos_data.items():
             _MODALIDADE_LABELS.get(_modal_int, "Não informado"),
         )
         if _chave not in _grupos:
-            _grupos[_chave] = {"mat": 0, "ing": 0, "conc": 0, "vgTot": 0, "cursos": 0, "desvinc": 0}
+            _grupos[_chave] = {
+                "mat": 0, "ing": 0, "conc": 0, "vgTot": 0, "cursos": 0, "desvinc": 0,
+                # Round 4 — Tipo de Vaga / Turno (contagens brutas por grupo;
+                # o front-end soma essas contagens entre grupos já restringidos
+                # por Tipo de Curso/Modalidade/Grande Área e SÓ ENTÃO calcula a
+                # razão — mesmo padrão de "dropoutCount" acima, já que % não é
+                # somável entre grupos).
+                "vgDiurno": 0, "vgNoturno": 0, "vgEad": 0,
+                "vgNova": 0, "vgProcSeletivo": 0, "vgRemanesc": 0, "vgProgEspecial": 0,
+                "ingDiurno": 0, "ingNoturno": 0,
+                "ingVgNova": 0, "ingProcSeletivo": 0, "ingVgRemanesc": 0, "ingVgProgEspecial": 0,
+            }
         _g = _grupos[_chave]
         _g["mat"]     += safe_int(_r[qt_mat])  or 0
         _g["ing"]     += safe_int(_r[qt_ing])  or 0
@@ -337,6 +382,19 @@ for _iees_d, _info_d in cursos_data.items():
         _g["vgTot"]   += safe_int(_r[qt_vg])   or 0
         _g["cursos"]  += safe_int(_r[qt_curs]) or 0
         _g["desvinc"] += safe_int(_r[qt_desv]) or 0
+        _g["vgDiurno"]         += safe_int(_r[qt_vg_diurno])   or 0
+        _g["vgNoturno"]        += safe_int(_r[qt_vg_noturno])  or 0
+        _g["vgEad"]            += safe_int(_r[qt_vg_ead])      or 0
+        _g["vgNova"]           += safe_int(_r[qt_vg_nova])     or 0
+        _g["vgProcSeletivo"]   += safe_int(_r[qt_vg_procsel])  or 0
+        _g["vgRemanesc"]       += safe_int(_r[qt_vg_remanesc]) or 0
+        _g["vgProgEspecial"]   += safe_int(_r[qt_vg_progesp])  or 0
+        _g["ingDiurno"]        += safe_int(_r[qt_ing_diurno])   or 0
+        _g["ingNoturno"]       += safe_int(_r[qt_ing_noturno])  or 0
+        _g["ingVgNova"]        += safe_int(_r[qt_ing_vgnova])   or 0
+        _g["ingProcSeletivo"]  += safe_int(_r[qt_ing_procsel])  or 0
+        _g["ingVgRemanesc"]    += safe_int(_r[qt_ing_remanesc]) or 0
+        _g["ingVgProgEspecial"] += safe_int(_r[qt_ing_progesp]) or 0
 
     _lista = []
     for (_cine, _grau_label, _modal_label), _g in _grupos.items():
@@ -355,8 +413,143 @@ for _iees_d, _info_d in cursos_data.items():
             "occupancy": _occ,
             "completion": _comp,
             "dropout": _drop,
+            # Contagem bruta de QT_SIT_DESVINCULADO do grupo — exposta para que o
+            # frontend possa recalcular "dropout" ao somar grupos (ex.: filtro de
+            # Tipo de Curso, Round 2b), já que "dropout" acima é uma razão e não
+            # é somável entre grupos. Mesma fórmula: dropoutCount / students * 100.
+            "dropoutCount": _g["desvinc"],
+            # Round 4 — Tipo de Vaga / Turno: contagens brutas (vagas e
+            # ingressantes correspondentes) por grupo. Ver comentário do
+            # dict de acumulação acima sobre por que não expomos % pronto aqui.
+            "vgDiurno": _g["vgDiurno"], "vgNoturno": _g["vgNoturno"], "vgEad": _g["vgEad"],
+            "vgNova": _g["vgNova"], "vgProcSeletivo": _g["vgProcSeletivo"],
+            "vgRemanesc": _g["vgRemanesc"], "vgProgEspecial": _g["vgProgEspecial"],
+            "ingDiurno": _g["ingDiurno"], "ingNoturno": _g["ingNoturno"],
+            "ingVgNova": _g["ingVgNova"], "ingProcSeletivo": _g["ingProcSeletivo"],
+            "ingVgRemanesc": _g["ingVgRemanesc"], "ingVgProgEspecial": _g["ingVgProgEspecial"],
         })
-    cursos_detalhado[_iees_d] = _lista
+    return _lista
+
+
+cursos_detalhado = {}
+for _iees_d, _info_d in cursos_data.items():
+    cursos_detalhado[_iees_d] = _agrupar_cursos_por_grupo(_info_d["_rows"])
+
+# Round 3a: cursos_detalhado_by_year — {sigla: {str(ano): [grupos]}}, mesmo
+# padrão de d8050_by_year (Seção 9). Pré-requisito para o front-end (Round
+# 3b) permitir Tipo de Curso/Modalidade/Grande Área combinados com o filtro
+# de Ano. cursos_detalhado (acima) continua sendo calculado e exportado sem
+# nenhuma alteração — os dois convivem em paralelo nesta rodada.
+cursos_detalhado_by_year = {}
+for _iees_d, _por_ano in cursos_data_by_year.items():
+    cursos_detalhado_by_year[_iees_d] = {
+        str(_ano): _agrupar_cursos_por_grupo(_linhas)
+        for _ano, _linhas in _por_ano.items()
+    }
+
+
+# ── 2c. Benchmark por Grande Área CINE — referência PR vs Brasil ─────────────
+# Fonte: mesma cursos_detalhado computada acima (Seção 2b) — não reabre a base.
+# Recorte "pr": as 7 IES-PR (IEES_PR). Recorte "br": as 40 IES (IEES = IEES_PR +
+# IEES_BR) — mesma definição de escopo Brasil usada no restante do painel
+# (ex. scopeUniverse() no frontend, que também é IES-PR + IES-BR, não IES-BR
+# isolada).
+#
+# DECISÕES NÃO VALIDADAS COM JÉSSICA/ANDERSON (pendência de validação
+# metodológica — ver changelog):
+#   - Ponderação: cada indicador pondera pelo seu próprio denominador de taxa —
+#     dropout pondera por "students" (mat), occupancyTipo pondera por
+#     "vacancies" (vgTot). Não há campo único "vagas ou matrículas" comum aos
+#     dois; a escolha acima segue a semântica de cada fórmula, não foi pedida
+#     explicitamente.
+#   - "occupancyTipo" reaproveita o campo "occupancy" já existente em
+#     cursos_detalhado, que é ingressantes ÷ vagas (QT_ING/QT_VG_TOTAL) — igual
+#     ao já usado pelos getters ind26/ind67 em painel.js. A fórmula oficial do
+#     IND-67 no catálogo é matrículas ÷ vagas (QT_MAT/QT_VG_TOTAL); não existe
+#     em cursos_detalhado nenhum campo com essa fórmula alternativa, e não foi
+#     criado um novo campo para isso nesta rodada.
+#   - Áreas "Não informado" (CINE ausente/nulo) entram como mais uma área se
+#     aparecerem nos dados, igual ao comportamento já existente em
+#     cineAreaOptions() no frontend (painel-aba3-acesso.js) — não filtradas.
+
+_POLARIDADE_CINE = {
+    "dropout":       "menor",  # menor valor vence (taxa de desvinculação)
+    "occupancyTipo": "maior",  # maior valor vence (taxa de ocupação)
+}
+_CAMPO_CINE = {
+    "dropout":       "dropout",
+    "occupancyTipo": "occupancy",
+}
+_PESO_CINE = {
+    "dropout":       "students",
+    "occupancyTipo": "vacancies",
+}
+
+
+# Round 3a: fonte migrada de cursos_detalhado (flat, ano mais recente) para
+# cursos_detalhado_by_year, selecionando explicitamente o ano mais recente
+# por IES — mesmo critério que cursos_data já usava (max(y) por IES).
+# Resultado idêntico ao anterior (confirmado: cursos_detalhado[iees] ==
+# cursos_detalhado_by_year[iees][str(ano_mais_recente)], mesmas linhas de
+# origem); o benchmark CINE continua fora do escopo de "filtrar por ano"
+# (fotografia fixa), só a fonte de leitura mudou para não depender mais do
+# campo antigo, que o Round 3b pode vir a aposentar no front-end.
+def _grupos_ano_mais_recente_cine(iees):
+    anos = cursos_detalhado_by_year.get(iees)
+    if not anos:
+        return []
+    ano_recente = max(anos.keys(), key=lambda a: int(a))
+    return anos[ano_recente]
+
+
+def _media_ponderada_cine(lista_iees, area, metrica):
+    campo = _CAMPO_CINE[metrica]
+    peso_campo = _PESO_CINE[metrica]
+    soma_valor_peso = 0.0
+    soma_peso = 0.0
+    for _iees_b in lista_iees:
+        for _g in _grupos_ano_mais_recente_cine(_iees_b):
+            if _g["cineArea"] != area:
+                continue
+            _v = _g[campo]
+            _p = _g[peso_campo]
+            if _v is None or not _p:
+                continue
+            soma_valor_peso += _v * _p
+            soma_peso += _p
+    if soma_peso <= 0:
+        return None
+    return round(soma_valor_peso / soma_peso, 2)
+
+
+def calcular_benchmark_cine():
+    areas = sorted({
+        _g["cineArea"]
+        for _iees_b in cursos_detalhado_by_year
+        for _g in _grupos_ano_mais_recente_cine(_iees_b)
+    })
+    resultado = {}
+    for _area in areas:
+        _entry = {}
+        for _metrica, _pol in _POLARIDADE_CINE.items():
+            _v_pr = _media_ponderada_cine(IEES_PR, _area, _metrica)
+            _v_br = _media_ponderada_cine(IEES, _area, _metrica)
+            if _v_pr is None and _v_br is None:
+                _ref, _origem = None, None
+            elif _v_pr is None:
+                _ref, _origem = _v_br, "BR"
+            elif _v_br is None:
+                _ref, _origem = _v_pr, "PR"
+            elif _pol == "menor":
+                _ref, _origem = (_v_pr, "PR") if _v_pr <= _v_br else (_v_br, "BR")
+            else:
+                _ref, _origem = (_v_pr, "PR") if _v_pr >= _v_br else (_v_br, "BR")
+            _entry[_metrica] = {"pr": _v_pr, "br": _v_br, "referencia": _ref, "origem": _origem}
+        resultado[_area] = _entry
+    return resultado
+
+
+benchmark_cine = calcular_benchmark_cine()
 
 
 # ── 3. Docentes — facultyOcc, cres, tide ─────────────────────────────────────
@@ -1324,7 +1517,7 @@ for row in ws_ref.iter_rows(min_row=6, values_only=True):
 # 12c. Valores territoriais oficiais (PR) para V7 e V8.
 # As abas 10/11 trazem valores ponderados por território atendido; estes campos
 # substituem qualquer valor antigo baseado em município-sede.
-for row in wb["10_Renda Território PR"].iter_rows(min_row=6, values_only=True):
+for row in wb["9_Renda Território PR"].iter_rows(min_row=6, values_only=True):
     sigla = str(row[2]).strip() if len(row) > 2 and row[2] else None
     if sigla not in IEES_PR:
         continue
@@ -1334,19 +1527,19 @@ for row in wb["10_Renda Território PR"].iter_rows(min_row=6, values_only=True):
     if renda is not None:
         results[key]["territoryIncome"] = renda
         sources[key]["territoryIncome"] = (
-            "Estratificação_IES_Estaduais_BR.xlsx / 10_Renda Território PR"
+            "Estratificação_IES_Estaduais_BR.xlsx / 9_Renda Território PR"
             " / Renda Per Capita Ponderada (R$)"
         )
     if faixa:
         results[key]["v7_label"] = faixa
         sources[key]["v7_label"] = (
-            "Estratificação_IES_Estaduais_BR.xlsx / 10_Renda Território PR"
+            "Estratificação_IES_Estaduais_BR.xlsx / 9_Renda Território PR"
             " / Faixa de Renda Territorial"
         )
         if sigla in clusters_raw:
             clusters_raw[sigla]["v7"] = faixa
 
-for row in wb["11_IDH Território PR"].iter_rows(min_row=6, values_only=True):
+for row in wb["10_IDH Território PR"].iter_rows(min_row=6, values_only=True):
     sigla = str(row[2]).strip() if len(row) > 2 and row[2] else None
     if sigla not in IEES_PR:
         continue
@@ -1356,17 +1549,49 @@ for row in wb["11_IDH Território PR"].iter_rows(min_row=6, values_only=True):
     if idh is not None:
         results[key]["idhmRegional"] = idh
         sources[key]["idhmRegional"] = (
-            "Estratificação_IES_Estaduais_BR.xlsx / 11_IDH Território PR"
+            "Estratificação_IES_Estaduais_BR.xlsx / 10_IDH Território PR"
             " / IDH Municipal Ponderado (0–1)"
         )
     if faixa:
         results[key]["v8_label"] = faixa
         sources[key]["v8_label"] = (
-            "Estratificação_IES_Estaduais_BR.xlsx / 11_IDH Território PR"
+            "Estratificação_IES_Estaduais_BR.xlsx / 10_IDH Território PR"
             " / Faixa de Contexto Socioeconômico"
         )
         if sigla in clusters_raw:
             clusters_raw[sigla]["v8"] = faixa
+
+# 12d. V9 — Área de Atuação Predominante (Grande Área CINE). Usada só como
+# filtro global de UNIVERSO de IES (Round 2a) — NÃO é variável de groupBy
+# V1-V8 e NÃO entra em clusters_raw (mantido intocado, ver linha 1380).
+# Reaproveita ws_mat (mesmo workbook já aberto em 12a) numa segunda
+# passada — sem reabrir o arquivo.
+for row in ws_mat.iter_rows(min_row=6, values_only=True):
+    sigla = row[2] if len(row) > 2 else None
+    if sigla not in IEES:
+        continue
+    key = sigla.lower()
+    area = _strat_label(row[27] if len(row) > 27 else None)
+    pct = _strat_float(row[28] if len(row) > 28 else None, 2)
+    herf = _strat_float(row[29] if len(row) > 29 else None, 3)
+    if area is not None:
+        results[key]["areaCineGrande"] = area
+        sources[key]["areaCineGrande"] = (
+            "Estratificação_IES_Estaduais_BR.xlsx / 1_Matriz de Estratificação"
+            " / V9 – Área de Atuação Predominante (col 27)"
+        )
+    if pct is not None:
+        results[key]["areaCinePct"] = pct
+        sources[key]["areaCinePct"] = (
+            "Estratificação_IES_Estaduais_BR.xlsx / 1_Matriz de Estratificação"
+            " / V9 – % Matrículas na Área (col 28)"
+        )
+    if herf is not None:
+        results[key]["areaCineHerfindahl"] = herf
+        sources[key]["areaCineHerfindahl"] = (
+            "Estratificação_IES_Estaduais_BR.xlsx / 1_Matriz de Estratificação"
+            " / V9 – Índice de Concentração / Herfindahl (col 29)"
+        )
 
 wb.close()
 
@@ -1534,7 +1759,7 @@ for sigla in IEES_PR:
 
 
 # ── Seção 10 — Estratificação V6 (Dinâmica Orçamentária PR) ──────────────────
-# Lê a aba '9_Dinâmica Orçamentária PR' do arquivo de estratificação e extrai
+# Lê a aba '8_Dinâmica Orçamentária PR' do arquivo de estratificação e extrai
 # o índice composto e a faixa de perfil orçamentário por IES-PR.
 # Substitui clusters_raw[sigla]["v6"] com o rótulo oficial.
 #
@@ -1546,7 +1771,7 @@ for sigla in IEES_PR:
 _wb_v6 = openpyxl.load_workbook(
     DATA_DIR / "Estratificação_IES_Estaduais_BR.xlsx", read_only=True, data_only=True
 )
-_ws_v6 = _wb_v6["9_Dinâmica Orçamentária PR"]
+_ws_v6 = _wb_v6["8_Dinâmica Orçamentária PR"]
 
 for _row in _ws_v6.iter_rows(min_row=6, values_only=True):
     _sigla = str(_row[2]).strip() if len(_row) > 2 and _row[2] else None
@@ -1558,7 +1783,7 @@ for _row in _ws_v6.iter_rows(min_row=6, values_only=True):
     except (TypeError, ValueError):
         _v6_indice = None
     _v6_perfil = str(_row[14]).strip() if len(_row) > 14 and _row[14] else None
-    _src = "Estratificação_IES_Estaduais_BR.xlsx / 9_Dinâmica Orçamentária PR"
+    _src = "Estratificação_IES_Estaduais_BR.xlsx / 8_Dinâmica Orçamentária PR"
 
     _key = _sigla.lower()
     if _v6_indice is not None:
@@ -2293,6 +2518,92 @@ if _nao_classificadas:
     )
 
 
+# ── 13. Referência Geral — melhor valor bruto entre as IES (whitelist v1) ────
+# Substitui, na v1 do frontend, a "média do cluster" (que reage a filtro) por
+# um valor FIXO: o maior (ou menor, conforme polaridade) valor bruto de uma
+# única IES entre o universo aplicável — nunca recalculado a partir de linhas
+# filtradas. Mesmo princípio já usado em benchmark_cine (Seção 2c).
+#
+# Roda por último (depois de todas as seções) porque a whitelist inclui campos
+# de seções tardias: doctors (1), occupancy/dropout/completion (2),
+# facultyOcc/cres/docCresOciosidade/docCresPartic/docTidePartic (3), cnpq (4),
+# pctExcelencia (5b), employment/salary (8), insertionRatePR (9),
+# tx_execucao_empenho/grau_contingenciamento/tx_liquidacao/tx_pagamento_liq
+# (6b — merge de d8050_by_year 2024 em results, ~linha 1594).
+#
+# Excluídos da v1 (decisão desta rodada — não implementados aqui):
+#   - Indicadores "Neutra" no catálogo: var_dotacao_loa, part_pessoal,
+#     part_outras_correntes, razão correntes/capital, razaoDocenteDiscente.
+#   - Índices sintéticos sem entrada própria: academicPerformanceIndex,
+#     costPerStudent, costEquivalentStudent, dimensionScore, cnpqLinks,
+#     cboDistribution, occupationalDiversity, foreignFacultyRate,
+#     mobilityRate, pgForeignShare, pgProductivityShare.
+#   - Campos sem polaridade/universo confirmado: capes (bruto), vinculos,
+#     egressosMunicipios, docVagasTotais/docVagasDisp/docVagasOcupadas/
+#     docVagasCond, docChMedia.
+#   - Composição orçamentária sem entrada isolada: part_capital,
+#     part_recursos_livres, part_fonte_500/501, part_demais_vincul,
+#     transfers, freeResources, ownResources.
+#   - DIVERGÊNCIA ENCONTRADA NESTA RODADA — cbo2Rate (IND-39): a whitelist
+#     pedia a inclusão deste campo, mas `grep -r ind39 pipeline/` não retorna
+#     NENHUMA ocorrência em todo o pipeline (nem em assemble_final.py, nem em
+#     nenhum enrich_*.py), e o JSON gerado não tem a chave "ind39" em nenhum
+#     byYear de nenhuma IES (confirmado lendo data/seti_precomputed.json).
+#     Ou seja: o campo `employmentMetrics(u).cbo2Rate` do frontend (que lê
+#     `real.ind39 ?? fórmula sintética`) sempre cai no fallback sintético hoje
+#     — não há dado real precomputado para calcular uma referência geral.
+#     NÃO implementado; card de cbo2Rate (Aba 7) continua com média do
+#     cluster, igual aos demais índices sintéticos excluídos.
+_REFERENCIA_GERAL_WHITELIST = {
+    # campo:                    (universo, polaridade, rótulo do universo)
+    "dropout":                 (IEES,    "menor", "40 IES"),
+    "completion":              (IEES,    "maior", "40 IES"),
+    "doctors":                 (IEES,    "maior", "40 IES"),
+    "occupancy":               (IEES,    "maior", "40 IES"),
+    "cnpq":                    (IEES,    "maior", "40 IES"),
+    "pctExcelencia":           (IEES,    "maior", "40 IES"),
+    "facultyOcc":              (IEES_PR, "maior", "7 IES-PR"),
+    "cres":                    (IEES_PR, "maior", "7 IES-PR"),
+    "docCresOciosidade":       (IEES_PR, "menor", "7 IES-PR"),
+    "docCresPartic":           (IEES_PR, "maior", "7 IES-PR"),
+    "docTidePartic":           (IEES_PR, "maior", "7 IES-PR"),
+    "employment":              (IEES_PR, "maior", "7 IES-PR"),
+    "insertionRatePR":         (IEES_PR, "maior", "7 IES-PR"),
+    "salary":                  (IEES_PR, "maior", "7 IES-PR"),
+    "tx_execucao_empenho":     (IEES_PR, "maior", "7 IES-PR"),
+    "grau_contingenciamento":  (IEES_PR, "menor", "7 IES-PR"),
+    "tx_liquidacao":           (IEES_PR, "maior", "7 IES-PR"),
+    "tx_pagamento_liq":        (IEES_PR, "maior", "7 IES-PR"),
+}
+
+
+def calcular_referencia_geral():
+    resultado = {}
+    for campo, (universo, polaridade, universo_label) in _REFERENCIA_GERAL_WHITELIST.items():
+        melhor_valor = None
+        melhor_sigla = None
+        for iees in universo:
+            v = results.get(iees.lower(), {}).get(campo)
+            if v is None:
+                continue
+            if (
+                melhor_valor is None
+                or (polaridade == "maior" and v > melhor_valor)
+                or (polaridade == "menor" and v < melhor_valor)
+            ):
+                melhor_valor, melhor_sigla = v, iees
+        resultado[campo] = {
+            "valor": melhor_valor,
+            "sigla": melhor_sigla,
+            "universo": universo_label,
+            "polaridade": polaridade,
+        }
+    return resultado
+
+
+referencia_geral = calcular_referencia_geral()
+
+
 # ── Saída stdout (retrocompatível) ────────────────────────────────────────────
 
 print(json.dumps({"results": results, "sources": sources}, indent=2, ensure_ascii=False))
@@ -2313,6 +2624,18 @@ precomputed = {
     "clustersEspecificos": clusters_especificos_catalog,
     "composicaoFontes": composicaoFontes,
     "cursosDetalhado": cursos_detalhado,
+    # cursosDetalhadoByYear: {SIGLA: {str(ano): [grupos]}} para 2020-2024 —
+    # Round 3a, pré-requisito para o front-end (Round 3b) combinar Tipo de
+    # Curso/Modalidade/Grande Área com o filtro de Ano. cursosDetalhado
+    # (acima) continua sendo exportado sem alteração nesta rodada.
+    "cursosDetalhadoByYear": cursos_detalhado_by_year,
+    # benchmarkCine: {area: {dropout: {pr, br, referencia, origem}, occupancyTipo: {...}}}
+    # pendência de validação metodológica (ponderação e escopo do campo occupancy) — ver Seção 2c
+    "benchmarkCine": benchmark_cine,
+    # referenciaGeral: {campo: {valor, sigla, universo, polaridade}} — melhor
+    # valor bruto de uma única IES (fixo, não reage a filtro). Whitelist v1 —
+    # ver Seção 13. cbo2Rate (IND-39) não incluído: sem dado real precomputado.
+    "referenciaGeral": referencia_geral,
     # byYear: 2024 = todos os indicadores para as 40 IES;
     # 2025/2026 = apenas campos D8050 para as 7 IES-PR
     "byYear": {

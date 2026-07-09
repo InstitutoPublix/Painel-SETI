@@ -57,6 +57,7 @@ tabBlocks.efficiency.push(
 // ── Estado para a Seção 3 ────────────────────────────────────────────────────
 var _ORC_IES_PR = ["UEL","UEM","UEPG","UNIOESTE","UNICENTRO","UENP","UNESPAR"];
 if (!state.orcEvolucaoFilter) state.orcEvolucaoFilter = new Set(_ORC_IES_PR);
+if (!state.orcEvolucaoYearFilter) state.orcEvolucaoYearFilter = "todos";
 
 window.toggleOrcEvolucaoIES = function(sigla) {
   if (!state.orcEvolucaoFilter) state.orcEvolucaoFilter = new Set(_ORC_IES_PR);
@@ -67,6 +68,13 @@ window.toggleOrcEvolucaoIES = function(sigla) {
 
 window.limparOrcEvolucao = function() {
   state.orcEvolucaoFilter = new Set();
+  render();
+};
+
+window.setOrcEvolucaoYearFilter = function(year) {
+  state.orcEvolucaoYearFilter = ["todos", "2024", "2025", "2026"].indexOf(String(year)) >= 0
+    ? String(year)
+    : "todos";
   render();
 };
 
@@ -421,9 +429,12 @@ function renderOrcEvolucao(c) {
   }).join("");
 
   // Elemento 2: linha de Taxa de Liquidação por IES (eixo único 0-100%)
+  var selectedTlYear = state.orcEvolucaoYearFilter || "todos";
+  if (["todos", "2024", "2025", "2026"].indexOf(String(selectedTlYear)) < 0) selectedTlYear = "todos";
+  var TL_ANOS = selectedTlYear === "todos" ? ANOS.slice() : [String(selectedTlYear)];
   var TL_W = 620, TL_H = 220, TL_PL = 40, TL_PR = 20, TL_PT = 16, TL_PB = 36;
   var TL_CW = TL_W - TL_PL - TL_PR, TL_CH = TL_H - TL_PT - TL_PB;
-  var tlX = function(i) { return TL_PL + i * (TL_CW / (ANOS.length - 1)); };
+  var tlX = function(i) { return TL_ANOS.length === 1 ? TL_PL + TL_CW / 2 : TL_PL + i * (TL_CW / (TL_ANOS.length - 1)); };
   var tlY = function(v) { return TL_PT + (1 - v / 100) * TL_CH; };
   var tlBuildPath = function(values) {
     var d = "", started = false;
@@ -442,11 +453,11 @@ function renderOrcEvolucao(c) {
               '<text x="' + (TL_PL - 6) + '" y="' + (gy + 3.5).toFixed(1) + '" text-anchor="end" fill="#6d7a8a" font-size="9.5">' + v + '%</text>';
   });
 
-  var TL_XLAB = ["2024", "2025", "2026 (parcial)"];
+  var TL_X_LABELS = { "2024": "2024", "2025": "2025", "2026": "2026 (parcial)" };
   var tlXAxis = "";
-  ANOS.forEach(function(yr, i) {
-    var anchor = i === 0 ? "start" : (i === ANOS.length - 1 ? "end" : "middle");
-    tlXAxis += '<text x="' + tlX(i).toFixed(1) + '" y="' + (TL_H - TL_PB + 16) + '" text-anchor="' + anchor + '" fill="#374151" font-size="11">' + TL_XLAB[i] + '</text>';
+  TL_ANOS.forEach(function(yr, i) {
+    var anchor = TL_ANOS.length === 1 ? "middle" : (i === 0 ? "start" : (i === TL_ANOS.length - 1 ? "end" : "middle"));
+    tlXAxis += '<text x="' + tlX(i).toFixed(1) + '" y="' + (TL_H - TL_PB + 16) + '" text-anchor="' + anchor + '" fill="#374151" font-size="11">' + TL_X_LABELS[yr] + '</text>';
   });
 
   var tlAxes = '<line x1="' + TL_PL + '" y1="' + TL_PT + '" x2="' + TL_PL + '" y2="' + (TL_H-TL_PB) + '" stroke="#9ca3af" stroke-width="1.5"/>' +
@@ -455,12 +466,12 @@ function renderOrcEvolucao(c) {
   var tlLinesHtml = "";
   selectedIES.forEach(function(sig) {
     var col = IES_COLORS[sig] || "#555";
-    var vals = ANOS.map(function(yr) { return DATA_YEARS[sig][yr].txLiq; });
+    var vals = TL_ANOS.map(function(yr) { return DATA_YEARS[sig][yr].txLiq; });
     var path = tlBuildPath(vals);
     if (path) tlLinesHtml += '<path d="' + path + '" fill="none" stroke="' + col + '" stroke-width="2.2" stroke-linejoin="round"/>';
     vals.forEach(function(v, i) {
       if (v == null) return;
-      tlLinesHtml += '<circle cx="' + tlX(i).toFixed(1) + '" cy="' + tlY(v).toFixed(1) + '" r="4.5" fill="' + col + '" stroke="white" stroke-width="1.5"><title>' + sig + ': ' + _fmtP(v) + ' em ' + ANOS[i] + '</title></circle>';
+      tlLinesHtml += '<circle cx="' + tlX(i).toFixed(1) + '" cy="' + tlY(v).toFixed(1) + '" r="4.5" fill="' + col + '" stroke="white" stroke-width="1.5"><title>' + sig + ': ' + _fmtP(v) + ' em ' + TL_ANOS[i] + '</title></circle>';
     });
   });
 
@@ -469,8 +480,24 @@ function renderOrcEvolucao(c) {
     return '<span class="tl-legend-item"><i style="background:' + col + '"></i>' + sig + '</span>';
   }).join("");
 
+  var tlYearSelectHtml = '<label class="orc-liquidation-year-filter">' +
+    '<span>Ano</span>' +
+    '<select class="filter-inline-select" onchange="window.setOrcEvolucaoYearFilter(this.value)" aria-label="Ano da Taxa de liquidação por IES">' +
+    [
+      { value: "todos", label: "Todos" },
+      { value: "2024", label: "2024" },
+      { value: "2025", label: "2025" },
+      { value: "2026", label: "2026" },
+    ].map(function(opt) {
+      var selected = String(selectedTlYear) === opt.value ? " selected" : "";
+      return '<option value="' + opt.value + '"' + selected + '>' + opt.label + '</option>';
+    }).join("") +
+    '</select></label>';
+
   var txLiquidacaoHtml = '<div style="margin-top:18px">' +
-    '<p class="card-subtitle" style="margin-bottom:6px;font-weight:700;color:var(--text-primary,#222)">Taxa de liquidação por IES</p>' +
+    '<div class="orc-liquidation-chart-header">' +
+    '<p class="card-subtitle" style="margin:0;font-weight:700;color:var(--text-primary,#222)">Taxa de liquidação por IES</p>' +
+    '</div>' +
     '<svg viewBox="0 0 ' + TL_W + ' ' + TL_H + '" width="100%" style="display:block;overflow:visible;font-family:DM Sans,sans-serif">' +
     tlGrid + tlAxes + tlXAxis + tlLinesHtml +
     '</svg>' +
@@ -481,7 +508,7 @@ function renderOrcEvolucao(c) {
          '<div class="visual-card-header"><div>' +
          '<h3>Evolução Orçamentária 2024–2026</h3>' +
          '<p class="card-subtitle">Orçamento Atualizado × Liquidado, e Taxa de Liquidação por IEES · ' + selYear + ' · Fonte: Relatório da Despesa 8050</p>' +
-         '</div></div>' +
+         '</div>' + tlYearSelectHtml + '</div>' +
          '<div style="margin:6px 0 10px;line-height:1.8">' + checkHtml +
          '<button onclick="window.limparOrcEvolucao()" style="margin-left:12px;padding:3px 12px;border-radius:14px;border:1px solid #94a3b8;background:transparent;color:var(--text-secondary,#666);font-size:0.80rem;cursor:pointer;vertical-align:middle;" title="Desselecionar todas as IES">Limpar</button></div>' +
          '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px">' + cardsHtml + '</div>' +

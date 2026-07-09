@@ -213,9 +213,10 @@ function comparisonTable(c) {
     <table class="data-table comparison-table">
       <thead><tr><th>Rank</th><th>IEES</th>${dimension.indicators.map(ind => { const shortName = comparisonShortAxisLabel(ind.name, 200); return `<th title="${ind.name}" style="min-width:150px;word-break:break-word;white-space:normal;font-size:12px">${shortName}</th>`; }).join("")}</tr></thead>
       <tbody>${sortedRows.map(u => `<tr class="${isUniSelected(c.f, u.id) ? "selected-row" : ""}"><td><strong>${ranking.get(u.id) || "-"}º</strong></td><td><strong>${u.sigla}</strong><br><span>${u.region}</span></td>${dimension.indicators.map(ind => indicatorCell(ind, u, means[ind.code])).join("")}</tr>`).join("")}</tbody>
-      <tfoot><tr><td colspan="2"><strong>${nationalMeanLabel()}</strong></td>${dimension.indicators.map(ind => `<td>${comparisonFormat(ind, means[ind.code])}</td>`).join("")}</tr></tfoot>
+      <tfoot><tr><td colspan="2"><strong>${nationalMeanLabel()}</strong></td>${dimension.indicators.map(ind => comparisonFooterCell(ind, means[ind.code])).join("")}</tr></tfoot>
     </table>
-  </div>`;
+  </div>
+  ${comparisonRefGeralFootnote(dimension, "nacional")}`;
   }
   /* escopo Paraná */
   const key = comparisonDimensionKey(c);
@@ -236,11 +237,12 @@ function comparisonTable(c) {
       <thead><tr><th>Rank</th><th>IEES</th>${dimension.indicators.map(ind => { const shortName = comparisonShortAxisLabel(ind.name, 200); return `<th title="${ind.name}" style="min-width:150px;word-break:break-word;white-space:normal;font-size:12px">${shortName}</th>`; }).join("")}</tr></thead>
       <tbody>${sortedRows.map(u => `<tr class="${clusterIds.has(u.id) ? "in-cluster" : "out-cluster"} ${isUniSelected(c.f, u.id) ? "selected-row" : ""}"><td><strong>${ranking.get(u.id) || "-"}º</strong></td><td><strong>${u.sigla}</strong><br><span>${u.groups[c.f.groupBy]}</span></td>${dimension.indicators.map(ind => indicatorCell(ind, u, means[ind.code])).join("")}</tr>`).join("")}</tbody>
       <tfoot>
-        <tr><td colspan="2"><strong>Média do cluster</strong></td>${dimension.indicators.map(ind => `<td>${comparisonFormat(ind, means[ind.code])}</td>`).join("")}</tr>
-        <tr class="pr-average-row"><td colspan="2"><strong>Média geral PR</strong></td>${dimension.indicators.map(ind => `<td>${comparisonFormat(ind, prMeans[ind.code])}</td>`).join("")}</tr>
+        <tr><td colspan="2"><strong>Média do cluster</strong></td>${dimension.indicators.map(ind => comparisonFooterCell(ind, means[ind.code])).join("")}</tr>
+        <tr class="pr-average-row"><td colspan="2"><strong>Média geral PR</strong></td>${dimension.indicators.map(ind => comparisonFooterCell(ind, prMeans[ind.code])).join("")}</tr>
       </tfoot>
     </table>
-  </div>`;
+  </div>
+  ${comparisonRefGeralFootnote(dimension, "cluster")}`;
 }
 
 /* ── helpers de célula e classificação condicional ───────────────────────── */
@@ -255,13 +257,45 @@ function comparisonValues(rows, ind) {
   return rows.map(u => comparisonValue(ind, u)).filter(v => v != null);
 }
 
+// Referência Geral (whitelist v1): quando ind.code está mapeado em
+// OVERVIEW_METRIC_REFCAMPO (painel-aba1-panorama.js, carregado antes deste
+// arquivo), retorna o valor FIXO (melhor IES) em vez da média das linhas
+// filtradas. O rótulo genérico da linha de rodapé ("Média do cluster"/"Média
+// geral PR"/nationalMeanLabel()) é compartilhado por todas as colunas da
+// dimensão e permanece assim de propósito — mas cada CÉLULA que usa esse
+// valor fixo é marcada individualmente por comparisonFooterCell() (★ +
+// tooltip), então não há ambiguidade célula a célula mesmo quando a linha
+// mistura média real e Referência Geral.
 function comparisonMean(rows, ind) {
+  const refGeral = typeof overviewMetricReferenceGeral === "function" ? overviewMetricReferenceGeral(ind) : null;
+  if (refGeral) return refGeral.valor;
   const values = comparisonValues(rows, ind);
   return values.length ? values.reduce((s, v) => s + v, 0) / values.length : null;
 }
 
 function comparisonFormat(ind, value) {
   return value == null || !Number.isFinite(Number(value)) ? "—" : ind.fmt(value);
+}
+
+// Marca por célula (não por linha) quando o valor de rodapé vem da
+// Referência Geral em vez da média real das linhas filtradas — ver
+// comparisonMean() acima para o porquê disso ser necessário por célula.
+function comparisonIndicatorHasRefGeral(ind) {
+  return typeof overviewMetricReferenceGeral === "function" && !!overviewMetricReferenceGeral(ind);
+}
+
+function comparisonFooterCell(ind, value) {
+  const refGeral = comparisonIndicatorHasRefGeral(ind) ? overviewMetricReferenceGeral(ind) : null;
+  const mark = refGeral
+    ? `<span class="ref-geral-mark" title="Referência: ${refGeral.sigla}" aria-label="Valor de referência geral (${refGeral.sigla})"> ★</span>`
+    : "";
+  return `<td>${comparisonFormat(ind, value)}${mark}</td>`;
+}
+
+function comparisonRefGeralFootnote(dimension, scopeLabel) {
+  if (!dimension.indicators.some(comparisonIndicatorHasRefGeral)) return "";
+  const demaisLabel = scopeLabel === "cluster" ? "média do cluster ativo" : "média nacional real";
+  return `<p class="comparison-table-footnote">★ = valor de referência geral, melhor IES do universo aplicável; demais valores = ${demaisLabel}.</p>`;
 }
 
 function indicatorCell(ind, u, avg) {
@@ -463,6 +497,17 @@ function comparisonRadar(c) {
   </article>`;
 }
 
+// Radar (comparisonRadar): EXCLUSÃO INTENCIONAL da Referência Geral nesta
+// visualização — não é uma pendência a resolver depois. O radar plota até 6
+// eixos simultâneos sob uma única legenda ("Média do cluster"); diferenciar
+// por eixo qual referência foi usada (Geral fixa vs. média real do cluster)
+// exigiria redesenhar a legenda por vértice, fora do escopo desta feature.
+// Diferente da Tabela (Tópico 1, ver comparisonFooterCell), aqui não há
+// como marcar por célula — por isso o refKey "cluster" (opção padrão do
+// seletor "Comparar com") permanece 100% "média real do cluster" (reage a
+// filtro), igual ao comportamento anterior à feature Referência Geral. As
+// demais opções do seletor ("parana"/"brasil"/IES específica) nunca usaram
+// Referência Geral e não são afetadas por esta decisão.
 function radarReferenceValue(axis, refKey, clusterRows, c, allUnis) {
   if (refKey === "brasil") return axis.br();
   if (refKey === "parana") return mean(c.base.length ? c.base : c.all, axis.get);

@@ -8,7 +8,7 @@
     <link rel="icon" href="data:," />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,300&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet" />
-    <link rel="stylesheet" href="assets/painel.css" />
+    <link rel="stylesheet" href="assets/painel.css?v=20260708-ano-liquidacao" />
 
     <style>
       /* ── Cabeçalho institucional — overrides de layout ───────────────── */
@@ -65,13 +65,20 @@
       }
 
       .header-logo {
-        height: 52px;
         width: auto;
         object-fit: contain;
       }
 
-      .header-logo-seti {
-        height: 44px;
+      .header-logo-brasao {
+        height: 72px;
+        max-width: 72px;
+      }
+
+      @media (max-width: 620px) {
+        .header-logo-brasao {
+          height: 48px;
+          max-width: 48px;
+        }
       }
     </style>
 
@@ -119,18 +126,12 @@
           </svg>
         </div>
 
-        <!-- DIREITA: logos Governo do Paraná + SETI -->
+        <!-- DIREITA: brasão do Paraná -->
         <div class="header-logos">
           <img
-            src="assets/img/logo_gov_pr.png"
-            alt="Paraná — Governo do Estado"
-            class="header-logo"
-          />
-          <div style="width:1px; height:56px; background:rgba(255,255,255,0.3);"></div>
-          <img
-            src="assets/img/logo_SETI.png"
-            alt="Secretaria da Ciência, Tecnologia e Ensino Superior"
-            class="header-logo header-logo-seti"
+            src="assets/brasao_parana.svg"
+            alt="Brasão do Paraná"
+            class="header-logo header-logo-brasao"
           />
         </div>
 
@@ -222,6 +223,62 @@
               <option value="v8" title="Disponível apenas para escopo Paraná">IDH do Território Atendido (PR)</option>
               <option value="especifico">Cluster Multidimensional</option>
             </select>
+
+            <!-- Filtros globais de curso (Round 1): grauAcademico/cineArea/
+                 modalidadeEnsino ficam disponíveis em filters() mas ainda NÃO
+                 são consumidos por applyFilters()/byYear() nem recalculam
+                 indicador nenhum — isso é Round 2. Opções populadas em
+                 populate() a partir de window.SETI_CURSOS_DETALHADO (via
+                 byYear(), já que cursosDetalhado só existe pós-byYear()),
+                 nunca hardcoded aqui. -->
+            <label class="filter-inline-group" for="grauAcademicoGlobalFilter">
+              <span class="filter-inline-label">Tipo de Curso</span>
+              <select class="filter-inline-select" id="grauAcademicoGlobalFilter">
+                <option value="all">Todos os tipos</option>
+              </select>
+            </label>
+
+            <label class="filter-inline-group" for="cineAreaGlobalFilter">
+              <span class="filter-inline-label">Grande Área</span>
+              <select class="filter-inline-select" id="cineAreaGlobalFilter">
+                <option value="all">Todas as áreas</option>
+              </select>
+            </label>
+
+            <label class="filter-inline-group" for="modalidadeEnsinoGlobalFilter">
+              <span class="filter-inline-label">Modalidade de Ensino</span>
+              <select class="filter-inline-select" id="modalidadeEnsinoGlobalFilter">
+                <option value="all">Todas</option>
+              </select>
+            </label>
+
+            <!-- Round 5: Tipo de Vaga e Turno de Vaga consolidados em UM
+                 select (vagaRecorteGlobalFilter) — é um SELETOR DE MÉTRICA
+                 (troca qual campo de vaga alimenta os 2 cards de vagas da
+                 Aba Acesso/Oferta; ver Etapa C do prompt), não um filtro de
+                 linha por categoria, e só um valor pode estar ativo por vez
+                 (não dá pra combinar Nova + Noturno, por exemplo — não
+                 existe essa coluna cruzada no Censo). optgroups são só
+                 visuais, para deixar claro que são duas dimensões dentro do
+                 mesmo seletor. Opções são lista fixa (nomes de campo, não
+                 categorias de cursosDetalhado) — ver applyVagaMetricOverride()
+                 em painel.js. -->
+            <label class="filter-inline-group" for="vagaRecorteGlobalFilter">
+              <span class="filter-inline-label">Vagas</span>
+              <select class="filter-inline-select" id="vagaRecorteGlobalFilter">
+                <option value="all">Todos os tipos</option>
+                <optgroup label="Tipo">
+                  <option value="Nova">Nova</option>
+                  <option value="Remanescente">Remanescente</option>
+                  <option value="ProcSeletivo">Processo Seletivo</option>
+                  <option value="ProgEspecial">Programa Especial</option>
+                </optgroup>
+                <optgroup label="Turno">
+                  <option value="Diurno">Diurno</option>
+                  <option value="Noturno">Noturno</option>
+                </optgroup>
+              </select>
+            </label>
 
             <div class="iees-multi-wrap group-by-wrap filter-inline-group" id="groupByWrap">
               <span class="filter-inline-label">Cluster Específico</span>
@@ -343,13 +400,13 @@
     </footer>
 
         <!-- UI principal: cache, populate, bind, render -->
-    <script src="assets/painel.js"></script>
+    <script src="assets/painel.js?v=20260709-remove-ead"></script>
     <!-- ABA 1 — Panorama Executivo -->
     <script src="assets/painel-aba1-panorama.js"></script>
     <!-- ABA 2 — Comparação entre IEES -->
     <script src="assets/painel-aba2-comparacao.js"></script>
     <!-- ABA 3 — Acesso e Oferta: redefine funções desta aba (carregado após painel.js) -->
-    <script src="assets/painel-aba3-acesso.js"></script>
+    <script src="assets/painel-aba3-acesso.js?v=20260709-remove-ead"></script>
     <!-- ABA 4 — Permanência e Formação -->
     <script src="assets/painel-aba4-permanencia.js"></script>
     <!-- ABA 5 — Qualificação docente, Pesquisa e Pós-Graduação -->
@@ -359,7 +416,7 @@
     <!-- ABA 7 — Retenção Profissional -->
     <script src="assets/painel-aba7-insercao.js"></script>
     <!-- ABA 8 — Orçamentária e Despesa 8050 -->
-    <script src="assets/painel-aba8-orcamentaria.js"></script>
+    <script src="assets/painel-aba8-orcamentaria.js?v=20260708-ano-liquidacao"></script>
     <!-- ABA 9 — Desempenho e Eficiência Relativa -->
     <script src="assets/painel-aba9-desempenho.js"></script>
   <div hidden aria-hidden="true">

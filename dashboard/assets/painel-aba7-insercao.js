@@ -187,25 +187,31 @@ function employmentRegionBlock(c) {
     : 'Mesma regra de cor, comparada aos pares do cluster ativo.';
 
   return filterBtns + noteHtml + `<div class="chart-grid">
-    <article class="visual-card"><h3>${indicatorName(37)} por IEES</h3><p class="card-subtitle">${sub1}</p>${employmentRateBars(c, u => employmentMetrics(u).prRate, formatPercent, filterFn)}</article>
-    <article class="visual-card"><h3>${indicatorName(35)} por IEES</h3><p class="card-subtitle">${sub2}</p>${employmentRateBars(c, u => employmentMetrics(u).southRate, formatPercent, filterFn)}</article>
+    <article class="visual-card"><h3>${indicatorName(37)} por IEES</h3><p class="card-subtitle">${sub1}</p>${employmentRateBars(c, u => employmentMetrics(u).prRate, formatPercent, filterFn, "employment")}</article>
+    <article class="visual-card"><h3>${indicatorName(35)} por IEES</h3><p class="card-subtitle">${sub2}</p>${employmentRateBars(c, u => employmentMetrics(u).southRate, formatPercent, filterFn, "insertionRatePR")}</article>
   </div>`;
 }
 
-function employmentRateBars(c, getter, fmt, filterFn) {
+// campo (5º parâmetro, opcional): nome do campo bruto na whitelist de
+// Referência Geral (window.SETI_REFERENCIA_GERAL). Site seguro para a
+// substituição: a cor da barra (tone) usa limiares FIXOS (55/45), não a
+// média — só o --ref-pos/rótulo de exibição usam a referência.
+function employmentRateBars(c, getter, fmt, filterFn, campo) {
   const clusterBase = employmentClusterRows(c);
   const clusterRows = filterFn ? clusterBase.filter(filterFn) : clusterBase;
   const clusterIds = new Set(clusterRows.map(u => u.id));
   const allRows = employmentRows(c);
   const rows = filterFn ? allRows.filter(filterFn) : allRows;
   if (!rows.length) return '<div class="empty-state" style="padding:28px 0;text-align:center;color:var(--text-secondary,#777);font-size:0.88rem;">Nenhuma IEES encontrada para o grau selecionado.</div>';
-  const ref = clusterRows.length ? mean(clusterRows, getter) : 0;
+  const refGeral = campo ? getReferenciaGeral(campo) : null;
+  const ref = refGeral ? refGeral.valor : (clusterRows.length ? mean(clusterRows, getter) : 0);
+  const refLabelTxt = refGeral ? `Referência (${refGeral.sigla})` : "Média do cluster";
   const sorted = [...rows].sort((a, b) => getter(b) - getter(a));
   return `<div class="bars employment-rate-bars" style="--ref-pos:${clamp(ref, 0, 100)}%">${sorted.map(u => {
     const value = getter(u);
     const tone = value > 55 ? "rate-high" : value >= 45 ? "rate-mid" : "rate-low";
     return `<div class="bar-row ${clusterIds.has(u.id) ? "in-cluster" : "out-cluster"} ${isUniSelected(c.f, u.id) ? "selected" : ""}"><span class="bar-name" title="${u.nome}">${u.sigla}</span><span class="bar-track"><span class="bar-fill ${tone}" style="width:${clamp(value, 4, 100)}%"></span><span class="bar-reference" aria-hidden="true"></span></span><span class="bar-value">${fmt(value)}</span></div>`;
-  }).join("")}</div><div class="bars-reference-note"><span>Média do cluster: <strong>${fmt(ref)}</strong></span></div>`;
+  }).join("")}</div><div class="bars-reference-note"><span>${refLabelTxt}: <strong>${fmt(ref)}</strong></span></div>`;
 }
 
 function employmentCboSalaryBlock(c) {
@@ -283,7 +289,9 @@ function employmentDestinationBlock(c) {
   const sigla = target ? target.sigla : null;
 
   const munCount    = target ? (target.egressosMunicipios ?? null) : null;
-  const dispIdx     = target ? panelEgressosField(target, "raisDispersao", null) : null;
+  const dispInfo    = target && typeof getRealIndicatorFieldWithYear === "function"
+    ? getRealIndicatorFieldWithYear(target.sigla, "raisDispersao") : { value: null, year: null };
+  const dispIdx     = dispInfo.value;
   const validCluster = rows.filter(u => u.egressosMunicipios != null);
   const clusterMunAvg = validCluster.length
     ? Math.round(mean(validCluster, u => u.egressosMunicipios)) : null;
@@ -300,7 +308,7 @@ function employmentDestinationBlock(c) {
       <div style="font-size:0.72rem;text-transform:uppercase;letter-spacing:.04em;color:var(--text-secondary,#777);">Índice de dispersão territorial</div>
       <div style="font-size:2rem;font-weight:700;margin:4px 0;">${dispIdx != null ? dispIdx.toFixed(3).replace(".", ",") : "—"}</div>
       <div style="font-size:0.75rem;color:var(--text-secondary,#888);">média do índice por curso: municípios distintos / egressos encontrados por curso</div>
-      <div style="font-size:0.72rem;color:var(--text-secondary,#999);margin-top:4px;">Fonte: SETI/RAIS — Base RAIS 2023 e 2024 / col. 22</div>
+      <div style="font-size:0.72rem;color:var(--text-secondary,#999);margin-top:4px;">Fonte: SETI/RAIS — Base RAIS 2023 e 2024 / col. 22${dispInfo.year ? ` · Safra de egressos ${dispInfo.year} (indicador não é apurado em anos posteriores)` : ""}</div>
     </div>`,
     `<div style="${cs}">
       <div style="font-size:0.72rem;text-transform:uppercase;letter-spacing:.04em;color:var(--text-secondary,#777);">Média do cluster (municípios)</div>

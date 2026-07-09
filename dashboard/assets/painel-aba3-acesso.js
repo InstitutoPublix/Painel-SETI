@@ -317,9 +317,10 @@ function accessOccupancy(c) {
 // (Base Cursos - Brasil.xlsx, via pipeline/assemble_final.py Seção 2b — ver
 // diagnóstico das Fases 1-2: o campo antigo "grauMix" nunca foi populado em
 // nenhuma camada do sistema e caía sempre no fallback estimado abaixo).
-// ATENÇÃO: cursosDetalhado é uma fotografia do ano mais recente disponível
-// por IES (mesma seleção de ano da Seção 2 original) — NÃO varia com o
-// filtro de Ano do cabeçalho. Ver nota "Ano de referência" no card.
+// Round 3b: cursosDetalhado passou a refletir o ano selecionado no filtro
+// de Ano do cabeçalho (via byYear() → cursosDetalhadoByYear), com fallback
+// para o ano mais recente disponível por IES quando não há dado para o ano
+// selecionado. Ver nota "Ano de referência" no card.
 function courseMix(u) {
   if (u.cursosDetalhado && u.cursosDetalhado.length) {
     const vac = label => sum(u.cursosDetalhado.filter(g => g.grauAcademico === label), g => g.vacancies);
@@ -422,6 +423,135 @@ function modalidadeCard(c) {
   return `${btns}${accessClusterBars(c, get, fmt)}`;
 }
 
+// ── Benchmark por Grande Área CINE — referência PR vs Brasil (v1) ────────────
+// Fonte: window.SETI_BENCHMARK_CINE (data.benchmarkCine, pipeline Seção 2c) —
+// dado GLOBAL por área, não por IES; não passa por byYear()/merge por sigla.
+// Roda em qualquer escopo (PR ou BR) — chamado fora de accessBlock() (ver
+// renderBlockContent em painel.js), que é o único bloqueio de escopo desta
+// aba (confirmado: nenhum outro gate de escopo intercepta este bloco).
+// Indicadores v1: dropout (IND-5) e occupancyTipo (campo occupancy de
+// cursosDetalhado — ingressantes÷vagas, NÃO matrículas÷vagas do IND-67
+// oficial; ver nota de manutenção no README). Pendência de validação
+// metodológica com Jéssica/Anderson (ponderação e uso do campo occupancy).
+const BENCHMARK_CINE_METRICAS = {
+  dropout: {
+    label: "Taxa de desvinculação (IND-5)",
+    campo: "dropout",
+    pesoLabel: "matrículas (students)",
+    pesoCampo: "students",
+    polaridadeTxt: "menor valor é a referência (taxa de desvinculação — quanto menor, melhor)",
+  },
+  occupancyTipo: {
+    label: "Taxa de ocupação por tipo de curso (IND-67)",
+    campo: "occupancy",
+    pesoLabel: "vagas ofertadas (vacancies)",
+    pesoCampo: "vacancies",
+    polaridadeTxt: "maior valor é a referência (taxa de ocupação — quanto maior, melhor)",
+  },
+};
+
+// Valor de (área, métrica) para uma única IES — mesma fórmula/ponderação do
+// pipeline (Seção 2c, _media_ponderada_cine), aplicada aos grupos já expostos
+// em u.cursosDetalhado (agregados por grau/modalidade dentro da área).
+function cineAreaMetricForUni(u, area, metrica) {
+  if (!u.cursosDetalhado || !u.cursosDetalhado.length) return null;
+  const def = BENCHMARK_CINE_METRICAS[metrica];
+  if (!def) return null;
+  const grupos = u.cursosDetalhado.filter(g =>
+    g.cineArea === area && g[def.campo] != null && g[def.pesoCampo]
+  );
+  if (!grupos.length) return null;
+  return round(wavg(grupos, g => g[def.campo], g => g[def.pesoCampo]), 2);
+}
+
+function setBenchmarkCineMetric(metrica) {
+  state.benchmarkCineMetric = BENCHMARK_CINE_METRICAS[metrica] ? metrica : "dropout";
+  render();
+}
+window.setBenchmarkCineMetric = setBenchmarkCineMetric;
+
+// Ícones ⓘ (metodologia) e 📌 (fotografia fixa) — reaproveitam o mecanismo
+// visual de injectFormulaTooltip()/injectLagTooltip() (mesmas classes CSS de
+// ícone+tooltip via hover/focus). Não usamos as duas funções diretamente
+// porque elas só injetam texto estático de INDICATOR_CATALOG[key].formula ou
+// LAG_NOTES[key] — aqui o texto é composto (metodologia + polaridade + caveat
+// do occupancyTipo) e varia por métrica selecionada, não por um indKey fixo.
+// O ícone 📌 usa uma classe nova (.ind-snapshot-info/.ind-snapshot-tooltip,
+// ver painel.css) em vez de reaproveitar .ind-lag-info (⏳) — mesmo mecanismo
+// de hover, mas ícone/cor próprios para não colidir semanticamente com a
+// defasagem temporal da Camada B.
+function benchmarkCineMethodologyTooltipHtml(metrica) {
+  const def = BENCHMARK_CINE_METRICAS[metrica];
+  const caveat = metrica === "occupancyTipo"
+    ? "<br><br>⚠ Esta métrica usa ingressantes ÷ vagas, não matrículas ÷ vagas como descrito no IND-67 oficial — mesma base já usada nos indicadores ind26/ind67 do painel."
+    : "";
+  const texto = `Média ponderada por ${def.pesoLabel} entre as IES do recorte.<br><br>Regra de polaridade: ${def.polaridadeTxt}.${caveat}<br><br>📌 Fotografia do ano mais recente disponível por IES — não varia com o filtro de Ano.`;
+  return `<span class="ind-formula-info" tabindex="0" aria-label="Metodologia do benchmark por Grande Área CINE">ⓘ<span class="ind-formula-tooltip"><strong>Metodologia</strong><br>${texto}</span></span>`;
+}
+
+function benchmarkCineSnapshotIconHtml() {
+  const texto = "Reflete o ano mais recente disponível por IES; não varia com o filtro de Ano.";
+  return `<span class="ind-snapshot-info" tabindex="0" aria-label="Fotografia fixa: ${texto}">📌<span class="ind-snapshot-tooltip"><strong>Fotografia fixa</strong><br>${texto}</span></span>`;
+}
+
+// Bars com linha de referência TRACEJADA (dashed) cruzando as barras — mesmo
+// esqueleto de barsWithBrRef() (painel.js), mas com marcador tracejado (não
+// sólido, para não ser confundido com o marcador "Média Brasil" já usado em
+// outras abas) e selo de origem (PR/BR) colado ao rótulo da linha.
+function benchmarkCineBars(rows, get, fmt, refValue, origem) {
+  const s = [...rows].sort((a, b) => get(b) - get(a));
+  const max = Math.max(...s.map(get), refValue != null ? refValue : 0, 1);
+  const refPct = refValue != null ? clamp(refValue / max * 100, 0, 100) : null;
+  const refLine = refPct != null
+    ? `<div style="position:relative;height:0;margin-bottom:22px"><span style="position:absolute;left:${refPct.toFixed(1)}%;transform:translateX(-50%);font-size:9.5px;color:#8b2fc9;font-weight:600;white-space:nowrap">— Referência: ${fmt(refValue)}<span class="benchmark-cine-origem-badge">${origem}</span></span></div>`
+    : "";
+  return `<div class="bars">${refLine}${s.map(u => {
+    const v = get(u);
+    const marker = refPct != null
+      ? `<span class="benchmark-cine-ref-marker" style="left:${refPct.toFixed(1)}%" title="Referência (${origem}): ${fmt(refValue)}"></span>`
+      : "";
+    return `<div class="bar-row"><span class="bar-name" title="${u.nome}">${u.sigla}</span><span class="bar-track" style="position:relative">${marker}<span class="bar-fill" style="width:${clamp(v / max * 100, 4, 100)}%"></span></span><span class="bar-value">${fmt(v)}</span></div>`;
+  }).join("")}</div>`;
+}
+
+function benchmarkCineAreaCard(area, metrica, rows) {
+  const bench = (window.SETI_BENCHMARK_CINE || {})[area]?.[metrica];
+  const def = BENCHMARK_CINE_METRICAS[metrica];
+  if (!bench || !def) return "";
+  const get = u => cineAreaMetricForUni(u, area, metrica);
+  const validRows = rows.filter(u => get(u) != null);
+  const fmt = formatPercent;
+  const corpo = validRows.length
+    ? benchmarkCineBars(validRows, get, fmt, bench.referencia, bench.origem)
+    : `<div class="empty-state" style="padding:10px 0">Sem dado desagregado para esta área no recorte ativo.</div>`;
+  const transparencia = `<p class="card-subtitle" style="margin-top:6px">PR: ${bench.pr != null ? formatPercent(bench.pr) : "—"} · BR: ${bench.br != null ? formatPercent(bench.br) : "—"}</p>`;
+  return `<article class="visual-card">
+    <h3>${area}${benchmarkCineMethodologyTooltipHtml(metrica)}${benchmarkCineSnapshotIconHtml()}</h3>
+    <p class="card-subtitle">${def.label} · Sem código de indicador combinado — quebra exploratória adicional (não faz parte do catálogo oficial); referência calculada por Grande Área CINE a partir de IND-5/IND-67.</p>
+    ${corpo}
+    ${transparencia}
+  </article>`;
+}
+
+function benchmarkCineBlock(c) {
+  if (!window.SETI_BENCHMARK_CINE) return "";
+  const areas = Object.keys(window.SETI_BENCHMARK_CINE).sort();
+  if (!areas.length) return "";
+  const rows = clusterRowsFor(c);
+  if (!rows.length) return "";
+  const metrica = BENCHMARK_CINE_METRICAS[state.benchmarkCineMetric] ? state.benchmarkCineMetric : "dropout";
+  const toggle = `<div class="stack-legend" style="margin:14px 0 10px">
+    <button class="stack-type-btn${metrica === "dropout" ? " active" : ""}" type="button" onclick="setBenchmarkCineMetric('dropout')">Taxa de desvinculação (IND-5)</button>
+    <button class="stack-type-btn${metrica === "occupancyTipo" ? " active" : ""}" type="button" onclick="setBenchmarkCineMetric('occupancyTipo')">Taxa de ocupação por tipo de curso (IND-67)</button>
+  </div>`;
+  const cards = areas.map(area => benchmarkCineAreaCard(area, metrica, rows)).filter(Boolean);
+  if (!cards.length) return "";
+  return `<h3 class="mt-14" style="margin-bottom:2px">Referência por Grande Área CINE — Paraná × Brasil</h3>
+  <p class="card-subtitle">Um card por Grande Área; valor de referência é o melhor entre a média ponderada do Paraná (7 IEES) e do Brasil (40 IEES), conforme a polaridade do indicador selecionado.</p>
+  ${toggle}
+  <div class="chart-grid mt-14">${cards.join("")}</div>`;
+}
+
 function offerSpecialization(u) {
   const mix = courseMix(u);
   return Math.max(mix.bach, mix.lic, mix.tech) * 100;
@@ -459,7 +589,7 @@ function stackedCourseBars(c) {
   const clusterRow = `<tr class="cmix-cluster-row"><td><strong>Média do cluster</strong></td><td>${mixBar(avg)}</td><td>${occBadge(avgOcc)}</td></tr>`;
   const rowsHtml = sorted.map(u => `<tr class="${isUniSelected(c.f, u.id) ? "selected" : ""}"><td><strong>${u.sigla}</strong></td><td title="${u.sigla}: Bach. ${formatPercent(courseMix(u).bach*100)} · Lic. ${formatPercent(courseMix(u).lic*100)} · Tecn. ${formatPercent(courseMix(u).tech*100)}">${mixBar(courseMix(u))}</td><td>${occBadge(u.occupancy)}</td></tr>`).join("");
   const typeBtns = `<div class="stack-legend" style="margin-bottom:10px"><button class="stack-type-btn${activeType === "bach" ? " active" : ""}" type="button" onclick="setDistributionCourseType('bach')"><i class="cmix-bach-dot"></i>Bacharelado</button><button class="stack-type-btn${activeType === "lic" ? " active" : ""}" type="button" onclick="setDistributionCourseType('lic')"><i class="cmix-lic-dot"></i>Licenciatura</button><button class="stack-type-btn${activeType === "tech" ? " active" : ""}" type="button" onclick="setDistributionCourseType('tech')"><i class="cmix-tech-dot"></i>Tecnólogo</button></div>`;
-  const refYearNote = `<p class="cmix-ref-note" style="font-size:12px;color:var(--text-secondary,#666);margin:0 0 8px">Composição por grau acadêmico refere-se ao ano mais recente disponível na Base Cursos, podendo diferir do ano selecionado no filtro.</p>`;
+  const refYearNote = `<p class="cmix-ref-note" style="font-size:12px;color:var(--text-secondary,#666);margin:0 0 8px">Composição por grau acadêmico reflete o ano selecionado no filtro (quando disponível para a IES na Base Cursos; caso contrário, o ano mais recente disponível).</p>`;
   return `${refYearNote}${typeBtns}<table class="cmix-table"><thead><tr><th>IEES</th><th>Composição</th><th>Ocupação</th></tr></thead><tbody>${clusterRow}${rowsHtml}</tbody></table>`;
 }
 
@@ -512,13 +642,35 @@ function accessScale(c) {
 
   const typeFilter = state.accessCourseTypeFilter || "all";
   const mixKey = typeFilter === "Bacharelado" ? "bach" : typeFilter === "Licenciatura" ? "lic" : typeFilter === "Tecnólogo" ? "tech" : null;
-  const getVac = mixKey ? u => u.vacancies * courseMix(u)[mixKey] : u => u.vacancies;
+  // Round 5: Vagas (recorte único, filtro global) só troca getVac quando o
+  // filtro local de Tipo de Curso desta aba (mixKey, via courseMix — uma
+  // APROXIMAÇÃO por proporção) NÃO estiver ativo — combinar as duas
+  // aproximações (courseMix × vaga-metric) inventaria um número que a base
+  // não sustenta. Se os dois estiverem ativos ao mesmo tempo, este card
+  // continua mostrando vagas totais por tipo de curso, sem o recorte de vaga.
+  const hasVagaMetric = c.f.vagaRecorte && c.f.vagaRecorte !== "all";
+  const vagaLabel = hasVagaMetric ? (VAGA_RECORTE_FIELDS[c.f.vagaRecorte]?.label || c.f.vagaRecorte) : null;
+  const getVac = mixKey ? u => u.vacancies * courseMix(u)[mixKey]
+               : hasVagaMetric ? u => (u.vagaMetricVacancies ?? 0)
+               : u => u.vacancies;
   const getCrs = mixKey ? u => u.courses  * courseMix(u)[mixKey] : u => u.courses;
   const typeLabel = mixKey ? ` · ${typeFilter}` : "";
+  // Round 5: sufixo exclusivo do card "Total de vagas" — NÃO usa typeLabel
+  // (que também rotula "Cursos ativos"/"Vagas por curso", onde o recorte de
+  // vaga não se aplica: cursos e a razão vagas/curso não são filtrados por
+  // tipo/turno de vaga, só a contagem de vagas em si).
+  const vacTypeLabel = mixKey ? typeLabel : (hasVagaMetric ? ` — ${vagaLabel}` : "");
 
   const data = c.display && c.display.length ? c.display : (selected ? [selected] : clusterRows);
   const vacDisp    = sum(data,        getVac);
   const crsDisp    = sum(data,        getCrs);
+  // Round 5: card extra de ocupação por Vagas (recorte) — não há campo
+  // occupancy pronto para o recorte (occupancyBars/signalCard continuam
+  // mostrando a taxa real, sem o recorte, propositalmente — ver diagnóstico
+  // sobre por que u.occupancy não é sobrescrito). Média simples entre as
+  // IEES do recorte que têm % calculável (numerador existente e vagas>0).
+  const vagaOccRows = hasVagaMetric && !mixKey ? data.filter(u => u.vagaMetricOccupancy != null) : [];
+  const vagaOccAvg = vagaOccRows.length ? mean(vagaOccRows, u => u.vagaMetricOccupancy) : null;
   const clVacTotal = Math.max(sum(clusterRows, getVac), 1);
   const clVacAvg   = mean(clusterRows, getVac);
   const clCrsAvg   = mean(clusterRows, getCrs);
@@ -536,11 +688,16 @@ function accessScale(c) {
 
   const act = accessIndFilter(["ind10", "ind11", "ind15", "ind16", "ind17"]);
   const cards = [
-    accessIndShow(act, ["ind11"]) ? accessCard("IND-11", "Total de vagas" + typeLabel, formatNumber(vacDisp), `Média do cluster: ${formatNumber(clVacAvg)}`) : "",
+    accessIndShow(act, ["ind11"]) ? accessCard("IND-11", "Total de vagas" + vacTypeLabel, formatNumber(vacDisp), `Média do cluster: ${formatNumber(clVacAvg)}`) : "",
     accessIndShow(act, ["ind10"]) ? accessCard("IND-10", "Cursos ativos" + typeLabel, formatNumber(crsDisp), `Média do cluster: ${formatNumber(clCrsAvg)}`) : "",
     accessIndShow(act, ["ind17"]) ? accessCard("IND-17", "Municípios com oferta", formatNumber(new Set(data.map(u => u.municipality)).size), `Cluster: ${formatNumber(new Set(clusterRows.map(u => u.municipality)).size)} municípios`) : "",
     accessIndShow(act, ["ind16"]) ? accessCard("IND-16", "Participação nas vagas", formatPercent(participation), selected ? "sobre vagas do cluster" : "sobre Sistema PR completo") : "",
-    accessIndShow(act, ["ind15"]) ? accessCard("IND-15", "Vagas por curso" + typeLabel, formatNumber(avgVacCrs), `Média do cluster: ${formatNumber(clAvgVacCrs)}`) : ""
+    accessIndShow(act, ["ind15"]) ? accessCard("IND-15", "Vagas por curso" + typeLabel, formatNumber(avgVacCrs), `Média do cluster: ${formatNumber(clAvgVacCrs)}`) : "",
+    // Round 5: 2º card do recorte de Vagas — segue o mesmo padrão de
+    // "indisponibilidade metodológica" já usado no painel (ver
+    // QUADRANT_UNAVAILABLE_MESSAGE em painel.js/README "Notas de
+    // Manutenção"): mensagem explícita com o motivo, nunca null/NaN/0,0%.
+    hasVagaMetric && !mixKey ? accessCard("Vaga", `Taxa de ocupação — ${vagaLabel}`, vagaOccAvg != null ? formatPercent(vagaOccAvg) : "Não aplicável", vagaOccAvg != null ? "Média do recorte selecionado" : `Taxa de ocupação não disponível — não há ingressantes desagregados para "${vagaLabel}" na base do Censo da Educação Superior`) : ""
   ].join("");
 
   return `<div class="rank-metric-selector" style="margin-bottom:14px">
@@ -978,14 +1135,26 @@ function brasilAccessEscalaBlock(c) {
 
   // Cards consolidados: somam/contam todas as IEES do recorte selecionado
   // (uma ou várias), de modo que a seleção múltipla reflita a consolidação.
-  const vacDisp = sum(rows, u => u.vacancies || 0);
+  // Round 5: Vagas (recorte único) troca a fonte de vacDisp para o recorte
+  // (vagaMetricVacancies) — esta tela Brasil não tem o filtro local de Tipo
+  // de Curso (mixKey) que existe na versão PR, então não há cruzamento a
+  // evitar aqui.
+  const hasVagaMetric = c.f.vagaRecorte && c.f.vagaRecorte !== "all";
+  const vagaLabel = hasVagaMetric ? (VAGA_RECORTE_FIELDS[c.f.vagaRecorte]?.label || c.f.vagaRecorte) : null;
+  const vacDisp = hasVagaMetric ? sum(rows, u => u.vagaMetricVacancies ?? 0) : sum(rows, u => u.vacancies || 0);
   const crsDisp = sum(rows, u => u.courses || 0);
+  const vagaOccRows = hasVagaMetric ? rows.filter(u => u.vagaMetricOccupancy != null) : [];
+  const vagaOccAvg = vagaOccRows.length ? mean(vagaOccRows, u => u.vagaMetricOccupancy) : null;
   const cards = [
-    accessIndShow(act, ["ind11"]) ? accessCard("IND-11", "Total de vagas", formatNumber(vacDisp), `Média nacional por IEES: ${formatNumber(avgVac)}`) : "",
+    accessIndShow(act, ["ind11"]) ? accessCard("IND-11", "Total de vagas" + (hasVagaMetric ? ` — ${vagaLabel}` : ""), formatNumber(vacDisp), `Média nacional por IEES: ${formatNumber(avgVac)}`) : "",
     accessIndShow(act, ["ind10"]) ? accessCard("IND-10", "Cursos ativos", formatNumber(crsDisp), `Média nacional por IEES: ${formatNumber(avgCrs)}`) : "",
     accessIndShow(act, ["ind17"]) ? accessCard("IND-17", "Municípios com oferta", formatNumber(new Set(rows.map(u => u.municipality)).size), `${rows.length} IEES no recorte`) : "",
     accessIndShow(act, ["ind16"]) ? accessCard("IND-16", "Participação nas vagas", formatPercent(vacDisp / Math.max(sum(allRows, u => u.vacancies || 0), 1) * 100), "sobre o total nacional") : "",
-    accessIndShow(act, ["ind15"]) ? accessCard("IND-15", "Vagas por curso", formatNumber(vacDisp / Math.max(crsDisp, 1)), `Média nacional: ${formatNumber(sum(allRows, u => u.vacancies || 0) / Math.max(sum(allRows, u => u.courses || 0), 1))}`) : ""
+    accessIndShow(act, ["ind15"]) ? accessCard("IND-15", "Vagas por curso", formatNumber(vacDisp / Math.max(crsDisp, 1)), `Média nacional: ${formatNumber(sum(allRows, u => u.vacancies || 0) / Math.max(sum(allRows, u => u.courses || 0), 1))}`) : "",
+    // Round 5: 2º card do recorte de Vagas — mesmo padrão de
+    // "indisponibilidade metodológica" da versão PR (ver comentário acima em
+    // accessScale).
+    hasVagaMetric ? accessCard("Vaga", `Taxa de ocupação — ${vagaLabel}`, vagaOccAvg != null ? formatPercent(vagaOccAvg) : "Não aplicável", vagaOccAvg != null ? "Média do recorte selecionado" : `Taxa de ocupação não disponível — não há ingressantes desagregados para "${vagaLabel}" na base do Censo da Educação Superior`) : ""
   ].join("");
   // markerClass/markerName: cor da linha de média por gráfico — laranja some
   // sobre as barras laranjas de cursos, então lá usamos a variante azul-escura.

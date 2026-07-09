@@ -269,6 +269,28 @@ function getRealIndicatorsExact(sigla, year) {
   return wanted && wanted !== "all" ? (row.byYear[wanted] || null) : null;
 }
 
+// Alguns campos (ex.: os derivados da Base RAIS, chave "rais*") só existem nas
+// safras/coortes de egressos (ex.: 2020, 2021) e nunca são escritos nos anos
+// de execução orçamentária mais recentes (2024-2026). getRealIndicators()
+// pega o ANO mais recente com QUALQUER dado, que costuma ser um ano de outro
+// dataset sem esse campo — mascarando o valor real com null. Esta função
+// varre todos os anos disponíveis (mais recente primeiro) e retorna o valor
+// do primeiro ano em que o campo realmente está presente, junto com esse ano.
+function getRealIndicatorFieldWithYear(sigla, field) {
+  const row = DATA[String(sigla || "").trim().toUpperCase()];
+  if (!row || !row.byYear) return { value: null, year: null };
+  const years = Object.keys(row.byYear).sort().reverse();
+  for (const y of years) {
+    const val = row.byYear[y] ? row.byYear[y][field] : null;
+    if (val != null) return { value: val, year: y };
+  }
+  return { value: null, year: null };
+}
+
+function getRealIndicatorField(sigla, field) {
+  return getRealIndicatorFieldWithYear(sigla, field).value;
+}
+
 function applyPanelFiltersToRows(rows, filterState) {
   const f = filterState || {};
   return (rows || []).filter(function(row) {
@@ -1454,6 +1476,18 @@ async function loadPrecomputedJson() {
     // Desagregação por Grande Área CINE / Grau Acadêmico / Modalidade de Ensino
     // Fonte: Base Cursos - Brasil.xlsx, via pipeline/assemble_final.py (Seção 2b)
     if (data.cursosDetalhado) window.SETI_CURSOS_DETALHADO = data.cursosDetalhado;
+    // Round 3b: mesma fonte, desagregada por ano — {sigla: {"ano": [grupos]}}.
+    // byYear() usa isto para que Tipo de Curso/Modalidade respeitem o filtro
+    // de Ano; cai de volta em SETI_CURSOS_DETALHADO (ano mais recente) se a
+    // IES não tiver dado para o ano selecionado (ex.: UEPA/2020, UnDF/2020-21).
+    if (data.cursosDetalhadoByYear) window.SETI_CURSOS_DETALHADO_BY_YEAR = data.cursosDetalhadoByYear;
+    // Benchmark por Grande Área CINE (PR × Brasil) — dado GLOBAL por área, não
+    // por IES; não passa por upsertYearIndicators()/byYear(). Pipeline Seção 2c.
+    // Pendência de validação metodológica (ponderação e campo occupancy) — README.
+    if (data.benchmarkCine) window.SETI_BENCHMARK_CINE = data.benchmarkCine;
+    // Referência Geral — melhor valor bruto de uma única IES por campo
+    // (whitelist v1, fixo, não reage a filtro/ano). Pipeline Seção 13.
+    if (data.referenciaGeral) window.SETI_REFERENCIA_GERAL = data.referenciaGeral;
     // Programas de pós-graduação reais por IES (Base CAPES via enrich_capes.py)
     if (data.capesPrograms) window.SETI_CAPES_PROGRAMS = data.capesPrograms;
     // Vagas reais por município (Base Cursos via enrich_municipios.py)

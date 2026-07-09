@@ -514,8 +514,11 @@ function overview(c) {
         const groupLabel = activeOverviewGroup !== "all" ? activeOverviewGroup : "Todos os grupos";
         const groupByLabel = (groupMeta[c.f.groupBy]?.label || c.f.groupBy.toUpperCase()).replace(/^V\d+\s*[–-]\s*/, "");
         const chartData = data;
-        const refVal = mean(chartData.length ? chartData : c.base, metric.get);
-        const refLabel = clusterActive || localGroup !== "all" ? "Média do grupo" : "Média do sistema";
+        const refGeralOverview = overviewMetricReferenceGeral(metric);
+        const refVal = refGeralOverview ? refGeralOverview.valor : mean(chartData.length ? chartData : c.base, metric.get);
+        const refLabel = refGeralOverview
+          ? `Referência (${refGeralOverview.sigla})`
+          : clusterActive || localGroup !== "all" ? "Média do grupo" : "Média do sistema";
         const groupOptions_ = groupOptions[c.f.groupBy] || [];
         const chipsHtml = [
           `<button class="qchip${localGroup === "all" ? " qchip-active" : ""}" type="button" data-group="all">Todos (${c.base.length})</button>`,
@@ -706,6 +709,26 @@ function _injectAba1FormulaTooltips() {
   _injectAba1FormulaTooltips(); // cobre o caso do DOM inicial já estar pronto no load
 }());
 
+// ── Referência Geral (whitelist v1) para o seletor dinâmico de métrica ──────
+// Mapeia o `metric.code` (ex. "IND-5") para o campo bruto correspondente em
+// window.SETI_REFERENCIA_GERAL. Só inclui códigos cujo getter em
+// IND_FIELD_MAP (painel.js) resolve efetivamente para o campo whitelisted —
+// ind35/ind39 ficam de fora de propósito: seus getters usam caminhos
+// sintéticos próprios (panelEgressosField com fallback u.employment+5 /
+// fórmula CBO2), não o campo bruto homônimo da whitelist.
+const OVERVIEW_METRIC_REFCAMPO = {
+  "IND-5": "dropout", "IND-6": "doctors", "IND-26": "occupancy", "IND-27": "completion",
+  "IND-37": "employment", "IND-40": "salary", "IND-46": "facultyOcc", "IND-51": "docTidePartic",
+  "IND-56": "cres", "IND-58": "docCresOciosidade", "IND-59": "docCresPartic", "IND-60": "cnpq",
+  "IND-81": "tx_execucao_empenho", "IND-82": "tx_liquidacao", "IND-83": "tx_pagamento_liq",
+  "IND-84": "grau_contingenciamento", "IND-108": "pctExcelencia",
+};
+
+function overviewMetricReferenceGeral(metric) {
+  const campo = OVERVIEW_METRIC_REFCAMPO[metric.code];
+  return campo ? getReferenciaGeral(campo) : null;
+}
+
 // ── Barras de cluster do panorama ────────────────────────────────────────────
 
 function overviewClusterBars(c, metric) {
@@ -722,10 +745,13 @@ function overviewClusterBars(c, metric) {
   };
   const sorted = [...chartData].sort((a, b) => (metricValue(b) ?? -Infinity) - (metricValue(a) ?? -Infinity));
   const values = sorted.map(metricValue).filter(v => v != null);
-  const max = Math.max(...values, 1);
-  const ref = values.length ? values.reduce((total, value) => total + value, 0) / values.length : null;
+  const refGeral = overviewMetricReferenceGeral(metric);
+  const ref = refGeral ? refGeral.valor : (values.length ? values.reduce((total, value) => total + value, 0) / values.length : null);
+  const max = Math.max(...values, ref != null ? ref : 0, 1);
   const refPos = ref != null ? clamp(ref / max * 100, 0, 100) : 0;
-  const refLabel = isBR ? "Média nacional" : (clusterActive ? "Média do cluster" : "Média do sistema");
+  const refLabel = refGeral
+    ? `Referência (${refGeral.sigla})`
+    : isBR ? "Média nacional" : (clusterActive ? "Média do cluster" : "Média do sistema");
   const ieesColors = { UEL: "#1f72b8", UEM: "#e05c00", UEPG: "#14804a", UNIOESTE: "#8b2fc9", UNICENTRO: "#c43f3a", UENP: "#af7a00", UNESPAR: "#0f6e56" };
   const palette = ["#1f72b8", "#e05c00", "#14804a", "#8b2fc9", "#c43f3a", "#af7a00", "#0f6e56", "#2563eb", "#0f766e", "#9333ea", "#ca8a04", "#dc2626"];
   return `<div class="bars-reference-note"><span>${refLabel}: <strong>${ref != null ? metric.fmt(ref) : "sem dados"}</strong></span></div>
