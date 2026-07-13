@@ -8,7 +8,7 @@
     <link rel="icon" href="data:," />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,300&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet" />
-    <link rel="stylesheet" href="assets/painel.css?v=20260708-ano-liquidacao" />
+    <link rel="stylesheet" href="assets/painel.css?v=20260710-iees-dropdown-overflow-fix" />
 
     <style>
       /* ── Cabeçalho institucional — overrides de layout ───────────────── */
@@ -159,8 +159,8 @@
         <button class="tab-button" type="button" data-tab="comparison">2. Comparação entre IEES</button>
         <button class="tab-button" type="button" data-tab="access">3. Acesso e Oferta</button>
         <button class="tab-button" type="button" data-tab="retention">4. Permanência e Formação</button>
-        <button class="tab-button" type="button" data-tab="quality">5. Qualificação docente, Pesquisa e Pós-Graduação</button>
-        <button class="tab-button" type="button" data-tab="faculty">6. Corpo Docente e Capacidade Operacional</button>
+        <button class="tab-button" type="button" data-tab="quality">5. Pesquisa e Pós-Graduação</button>
+        <button class="tab-button" type="button" data-tab="faculty">6. Qualificação Docente e Capacidade Operacional</button>
         <button class="tab-button" type="button" data-tab="employment">7. Retenção Profissional</button>
         <button class="tab-button" type="button" data-tab="efficiency">8. Execução Orçamentária</button>
         <button class="tab-button" type="button" data-tab="performance">9. Desempenho e Eficiência Relativa</button>
@@ -170,8 +170,8 @@
       <section class="kpi-grid" id="kpiGrid" aria-label="Cards de indicadores principais"></section>
 
       <section class="filter-bar-compact" aria-label="Filtros globais">
-        <div class="filter-bar-row">
-          <div class="filter-bar-left">
+        <div class="filter-bar-row filter-bar-row-1">
+          <div class="filter-bar-left filter-bar-left-nowrap">
             <span class="filter-bar-label">Recorte</span>
             <label class="filter-inline-group" for="yearFilter">
               <span class="filter-inline-label">Ano</span>
@@ -231,21 +231,21 @@
                  populate() a partir de window.SETI_CURSOS_DETALHADO (via
                  byYear(), já que cursosDetalhado só existe pós-byYear()),
                  nunca hardcoded aqui. -->
-            <label class="filter-inline-group" for="grauAcademicoGlobalFilter">
+            <label class="filter-inline-group filter-inline-group-course" for="grauAcademicoGlobalFilter">
               <span class="filter-inline-label">Tipo de Curso</span>
               <select class="filter-inline-select" id="grauAcademicoGlobalFilter">
                 <option value="all">Todos os tipos</option>
               </select>
             </label>
 
-            <label class="filter-inline-group" for="cineAreaGlobalFilter">
+            <label class="filter-inline-group filter-inline-group-course" for="cineAreaGlobalFilter">
               <span class="filter-inline-label">Grande Área</span>
               <select class="filter-inline-select" id="cineAreaGlobalFilter">
                 <option value="all">Todas as áreas</option>
               </select>
             </label>
 
-            <label class="filter-inline-group" for="modalidadeEnsinoGlobalFilter">
+            <label class="filter-inline-group filter-inline-group-course" for="modalidadeEnsinoGlobalFilter">
               <span class="filter-inline-label">Modalidade de Ensino</span>
               <select class="filter-inline-select" id="modalidadeEnsinoGlobalFilter">
                 <option value="all">Todas</option>
@@ -263,7 +263,7 @@
                  mesmo seletor. Opções são lista fixa (nomes de campo, não
                  categorias de cursosDetalhado) — ver applyVagaMetricOverride()
                  em painel.js. -->
-            <label class="filter-inline-group" for="vagaRecorteGlobalFilter">
+            <label class="filter-inline-group filter-inline-group-course" for="vagaRecorteGlobalFilter">
               <span class="filter-inline-label">Vagas</span>
               <select class="filter-inline-select" id="vagaRecorteGlobalFilter">
                 <option value="all">Todos os tipos</option>
@@ -279,7 +279,11 @@
                 </optgroup>
               </select>
             </label>
+          </div>
+        </div>
 
+        <div class="filter-bar-row filter-bar-row-2">
+          <div class="filter-bar-left">
             <div class="iees-multi-wrap group-by-wrap filter-inline-group" id="groupByWrap">
               <span class="filter-inline-label">Cluster Específico</span>
               <button type="button" class="iees-multi-btn group-by-btn" id="groupByBtn" aria-haspopup="listbox" aria-expanded="false">
@@ -314,11 +318,11 @@
               <strong id="scopeLabel">Sistema estadual</strong>
               <span id="activeClusterLabel" class="cluster-active-label">Cluster: V1 - Todos os grupos</span>
             </div>
-            <button class="filter-reset-btn" id="resetFilters" type="button">Limpar</button>
             <div class="tab-scope-toggle" id="tabScopeToggle" hidden>
               <button class="tab-scope-btn" id="tabScopeBtnPR" type="button" onclick="setScope('PR')" aria-pressed="true">Paraná</button>
               <button class="tab-scope-btn" id="tabScopeBtnBR" type="button" onclick="setScope('BR')" aria-pressed="false">Brasil</button>
             </div>
+            <button class="filter-reset-btn" id="resetFilters" type="button">Limpar</button>
           </div>
         </div>
 
@@ -339,6 +343,8 @@
           <option value="all">Todos os grupos</option>
         </select>
       </section>
+
+      <p class="filter-bar-note-row" id="yearContextNoteWrap"></p>
 
       <section class="dashboard-layout">
         <article class="content-panel">
@@ -400,25 +406,25 @@
     </footer>
 
         <!-- UI principal: cache, populate, bind, render -->
-    <script src="assets/painel.js?v=20260709-remove-ead"></script>
+    <script src="assets/painel.js?v=20260710-qualificacao-migra-aba6"></script>
     <!-- ABA 1 — Panorama Executivo -->
-    <script src="assets/painel-aba1-panorama.js"></script>
+    <script src="assets/painel-aba1-panorama.js?v=20260710-ref-geral-ind47"></script>
     <!-- ABA 2 — Comparação entre IEES -->
-    <script src="assets/painel-aba2-comparacao.js"></script>
+    <script src="assets/painel-aba2-comparacao.js?v=20260709-cache-busting-all-abas"></script>
     <!-- ABA 3 — Acesso e Oferta: redefine funções desta aba (carregado após painel.js) -->
-    <script src="assets/painel-aba3-acesso.js?v=20260709-remove-ead"></script>
+    <script src="assets/painel-aba3-acesso.js?v=20260710-ref-geral-occupancy"></script>
     <!-- ABA 4 — Permanência e Formação -->
-    <script src="assets/painel-aba4-permanencia.js"></script>
-    <!-- ABA 5 — Qualificação docente, Pesquisa e Pós-Graduação -->
-    <script src="assets/painel-aba5-qualidade.js"></script>
-    <!-- ABA 6 — Corpo Docente e Capacidade Operacional -->
-    <script src="assets/painel-aba6-docentes.js"></script>
+    <script src="assets/painel-aba4-permanencia.js?v=20260710-ref-geral-dispersao-alertas"></script>
+    <!-- ABA 5 — Pesquisa e Pós-Graduação -->
+    <script src="assets/painel-aba5-qualidade.js?v=20260710-ref-geral-cnpq-excelencia"></script>
+    <!-- ABA 6 — Qualificação Docente e Capacidade Operacional -->
+    <script src="assets/painel-aba6-docentes.js?v=20260710-ref-geral-tabela-legal"></script>
     <!-- ABA 7 — Retenção Profissional -->
-    <script src="assets/painel-aba7-insercao.js"></script>
+    <script src="assets/painel-aba7-insercao.js?v=20260710-ref-geral-kpi-cards"></script>
     <!-- ABA 8 — Orçamentária e Despesa 8050 -->
-    <script src="assets/painel-aba8-orcamentaria.js?v=20260708-ano-liquidacao"></script>
+    <script src="assets/painel-aba8-orcamentaria.js?v=20260710-ref-geral-tabela-8050"></script>
     <!-- ABA 9 — Desempenho e Eficiência Relativa -->
-    <script src="assets/painel-aba9-desempenho.js"></script>
+    <script src="assets/painel-aba9-desempenho.js?v=20260710-fix-dispatch-composicao-fontes"></script>
   <div hidden aria-hidden="true">
     <button id="scopeBtnPR" type="button" onclick="setScope('PR')" aria-pressed="true">📍 Paraná</button>
     <button id="scopeBtnBR" type="button" onclick="setScope('BR')" aria-pressed="false">🌐 Brasil</button>

@@ -64,8 +64,20 @@ function retentionFunnelBlock(c) {
 
 function formationFunnel(title, rows, c) {
   const a = overviewAgg(rows);
-  const vacancies = Math.max(a.vacancies, 1);
-  const entrants = Math.max(a.entrants, 1);
+  const hasVagaMetric = c.f.vagaRecorte && c.f.vagaRecorte !== "all";
+  const vagaLabel = hasVagaMetric ? (VAGA_RECORTE_FIELDS[c.f.vagaRecorte]?.label || c.f.vagaRecorte) : null;
+  const vagaVacTotal = hasVagaMetric ? sum(rows, u => u.vagaMetricVacancies ?? 0) : null;
+  const vagaEntrantsRows = hasVagaMetric ? rows.filter(u => u.vagaMetricEntrants != null) : [];
+  const vagaEntrantsTotal = hasVagaMetric && vagaEntrantsRows.length ? sum(vagaEntrantsRows, u => u.vagaMetricEntrants) : null;
+  const vagaOccRows = hasVagaMetric ? rows.filter(u => u.vagaMetricOccupancy != null) : [];
+  const vagaOccAvg = hasVagaMetric && vagaOccRows.length ? mean(vagaOccRows, u => u.vagaMetricOccupancy) : null;
+  const vagaEntrantsUnavailable = hasVagaMetric && vagaEntrantsTotal == null;
+  const vagaOccUnavailable = hasVagaMetric && vagaOccAvg == null;
+
+  const vacanciesRaw = hasVagaMetric ? (vagaVacTotal ?? 0) : a.vacancies;
+  const entrantsRaw = hasVagaMetric ? (vagaEntrantsTotal ?? 0) : a.entrants;
+  const vacancies = Math.max(vacanciesRaw, 1);
+  const entrants = Math.max(entrantsRaw, 1);
   const students = Math.max(a.students, 1);
   const fmt1 = v => v.toFixed(1).replace(".", ",");
 
@@ -73,25 +85,34 @@ function formationFunnel(title, rows, c) {
   // ocupação = ingressantes/vagas; concluintes = concluintes/matrículas.
   // Matrículas ativas são estoque (todas as coortes), por isso a etapa é
   // descrita pela relação matrículas/ingressante e não por um percentual.
-  const occRate = clamp(a.entrants / vacancies * 100, 0, 100);
+  // Recorte de Vagas ativo: occRate usa vagaMetricOccupancy (média por IES,
+  // mesmo método de accessScale()/tabMiniKpis()) em vez de recalcular
+  // entrants/vacancies — evita um 3º método de cálculo do mesmo número.
+  const occRate = hasVagaMetric ? (vagaOccAvg ?? 0) : clamp(a.entrants / vacancies * 100, 0, 100);
   const gradRate = clamp(a.graduates / students * 100, 0, 100);
   const stockRatio = a.students / entrants;
-  const idleVacancies = Math.max(a.vacancies - a.entrants, 0);
+  const idleVacancies = hasVagaMetric
+    ? (vagaEntrantsUnavailable ? null : Math.max(vacanciesRaw - entrantsRaw, 0))
+    : Math.max(a.vacancies - a.entrants, 0);
 
   const act = retentionIndFilter(["ind11", "ind12", "ind13", "ind14"]);
-  const maxVal = Math.max(a.vacancies, a.entrants, a.students, a.graduates, 1);
+  const maxVal = Math.max(vacanciesRaw, entrantsRaw, a.students, a.graduates, 1);
 
   const steps = [
-    { num:1, code:"IND-11", ind:"ind11", label:"Vagas ofertadas",  val:a.vacancies, pctTxt:"oferta do ano de referência",            bg:"#0f3b68" },
-    { num:2, code:"IND-13", ind:"ind13", label:"Ingressantes",     val:a.entrants,  pctTxt:`${fmt1(occRate)}% das vagas ocupadas`,   bg:"#1f72b8" },
+    { num:1, code:"IND-11", ind:"ind11", label:"Vagas ofertadas",  val:vacanciesRaw, pctTxt:"oferta do ano de referência", bg:"#0f3b68" },
+    { num:2, code:"IND-13", ind:"ind13", label:"Ingressantes",     val:entrantsRaw,
+      valDisplay: vagaEntrantsUnavailable ? "—" : undefined,
+      pctTxt: vagaEntrantsUnavailable ? `sem ingressantes desagregados para "${vagaLabel}"` : `${fmt1(occRate)}% das vagas ocupadas`,
+      bg:"#1f72b8" },
     { num:3, code:"IND-12", ind:"ind12", label:"Matrículas ativas",val:a.students,  pctTxt:"estoque de todas as coortes",            bg:"#e07b10" },
     { num:4, code:"IND-14", ind:"ind14", label:"Concluintes",      val:a.graduates, pctTxt:`${fmt1(gradRate)}% das matrículas`,      bg:"#14804a" }
   ];
 
   const chevron = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>`;
+  const stockRatioUnavailable = entrantsRaw === 0;
   const connectors = [
-    { label: `Taxa de ocupação das vagas`, value: `${fmt1(occRate)}%`,  low: occRate < 70 },
-    { label: `Matrículas por ingressante`, value: stockRatio.toFixed(1).replace(".", ","), low: false },
+    { label: `Taxa de ocupação das vagas`, value: vagaOccUnavailable ? "Não aplicável" : `${fmt1(occRate)}%`, low: !vagaOccUnavailable && occRate < 70 },
+    { label: `Matrículas por ingressante`, value: stockRatioUnavailable ? "—" : stockRatio.toFixed(1).replace(".", ","), low: false },
     { label: `Concluintes sobre matrículas`, value: `${fmt1(gradRate)}%`, low: gradRate < 15 }
   ];
 
@@ -103,7 +124,7 @@ function formationFunnel(title, rows, c) {
     const meterW = clamp(s.val / maxVal * 100, 3, 100).toFixed(1);
     funnel += `<div class="ff-step${dim}" style="background:${s.bg}">
       <div class="ff-step-top"><span class="ff-num">${s.num}</span><span class="ff-code">${s.code}</span><span class="ff-label">${s.label}</span></div>
-      <div class="ff-val">${formatNumber(s.val)}</div>
+      <div class="ff-val">${s.valDisplay ?? formatNumber(s.val)}</div>
       <div class="ff-pct">${s.pctTxt}</div>
       <div class="ff-meter" title="Proporção sobre a maior etapa: ${meterW}%"><span style="width:${meterW}%"></span></div>
     </div>`;
@@ -125,10 +146,10 @@ function formationFunnel(title, rows, c) {
 
   const side = `<div class="ff-side">
     <div class="ff-kpi-grid">
-      ${kpi("Vagas não ocupadas", formatNumber(idleVacancies), ffIcons.idle)}
-      ${kpi("Ocupação das vagas", fmt1(occRate) + "%", ffIcons.gauge)}
+      ${kpi("Vagas não ocupadas", idleVacancies == null ? "—" : formatNumber(idleVacancies), ffIcons.idle)}
+      ${kpi("Ocupação das vagas", vagaOccUnavailable ? "Não aplicável" : fmt1(occRate) + "%", ffIcons.gauge)}
       ${kpi("Concluintes sobre matrículas", fmt1(gradRate) + "%", ffIcons.grad)}
-      ${kpi("Matrículas por ingressante", stockRatio.toFixed(1).replace(".", ","), ffIcons.ratio)}
+      ${kpi("Matrículas por ingressante", stockRatioUnavailable ? "—" : stockRatio.toFixed(1).replace(".", ","), ffIcons.ratio)}
     </div>
     <div class="ff-howto">
       <strong>Como ler</strong>
@@ -335,6 +356,14 @@ function retentionScatterBlock(c) {
   const rows = explicitClusterActive(c) ? (c.base.length ? c.base : c.all) : clusterRows;
   const avgDrop = mean(clusterRows, u => u.dropout);
   const avgComp = mean(clusterRows, u => u.completion);
+  // Referência Geral (whitelist v1) — dropout/completion (40 IES). Site NÃO
+  // seguro para substituir avgDrop/avgComp: são divisores de quadrante e
+  // também alimentam a classificação do painel de clique
+  // (window.dispersaoTab4Click) — trocar por um valor fixo desequilibraria
+  // a distribuição de pontos entre os 4 quadrantes já validados. Aqui a
+  // referência só entra como nota textual no subtítulo.
+  const refGeralDrop = getReferenciaGeral("dropout");
+  const refGeralComp = getReferenciaGeral("completion");
   const maxStudents = Math.max(...rows.map(u => u.students), 1);
 
   // Eixos escalados ao intervalo real dos dados (com folga) em vez de 0–100%:
@@ -448,7 +477,7 @@ function retentionScatterBlock(c) {
     `<span class="scatter-axis-tick" style="left:-6px;top:2px;transform:translateX(-100%);">${fmtAxis(yMax)}</span>`;
 
   return `<article class="visual-card"><h3>IND-5 × IND-27 · Dispersão formação</h3>
-    <p class="card-subtitle">X = desvinculação (→ pior); Y = concluintes sobre matrículas (↑ melhor); tamanho = matrículas · Quadrantes definidos pela média do grupo · Eixos ajustados ao intervalo dos dados · Clique em uma bolha para detalhar</p>
+    <p class="card-subtitle">X = desvinculação (→ pior); Y = concluintes sobre matrículas (↑ melhor); tamanho = matrículas · Quadrantes definidos pela média do grupo${refGeralDrop || refGeralComp ? ` · Referência PR/BR: desvinculação ${refGeralDrop ? refGeralDrop.sigla + " " + formatPercent(refGeralDrop.valor) : "—"} · concluintes ${refGeralComp ? refGeralComp.sigla + " " + formatPercent(refGeralComp.valor) : "—"}` : ""} · Eixos ajustados ao intervalo dos dados · Clique em uma bolha para detalhar</p>
     <div class="retention-scatter faculty-scatter" style="background:var(--surface-1,#fff);overflow:visible;margin-left:42px;margin-bottom:20px;">${quadBg}${refLines}${qLabels}${axisLabels}${dots}</div>
     ${legend}${fonte}${painel}
   </article>`;
@@ -566,13 +595,22 @@ renderSystemAlerts = function renderSystemAlertsWithRetention(c) {
   if (!rows.length) { _prevRenderSystemAlertsRetention(c); return; }
   const avgDrop = mean(rows, u => u.dropout);
   const avgComp = mean(rows, u => u.completion);
+  // Referência Geral (whitelist v1) — dropout/completion (40 IES). Site NÃO
+  // seguro para virar o threshold: avgDrop+2/avgComp-10 são margens de
+  // tolerância em torno da média do RECORTE (PR, 7 IES), não do melhor valor
+  // nacional — usar refGeral aqui inflaria os alertas para quase todo mundo.
+  // Só entra como informação adicional no texto, sem mudar quando dispara.
+  const refGeralDropout = getReferenciaGeral("dropout");
+  const refGeralCompletion = getReferenciaGeral("completion");
+  const refDropTxt = refGeralDropout ? ` (referência nacional: ${refGeralDropout.sigla} ${formatPercent(refGeralDropout.valor)})` : "";
+  const refCompTxt = refGeralCompletion ? ` (referência nacional: ${refGeralCompletion.sigla} ${formatPercent(refGeralCompletion.valor)})` : "";
   const alerts = [];
   rows.forEach(u => {
     const highDrop = u.dropout > avgDrop + 2;
     const lowCompletion = u.completion < avgComp - 10;
     if (highDrop && lowCompletion) alerts.push(["alert-danger", "⚠", u.sigla, `IND-5 alto (${formatPercent(u.dropout)}) e IND-27 baixo (${formatPercent(u.completion)}). Atenção prioritária.`]);
-    else if (highDrop)        alerts.push(["alert-warn", "⚠", u.sigla, `IND-5 Desvinculação ${formatPercent(u.dropout)} — acima da média do cluster`]);
-    else if (lowCompletion)   alerts.push(["alert-warn", "⚠", u.sigla, `IND-27 Concluintes ${formatPercent(u.completion)} — abaixo da média do cluster`]);
+    else if (highDrop)        alerts.push(["alert-warn", "⚠", u.sigla, `IND-5 Desvinculação ${formatPercent(u.dropout)} — acima da média do cluster${refDropTxt}`]);
+    else if (lowCompletion)   alerts.push(["alert-warn", "⚠", u.sigla, `IND-27 Concluintes ${formatPercent(u.completion)} — abaixo da média do cluster${refCompTxt}`]);
   });
   if (!alerts.length) alerts.push(["alert-ok", "✓", "Formação", "Sem alertas críticos de formação no recorte ativo."]);
   box.innerHTML = alerts.slice(0, 6).map(([cls, icon, ies, msg]) => `<div class="alert-item ${cls}"><span class="alert-icon" aria-hidden="true">${icon}</span><div class="alert-body"><strong class="alert-ies">${ies}</strong><span class="alert-msg">${msg}</span></div></div>`).join("");

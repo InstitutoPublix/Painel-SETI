@@ -1466,7 +1466,7 @@ const INDICATOR_CATALOG = {
     "codigo": 83,
     "nome": "Taxa de Pagamento sobre Liquidado",
     "categoria": "Eficiência Orçamentária",
-    "formula": "Pago / Orçamento Atualizado × 100",
+    "formula": "Pago / Liquidado × 100",
     "unidade": "Percentual",
     "periodicidade": "Anual / Trimestral",
     "polaridade": "Quanto maior, melhor",
@@ -2394,8 +2394,8 @@ const tabInfo = {
   comparison:["Indicador-síntese por dimensão","Comparação entre IEES","Como cada universidade se posiciona por dimensão? A leitura é um indicador-síntese por dimensão — média Paraná, referência Brasil e média do agrupamento ativo —, sem presumir que as IEES do agrupamento sejam semelhantes entre si; cada instituição mantém sua singularidade."],
   access:["Acesso, oferta e vagas não ocupadas","Acesso e Oferta","Onde há demanda, ocupação e vagas não ocupadas? Escala da oferta, ocupação, territorialização e eficiência da oferta."],
   retention:["Permanência e formação","Permanência e Formação","Os estudantes permanecem e concluem? Funil de ingressantes, matrículas e concluintes com custos associados."],
-  quality:["Qualidade acadêmica e ciência","Qualificação docente, Pesquisa e Pós-Graduação","Onde está a maturidade acadêmica e científica? Qualificação docente, CAPES, CNPq e internacionalização."],
-  faculty:["Capacidade operacional","Corpo Docente e Capacidade Operacional","Há capacidade operacional suficiente? Quadro legal, ocupação docente, TIDE, CRES e alertas."],
+  quality:["Qualidade acadêmica e ciência","Pesquisa e Pós-Graduação","Onde está a maturidade acadêmica e científica? CAPES, CNPq e internacionalização."],
+  faculty:["Capacidade operacional","Qualificação Docente e Capacidade Operacional","Há capacidade operacional suficiente? Qualificação docente, quadro legal, ocupação, TIDE, CRES e alertas."],
   employment:["Egressos e mercado","Retenção Profissional","Os egressos se inserem bem no mercado? Retenção no Paraná, aderência CBO2 e salários."],
   efficiency:["Execução","Execução Orçamentária","Dados do Relatório da Despesa 8050: execução, liquidação, composição e evolução orçamentária das universidades estaduais do Paraná."],
   performance:["Desempenho","Desempenho e Eficiência Relativa","Orçamento maior está associado a melhor desempenho? Resposta ao piloto, cruzamentos de desempenho e matriz de oportunidades das IEES."]
@@ -2721,10 +2721,10 @@ const TAB_SUMMARIES = {
                 text:"Análises sobre cursos, vagas, matrículas, ocupação e distribuição territorial da oferta educacional." },
   retention:  { icon:"🎓", title:"Permanência e Formação",
                 text:"Indicadores de trajetória acadêmica, retenção, concluintes, evasão e desempenho dos cursos ao longo do tempo." },
-  quality:    { icon:"🔬", title:"Qualificação docente, Pesquisa e Pós-Graduação",
-                text:"Qualidade acadêmica, produção científica, programas de pós-graduação, titulação docente e capacidades de pesquisa." },
-  faculty:    { icon:"👥", title:"Corpo Docente e Capacidade Operacional",
-                text:"Estrutura do corpo docente, regimes de trabalho, dedicação, capacidade instalada e sinais de equilíbrio operacional." },
+  quality:    { icon:"🔬", title:"Pesquisa e Pós-Graduação",
+                text:"Qualidade acadêmica, produção científica e programas de pós-graduação." },
+  faculty:    { icon:"👥", title:"Qualificação Docente e Capacidade Operacional",
+                text:"Qualificação e titulação docente, regimes de trabalho, dedicação, capacidade instalada e sinais de equilíbrio operacional." },
   employment: { icon:"💼", title:"Retenção Profissional",
                 text:"Relação entre formação acadêmica, aderência ocupacional, empregabilidade, inserção regional e conexão com o mercado de trabalho." },
   efficiency: { icon:"💰", title:"Orçamento e Eficiência",
@@ -2852,7 +2852,7 @@ function updateCourseTypeBanner(c){
   if (strong) strong.textContent = titleParts.join(" · ");
   let texto = label ? `Filtro de ${label} reflete o ano selecionado no filtro de Ano (quando disponível para a IES; caso contrário, o ano mais recente disponível).` : "";
   if (vagaLabel) {
-    texto += `${texto ? " " : ""}Filtro de Vagas (${vagaLabel}) visível apenas nos cards "Total de vagas" e "Taxa de ocupação" da Aba 3 · Acesso e Oferta — o restante do painel (KPIs, score, rankings, demais abas) continua mostrando os dados sem esse recorte.`;
+    texto += `${texto ? " " : ""}Filtro de Vagas (${vagaLabel}) afeta os cards "Total de vagas" e "Taxa de ocupação" da Aba 1 · Panorama Executivo, da Aba 3 · Acesso e Oferta, o funil formativo da Aba 4 · Permanência e Formação, o card "Custo por vaga ocupada" da Aba 8 · Execução Orçamentária e a opção "Taxa de ocupação de vagas" do gráfico Orçamento × Desempenho da Aba 9 · Desempenho — a Taxa de ocupação das vagas de ingresso (IND-24) e o restante da Aba 2 · Comparação continuam mostrando os dados sem esse recorte.`;
     // Round 5: ressalva só aparece quando o recorte realmente resulta em %
     // não calculável para pelo menos uma IES exibida (Nova/Diurno/Noturno
     // têm numerador e só ficam sem % se a IES/ano específico não tiver vaga
@@ -3197,12 +3197,12 @@ window.applyCourseFiltersOverride = applyCourseFiltersOverride;
 // (ing:null, sem numerador — não existe QT_ING_EAD na base) e o <option>
 // correspondente no <optgroup label="Turno"> do HTML.
 const VAGA_RECORTE_FIELDS = {
-  Nova:         { vg: "vgNova",         ing: "ingVgNova",  label: "Vagas Novas" },
-  Remanescente: { vg: "vgRemanesc",     ing: null,         label: "Vagas Remanescentes" },
-  ProcSeletivo: { vg: "vgProcSeletivo", ing: null,         label: "Vagas de Processo Seletivo" },
-  ProgEspecial: { vg: "vgProgEspecial", ing: null,         label: "Vagas de Programa Especial" },
-  Diurno:       { vg: "vgDiurno",       ing: "ingDiurno",  label: "Vagas Diurnas" },
-  Noturno:      { vg: "vgNoturno",      ing: "ingNoturno", label: "Vagas Noturnas" },
+  Nova:         { vg: "vgNova",         ing: "ingVgNova",         label: "Vagas Novas" },
+  Remanescente: { vg: "vgRemanesc",     ing: "ingVgRemanesc",     label: "Vagas Remanescentes" },
+  ProcSeletivo: { vg: "vgProcSeletivo", ing: null,                label: "Vagas de Processo Seletivo" },
+  ProgEspecial: { vg: "vgProgEspecial", ing: "ingVgProgEspecial", label: "Vagas de Programa Especial" },
+  Diurno:       { vg: "vgDiurno",       ing: "ingDiurno",         label: "Vagas Diurnas" },
+  Noturno:      { vg: "vgNoturno",      ing: "ingNoturno",        label: "Vagas Noturnas" },
 };
 function applyVagaMetricOverride(u, vagaRecorte) {
   const hasRecorte = !!vagaRecorte && vagaRecorte !== "all";
@@ -3225,6 +3225,7 @@ function applyVagaMetricOverride(u, vagaRecorte) {
   return {
     ...u,
     vagaMetricVacancies: vacancies,
+    vagaMetricEntrants: spec.ing ? entrants : null,
     vagaMetricOccupancy: occupancy,
     _vagaMetricFiltered: true,
     _vagaMetricSemOcupacao: occupancy === null,
@@ -3322,6 +3323,7 @@ var TAB_YEAR_CONTEXT = {
   },
   efficiency: {
     fonte: "SEFA · Relatório da Despesa 8050 · Base SELO-PR",
+    coverageHtml: "<span>Cobertura: <strong>2024–2026</strong></span> &middot; <span>Fonte: <strong>SEFA · Relatório da Despesa 8050</strong></span> &middot; <span>Filtro: <strong>Ações 8116, 8119, 8122, 8125, 8128, 8131 e 8149 · Base SELO-PR</strong></span>",
     nota: "2026 = exercício em andamento — dados parciais até a data de extração"
   },
   performance: {
@@ -3357,7 +3359,7 @@ function updateYearFilterOptions(tabId) {
 
   // ── nota contextual abaixo do select ─────────────────────────────────────
   const ctx = TAB_YEAR_CONTEXT[tabId];
-  const container = sel.closest(".filter-bar-left") || sel.parentElement;
+  const container = document.getElementById("yearContextNoteWrap") || sel.closest(".filter-bar-left") || sel.parentElement;
   if (!container) return;
 
   let note = document.getElementById("yearContextNote");
@@ -3368,6 +3370,10 @@ function updateYearFilterOptions(tabId) {
   }
 
   if (!ctx) { note.innerHTML = ""; return; }
+  if (ctx.coverageHtml) {
+    note.innerHTML = ctx.coverageHtml;
+    return;
+  }
 
   const minYear = Math.min(...years);
   const cobertura = minYear === maxYear ? String(maxYear) : minYear + "–" + maxYear;
@@ -3983,8 +3989,8 @@ const tabBlocks = {
   comparison: ["Tabela comparativa", "Ranking", "Radar"],
   access: ["Escala da oferta", "Ocupação e vagas não ocupadas", "Catálogo de indicadores e Distribuição territorial"],
   retention: ["Funil", "Taxas", "Evolução do ranking por ano", "Dispersão", "Ranking por curso"],
-  quality: ["Qualificação docente", "Pós-grad e CAPES", "Pesquisa e CNPq", "Internacionalização"],
-  faculty: ["Quadro legal", "Vagas disponíveis e condicionadas", "TIDE", "CRES e esforço"],
+  quality: ["Pós-grad e CAPES", "Pesquisa e CNPq", "Internacionalização"],
+  faculty: ["Qualificação docente", "Quadro legal", "Vagas disponíveis e condicionadas", "TIDE", "CRES e esforço"],
   employment: ["Inserção geral", "Retenção PR e Sul", "CBO2 e salário", "Destino territorial", "Por curso", "Perfil ocupacional"],
   efficiency: ["Perfil da movimentação", "Composição crédito e despesa"],
   performance: ["Resposta ao Piloto", "Cruzamento desempenho acadêmico", "Cruzamento corpo docente", "Matriz de oportunidades e alertas"]
@@ -4030,7 +4036,6 @@ const tabIndicators = {
     { code:"ind27", label:"Concluintes sobre matrículas" }
   ],
   quality: [
-    { code:"ind6",  label:"Proporção de docentes com doutorado" },
     { code:"ind7",  label:"Alunos em mobilidade acadêmica" },
     { code:"ind8",  label:"Proporção de docentes estrangeiros" },
     { code:"ind9",  label:"Acesso ao Portal CAPES" },
@@ -4041,6 +4046,10 @@ const tabIndicators = {
     { code:"ind66", label:"Programas com conceito CAPES 5-7" }
   ],
   faculty: [
+    { code:"ind6",  label:"Proporção de docentes com doutorado" },
+    { code:"ind7",  label:"Alunos em mobilidade acadêmica" },
+    { code:"ind8",  label:"Proporção de docentes estrangeiros" },
+    { code:"ind9",  label:"Acesso ao Portal CAPES" },
     { code:"ind43", label:"Total de códigos de vagas docentes" },
     { code:"ind45", label:"Vagas docentes efetivas ocupadas" },
     { code:"ind46", label:"Taxa de ocupação do quadro docente" },
@@ -4257,12 +4266,12 @@ const tabBlockIndMap = {
     "Ranking por curso":           ["ind5","ind27"]
   },
   quality: {
-    "Qualificação docente": ["ind6","ind7","ind8","ind9"],
     "Pós-grad e CAPES":     ["ind62","ind63","ind65","ind66"],
     "Pesquisa e CNPq":      ["ind60","ind61"],
     "Internacionalização":  ["ind7","ind8","ind9"]
   },
   faculty: {
+    "Qualificação docente":                ["ind6","ind7","ind8","ind9"],
     "Quadro legal":                        ["ind43","ind44","ind45","ind46","ind47","ind53"],
     "Vagas disponíveis e condicionadas":   ["ind44","ind45","ind48","ind49"],
     "TIDE":                                ["ind50","ind51","ind52"],
@@ -4439,20 +4448,25 @@ function tabMiniKpis(tabId, c) {
   const a = agg(d);
   let kpis = "";
   if (tabId === "access") {
-    const unfilled = Math.max(0, a.vacancies - Math.round(a.vacancies * a.occupancy / 100));
-    kpis = miniKpi("Vagas totais", formatNumber(a.vacancies))
-         + miniKpi("Ocupação média", formatPercent(a.occupancy))
-         + miniKpi("Vagas não ocupadas", formatNumber(unfilled));
+    const hasVagaMetric = c.f.vagaRecorte && c.f.vagaRecorte !== "all";
+    const vagaLabel = hasVagaMetric ? (VAGA_RECORTE_FIELDS[c.f.vagaRecorte]?.label || c.f.vagaRecorte) : null;
+    const vacTotal = hasVagaMetric ? sum(d, u => u.vagaMetricVacancies ?? 0) : a.vacancies;
+    const vagaOccRows = hasVagaMetric ? d.filter(u => u.vagaMetricOccupancy != null) : [];
+    const occAvg = hasVagaMetric ? (vagaOccRows.length ? mean(vagaOccRows, u => u.vagaMetricOccupancy) : null) : a.occupancy;
+    const unfilled = occAvg != null ? Math.max(0, vacTotal - Math.round(vacTotal * occAvg / 100)) : null;
+    kpis = miniKpi("Vagas totais" + (vagaLabel ? ` — ${vagaLabel}` : ""), formatNumber(vacTotal))
+         + miniKpi("Ocupação média", occAvg != null ? formatPercent(occAvg) : "Não aplicável")
+         + miniKpi("Vagas não ocupadas", unfilled != null ? formatNumber(unfilled) : "Não aplicável");
   } else if (tabId === "retention") {
     kpis = miniKpi("Ingressantes", formatNumber(a.entrants))
          + miniKpi("Concluintes sobre matrículas", formatPercent(a.completion))
          + miniKpi("Desvinculação média", formatPercent(mean(d, u => u.dropout)));
   } else if (tabId === "quality") {
-    kpis = miniKpi("Doutores médio", formatPercent(mean(d, u => u.doctors)))
-         + miniKpi("Conceito CAPES", mean(d, u => u.capes).toFixed(1))
+    kpis = miniKpi("Conceito CAPES", mean(d, u => u.capes).toFixed(1))
          + miniKpi("Captação CNPq", formatCurrencyMillions(a.cnpq));
   } else if (tabId === "faculty") {
-    kpis = miniKpi("Ocupação docente", formatPercent(mean(d, u => u.facultyOcc)))
+    kpis = miniKpi("Doutores médio", formatPercent(mean(d, u => u.doctors)))
+         + miniKpi("Ocupação docente", formatPercent(mean(d, u => u.facultyOcc)))
          + miniKpi("Utilização CRES", formatPercent(mean(d, u => u.cres)))
          + miniKpi("Despesa pessoal", formatPercent(mean(d, u => u.personnel)));
   } else if (tabId === "employment") {
@@ -5135,7 +5149,7 @@ window.exportAccessTerritoryCSV = function() {
   URL.revokeObjectURL(url);
 };
 
-/* Aba 5 - Qualificação docente, Pesquisa e Pós-Graduação */
+/* Aba 5 - Pesquisa e Pós-Graduação */
 var previousRenderBlockContentQuality = renderBlockContent;
 renderBlockContent = function(tabId, title, c) {
   if (tabId === "quality") return qualityBlock(title, c);
@@ -5146,7 +5160,7 @@ function estimatedFaculty(u) {
   return Math.max(120, Math.round(u.students / 15));
 }
 
-/* Aba 6 - Corpo Docente e Capacidade Operacional (SETI/LGU - Paraná) */
+/* Aba 6 - Qualificação Docente e Capacidade Operacional (SETI/LGU - Paraná) */
 var previousRenderBlockContentFaculty = renderBlockContent;
 renderBlockContent = function(tabId, title, c) {
   if (tabId === "faculty") return facultyBlock(title, c);
@@ -5707,8 +5721,8 @@ const tabIndicatorCatalog = {
   comparison:[1,3,4,5,6,7,8,9,10,11,14,15,21,26,27,28,35,37,39,40,46,47,53,56,60,61,62,64,65,66,81,82,84,85,86,87,88,89,90,91,92,93,94,95],
   access:[1,3,4,10,11,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,67,68,69],
   retention:[5,12,13,14,27],
-  quality:[6,7,8,9,60,61,62,63,64,65,66],
-  faculty:[43,44,45,46,47,48,49,50,51,52,53,54,55,56,57,58,59,63],
+  quality:[7,8,9,60,61,62,63,64,65,66],
+  faculty:[6,7,8,9,43,44,45,46,47,48,49,50,51,52,53,54,55,56,57,58,59,63],
   employment:[33,34,35,36,37,38,39,40,41,42,71,72,73,74,75,76,77,78,79,80],
   efficiency:[81,82,83,84,85,86,87,88,89,90,91,92,93,94,"ind95orc","ind96orc","ind97orc"]
 };
@@ -6030,7 +6044,7 @@ function indicatorCatalogBlock(tabId, c) {
   // Para demais abas: usar o dropdown customizado genérico
   const tabLabels = {
     comparison:"Comparação entre IEES", retention:"Permanência e Formação",
-    quality:"Qualificação docente, Pesquisa e Pós-Graduação", faculty:"Corpo Docente e Capacidade Operacional",
+    quality:"Pesquisa e Pós-Graduação", faculty:"Qualificação Docente e Capacidade Operacional",
     employment:"Retenção Profissional", efficiency:"Orçamento e Eficiência"
   };
   return renderCustomCatalog(tabId, tabLabels[tabId] || tabId);
@@ -6446,17 +6460,19 @@ bind = function bindAuditedButtons() {
     const drop=document.getElementById("universityFilterDropdown");
     const wrap=document.getElementById("universityFilterWrap");
     if(!btn||!drop)return;
+    const nowrapRow=wrap?.closest(".filter-bar-left-nowrap");
     btn.addEventListener("click",e=>{
       e.stopPropagation();
       const open=btn.getAttribute("aria-expanded")==="true";
       btn.setAttribute("aria-expanded",String(!open));
       drop.hidden=open;
+      nowrapRow?.classList.toggle("has-open-dropdown",!open);
     });
     document.addEventListener("click",e=>{
-      if(!wrap?.contains(e.target)){btn.setAttribute("aria-expanded","false");drop.hidden=true;}
+      if(!wrap?.contains(e.target)){btn.setAttribute("aria-expanded","false");drop.hidden=true;nowrapRow?.classList.remove("has-open-dropdown");}
     });
     document.addEventListener("keydown",e=>{
-      if(e.key==="Escape"&&!drop.hidden){btn.setAttribute("aria-expanded","false");drop.hidden=true;btn.focus();}
+      if(e.key==="Escape"&&!drop.hidden){btn.setAttribute("aria-expanded","false");drop.hidden=true;nowrapRow?.classList.remove("has-open-dropdown");btn.focus();}
     });
     document.getElementById("uniCheckAll")?.addEventListener("change",()=>{setUniSelection("all");render();});
     document.getElementById("uniCheckNone")?.addEventListener("change",()=>{setUniSelection("none");render();});

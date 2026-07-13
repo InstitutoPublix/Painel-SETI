@@ -141,8 +141,10 @@ function renderComposicaoFontesBlock(c) {
 // ─────────────────────────────────────────────────────────────────────────────
 // SEÇÃO 1 — Custo por Resultado (dados reais: u.liquidado)
 // ─────────────────────────────────────────────────────────────────────────────
-function renderOrcCustoPorResultado(rows) {
+function renderOrcCustoPorResultado(rows, c) {
   if (!rows || !rows.length) return '<div class="empty-state">Sem dados no recorte selecionado.</div>';
+
+  var hasVagaMetric = c.f.vagaRecorte && c.f.vagaRecorte !== "all";
 
   var COST_INDS = [
     { label: "Custo por aluno matriculado",
@@ -154,7 +156,9 @@ function renderOrcCustoPorResultado(rows) {
     { label: "Custo por vaga ocupada",
       sub:   "Liquidado × 1M / (vagas × ocupação%)",
       get:   function(u) {
-        var denom = u.vacancies > 0 && u.occupancy > 0 ? u.vacancies * u.occupancy / 100 : 0;
+        var vac = hasVagaMetric ? (u.vagaMetricVacancies ?? 0) : u.vacancies;
+        var occ = hasVagaMetric ? (u.vagaMetricOccupancy ?? 0) : u.occupancy;
+        var denom = vac > 0 && occ > 0 ? vac * occ / 100 : 0;
         return (u.liquidado > 0 && denom > 0) ? u.liquidado * 1e6 / denom : null; } },
     { label: "Custo por egresso empregado",
       sub:   "Liquidado × 1M / (graduados × inserção%)",
@@ -225,14 +229,18 @@ function renderOrcExecucao(rows) {
 
   function avgOf(getter) { return _avgField(sorted, getter); }
 
-  function makeRow(label, getter, fmtFn, colorOpt, grupo) {
+  function makeRow(label, getter, fmtFn, colorOpt, grupo, refCampo) {
     var avgV = colorOpt ? avgOf(getter) : null;
+    var refGeral = refCampo ? getReferenciaGeral(refCampo) : null;
+    var refTitle = refGeral ? ' title="Melhor valor bruto entre as 7 IES-PR (fixo) — ' + refGeral.sigla + '"' : '';
+    var refArrow = refGeral && refGeral.polaridade === "menor" ? "↓ " : "";
+    var labelHtml = refGeral ? label + ' <span style="font-size:10px;font-weight:400;color:var(--text-secondary,#888)">· Ref. PR: ' + refArrow + refGeral.sigla + ' ' + fmtFn(refGeral.valor) + '</span>' : label;
     var cells = sorted.map(function(u) {
       var v = getter(u);
       var style = colorOpt ? cellStyle(v, avgV, colorOpt === "higher") : "";
-      return '<td style="text-align:right;' + style + '">' + fmtFn(v) + '</td>';
+      return '<td style="text-align:right;' + style + '"' + refTitle + '>' + fmtFn(v) + '</td>';
     }).join("");
-    return '<tr data-grupo="' + grupo + '"><td style="font-size:12px;padding:5px 8px;white-space:nowrap">' + label + '</td>' + cells + '</tr>';
+    return '<tr data-grupo="' + grupo + '"><td style="font-size:12px;padding:5px 8px;white-space:nowrap">' + labelHtml + '</td>' + cells + '</tr>';
   }
 
   function blockHead(label, grupo) {
@@ -267,9 +275,9 @@ function renderOrcExecucao(rows) {
     makeRow("Saldo não executado",         saldoNaoExec,                               _fmtM, null,     "A") +
     blockHead("B — Taxas de execução (%)", "B") +
     makeRow("Taxa de Execução — Empenho",    function(u){return u.tx_execucao_empenho;},   _fmtP, "higher", "B") +
-    makeRow("Taxa de Liquidação",            function(u){return u.tx_liquidacao;},          _fmtP, "higher", "B") +
-    makeRow("Taxa de Pagamento / Liquidado", function(u){return u.tx_pagamento_liq;},       _fmtP, "higher", "B") +
-    makeRow("Grau de Contingenciamento",     function(u){return u.grau_contingenciamento;}, _fmtP, "lower",  "B") +
+    makeRow("Taxa de Liquidação",            function(u){return u.tx_liquidacao;},          _fmtP, "higher", "B", "tx_liquidacao") +
+    makeRow("Taxa de Pagamento / Liquidado", function(u){return u.tx_pagamento_liq;},       _fmtP, "higher", "B", "tx_pagamento_liq") +
+    makeRow("Grau de Contingenciamento",     function(u){return u.grau_contingenciamento;}, _fmtP, "lower",  "B", "grau_contingenciamento") +
     makeRow("Variação Dotação / LOA",        function(u){return u.var_dotacao_loa;},        _fmtP, null,     "B") +
     blockHead("C — Composição da despesa (%)", "C") +
     makeRow("Pessoal e Encargos",         function(u){return u.part_pessoal;},          _fmtP, null, "C") +
@@ -521,7 +529,7 @@ function renderOrcEvolucao(c) {
 function budget8050Block(title, c) {
   if (title === "Avaliação SELO-PR") return renderSeloBlock(c);
   if (title === "Composição por Fonte de Despesa") return renderComposicaoFontesBlock(c);
-  if (title === "Custo por Resultado (8050)") return renderOrcCustoPorResultado(efficiencyRows(c));
+  if (title === "Custo por Resultado (8050)") return renderOrcCustoPorResultado(efficiencyRows(c), c);
   if (title === "Execução Orçamentária 8050") return renderOrcExecucao(efficiencyRows(c));
   if (title === "Evolução 2024–2026") return renderOrcEvolucao(c);
   if (title === "Tendência Histórica 2024–2026") return trendBlock(c);
@@ -1000,7 +1008,7 @@ ${execCard("Suplementação", avg(u => u.supplementation), "% crédito adicional
 
 // Opções do eixo Y
 var _SCATTER_Y_OPTS = {
-  occupancy:  { label: "Taxa de ocupação de vagas (%)", get: function(u) { return u.occupancy;  }, fmt: _fmtP },
+  occupancy:  { label: "Taxa de ocupação de vagas (%)", get: function(u, hasVagaMetric) { return hasVagaMetric ? (u.vagaMetricOccupancy ?? null) : u.occupancy; }, fmt: _fmtP },
   completion: { label: "Concluintes sobre matrículas (%)", get: function(u) { return u.completion; }, fmt: _fmtP },
   employment: { label: "Egressos empregados (%)",       get: function(u) { return u.employment; }, fmt: _fmtP },
   capes:      { label: "Conceito CAPES médio",          get: function(u) { return u.capes;      }, fmt: function(v) { return (v != null && isFinite(v)) ? v.toFixed(1).replace(".", ",") + " pts" : "—"; } },
@@ -1052,7 +1060,9 @@ window.setOrcScatterY = function(key) {
   var svgEl = document.getElementById("orcScatterSvg");
   if (svgEl && _orcScatterRows) {
     // Limpa e redesenha apenas o SVG — sem recriar o container externo
-    svgEl.innerHTML = _buildOrcScatterInner(_orcScatterRows, key);
+    var f = filters();
+    var hasVagaMetric = f.vagaRecorte && f.vagaRecorte !== "all";
+    svgEl.innerHTML = _buildOrcScatterInner(_orcScatterRows, key, hasVagaMetric);
   } else {
     render();
   }
@@ -1070,7 +1080,7 @@ window.setOrcScatterY = function(key) {
 };
 
 // Constrói o conteúdo interno do SVG (reutilizado em render + update direto)
-function _buildOrcScatterInner(rows, yKey) {
+function _buildOrcScatterInner(rows, yKey, hasVagaMetric) {
   var opt = _SCATTER_Y_OPTS[yKey] || _SCATTER_Y_OPTS.occupancy;
 
   // Pontos válidos
@@ -1078,7 +1088,7 @@ function _buildOrcScatterInner(rows, yKey) {
   rows.forEach(function(u) {
     if (!u.liquidado || !u.students || u.students <= 0) return;
     var x = u.liquidado * 1e6 / u.students;
-    var y = opt.get(u);
+    var y = opt.get(u, hasVagaMetric);
     if (x == null || y == null || !isFinite(x) || !isFinite(y)) return;
     points.push({ u: u, x: x, y: y });
   });
@@ -1213,6 +1223,7 @@ function renderOrcScatter(c) {
   _orcScatterRows = rows;  // cache para update direto do SVG
 
   var yKey = state.orcScatterY || "occupancy";
+  var hasVagaMetric = c.f.vagaRecorte && c.f.vagaRecorte !== "all";
 
   // Dropdown de seleção do eixo Y
   var selHtml = '<select id="orcScatterYSelect" class="filter-inline-select" onchange="setOrcScatterY(this.value)">' +
@@ -1254,7 +1265,7 @@ function renderOrcScatter(c) {
     'com menor gasto relativo.</p>' +
     '</div>' +
     '<svg id="orcScatterSvg" viewBox="0 0 640 420" width="100%" style="display:block;overflow:visible;font-family:DM Sans,sans-serif">' +
-    _buildOrcScatterInner(rows, yKey) +
+    _buildOrcScatterInner(rows, yKey, hasVagaMetric) +
     '</svg>' + omitNote +
     '<div id="scatterYInfo" style="margin-top:10px;padding:10px 14px;background:var(--surface-2,#f0f4fa);border-left:3px solid var(--accent,#4A6FA5);border-radius:4px;font-size:0.82rem;color:var(--text-secondary,#555);line-height:1.55;">' +
     '<span id="scatterYInfoText">' + yInfoInitial + '</span>' +

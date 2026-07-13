@@ -217,8 +217,8 @@ var overviewKpiDefinitions = [
   { code: "IND-13", title: "Estudantes ingressantes",              source: "INEP",        formula: "Somatório QT_ING",                             polarity: "↑", mode: "pct", get: a => a.entrants,            fmt: formatNumber },
   { code: "IND-14", title: "Estudantes concluintes",               source: "INEP",        formula: "Somatório QT_CONC",                            polarity: "↑", mode: "pct", get: a => a.graduates,           fmt: formatNumber },
   { code: "IND-10", title: "Total de cursos",                      source: "INEP",        formula: "Contagem de cursos",                           polarity: "↑", mode: "pct", get: a => a.courses,             fmt: formatNumber },
-  { code: "IND-11", title: "Total de vagas",                       source: "INEP",        formula: "Somatório QT_VG_TOTAL",                        polarity: "↑", mode: "pct", get: a => a.vacancies,           fmt: formatNumber },
-  { code: "IND-26", title: "Taxa de ocupação das vagas",           source: "INEP",        formula: "QT_MAT / QT_VG_TOTAL × 100",                  polarity: "↑", mode: "pp",  benchmark: () => formatPercent(brazil.result.occupancy),  get: a => a.occupancy,          fmt: formatPercent },
+  { code: "IND-11", title: "Total de vagas",                       source: "INEP",        formula: "Somatório QT_VG_TOTAL",                        polarity: "↑", mode: "pct", get: a => a.hasVagaMetric ? a.vagaMetricVacancies : a.vacancies,           fmt: formatNumber },
+  { code: "IND-26", title: "Taxa de ocupação das vagas",           source: "INEP",        formula: "QT_MAT / QT_VG_TOTAL × 100",                  polarity: "↑", mode: "pp",  benchmark: () => formatPercent(brazil.result.occupancy),  get: a => a.hasVagaMetric ? a.vagaMetricOccupancy : a.occupancy,          fmt: formatPercent },
   { code: "IND-24", title: "Taxa de ocupação das vagas de ingresso", source: "INEP",      formula: "QT_ING / QT_VG_NOVA × 100",                   polarity: "↑", mode: "pp",  get: a => a.ingressOccupancy,    fmt: formatPercent },
   { code: "IND-5",  title: "Taxa anual de desvinculação discente", source: "INEP",        formula: "QT_DESVINCULADO / QT_MAT × 100",               polarity: "↓", mode: "pp",  benchmark: () => formatPercent(100 - brazil.result.permanence), get: a => a.dropout, fmt: formatPercent },
   { code: "IND-27", title: "Concluintes sobre matrículas",         source: "INEP",        formula: "QT_CONC / QT_MAT × 100",                  polarity: "↑", mode: "pp",  benchmark: () => formatPercent(brazil.result.completion),  get: a => a.completion, fmt: formatPercent },
@@ -242,7 +242,16 @@ function overviewActiveGroup(c) {
 
 function overviewDataSet(c) {
   const activeGroup = overviewActiveGroup(c);
-  let source = c.base.length ? c.base : c.all;
+  // Round — NÃO cair para c.all quando c.base estiver vazio: c.base só fica
+  // vazio quando um filtro de recorte (Grande Área/Tipo de Curso/Modalidade/
+  // Vagas) genuinamente não encontra nenhuma IES — nesse caso os KPIs devem
+  // refletir universo zero, não silenciosamente voltar a mostrar o universo
+  // inteiro sem filtro. (Fora daqui, o mesmo padrão "c.base.length ? c.base
+  // : c.all" aparece em ~27 outros pontos do dashboard — a maioria são
+  // linhas de referência/comparação, ex. média "Paraná" de radar em
+  // painel-aba2-comparacao.js, que devem continuar caindo para c.all
+  // propositalmente; não alterados nesta rodada.)
+  let source = c.base;
   if (Array.isArray(c.f.university) && c.f.university.length > 0) {
     const filtered = source.filter(u => c.f.university.includes(u.id));
     if (filtered.length) source = filtered;
@@ -322,16 +331,40 @@ function renderKpis(c) {
   el.kpiGrid.classList.add("overview-kpi-grid");
   const data = overviewDataSet(c);
   const current = overviewAgg(data);
+  const hasVagaMetric = c.f.vagaRecorte && c.f.vagaRecorte !== "all";
+  current.hasVagaMetric = hasVagaMetric;
+  if (hasVagaMetric) {
+    current.vagaLabel = VAGA_RECORTE_FIELDS[c.f.vagaRecorte]?.label || c.f.vagaRecorte;
+    current.vagaMetricVacancies = sum(data, u => u.vagaMetricVacancies ?? 0);
+    const vagaOccRows = data.filter(u => u.vagaMetricOccupancy != null);
+    current.vagaMetricOccupancy = vagaOccRows.length ? mean(vagaOccRows, u => u.vagaMetricOccupancy) : null;
+  }
+  const isEmptyUniverse = !data.length;
   el.kpiGrid.style.display = "";
   el.kpiGrid.innerHTML = overviewKpiDefinitions.map(def => {
+    // Round — universo vazio (filtro de recorte sem nenhuma IES): contagens
+    // (sum) já mostram 0 naturalmente, pois sum([]) é 0. Taxas
+    // (def.fmt === formatPercent) não podem mostrar "0,0%" nesse caso — 0/0
+    // é indefinido, não uma taxa de 0% — por isso viram "—" com tooltip
+    // explicando, reaproveitando a mesma mensagem de empty() (universo vazio
+    // no restante do painel), não um texto novo.
+    const isRate = def.fmt === formatPercent;
+    const vagaOccUnavailable = current.hasVagaMetric && def.code === "IND-26" && current.vagaMetricOccupancy == null;
+    const showUnavailable = (isEmptyUniverse && isRate) || vagaOccUnavailable;
     const value = def.get(current);
+    const displayValue = showUnavailable ? "—" : def.fmt(value);
+    const titleAttr = showUnavailable
+      ? (vagaOccUnavailable
+          ? ` title="Taxa de ocupação não disponível — não há ingressantes desagregados para &quot;${current.vagaLabel}&quot; na base do Censo da Educação Superior"`
+          : ' title="Nenhuma IEES encontrada para o recorte selecionado. Ajuste os filtros para visualizar o painel."')
+      : "";
     const brTag = "";
-    return `<article class="kpi-card overview-kpi">
+    return `<article class="kpi-card overview-kpi"${titleAttr}>
       <div class="kpi-head">
         <div class="kpi-label">${def.title}</div>
         <div class="kpi-icon" aria-hidden="true">${kpiIcon(def.title)}</div>
       </div>
-      <div class="kpi-value">${def.fmt(value)}</div>
+      <div class="kpi-value">${displayValue}</div>
       ${brTag}
     </article>`;
   }).join("");
@@ -720,6 +753,7 @@ const OVERVIEW_METRIC_REFCAMPO = {
   "IND-5": "dropout", "IND-6": "doctors", "IND-26": "occupancy", "IND-27": "completion",
   "IND-37": "employment", "IND-40": "salary", "IND-46": "facultyOcc", "IND-51": "docTidePartic",
   "IND-56": "cres", "IND-58": "docCresOciosidade", "IND-59": "docCresPartic", "IND-60": "cnpq",
+  "IND-47": "docTaxaUtil",
   "IND-81": "tx_execucao_empenho", "IND-82": "tx_liquidacao", "IND-83": "tx_pagamento_liq",
   "IND-84": "grau_contingenciamento", "IND-108": "pctExcelencia",
 };

@@ -3824,7 +3824,7 @@ body {
   }
 }
 
-/* Aba 5 - Qualificação docente, Pesquisa e Pós-Graduação */
+/* Aba 5 - Pesquisa e Pós-Graduação */
 .quality-context-grid {
   grid-template-columns: repeat(4, minmax(170px, 1fr));
 }
@@ -4211,7 +4211,7 @@ body {
   height: 38px;
 }
 
-/* Aba 6 - Corpo Docente e Capacidade Operacional */
+/* Aba 6 - Qualificação Docente e Capacidade Operacional */
 .faculty-context-grid {
   grid-template-columns: repeat(4, minmax(170px, 1fr));
 }
@@ -5675,6 +5675,51 @@ body {
   align-items: center;
   gap: 8px;
   flex-shrink: 0;
+}
+
+/* Recorte em 2 linhas: linha 1 (filtros de dado) fixa e sem quebra;
+   linha 2 (cluster + status) separada por borda, quebra só como último
+   recurso (ver .filter-bar-row-2 abaixo). */
+.filter-bar-left-nowrap {
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: thin;
+  padding-bottom: 2px;
+}
+
+/* Enquanto um dropdown filho (ex.: IEES) está aberto, o corte vertical
+   precisa sair do caminho — overflow-x/overflow-y não podem ser
+   independentes quando um dos dois não é "visible" (o navegador recalcula o
+   outro eixo para "auto"), então o par inteiro vira "visible" aqui. Efeito
+   colateral aceito: o scroll horizontal da linha 1 fica suspenso enquanto o
+   dropdown estiver aberto. */
+.filter-bar-left-nowrap.has-open-dropdown {
+  overflow: visible;
+}
+
+.filter-bar-left-nowrap > * {
+  flex-shrink: 0;
+}
+
+.filter-bar-row-2 {
+  border-top: 1px solid var(--gray-200);
+}
+
+.filter-inline-group-course {
+  flex: 1 1 210px;
+  min-width: 210px;
+  flex-shrink: 0;
+}
+
+.filter-inline-group-course .filter-inline-select {
+  width: 100%;
+  min-width: 0;
+  max-width: none;
+}
+
+#yearFilter {
+  min-width: 70px;
 }
 
 .filter-bar-label {
@@ -7903,14 +7948,17 @@ details.ind-detail-accordion .catalog-card { border: none; border-radius: 0; mar
   transform: translateX(-50%) translateY(0);
 }
 
-/* ── Nota de cobertura e fonte abaixo do filtro de ano ── */
+/* ── Nota de cobertura e fonte, legenda abaixo do card de Recorte ── */
+.filter-bar-note-row {
+  order: 3;
+  margin: -8px 0 14px;
+  padding: 0 18px;
+}
+
 #yearContextNote {
-  flex: 0 0 100%;
   font-size: 11px;
   color: var(--text-secondary, #6b7280);
   line-height: 1.5;
-  margin-top: 2px;
-  padding: 0 2px;
   transition: opacity 0.15s ease;
 }
 

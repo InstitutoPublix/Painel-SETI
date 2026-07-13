@@ -1,5 +1,5 @@
 /* ==========================================================================
-   ABA 5 — Qualificação docente, Pesquisa e Pós-Graduação
+   ABA 5 — Pesquisa e Pós-Graduação
    Redefine as funções desta aba carregando-as após painel.js.
    Constantes definidas em painel.js (brasil, brVal, etc.) são acessadas
    como globais — não redeclaradas aqui.
@@ -17,7 +17,6 @@
 // código — comportamento diferente do visto nas Abas 3/4, onde o texto após
 // "· " era um sufixo diferente do nome puro.
 const ABA5_LABEL_TO_IND = {
-  "Proporção de docentes com doutorado · Proporção de docentes com doutorado": "ind6",              // pós expansão (fonte: "IND-6 · Proporção de docentes com doutorado")
   "Captação de recursos do CNPq · Captação de recursos do CNPq": "ind60",                            // pós expansão (fonte: "IND-60 · Captação de recursos do CNPq")
   "Número de vínculos de fomento do CNPq · Número de vínculos de fomento do CNPq": "ind61",          // pós expansão (fonte: "IND-61 · Número de vínculos de fomento do CNPq")
   "Distribuição por grande área do conhecimento": "ind98",                                           // sem "IND-N" no h3 — código confirmado no card-subtitle ("IND-98 · ...")
@@ -30,7 +29,6 @@ function qualityBlock(title, c) {
   // try/catch defensivo: uma exceção em um bloco (ex.: campo nulo no escopo
   // Brasil) não pode apagar a aba inteira.
   try {
-    if (title.includes("Qualificação")) return qualityFacultyBlock(c);
     if (title.includes("Pós-grad")) return qualityCapesBlock(c);
     if (title.includes("Pesquisa")) return qualityResearchBlock(c);
     return qualityInternationalBlock(c);
@@ -95,92 +93,6 @@ function estimatedFaculty(u) {
   if (u.docExe) return u.docExe;
   if (u.docTotal) return u.docTotal;
   return Math.max(80, Math.round(u.students / 15));
-}
-
-// ── 1. Qualificação docente ─────────────────────────────────────────────────
-function qualityFacultyBlock(c) {
-  let rows = chartRowsByLocal(c, "qualityDoctorBars", qualityRows(c));
-  const allRows = c.base.length ? c.base : c.all;
-  // Cards respondem ao filtro de IEES: com seleção ativa, recalculam sobre
-  // as IEES selecionadas (antes usavam sempre o universo completo).
-  const selRows = c.display && c.display.length ? c.display : allRows;
-  const selLabel = c.display && c.display.length && c.display.length < allRows.length
-    ? (c.display.length === 1 ? c.display[0].sigla : `${c.display.length} IEES selecionadas`)
-    : null;
-  const scopeTxt = selLabel || (isBrasilContext(c) ? "média nacional" : "média PR");
-  const clusterMean = mean(rows.length ? rows : qualityRows(c), u => u.doctors);
-  // Referência Geral (whitelist v1) — só troca o card de exibição abaixo; não
-  // usada em qualityDoctorBars/qualityFacultyTable (mais abaixo neste arquivo)
-  // porque lá a mesma média também calibra tone()/cor das barras/células — um
-  // valor fixo extremo quebraria essas faixas de cor (ver changelog).
-  const refGeralDoctors = getReferenciaGeral("doctors");
-  const act = qualityIndFilter(["ind6", "ind7", "ind8", "ind9"]);
-
-  const cards = `<div class="score-grid quality-context-grid">
-    ${score(`Doutores — ${scopeTxt}`, formatPercent(mean(selRows, u => u.doctors)), "IND-6 · recorte do filtro de IEES", mean(selRows, u => u.doctors), brVal("doctorate"))}
-    ${refGeralDoctors
-      ? score(`Referência (${refGeralDoctors.sigla})`, formatPercent(refGeralDoctors.valor), "Melhor valor bruto entre as 40 IES (fixo)", refGeralDoctors.valor)
-      : score("Média do cluster", formatPercent(clusterMean), `${c.f.groupBy.toUpperCase()} · ${explicitClusterActive(c) ? c.f.groupLevel : "todos"}`, clusterMean)}
-    ${score(`Docentes estrangeiros — ${scopeTxt}`, formatPercent(mean(selRows, foreignFacultyRate)), "IND-8 · recorte do filtro de IEES", mean(selRows, foreignFacultyRate) * 10)}
-    ${score(`Portal CAPES — ${scopeTxt}`, formatPercent(mean(selRows, capesPortalAccess)), "IND-9 · % das IEES do recorte com acesso", mean(selRows, capesPortalAccess))}
-  </div>`;
-
-  const barsCard = `<article class="visual-card mt-14"><h3>IND-6 · Proporção de docentes com doutorado</h3><p class="card-subtitle">V4 é a variável natural de agrupamento. Linhas tracejadas: laranja = média do cluster · azul = média ${isBrasilContext(c) ? "nacional" : "PR"} · roxa = referência nacional INEP.</p>${quartilChipStrip("qualityDoctorBars", c.f.groupBy, c.base, c)}${qualityDoctorBars(c)}</article>`;
-
-  return `${cards}
-  ${!act || act === "ind6" ? barsCard : ""}
-  ${!act || act !== "ind6" ? qualityFacultyTable(rows.length ? rows : qualityRows(c), act) : ""}`;
-}
-
-function qualityDoctorBars(c) {
-  let rows = chartRowsByLocal(c, "qualityDoctorBars", qualityRows(c));
-  const allRows = c.base.length ? c.base : c.all;
-  const clusterIds = new Set(rows.map(u => u.id));
-  const chartRows = explicitClusterActive(c) ? allRows : rows;
-  const clusterMean = mean(rows, u => u.doctors);
-  const prMean = mean(allRows, u => u.doctors);
-  const inepRef = brazil.result.doctorate;
-  const sorted = [...chartRows].sort((a, b) => b.doctors - a.doctors);
-  const rankMap = new Map([...rows].sort((a,b)=>b.doctors-a.doctors).map((u,i)=>[u.id,i+1]));
-  const doctorTone = v => v >= clusterMean ? "rate-high" : v >= clusterMean - 10 ? "rate-mid" : "rate-low";
-  const deltaPP = (v, ref) => { const d = v - ref; return (d >= 0 ? "+" : "") + d.toFixed(1).replace(".", ",") + " p.p."; };
-  return `<div class="dual-reference-note"><span><i class="ref-dot ref-cluster"></i>Média cluster: <strong>${formatPercent(clusterMean)}</strong></span><span><i class="ref-dot ref-pr"></i>Média ${isBrasilContext(c) ? "nacional" : "PR"}: <strong>${formatPercent(prMean)}</strong></span><span><i class="ref-dot ref-inep"></i>Referência nacional INEP: <strong>${formatPercent(inepRef)}</strong></span></div>
-  <div class="bars dual-ref-bars quality-doctor-bars" style="--cluster-ref:${clamp(clusterMean,0,100)}%;--pr-ref:${clamp(prMean,0,100)}%;--inep-ref:${clamp(inepRef,0,100)}%">${sorted.map(u => { const rank = rankMap.get(u.id) || "-"; const delta = deltaPP(u.doctors, clusterMean); return `<div class="bar-row ${clusterIds.has(u.id) ? "in-cluster" : "out-cluster"} ${isUniSelected(c.f, u.id) ? "selected" : ""}"><span class="bar-name" title="${u.nome}">${u.sigla}</span><span class="bar-track"><span class="bar-fill ${doctorTone(u.doctors)}" style="width:${clamp(u.doctors,4,100)}%" title="${formatPercent(u.doctors)} · ${rank}º no cluster · ${delta} vs. média cluster · INEP BR ${formatPercent(inepRef)}"></span><span class="cluster-ref-line" aria-hidden="true"></span><span class="pr-ref-line" aria-hidden="true"></span><span class="inep-ref-line" aria-hidden="true"></span></span><span class="bar-value" title="${formatPercent(u.doctors)} — ${rank}º no cluster">${formatPercent(u.doctors)} <span class="bar-delta ${u.doctors >= clusterMean ? "delta-pos" : "delta-neg"}">${delta}</span></span></div>`; }).join("")}</div>`;
-}
-
-// Tabela visual de qualificação docente: mini-barras coloridas + delta vs média
-// (mesma linguagem da Tabela comparativa da ABA 2)
-function qualityFacultyTable(rows, act) {
-  if (!rows.length) return "";
-  let cols = [
-    { code: "ind6", h: "IND-6 Doutores",               get: u => u.doctors,            fmt: formatPercent, max: 100 },
-    { code: "ind8", h: "IND-8 Docentes estrangeiros",  get: u => foreignFacultyRate(u), fmt: formatPercent, max: null },
-    { code: "ind7", h: "IND-7 Mobilidade acadêmica",   get: u => mobilityRate(u),       fmt: formatPercent, max: null }
-  ];
-  if (act) cols = cols.filter(col => col.code === act);
-  const showPortal = !act || act === "ind9";
-  const means = cols.map(col => mean(rows, col.get));
-  const maxes = cols.map((col, i) => col.max || Math.max(...rows.map(col.get), 0.001));
-  const tone = (v, avg) => v >= avg * 1.1 ? "g" : v <= avg * 0.9 ? "r" : "y";
-  const toneBg  = { g: "#f0faf5", y: "#fffbeb", r: "#fdf2f2" };
-  const toneBar = { g: "#14804a", y: "#f59e0b", r: "#dc2626" };
-  const trs = [...rows].sort((a, b) => b.doctors - a.doctors).map(u => {
-    const tds = cols.map((col, i) => {
-      const v = col.get(u);
-      const t = tone(v, means[i]);
-      const d = v - means[i];
-      const deltaTxt = (d >= 0 ? "+" : "") + d.toFixed(1).replace(".", ",");
-      return `<td style="background:${toneBg[t]}"><span>${col.fmt(v)}</span> <span class="bar-delta ${d >= 0 ? "delta-pos" : "delta-neg"}">(${deltaTxt})</span><div style="height:5px;border-radius:3px;background:${toneBar[t]};width:${clamp(v / maxes[i] * 100, 2, 100).toFixed(1)}%;margin-top:4px;min-width:3px"></div></td>`;
-    }).join("");
-    const portalTd = showPortal ? `<td style="text-align:center">${capesPortalAccess(u) ? '<span class="status-pill status-high">Sim</span>' : '<span class="status-pill status-low">Não</span>'}</td>` : "";
-    return `<tr><td><strong>${u.sigla}</strong></td>${tds}${portalTd}</tr>`;
-  }).join("");
-  const footer = `<tr><td><em>Média do cluster</em></td>${cols.map((col, i) => `<td><em>${col.fmt(means[i])}</em></td>`).join("")}${showPortal ? "<td></td>" : ""}</tr>`;
-  return `<div class="table-wrap mt-14">
-    <h3>Indicadores de qualificação docente</h3>
-    <p class="card-subtitle">Verde: ≥ 10% acima da média do cluster · Amarelo: na faixa da média (±10%) · Vermelho: ≥ 10% abaixo. Entre parênteses, a diferença para a média.</p>
-    <table class="data-table quality-visual-table"><thead><tr><th>IEES</th>${cols.map(col => `<th>${col.h}</th>`).join("")}${showPortal ? "<th>IND-9 Portal CAPES</th>" : ""}</tr></thead><tbody>${trs}</tbody><tfoot>${footer}</tfoot></table>
-  </div>`;
 }
 
 // ── 2. Pós-graduação e CAPES ─────────────────────────────────────────────────
@@ -403,11 +315,19 @@ function cnpqBars(c) {
   const allRows = c.base.length ? c.base : c.all;
   const clusterIds = new Set(rows.map(u => u.id));
   const chartRows = explicitClusterActive(c) ? allRows : rows;
-  const max = Math.max(...chartRows.map(u => u.cnpq || 0), 1);
-  const ref = mean(rows, u => u.cnpq || 0) || 1;
-  const cnpqTone = v => v >= ref ? "rate-high" : v >= ref * 0.65 ? "rate-mid" : "rate-low";
-  const deltaRel = v => { const d = (v - ref) / ref * 100; return (d >= 0 ? "+" : "") + d.toFixed(1).replace(".", ",") + "%"; };
-  return `<div class="bars-reference-note"><span>Média do cluster: <strong>${formatCurrencyMillions(ref)}</strong></span></div><div class="bars overview-cluster-bars cnpq-bars" style="--ref-pos:${clamp(ref / max * 100,0,100)}%">${[...chartRows].sort((a,b)=>(b.cnpq||0)-(a.cnpq||0)).map(u => { const perDoc = formatCurrency((u.cnpq || 0) * 1000000 / estimatedFaculty(u)); const delta = deltaRel(u.cnpq || 0); return `<div class="bar-row ${clusterIds.has(u.id) ? "in-cluster" : "out-cluster"} ${isUniSelected(c.f, u.id) ? "selected" : ""}"><span class="bar-name" title="${u.nome}">${u.sigla}</span><span class="bar-track"><span class="bar-fill ${cnpqTone(u.cnpq || 0)}" style="width:${clamp((u.cnpq || 0) / max * 100,4,100)}%"></span><span class="bar-reference" aria-hidden="true"></span></span><span class="bar-value" title="${formatCurrencyMillions(u.cnpq || 0)} · ${perDoc}/doc. · ${delta} vs. média">${formatCurrencyMillions(u.cnpq || 0)} <span class="bar-delta ${(u.cnpq || 0) >= ref ? "delta-pos" : "delta-neg"}">${delta}</span></span></div>`; }).join("")}</div>`;
+  const clusterMean = mean(rows, u => u.cnpq || 0) || 1;
+  // Referência Geral (whitelist v1) — cnpq (40 IES). Site NÃO seguro para
+  // troca completa: cnpqTone()/deltaRel() usam `ref` como limiar RELATIVO
+  // (100%/65%) que calibra cor e delta de cada barra — diferente de
+  // occupancyTone() (Aba 3, limiares fixos). Mantido clusterMean para
+  // tone/delta; só a posição/rótulo da nota de referência usam refGeral.
+  const refGeral = getReferenciaGeral("cnpq");
+  const displayRef = refGeral ? refGeral.valor : clusterMean;
+  const refLabel = refGeral ? `Referência (${refGeral.sigla})` : "Média do cluster";
+  const max = Math.max(...chartRows.map(u => u.cnpq || 0), displayRef, 1);
+  const cnpqTone = v => v >= clusterMean ? "rate-high" : v >= clusterMean * 0.65 ? "rate-mid" : "rate-low";
+  const deltaRel = v => { const d = (v - clusterMean) / clusterMean * 100; return (d >= 0 ? "+" : "") + d.toFixed(1).replace(".", ",") + "%"; };
+  return `<div class="bars-reference-note"><span>${refLabel}: <strong>${formatCurrencyMillions(displayRef)}</strong></span></div><div class="bars overview-cluster-bars cnpq-bars" style="--ref-pos:${clamp(displayRef / max * 100,0,100)}%">${[...chartRows].sort((a,b)=>(b.cnpq||0)-(a.cnpq||0)).map(u => { const perDoc = formatCurrency((u.cnpq || 0) * 1000000 / estimatedFaculty(u)); const delta = deltaRel(u.cnpq || 0); return `<div class="bar-row ${clusterIds.has(u.id) ? "in-cluster" : "out-cluster"} ${isUniSelected(c.f, u.id) ? "selected" : ""}"><span class="bar-name" title="${u.nome}">${u.sigla}</span><span class="bar-track"><span class="bar-fill ${cnpqTone(u.cnpq || 0)}" style="width:${clamp((u.cnpq || 0) / max * 100,4,100)}%"></span><span class="bar-reference" aria-hidden="true"></span></span><span class="bar-value" title="${formatCurrencyMillions(u.cnpq || 0)} · ${perDoc}/doc. · ${delta} vs. média do cluster">${formatCurrencyMillions(u.cnpq || 0)} <span class="bar-delta ${(u.cnpq || 0) >= clusterMean ? "delta-pos" : "delta-neg"}">${delta}</span></span></div>`; }).join("")}</div>`;
 }
 
 function cnpqScatter(c) {
@@ -602,12 +522,18 @@ function pgGrandeAreaChart(rows, c) {
 function pgExcelenciaBars(rows) {
   const valid = rows.filter(u => u.pctExcelencia != null);
   if (!valid.length) return `<p class="card-subtitle">Sem dados de excelência para este recorte.</p>`;
-  const max    = Math.max(...valid.map(u => u.pctExcelencia), 0.1);
   const avg    = mean(valid, u => u.pctExcelencia);
+  // Referência Geral (whitelist v1) — pctExcelencia (40 IES). Site NÃO
+  // seguro para troca completa: tone() usa `avg` como limiar RELATIVO
+  // (110%/50%). Mantido avg para tone; só posição/rótulo usam refGeral.
+  const refGeral = getReferenciaGeral("pctExcelencia");
+  const displayRef = refGeral ? refGeral.valor : avg;
+  const refLabel = refGeral ? `Referência (${refGeral.sigla})` : "Média do recorte";
+  const max    = Math.max(...valid.map(u => u.pctExcelencia), displayRef, 0.1);
   const sorted = [...valid].sort((a, b) => b.pctExcelencia - a.pctExcelencia);
   const tone   = v => v >= avg * 1.1 ? "rate-high" : v >= avg * 0.5 ? "rate-mid" : "rate-low";
-  return `<div class="bars-reference-note"><span>Média do recorte: <strong>${avg.toFixed(1).replace(".",",")}%</strong></span></div>
-  <div class="bars" style="--ref-pos:${clamp(avg/Math.max(max,0.1)*100,0,100).toFixed(1)}%">
+  return `<div class="bars-reference-note"><span>${refLabel}: <strong>${displayRef.toFixed(1).replace(".",",")}%</strong></span></div>
+  <div class="bars" style="--ref-pos:${clamp(displayRef/Math.max(max,0.1)*100,0,100).toFixed(1)}%">
     ${sorted.map(u => `<div class="bar-row"><span class="bar-name" title="${u.nome}">${u.sigla}</span><span class="bar-track"><span class="bar-fill ${tone(u.pctExcelencia)}" style="width:${u.pctExcelencia > 0 ? clamp(u.pctExcelencia/max*100,2,100).toFixed(1) : 0}%"></span><span class="bar-reference" aria-hidden="true"></span></span><span class="bar-value">${u.pctExcelencia.toFixed(1).replace(".",",")}%</span></div>`).join("")}
   </div>`;
 }

@@ -2526,8 +2526,8 @@ if _nao_classificadas:
 #
 # Roda por último (depois de todas as seções) porque a whitelist inclui campos
 # de seções tardias: doctors (1), occupancy/dropout/completion (2),
-# facultyOcc/cres/docCresOciosidade/docCresPartic/docTidePartic (3), cnpq (4),
-# pctExcelencia (5b), employment/salary (8), insertionRatePR (9),
+# facultyOcc/docTaxaUtil/cres/docCresOciosidade/docCresPartic/docTidePartic (3),
+# cnpq (4), pctExcelencia (5b), employment/salary (8), insertionRatePR (9),
 # tx_execucao_empenho/grau_contingenciamento/tx_liquidacao/tx_pagamento_liq
 # (6b — merge de d8050_by_year 2024 em results, ~linha 1594).
 #
@@ -2563,6 +2563,7 @@ _REFERENCIA_GERAL_WHITELIST = {
     "cnpq":                    (IEES,    "maior", "40 IES"),
     "pctExcelencia":           (IEES,    "maior", "40 IES"),
     "facultyOcc":              (IEES_PR, "maior", "7 IES-PR"),
+    "docTaxaUtil":             (IEES_PR, "maior", "7 IES-PR"),
     "cres":                    (IEES_PR, "maior", "7 IES-PR"),
     "docCresOciosidade":       (IEES_PR, "menor", "7 IES-PR"),
     "docCresPartic":           (IEES_PR, "maior", "7 IES-PR"),

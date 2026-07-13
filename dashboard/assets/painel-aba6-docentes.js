@@ -1,5 +1,5 @@
 /* ==========================================================================
-   ABA 6 — Corpo Docente e Capacidade Operacional
+   ABA 6 — Qualificação Docente e Capacidade Operacional
    Redefine as funções desta aba carregando-as após painel.js.
    _SCATTER_IES_COLORS é const em painel.js (linha 11938) — acessada como global.
    ========================================================================== */
@@ -11,6 +11,7 @@
 // (painel.js ~5009) duplica o nome em vez de só trocar o código — mesmo
 // padrão visto na Aba 5, diferente do "nome · sufixo distinto" das Abas 3/4.
 const ABA6_LABEL_TO_IND = {
+  "Proporção de docentes com doutorado · Proporção de docentes com doutorado": "ind6",                             // pós expansão (fonte: "IND-6 · Proporção de docentes com doutorado") — migrado da Aba 5
   "Taxa de ocupação do quadro docente · Taxa de ocupação do quadro docente": "ind46",                              // pós expansão (fonte: "IND-46 · Taxa de ocupação do quadro docente")
   "Participação do TIDE no quadro docente disponível · Participação do TIDE no quadro docente disponível": "ind51" // pós expansão (fonte: "IND-51 · Participação do TIDE no quadro docente disponível")
 };
@@ -120,6 +121,7 @@ function facultyAgg(rows) {
 }
 
 function facultyBlock(title, c) {
+  if (title.includes("Qualificação")) return facultyQualificationBlock(c);
   if (title.includes("Quadro legal")) return facultyLegalBlock(c);
   if (title.includes("Vagas disponíveis")) return facultyVacanciesBlock(c);
   if (title.includes("TIDE")) return facultyTideBlock(c);
@@ -150,6 +152,89 @@ renderSystemAlerts = function renderSystemAlertsWithFaculty(c) {
 };
 window.renderSystemAlerts = renderSystemAlerts;
 
+// ── 0. Qualificação docente (migrado da Aba 5) ──────────────────────────────
+// foreignFacultyRate, mobilityRate, capesPortalAccess e qualityRows/estimatedFaculty
+// permanecem definidas em painel-aba5-qualidade.js (ainda usadas lá pelos blocos
+// "Pesquisa e CNPq" e "Internacionalização") — acessadas aqui como globais,
+// mesmo padrão já usado por estimatedFaculty nesta aba.
+function facultyQualificationBlock(c) {
+  let rows = chartRowsByLocal(c, "facultyQualificationBars", qualityRows(c));
+  const allRows = c.base.length ? c.base : c.all;
+  const selRows = c.display && c.display.length ? c.display : allRows;
+  const selLabel = c.display && c.display.length && c.display.length < allRows.length
+    ? (c.display.length === 1 ? c.display[0].sigla : `${c.display.length} IEES selecionadas`)
+    : null;
+  const scopeTxt = selLabel || (isBrasilContext(c) ? "média nacional" : "média PR");
+  const clusterMean = mean(rows.length ? rows : qualityRows(c), u => u.doctors);
+  const refGeralDoctors = getReferenciaGeral("doctors");
+  const act = facultyIndFilter(["ind6", "ind7", "ind8", "ind9"]);
+
+  const cards = `<div class="score-grid quality-context-grid">
+    ${score(`Doutores — ${scopeTxt}`, formatPercent(mean(selRows, u => u.doctors)), "IND-6 · recorte do filtro de IEES", mean(selRows, u => u.doctors), brVal("doctorate"))}
+    ${refGeralDoctors
+      ? score(`Referência (${refGeralDoctors.sigla})`, formatPercent(refGeralDoctors.valor), "Melhor valor bruto entre as 40 IES (fixo)", refGeralDoctors.valor)
+      : score("Média do cluster", formatPercent(clusterMean), `${c.f.groupBy.toUpperCase()} · ${explicitClusterActive(c) ? c.f.groupLevel : "todos"}`, clusterMean)}
+    ${score(`Docentes estrangeiros — ${scopeTxt}`, formatPercent(mean(selRows, foreignFacultyRate)), "IND-8 · recorte do filtro de IEES", mean(selRows, foreignFacultyRate) * 10)}
+    ${score(`Portal CAPES — ${scopeTxt}`, formatPercent(mean(selRows, capesPortalAccess)), "IND-9 · % das IEES do recorte com acesso", mean(selRows, capesPortalAccess))}
+  </div>`;
+
+  const barsCard = `<article class="visual-card mt-14"><h3>IND-6 · Proporção de docentes com doutorado</h3><p class="card-subtitle">V4 é a variável natural de agrupamento. Linhas tracejadas: laranja = média do cluster · azul = média ${isBrasilContext(c) ? "nacional" : "PR"} · roxa = referência nacional INEP.</p>${quartilChipStrip("facultyQualificationBars", c.f.groupBy, c.base, c)}${facultyQualificationBars(c)}</article>`;
+
+  return `${cards}
+  ${!act || act === "ind6" ? barsCard : ""}
+  ${!act || act !== "ind6" ? facultyQualificationTable(rows.length ? rows : qualityRows(c), act) : ""}`;
+}
+
+function facultyQualificationBars(c) {
+  let rows = chartRowsByLocal(c, "facultyQualificationBars", qualityRows(c));
+  const allRows = c.base.length ? c.base : c.all;
+  const clusterIds = new Set(rows.map(u => u.id));
+  const chartRows = explicitClusterActive(c) ? allRows : rows;
+  const clusterMean = mean(rows, u => u.doctors);
+  const prMean = mean(allRows, u => u.doctors);
+  const inepRef = brazil.result.doctorate;
+  const sorted = [...chartRows].sort((a, b) => b.doctors - a.doctors);
+  const rankMap = new Map([...rows].sort((a,b)=>b.doctors-a.doctors).map((u,i)=>[u.id,i+1]));
+  const doctorTone = v => v >= clusterMean ? "rate-high" : v >= clusterMean - 10 ? "rate-mid" : "rate-low";
+  const deltaPP = (v, ref) => { const d = v - ref; return (d >= 0 ? "+" : "") + d.toFixed(1).replace(".", ",") + " p.p."; };
+  return `<div class="dual-reference-note"><span><i class="ref-dot ref-cluster"></i>Média cluster: <strong>${formatPercent(clusterMean)}</strong></span><span><i class="ref-dot ref-pr"></i>Média ${isBrasilContext(c) ? "nacional" : "PR"}: <strong>${formatPercent(prMean)}</strong></span><span><i class="ref-dot ref-inep"></i>Referência nacional INEP: <strong>${formatPercent(inepRef)}</strong></span></div>
+  <div class="bars dual-ref-bars quality-doctor-bars" style="--cluster-ref:${clamp(clusterMean,0,100)}%;--pr-ref:${clamp(prMean,0,100)}%;--inep-ref:${clamp(inepRef,0,100)}%">${sorted.map(u => { const rank = rankMap.get(u.id) || "-"; const delta = deltaPP(u.doctors, clusterMean); return `<div class="bar-row ${clusterIds.has(u.id) ? "in-cluster" : "out-cluster"} ${isUniSelected(c.f, u.id) ? "selected" : ""}"><span class="bar-name" title="${u.nome}">${u.sigla}</span><span class="bar-track"><span class="bar-fill ${doctorTone(u.doctors)}" style="width:${clamp(u.doctors,4,100)}%" title="${formatPercent(u.doctors)} · ${rank}º no cluster · ${delta} vs. média cluster · INEP BR ${formatPercent(inepRef)}"></span><span class="cluster-ref-line" aria-hidden="true"></span><span class="pr-ref-line" aria-hidden="true"></span><span class="inep-ref-line" aria-hidden="true"></span></span><span class="bar-value" title="${formatPercent(u.doctors)} — ${rank}º no cluster">${formatPercent(u.doctors)} <span class="bar-delta ${u.doctors >= clusterMean ? "delta-pos" : "delta-neg"}">${delta}</span></span></div>`; }).join("")}</div>`;
+}
+
+// Tabela visual de qualificação docente: mini-barras coloridas + delta vs média
+function facultyQualificationTable(rows, act) {
+  if (!rows.length) return "";
+  let cols = [
+    { code: "ind6", h: "IND-6 Doutores",               get: u => u.doctors,            fmt: formatPercent, max: 100 },
+    { code: "ind8", h: "IND-8 Docentes estrangeiros",  get: u => foreignFacultyRate(u), fmt: formatPercent, max: null },
+    { code: "ind7", h: "IND-7 Mobilidade acadêmica",   get: u => mobilityRate(u),       fmt: formatPercent, max: null }
+  ];
+  if (act) cols = cols.filter(col => col.code === act);
+  const showPortal = !act || act === "ind9";
+  const means = cols.map(col => mean(rows, col.get));
+  const maxes = cols.map((col, i) => col.max || Math.max(...rows.map(col.get), 0.001));
+  const tone = (v, avg) => v >= avg * 1.1 ? "g" : v <= avg * 0.9 ? "r" : "y";
+  const toneBg  = { g: "#f0faf5", y: "#fffbeb", r: "#fdf2f2" };
+  const toneBar = { g: "#14804a", y: "#f59e0b", r: "#dc2626" };
+  const trs = [...rows].sort((a, b) => b.doctors - a.doctors).map(u => {
+    const tds = cols.map((col, i) => {
+      const v = col.get(u);
+      const t = tone(v, means[i]);
+      const d = v - means[i];
+      const deltaTxt = (d >= 0 ? "+" : "") + d.toFixed(1).replace(".", ",");
+      return `<td style="background:${toneBg[t]}"><span>${col.fmt(v)}</span> <span class="bar-delta ${d >= 0 ? "delta-pos" : "delta-neg"}">(${deltaTxt})</span><div style="height:5px;border-radius:3px;background:${toneBar[t]};width:${clamp(v / maxes[i] * 100, 2, 100).toFixed(1)}%;margin-top:4px;min-width:3px"></div></td>`;
+    }).join("");
+    const portalTd = showPortal ? `<td style="text-align:center">${capesPortalAccess(u) ? '<span class="status-pill status-high">Sim</span>' : '<span class="status-pill status-low">Não</span>'}</td>` : "";
+    return `<tr><td><strong>${u.sigla}</strong></td>${tds}${portalTd}</tr>`;
+  }).join("");
+  const footer = `<tr><td><em>Média do cluster</em></td>${cols.map((col, i) => `<td><em>${col.fmt(means[i])}</em></td>`).join("")}${showPortal ? "<td></td>" : ""}</tr>`;
+  return `<div class="table-wrap mt-14">
+    <h3>Indicadores de qualificação docente</h3>
+    <p class="card-subtitle">Verde: ≥ 10% acima da média do cluster · Amarelo: na faixa da média (±10%) · Vermelho: ≥ 10% abaixo. Entre parênteses, a diferença para a média.</p>
+    <table class="data-table quality-visual-table"><thead><tr><th>IEES</th>${cols.map(col => `<th>${col.h}</th>`).join("")}${showPortal ? "<th>IND-9 Portal CAPES</th>" : ""}</tr></thead><tbody>${trs}</tbody><tfoot>${footer}</tfoot></table>
+  </div>`;
+}
+
 function facultyLegalBlock(c) {
   const rows = facultyRows(c);
   const a = facultyAgg(rows);
@@ -168,6 +253,16 @@ function facultyLegalBlock(c) {
 // Cada barra é 100% das vagas (ocupadas + disponíveis + condicionadas), com o
 // percentual dentro de cada segmento; barra de composição média do cluster no
 // topo e linha tracejada contínua da ocupação média (imagem de referência).
+// Referência Geral (whitelist v1, facultyOcc, 7 IES-PR) — PENDÊNCIA,
+// deliberadamente NÃO conectada nesta rodada. avgOcc abaixo é um agregado
+// PONDERADO (soma de occupied / soma de totalCodes do recorte inteiro via
+// facultyAgg), não uma média simples por IES — grandeza incompatível com
+// getReferenciaGeral("facultyOcc"), que é o melhor VALOR BRUTO de uma única
+// IES. Comparar os dois diretamente seria enganoso. O card limpo equivalente
+// (média simples de facultyMetrics(u).occupationRate) já foi conectado em
+// facultyTimeline() — ver refGeralFacultyOcc lá. Resolver aqui exige desenhar
+// um texto de disclaimer específico (rodada futura), não é só trocar a
+// referência.
 function facultyOccupationProgress(c) {
   const rows = facultyRows(c);
   const allRows = c.base.length ? c.base : c.all;
@@ -232,11 +327,26 @@ function facultyLegalVisualTable(rows, c, act) {
     }).join("");
     return `<tr><td><strong>${u.sigla}</strong><br><span>${u.groups[c.f.groupBy] ?? "—"}</span></td>${tds}</tr>`;
   }).join("");
-  const footer = `<tr><td><em>Média do cluster</em></td>${cols.map((col, i) => `<td><em>${col.fmt(means[i])}</em></td>`).join("")}</tr>`;
+  // Referência Geral (whitelist v1) — facultyOcc (ind46) / docTaxaUtil
+  // (ind47), 7 IES-PR. Getters já confirmados diretos por IES (facultyMetrics
+  // .occupationRate/.availableUseRate) — sem o agregado ponderado de
+  // facultyOccupationProgress. tone()/delta das CÉLULAS continuam em
+  // means[i] (limiar relativo 105%/95%, não seguro pra virar referência
+  // fixa — mesmo motivo de cnpqBars/pgExcelenciaBars, Aba 5). Rodapé é uma
+  // única linha cobrindo colunas de fontes potencialmente diferentes —
+  // marcação ★ por célula, mesmo padrão de comparisonFooterCell (Aba 2).
+  const refGeralByCode = { ind46: getReferenciaGeral("facultyOcc"), ind47: getReferenciaGeral("docTaxaUtil") };
+  const footer = `<tr><td><em>Média do cluster</em></td>${cols.map((col, i) => {
+    const rg = refGeralByCode[col.code];
+    const mark = rg ? ` <span class="ref-geral-mark" title="Referência: ${rg.sigla}" aria-label="Valor de referência geral (${rg.sigla})"> ★</span>` : "";
+    return `<td><em>${col.fmt(means[i])}</em>${mark}</td>`;
+  }).join("")}</tr>`;
+  const hasRefGeral = cols.some(col => refGeralByCode[col.code]);
   return `<div class="table-wrap mt-14">
     <h3>Quadro legal e ocupação docente</h3>
     <p class="card-subtitle">Verde: ≥ 5% acima da média do cluster · Amarelo: na média (±5%) · Vermelho: ≥ 5% abaixo. Entre parênteses, a diferença para a média.</p>
     <table class="data-table faculty-visual-table"><thead><tr><th>IEES</th>${cols.map(col => `<th>${col.h}</th>`).join("")}</tr></thead><tbody>${trs}</tbody><tfoot>${footer}</tfoot></table>
+    ${hasRefGeral ? '<p class="comparison-table-footnote">★ = valor de referência geral, melhor IES do universo aplicável (7 IES-PR); demais valores = média do cluster.</p>' : ""}
   </div>`;
 }
 
@@ -295,6 +405,16 @@ function facultyTideBlock(c) {
 }
 
 function facultyCresBlock(c) {
+  // Referência Geral (whitelist v1) — docCresPartic (7 IES-PR). Site NÃO seguro
+  // para substituir avgX/quadBg em facultyCresScatter: X é divisor de
+  // quadrante do scatter, trocar por um valor fixo (melhor entre 7 IES)
+  // redistribuiria os pontos de forma desequilibrada entre os quadrantes —
+  // mesmo cuidado já aplicado a retentionScatterBlock (Aba 4). Aqui a
+  // referência só entra como nota textual no subtítulo, sem tocar no cálculo
+  // do quadrante.
+  const refGeralCresPartic = getReferenciaGeral("docCresPartic");
+  const scatterSub = "X = Participação CRES, Y = Ocupação do quadro · Quadrantes definidos pela média do grupo" +
+    (refGeralCresPartic ? ` · Referência PR (IND-59): ${refGeralCresPartic.sigla} ${formatPercent(refGeralCresPartic.valor)}` : "");
   const details =
     '<details open style="margin-bottom:10px;font-size:0.82rem;color:var(--text-secondary,#666);line-height:1.6;">' +
     '<summary style="cursor:pointer;font-weight:600;color:var(--text-primary,#333);margin-bottom:4px;">O que cada linha representa?</summary>' +
@@ -304,7 +424,7 @@ function facultyCresBlock(c) {
     '<li><strong>Taxa de ocupação do quadro docente:</strong> percentual de vagas docentes efetivamente ocupadas em relação às vagas disponíveis.</li>' +
     '<li><strong>Banda sombreada:</strong> intervalo entre a IES com menor e maior utilização de CRES dentro do cluster selecionado — permite ver onde cada IES se posiciona em relação ao grupo.</li>' +
     '</ul></details>';
-  return `<div class="chart-grid"><article class="visual-card"><h3>IND-56, IND-58 e IND-46 · Série mensal operacional</h3><p class="card-subtitle">Evolução anual por IES · Banda sombreada = intervalo min/máx entre as IEES do cluster ativo · Fonte: SETI — Base Docentes - Paraná.xlsx</p>${details}${facultyTimeline(c)}</article><article class="visual-card"><h3>IND-59 × IND-46 · Esforço docente total</h3><p class="card-subtitle">X = Participação CRES, Y = Ocupação do quadro · Quadrantes definidos pela média do grupo</p>${facultyCresScatter(c)}</article></div>`;
+  return `<div class="chart-grid"><article class="visual-card"><h3>IND-56, IND-58 e IND-46 · Série mensal operacional</h3><p class="card-subtitle">Evolução anual por IES · Banda sombreada = intervalo min/máx entre as IEES do cluster ativo · Fonte: SETI — Base Docentes - Paraná.xlsx</p>${details}${facultyTimeline(c)}</article><article class="visual-card"><h3>IND-59 × IND-46 · Esforço docente total</h3><p class="card-subtitle">${scatterSub}</p>${facultyCresScatter(c)}</article></div>`;
 }
 
 function facultyTimeline(c) {
@@ -330,6 +450,18 @@ function facultyTimeline(c) {
   const initUtil = fmt(mean(rows, function(u) { return facultyMetrics(u).cresUseRate; }));
   const initOcio = fmt(mean(rows, function(u) { return facultyMetrics(u).cresIdleRate; }));
   const initOcup = fmt(mean(rows, function(u) { return facultyMetrics(u).occupationRate; }));
+
+  // Referência Geral (whitelist v1) — cres/docCresOciosidade/facultyOcc (7
+  // IES-PR). Os 3 cards mostram a média do recorte/seleção ativa (reage aos
+  // botões de destaque via _ftlUpdateCards) — igual ao padrão já usado nas
+  // Abas 7/8: o valor principal do card não muda, só a legenda ganha a
+  // referência fixa quando disponível. cresUseRate/cresIdleRate/occupationRate
+  // são valores diretos por IES (facultyMetrics), sem problema de grandeza —
+  // diferente do agregado ponderado de facultyOccupationProgress (não tocado
+  // nesta rodada, ver comentário lá).
+  const refGeralCres = getReferenciaGeral("cres");
+  const refGeralOciosidade = getReferenciaGeral("docCresOciosidade");
+  const refGeralFacultyOcc = getReferenciaGeral("facultyOcc");
 
   function _ftlUpdateCards(sel) {
     // sel: array de IEES selecionadas ou null (= todas)
@@ -420,17 +552,17 @@ function facultyTimeline(c) {
     '<div style="flex:1;min-width:120px;padding:10px 14px;background:var(--surface-2,#f5f5f5);border-radius:8px;">' +
       '<div style="font-size:0.72rem;color:var(--text-secondary,#777);text-transform:uppercase;letter-spacing:.04em;">Utilização CRES</div>' +
       '<div id="cardCresUtil" style="font-size:1.3rem;font-weight:700;margin-top:2px;color:#4A6FA5;">' + initUtil + '</div>' +
-      '<div style="font-size:0.70rem;color:var(--text-secondary,#999);">IND-56 · média do cluster</div>' +
+      '<div style="font-size:0.70rem;color:var(--text-secondary,#999);">IND-56 · média do cluster' + (refGeralCres ? ' · Referência (' + refGeralCres.sigla + '): ' + fmt(refGeralCres.valor) : '') + '</div>' +
     '</div>' +
     '<div style="flex:1;min-width:120px;padding:10px 14px;background:var(--surface-2,#f5f5f5);border-radius:8px;">' +
       '<div style="font-size:0.72rem;color:var(--text-secondary,#777);text-transform:uppercase;letter-spacing:.04em;">Ociosidade CRES</div>' +
       '<div id="cardCresOcio" style="font-size:1.3rem;font-weight:700;margin-top:2px;color:#e07b39;">' + initOcio + '</div>' +
-      '<div style="font-size:0.70rem;color:var(--text-secondary,#999);">IND-58 · média do cluster</div>' +
+      '<div style="font-size:0.70rem;color:var(--text-secondary,#999);">IND-58 · média do cluster' + (refGeralOciosidade ? ' · Referência (' + refGeralOciosidade.sigla + '): ' + fmt(refGeralOciosidade.valor) : '') + '</div>' +
     '</div>' +
     '<div style="flex:1;min-width:120px;padding:10px 14px;background:var(--surface-2,#f5f5f5);border-radius:8px;">' +
       '<div style="font-size:0.72rem;color:var(--text-secondary,#777);text-transform:uppercase;letter-spacing:.04em;">Ocupação do quadro</div>' +
       '<div id="cardCresOcup" style="font-size:1.3rem;font-weight:700;margin-top:2px;color:#16875d;">' + initOcup + '</div>' +
-      '<div style="font-size:0.70rem;color:var(--text-secondary,#999);">IND-46 · média do cluster</div>' +
+      '<div style="font-size:0.70rem;color:var(--text-secondary,#999);">IND-46 · média do cluster' + (refGeralFacultyOcc ? ' · Referência (' + refGeralFacultyOcc.sigla + '): ' + fmt(refGeralFacultyOcc.valor) : '') + '</div>' +
     '</div>' +
     '</div>';
 
@@ -576,6 +708,7 @@ function _injectAba6FormulaTooltips() {
     if (!key) return;
     card.setAttribute("data-formula-done", "1");
     injectFormulaTooltip(h3, key);
+    injectLagTooltip(h3, key);
   });
 }
 

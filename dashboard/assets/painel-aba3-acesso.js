@@ -143,9 +143,15 @@ function occupancyBars(c) {
   let clusterRows = chartRowsByLocal(c, "occupancyBars", clusterRowsFor(c));
   const clusterIds = new Set(clusterRows.map(u => u.id));
   const rows = explicitClusterActive(c) ? (c.base.length ? c.base : c.all) : clusterRows;
-  const ref = mean(clusterRows.length ? clusterRows : clusterRowsFor(c), u => u.occupancy);
+  // Referência Geral (whitelist v1) — occupancy (40 IES). Site seguro:
+  // occupancyTone() usa limiares FIXOS (70/55), não a média — só o
+  // --ref-pos/rótulo usam a referência. Mesmo padrão de overviewClusterBars
+  // (Aba 1, painel-aba1-panorama.js ~767).
+  const refGeral = getReferenciaGeral("occupancy");
+  const ref = refGeral ? refGeral.valor : mean(clusterRows.length ? clusterRows : clusterRowsFor(c), u => u.occupancy);
+  const refLabel = refGeral ? `Referência (${refGeral.sigla})` : "Média do cluster";
   const rankedCluster = [...clusterRows].sort((a, b) => b.occupancy - a.occupancy);
-  return `<div class="bars-reference-note"><span>Média do cluster: <strong>${formatPercent(ref)}</strong></span></div><div class="bars overview-cluster-bars occupancy-bars" style="--ref-pos:${clamp(ref,0,100)}%">${[...rows].sort((a,b)=>b.occupancy-a.occupancy).map(u => {
+  return `<div class="bars-reference-note"><span>${refLabel}: <strong>${formatPercent(ref)}</strong></span></div><div class="bars overview-cluster-bars occupancy-bars" style="--ref-pos:${clamp(ref,0,100)}%">${[...rows].sort((a,b)=>b.occupancy-a.occupancy).map(u => {
     const diff = u.occupancy - ref;
     const rank = rankedCluster.findIndex(x => x.id === u.id) + 1;
     const rankLabel = rank > 0 ? `${rank}º no cluster` : "fora do cluster";
@@ -572,7 +578,11 @@ function municipalityOccupancy(u) {
 function stackedCourseBars(c) {
   const rows = clusterRowsFor(c);
   const avg = averageMix(rows);
-  const avgOcc = mean(rows, u => u.occupancy);
+  // Referência Geral (whitelist v1) — occupancy (40 IES). Mesmo site seguro
+  // de occupancyBars nesta mesma aba.
+  const refGeralOcc = getReferenciaGeral("occupancy");
+  const avgOcc = refGeralOcc ? refGeralOcc.valor : mean(rows, u => u.occupancy);
+  const clusterRowLabel = refGeralOcc ? `Referência (${refGeralOcc.sigla})` : "Média do cluster";
   const activeType = state.distributionCourseType || "all";
   const highlight = key => activeType === "all" || activeType === key;
   const MIN_PCT = 13;
@@ -586,7 +596,7 @@ function stackedCourseBars(c) {
   };
   const occBadge = v => `<span class="occ-badge ${occupancyTone(v)}">${formatPercent(v)}</span>`;
   const sorted = [...rows].sort((a, b) => b.occupancy - a.occupancy);
-  const clusterRow = `<tr class="cmix-cluster-row"><td><strong>Média do cluster</strong></td><td>${mixBar(avg)}</td><td>${occBadge(avgOcc)}</td></tr>`;
+  const clusterRow = `<tr class="cmix-cluster-row"><td><strong>${clusterRowLabel}</strong></td><td>${mixBar(avg)}</td><td>${occBadge(avgOcc)}</td></tr>`;
   const rowsHtml = sorted.map(u => `<tr class="${isUniSelected(c.f, u.id) ? "selected" : ""}"><td><strong>${u.sigla}</strong></td><td title="${u.sigla}: Bach. ${formatPercent(courseMix(u).bach*100)} · Lic. ${formatPercent(courseMix(u).lic*100)} · Tecn. ${formatPercent(courseMix(u).tech*100)}">${mixBar(courseMix(u))}</td><td>${occBadge(u.occupancy)}</td></tr>`).join("");
   const typeBtns = `<div class="stack-legend" style="margin-bottom:10px"><button class="stack-type-btn${activeType === "bach" ? " active" : ""}" type="button" onclick="setDistributionCourseType('bach')"><i class="cmix-bach-dot"></i>Bacharelado</button><button class="stack-type-btn${activeType === "lic" ? " active" : ""}" type="button" onclick="setDistributionCourseType('lic')"><i class="cmix-lic-dot"></i>Licenciatura</button><button class="stack-type-btn${activeType === "tech" ? " active" : ""}" type="button" onclick="setDistributionCourseType('tech')"><i class="cmix-tech-dot"></i>Tecnólogo</button></div>`;
   const refYearNote = `<p class="cmix-ref-note" style="font-size:12px;color:var(--text-secondary,#666);margin:0 0 8px">Composição por grau acadêmico reflete o ano selecionado no filtro (quando disponível para a IES na Base Cursos; caso contrário, o ano mais recente disponível).</p>`;

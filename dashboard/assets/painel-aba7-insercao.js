@@ -118,14 +118,17 @@ function employmentGeneralBlock(c) {
   const cluster = employmentAgg(rows);
   const activeLocal = getLocalFilter("employmentGeneralBlock");
   const label = c.selected ? c.selected.sigla : (activeLocal !== "all" ? activeLocal : (explicitClusterActive(c) ? c.group : "Sistema estadual"));
+  const refGeralEmployment = getReferenciaGeral("employment");
+  const refGeralInsertionPR = getReferenciaGeral("insertionRatePR");
+  const refGeralSalary = getReferenciaGeral("salary");
   return `${quartilChipStrip("employmentGeneralBlock", c.f.groupBy, c.base, c)}
   <div class="score-grid employment-kpi-grid">
     ${employmentKpiCard(indicatorName(33), formatNumber(target.totalEgress), label, `Média do cluster: ${formatNumber(cluster.totalEgress / Math.max(rows.length, 1))}`)}
     ${employmentKpiCard(indicatorName(36), formatNumber(target.prInserted), label, `Média do cluster: ${formatNumber(cluster.prInserted / Math.max(rows.length, 1))}`)}
-    ${employmentKpiCard(indicatorName(37), formatPercent(target.prRate), label, `Média do cluster: ${formatPercent(cluster.prRate)}`)}
-    ${employmentKpiCard(indicatorName(35), formatPercent(target.southRate), label, `Média do cluster: ${formatPercent(cluster.southRate)}`)}
+    ${employmentKpiCard(indicatorName(37), formatPercent(target.prRate), label, refGeralEmployment ? `Referência (${refGeralEmployment.sigla}): ${formatPercent(refGeralEmployment.valor)}` : `Média do cluster: ${formatPercent(cluster.prRate)}`)}
+    ${employmentKpiCard(indicatorName(35), formatPercent(target.southRate), label, refGeralInsertionPR ? `Referência (${refGeralInsertionPR.sigla}): ${formatPercent(refGeralInsertionPR.valor)}` : `Média do cluster: ${formatPercent(cluster.southRate)}`)}
     ${employmentKpiCard(indicatorName(39), formatPercent(target.cbo2Rate), label, `Média do cluster: ${formatPercent(cluster.cbo2Rate)}`)}
-    ${employmentKpiCard(indicatorName(40), formatCurrency(target.salary), label, `Média do cluster: ${formatCurrency(cluster.salary)}`)}
+    ${employmentKpiCard(indicatorName(40), formatCurrency(target.salary), label, refGeralSalary ? `Referência (${refGeralSalary.sigla}): ${formatCurrency(refGeralSalary.valor)}` : `Média do cluster: ${formatCurrency(cluster.salary)}`)}
   </div>
   ${metricTable(rows, [["IEES", u => `<strong>${u.sigla}</strong><br><span>${u.municipality}</span>`], [indicatorName(33), u => formatNumber(employmentMetrics(u).totalEgress)], [indicatorName(34), u => formatNumber(employmentMetrics(u).southInserted)], [indicatorName(35), u => formatPercent(employmentMetrics(u).southRate)], [indicatorName(36), u => formatNumber(employmentMetrics(u).prInserted)], [indicatorName(37), u => formatPercent(employmentMetrics(u).prRate)], [indicatorName(38), u => formatNumber(employmentMetrics(u).cbo2Inserted)], [indicatorName(39), u => formatPercent(employmentMetrics(u).cbo2Rate)], [indicatorName(40), u => formatCurrency(employmentMetrics(u).salary)], [indicatorName(41), u => formatNumber(employmentMetrics(u).localInserted)], [indicatorName(42), u => formatPercent(employmentMetrics(u).localRate)], [indicatorName(80) + estBadge("Índice institucional de dispersão (semente legada) — sem fonte rastreável nas bases atuais; a dispersão real de egressos (RAIS) é o card \"Índice de dispersão territorial\"") , u => formatPercent(employmentMetrics(u).territorialDispersion)]], "Inserção geral dos egressos")}`;
 }
@@ -179,12 +182,16 @@ function employmentRegionBlock(c) {
       '</p>'
     : '';
 
+  const refGeralEmployment = getReferenciaGeral("employment");
+  const refGeralInsertionPR = getReferenciaGeral("insertionRatePR");
+  var refTxt1 = refGeralEmployment ? `Referência (${refGeralEmployment.sigla})` : 'Média do cluster';
+  var refTxt2 = refGeralInsertionPR ? `Referência (${refGeralInsertionPR.sigla})` : 'Média do cluster';
   var sub1 = grau && grau !== 'Tecnólogo'
-    ? 'Apenas IEES com perfil predominante ' + grau + ' · Média do cluster recalculada para o subgrupo.'
-    : 'Verde acima de 55%; amarelo entre 45% e 55%; vermelho abaixo de 45%. Linha laranja = média do cluster.';
+    ? 'Apenas IEES com perfil predominante ' + grau + ' · Linha laranja = ' + refTxt1 + (refGeralEmployment ? ' (fixa, não recalcula por subgrupo).' : ' recalculada para o subgrupo.')
+    : 'Verde acima de 55%; amarelo entre 45% e 55%; vermelho abaixo de 45%. Linha laranja = ' + refTxt1 + '.';
   var sub2 = grau && grau !== 'Tecnólogo'
-    ? 'Apenas IEES com perfil predominante ' + grau + ' · Mesma escala de cores.'
-    : 'Mesma regra de cor, comparada aos pares do cluster ativo.';
+    ? 'Apenas IEES com perfil predominante ' + grau + ' · Linha laranja = ' + refTxt2 + (refGeralInsertionPR ? ' (fixa, não recalcula por subgrupo).' : ' recalculada para o subgrupo.')
+    : 'Mesma regra de cor · Linha laranja = ' + refTxt2 + '.';
 
   return filterBtns + noteHtml + `<div class="chart-grid">
     <article class="visual-card"><h3>${indicatorName(37)} por IEES</h3><p class="card-subtitle">${sub1}</p>${employmentRateBars(c, u => employmentMetrics(u).prRate, formatPercent, filterFn, "employment")}</article>

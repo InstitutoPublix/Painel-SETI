@@ -1232,7 +1232,7 @@ function performanceRelativeBlock(title, c) {
     `;
   }
   if (title.includes("Perfil da movimentação")) return budgetMovementBlock(c);
-  if (title.includes("Composição")) return budgetCompositionBlock(c);
+  if (title === "Composição crédito e despesa") return budgetCompositionBlock(c);
   if (title.includes("desempenho acadêmico")) return budgetAcademicBlock(c);
   if (title.includes("corpo docente")) return budgetFacultyBlock(c);
   if (title.includes("Matriz de oportunidades") || title.includes("alertas")) return budgetOpportunityBlock(c);
@@ -1421,7 +1421,7 @@ function budgetMovementBlock(c) {
     ${budgetScoreCard("Orçamento liquidado total", formatCurrencyMillions(a.liquidated), "soma do cluster")}
     ${budgetScoreCard(indicatorName(81), formatPercent(a.executionRate), "empenhado / orçamento atualizado")}
     ${budgetScoreCard(indicatorName(82), formatPercent(a.liquidationRate), "liquidado / orçamento atualizado")}
-    ${budgetScoreCard(indicatorName(83), formatPercent(a.paymentRate), "pago / orçamento atualizado")}
+    ${budgetScoreCard(indicatorName(83), formatPercent(a.paymentRate), "pago / liquidado")}
     ${budgetScoreCard(indicatorName(84), formatPercent(a.contingencyRate), "contingenciado / atualizado")}
     ${budgetScoreCard(indicatorName(85), formatPercent(a.variationRate), "LOA vs. atualizado")}
     ${budgetScoreCard(legacyBudgetIndicatorName("ind95orc"), formatPercent(a.execInitial), "liquidado / dotação inicial")}
