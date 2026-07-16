@@ -2,10 +2,10 @@
 
 ## Opção recomendada: arquivo único
 
-Use o arquivo da raiz do projeto:
+Use o arquivo dentro da pasta `dashboard`:
 
 ```text
-dashboard.html
+dashboard/painel_seti_standalone.html
 ```
 
 Esse arquivo já contém o painel, os estilos, os logos e o `data/seti_precomputed.json` embutidos. A pessoa pode abrir com duplo clique, sem rodar Python e sem enviar a pasta `data`.
@@ -16,7 +16,7 @@ Sempre que o JSON for atualizado, gere novamente o arquivo único:
 python pipeline/export_standalone.py
 ```
 
-Depois disso, envie o novo `dashboard.html`.
+Depois disso, envie o novo `painel_seti_standalone.html`.
 
 ## Opção completa do projeto
 

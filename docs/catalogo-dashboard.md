@@ -132,7 +132,7 @@ Colunas:
 | ind1 | Proporção de ocupação de vagas | `QT_ING / QT_VG_TOTAL × 100` |
 | ind11 | Total de vagas | `sum(QT_VG_TOTAL)` |
 | ind10 | Total de cursos | `sum(QT_CURSO)` |
-| ind24 | Taxa de ocupação das vagas de ingresso | `occupancy` |
+| ind24 | Taxa de Ocupação das Vagas Novas de Ingresso | Ingressantes em vagas novas ÷ vagas novas × 100 |
 | ind26 | Taxa de ocupação das vagas | `occupancy` |
 
 ### Visualizações

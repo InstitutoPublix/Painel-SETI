@@ -294,8 +294,8 @@ function capesSynthesisTable(rows) {
 function qualityResearchBlock(c) {
   const act = qualityIndFilter(["ind60", "ind61"]);
   return `<div class="chart-grid">
-    ${!act || act === "ind60" ? `<article class="visual-card"><h3>IND-60 · Captação de recursos do CNPq</h3><p class="card-subtitle">Valor absoluto em R$ milhões e captação por docente para normalização. Fonte: Base CNPq – Brasil.</p>${quartilChipStrip("cnpqBars", c.f.groupBy, c.base, c)}${cnpqBars(c)}</article>` : ""}
-    ${!act || act === "ind61" ? `<article class="visual-card"><h3>IND-61 · Número de vínculos de fomento do CNPq</h3><p class="card-subtitle">Número de vínculos ativos de fomento (bolsas e projetos). Fonte: Base CNPq – Brasil.</p>${vinculosBars(c)}</article>` : ""}
+    ${!act || act === "ind60" ? `<article class="visual-card"><h3>IND-60</h3><p class="card-subtitle">Valor absoluto em R$ milhões e captação por docente para normalização. Fonte: Base CNPq – Brasil.</p>${quartilChipStrip("cnpqBars", c.f.groupBy, c.base, c)}${cnpqBars(c)}</article>` : ""}
+    ${!act || act === "ind61" ? `<article class="visual-card"><h3>IND-61</h3><p class="card-subtitle">Número de vínculos ativos de fomento (bolsas e projetos). Fonte: Base CNPq – Brasil.</p>${vinculosBars(c)}</article>` : ""}
   </div>`;
 }
 
@@ -445,8 +445,9 @@ function pg5bBlocks(rows5b, c) {
   </article>
   <article class="visual-card mt-14">
     <h3>Conceitos CAPES — destaque de excelência</h3>
-    ${pgExcelenciaBars(rows5b)}
-    <p style="margin-top:8px;font-size:11px;color:#64748b;font-style:italic">⚠ Excelência = programas com CD_CONCEITO_PROGRAMA ≥ 6 (Base_Discentes). Métrica distinta do conceito por curso (CD_CONCEITO_CURSO) usado em pgTop/capes acima — não comparar diretamente.</p>
+    <p class="card-subtitle">Comparação lado a lado, na mesma escala (%): % pgTop/pg (conceito de curso ≥5) × % de programas com conceito de programa ≥6 (excelência).</p>
+    ${pgTopExcelenciaBars(rows5b)}
+    <p style="margin-top:8px;font-size:11px;color:#64748b;font-style:italic">⚠ Excelência = programas com CD_CONCEITO_PROGRAMA ≥ 6 (Base_Discentes). Métrica distinta do conceito por curso (CD_CONCEITO_CURSO) usado em pgTop/capes — as barras acima colocam as duas na mesma escala percentual só para deixar a diferença visível; não somar nem tratar como a mesma contagem.</p>
   </article>
   <article class="visual-card mt-14">
     <h3>Discentes matriculados em pós-graduação</h3>
@@ -458,6 +459,11 @@ function pg5bBlocks(rows5b, c) {
     <p class="card-subtitle">IND-101/102 · set(ID_PESSOA) distintos com NM_SITUACAO_DISCENTE = TITULADO, por DS_GRAU_ACADEMICO_DISCENTE (Mestrado/Doutorado), no AN_BASE mais recente por IES (CAPES – Base Pós-Graduação).</p>
     ${tituladosBars(rows5b)}
     <p style="margin-top:8px;font-size:11px;color:#64748b;font-style:italic">Ano de referência = AN_BASE (ano-base CAPES), não necessariamente o ano civil de defesa.</p>
+  </article>
+  <article class="visual-card mt-14">
+    <h3>Taxa de titulação da pós-graduação</h3>
+    <p class="card-subtitle">Titulados ÷ matriculados × 100, por grau (Mestrado/Doutorado), no mesmo AN_BASE — proxy de fluxo da pós-graduação, mesma lógica de leitura da conclusão já usada na Aba 4 para a graduação.</p>
+    ${taxaTitulacaoBars(rows5b)}
   </article>
   <article class="visual-card mt-14">
     <h3>Corpo docente da pós-graduação</h3>
@@ -513,9 +519,9 @@ function pgGrandeAreaChart(rows, c) {
     `<button class="rank-metric-btn${s === sel ? " active" : ""}" type="button" onclick="setPgAreaIes('${s}')">${s}</button>`
   ).join("");
   const bars = entries.map(([area, cnt]) =>
-    `<div class="bar-row"><span class="bar-name" title="${area}" style="min-width:170px;max-width:210px;font-size:11.5px;white-space:normal;line-height:1.3">${area}</span><span class="bar-track"><span class="bar-fill rate-high" style="width:${clamp(cnt/maxV*100,4,100).toFixed(1)}%"></span></span><span class="bar-value">${cnt} prog.</span></div>`
+    `<div class="bar-row"><span class="bar-name" title="${area}">${area}</span><span class="bar-track"><span class="bar-fill rate-high" style="width:${clamp(cnt/maxV*100,4,100).toFixed(1)}%"></span></span><span class="bar-value">${cnt} prog.</span></div>`
   ).join("");
-  return `<div class="rank-metric-selector" style="margin-bottom:10px">${tabs}</div><div class="bars">${bars}</div>`;
+  return `<div class="rank-metric-selector" style="margin-bottom:10px">${tabs}</div><div class="bars capes-area-bars">${bars}</div>`;
 }
 
 // c) pctExcelencia — CD_CONCEITO_PROGRAMA >= 6 / total (Base_Discentes)
@@ -620,6 +626,47 @@ function pgCapilaridadeCards(rows) {
   return `<div class="bars">
     ${sorted.map(u => `<div class="bar-row"><span class="bar-name" title="${u.nome}">${u.sigla}</span><span class="bar-track"><span class="bar-fill ${tone(u.pgMunicipiosDistintos)}" style="width:${clamp(u.pgMunicipiosDistintos/max*100,4,100).toFixed(1)}%"></span></span><span class="bar-value">${u.pgMunicipiosDistintos} munic.</span></div>`).join("")}
   </div>`;
+}
+
+// c2) pgTop × excelência — mesma escala percentual, bases distintas (curso vs programa)
+function pgTopExcelenciaBars(rows) {
+  const valid = rows.filter(u => u.pgTop != null && u.pg && u.pctExcelencia != null);
+  if (!valid.length) return `<p class="card-subtitle">Dados insuficientes para comparar pgTop e excelência neste recorte.</p>`;
+  const metrics = [
+    { label: "% pgTop/pg (conceito de curso ≥5)", cls: "intl-m-blue", get: u => u.pg ? (u.pgTop / u.pg * 100) : 0 },
+    { label: "% excelência (conceito de programa ≥6)", cls: "intl-m-orange", get: u => u.pctExcelencia || 0 },
+  ];
+  const maxVal = Math.max(...valid.flatMap(u => metrics.map(m => m.get(u))), 1);
+  const sorted = [...valid].sort((a, b) => metrics[0].get(b) - metrics[0].get(a));
+  const legend = `<div class="intl-legend">${metrics.map(m => `<span><i class="${m.cls}"></i>${m.label}</span>`).join("")}</div>`;
+  const groupRows = sorted.map(u =>
+    `<div class="intl-group-row"><span class="intl-group-name" title="${u.nome}">${u.sigla}</span><div class="intl-group-bars">${
+      metrics.map(m => { const v = m.get(u); return `<div class="intl-metric-track"><span class="intl-metric-bar ${m.cls}" style="width:${v > 0 ? clamp(v/maxVal*100,3,100).toFixed(1) : 0}%"></span><em>${v.toFixed(1).replace(".",",")}%</em></div>`; }).join("")
+    }</div></div>`
+  ).join("");
+  return `${legend}<div class="intl-group-chart">${groupRows}</div>`;
+}
+
+// e2) Taxa de titulação — titulados ÷ matriculados × 100, por grau
+function taxaTitulacaoBars(rows) {
+  const valid = rows.filter(u => (u.discMestrado || u.discDoutorado) && (u.tituladosMestrado != null || u.tituladosDoutorado != null));
+  if (!valid.length) return `<p class="card-subtitle">Dados insuficientes de matriculados/titulados para este recorte.</p>`;
+  const taxaMestrado  = u => u.discMestrado  ? clamp(u.tituladosMestrado  / u.discMestrado  * 100, 0, 999) : null;
+  const taxaDoutorado = u => u.discDoutorado ? clamp(u.tituladosDoutorado / u.discDoutorado * 100, 0, 999) : null;
+  const metrics = [
+    { label: "Mestrado",  cls: "intl-m-blue",  get: taxaMestrado },
+    { label: "Doutorado", cls: "intl-m-green", get: taxaDoutorado },
+  ];
+  const maxVal = Math.max(...valid.flatMap(u => metrics.map(m => m.get(u) || 0)), 1);
+  const sorted = [...valid].sort((a, b) => (taxaMestrado(b) || 0) - (taxaMestrado(a) || 0));
+  const legend = `<div class="intl-legend">${metrics.map(m => `<span><i class="${m.cls}"></i>${m.label}</span>`).join("")}</div>`;
+  const groupRows = sorted.map(u =>
+    `<div class="intl-group-row"><span class="intl-group-name" title="${u.nome}">${u.sigla}</span><div class="intl-group-bars">${
+      metrics.map(m => { const v = m.get(u); return `<div class="intl-metric-track"><span class="intl-metric-bar ${m.cls}" style="width:${v ? clamp(v/maxVal*100,3,100).toFixed(1) : 0}%"></span><em>${v != null ? v.toFixed(1).replace(".",",") + "%" : "—"}</em></div>`; }).join("")
+    }</div></div>`
+  ).join("");
+  return `${legend}<div class="intl-group-chart">${groupRows}</div>
+  <p style="margin-top:8px;font-size:11px;color:#64748b;font-style:italic">Proxy de fluxo: titulados e matriculados são contados no mesmo AN_BASE, não necessariamente a mesma coorte de ingressantes — não é uma taxa de conclusão por coorte.</p>`;
 }
 
 // ── Tooltip de fórmula (ⓘ) — h3 de .visual-card ─────────────────────────────

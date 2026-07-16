@@ -248,9 +248,18 @@ function occupancyTimeline(c) {
 // PRESSUPOSTO HERDADO DO CÓDIGO ORIGINAL: u.type usa os mesmos rótulos de
 // grauAcademico ("Bacharelado"/"Licenciatura"/"Tecnólogo") — não confirmado
 // nesta rodada, mas já era a mesma suposição do código anterior.
-function grauOccupancy(u) {
-  if (!u.cursosDetalhado || !u.cursosDetalhado.length || !u.type) return null;
-  const groups = u.cursosDetalhado.filter(g => g.grauAcademico === u.type && g.vacancies > 0);
+// Etapa GA-3: recebe f (filtros) para restringir aos grupos da Grande Área
+// CINE-BR ativa antes de agregar — mesma regra de applyGrandeAreaOverride
+// (painel.js). Usa u._filteredGroups quando existir (já respeita Tipo de
+// Curso/Modalidade, aplicados antes na cadeia de context()), caindo para
+// u.cursosDetalhado só se _filteredGroups não existir nesse ponto.
+function grauOccupancy(u, f) {
+  const base = u._filteredGroups || u.cursosDetalhado;
+  if (!base || !base.length || !u.type) return null;
+  const source = (f && f.cineArea && f.cineArea !== "all")
+    ? base.filter(g => g.cineArea === f.cineArea)
+    : base;
+  const groups = source.filter(g => g.grauAcademico === u.type && g.vacancies > 0);
   const totalVac = sum(groups, g => g.vacancies);
   if (totalVac <= 0) return null;
   const totalEnt = sum(groups, g => g.entrants || 0);
@@ -260,14 +269,14 @@ function grauOccupancy(u) {
 var accessOccupancyIndicators = [
   { code: "IND-26", name: "Ocupação vagas", get: u => u.occupancy, fmt: formatPercent },
   { code: "IND-1",  name: "Ocupação ES estadual", get: u => u.occupancy, fmt: formatPercent },
-  { code: "IND-3",  name: "Ocupação vagas iniciais", get: u => u.ingressOccupancy != null ? u.ingressOccupancy : round(u.entrants / Math.max(u.vacanciesNova != null ? u.vacanciesNova : u.vacancies * 0.82, 1) * 100, 1), fmt: formatPercent },
-  { code: "IND-24", name: "Ocupação ingresso", get: u => u.occupancy, fmt: formatPercent },
+  { code: "IND-3",  name: "Ocupação vagas iniciais", get: u => round(u.entrants / Math.max(u.vacanciesNova != null ? u.vacanciesNova : u.vacancies * 0.82, 1) * 100, 1), fmt: formatPercent },
+  { code: "IND-24", name: "Ocupação ingresso", get: u => u.ingressOccupancy != null ? u.ingressOccupancy : u.occupancy, fmt: formatPercent },
   { code: "IND-25", name: "Vagas ingresso não ocupadas", get: u => u.vacanciesNovaUnfilled != null ? u.vacanciesNovaUnfilled : Math.max(0, Math.round((u.vacanciesNova != null ? u.vacanciesNova : u.vacancies * 0.82) - u.entrants)), fmt: formatNumber },
   { code: "IND-28", name: "Vagas não ocupadas", get: u => u.vacanciesUnfilled != null ? u.vacanciesUnfilled : Math.max(0, Math.round(u.vacancies * (1 - u.occupancy / 100))), fmt: formatNumber },
-  { code: "IND-29", name: "Ocupação por grau", get: u => grauOccupancy(u) ?? clamp(u.occupancy + (u.type === "Bacharelado" ? 2.4 : -1.6), 0, 100), fmt: formatPercent },
+  { code: "IND-29", name: "Ocupação por grau", get: (u, f) => grauOccupancy(u, f) ?? clamp(u.occupancy + (u.type === "Bacharelado" ? 2.4 : -1.6), 0, 100), fmt: formatPercent },
   { code: "IND-30", name: "Ocupação diurno", get: u => dayOccupancy(u), fmt: formatPercent },
   { code: "IND-31", name: "Ocupação noturno", get: u => nightOccupancy(u), fmt: formatPercent },
-  { code: "IND-67", name: "Ocupação por tipo", get: u => grauOccupancy(u) ?? clamp(u.occupancy + (u.type === "Licenciatura" ? -3.5 : 1.8), 0, 100), fmt: formatPercent },
+  { code: "IND-67", name: "Ocupação por tipo", get: (u, f) => grauOccupancy(u, f) ?? clamp(u.occupancy + (u.type === "Licenciatura" ? -3.5 : 1.8), 0, 100), fmt: formatPercent },
   { code: "IND-23", name: "Estudantes por vaga", get: u => u.students / Math.max(u.vacancies, 1), fmt: v => v.toFixed(2).replace(".", ",") }
 ];
 
@@ -314,7 +323,7 @@ function accessOccupancy(c) {
   <div class="table-wrap mt-14 access-occupancy-table">
     <h3>Matriz de ocupação e vagas não ocupadas</h3>
     <p class="card-subtitle">Indicadores calculados por IEES dentro do recorte/cluster ativo.${act ? " Exibindo apenas o indicador selecionado no filtro acima." : ""}</p>
-    <table class="data-table"><thead><tr><th>IEES</th>${matrixCols.map(ind => `<th><span class="indicator-code">${ind.code}</span>${indicatorName(ind.code)}</th>`).join("")}</tr></thead><tbody>${clusterRows.map(u => `<tr><td><strong>${u.sigla}</strong><br><span>${u.groups[c.f.groupBy]}</span></td>${matrixCols.map(ind => `<td>${ind.fmt(ind.get(u))}</td>`).join("")}</tr>`).join("")}</tbody></table>
+    <table class="data-table"><thead><tr><th>IEES</th>${matrixCols.map(ind => `<th><span class="indicator-code">${ind.code}</span>${indicatorName(ind.code)}</th>`).join("")}</tr></thead><tbody>${clusterRows.map(u => `<tr><td><strong>${u.sigla}</strong><br><span>${u.groups[c.f.groupBy]}</span></td>${matrixCols.map(ind => `<td>${ind.fmt(ind.get(u, c.f))}</td>`).join("")}</tr>`).join("")}</tbody></table>
   </div>`;
 }
 
@@ -327,9 +336,17 @@ function accessOccupancy(c) {
 // de Ano do cabeçalho (via byYear() → cursosDetalhadoByYear), com fallback
 // para o ano mais recente disponível por IES quando não há dado para o ano
 // selecionado. Ver nota "Ano de referência" no card.
-function courseMix(u) {
-  if (u.cursosDetalhado && u.cursosDetalhado.length) {
-    const vac = label => sum(u.cursosDetalhado.filter(g => g.grauAcademico === label), g => g.vacancies);
+// Etapa GA-3: recebe f (filtros) para restringir aos grupos da Grande Área
+// CINE-BR ativa antes de agregar — mesma regra de applyGrandeAreaOverride
+// (painel.js). Usa u._filteredGroups quando existir, caindo para
+// u.cursosDetalhado só se _filteredGroups não existir nesse ponto.
+function courseMix(u, f) {
+  const base = u._filteredGroups || u.cursosDetalhado;
+  const source = (f && f.cineArea && f.cineArea !== "all") && base
+    ? base.filter(g => g.cineArea === f.cineArea)
+    : base;
+  if (source && source.length) {
+    const vac = label => sum(source.filter(g => g.grauAcademico === label), g => g.vacancies);
     const b = vac("Bacharelado"), l = vac("Licenciatura"), t = vac("Tecnólogo");
     const total = b + l + t;
     if (total > 0) return { bach: b / total, lic: l / total, tech: t / total };
@@ -351,12 +368,12 @@ function courseMixColor(key) {
   return key === "bach" ? "#185fa5" : key === "lic" ? "#0f6e56" : "#f28c28";
 }
 
-function averageMix(rows) {
+function averageMix(rows, f) {
   const total = Math.max(sum(rows, u => u.vacancies), 1);
   return {
-    bach: sum(rows, u => u.vacancies * courseMix(u).bach) / total,
-    lic: sum(rows, u => u.vacancies * courseMix(u).lic) / total,
-    tech: sum(rows, u => u.vacancies * courseMix(u).tech) / total
+    bach: sum(rows, u => u.vacancies * courseMix(u, f).bach) / total,
+    lic: sum(rows, u => u.vacancies * courseMix(u, f).lic) / total,
+    tech: sum(rows, u => u.vacancies * courseMix(u, f).tech) / total
   };
 }
 
@@ -404,11 +421,19 @@ function cineAreaCard(c) {
 // ── Distribuição por Modalidade de Ensino ───────────────────────────────────
 // Fonte: u.cursosDetalhado, mesmo padrão de cineAreaSharePct/cineAreaCard,
 // mas só 2 categorias (Presencial/EaD) — toggle de botões em vez de select.
-function modalidadeSharePct(u, modalidade) {
-  if (!u.cursosDetalhado || !u.cursosDetalhado.length) return 0;
-  const total = sum(u.cursosDetalhado, g => g.vacancies);
+// Etapa GA-3: recebe f (filtros) para restringir aos grupos da Grande Área
+// CINE-BR ativa antes de agregar — mesma regra de applyGrandeAreaOverride
+// (painel.js). Usa u._filteredGroups quando existir, caindo para
+// u.cursosDetalhado só se _filteredGroups não existir nesse ponto.
+function modalidadeSharePct(u, modalidade, f) {
+  const base = u._filteredGroups || u.cursosDetalhado;
+  if (!base || !base.length) return 0;
+  const source = (f && f.cineArea && f.cineArea !== "all")
+    ? base.filter(g => g.cineArea === f.cineArea)
+    : base;
+  const total = sum(source, g => g.vacancies);
   if (!total) return 0;
-  const inModalidade = sum(u.cursosDetalhado.filter(g => g.modalidade === modalidade), g => g.vacancies);
+  const inModalidade = sum(source.filter(g => g.modalidade === modalidade), g => g.vacancies);
   return round(inModalidade / total * 100, 1);
 }
 
@@ -424,7 +449,7 @@ function modalidadeCard(c) {
     <button class="stack-type-btn${active === "Presencial" ? " active" : ""}" type="button" onclick="setModalidadeFilter('Presencial')">Presencial</button>
     <button class="stack-type-btn${active === "EaD" ? " active" : ""}" type="button" onclick="setModalidadeFilter('EaD')">EaD</button>
   </div>`;
-  const get = u => modalidadeSharePct(u, active);
+  const get = u => modalidadeSharePct(u, active, c.f);
   const fmt = v => formatPercent(v);
   return `${btns}${accessClusterBars(c, get, fmt)}`;
 }
@@ -558,8 +583,8 @@ function benchmarkCineBlock(c) {
   <div class="chart-grid mt-14">${cards.join("")}</div>`;
 }
 
-function offerSpecialization(u) {
-  const mix = courseMix(u);
+function offerSpecialization(u, f) {
+  const mix = courseMix(u, f);
   return Math.max(mix.bach, mix.lic, mix.tech) * 100;
 }
 
@@ -577,7 +602,7 @@ function municipalityOccupancy(u) {
 // ── stackedCourseBars (versão ativa — com filtro por tipo e opacidade) ───────
 function stackedCourseBars(c) {
   const rows = clusterRowsFor(c);
-  const avg = averageMix(rows);
+  const avg = averageMix(rows, c.f);
   // Referência Geral (whitelist v1) — occupancy (40 IES). Mesmo site seguro
   // de occupancyBars nesta mesma aba.
   const refGeralOcc = getReferenciaGeral("occupancy");
@@ -597,7 +622,7 @@ function stackedCourseBars(c) {
   const occBadge = v => `<span class="occ-badge ${occupancyTone(v)}">${formatPercent(v)}</span>`;
   const sorted = [...rows].sort((a, b) => b.occupancy - a.occupancy);
   const clusterRow = `<tr class="cmix-cluster-row"><td><strong>${clusterRowLabel}</strong></td><td>${mixBar(avg)}</td><td>${occBadge(avgOcc)}</td></tr>`;
-  const rowsHtml = sorted.map(u => `<tr class="${isUniSelected(c.f, u.id) ? "selected" : ""}"><td><strong>${u.sigla}</strong></td><td title="${u.sigla}: Bach. ${formatPercent(courseMix(u).bach*100)} · Lic. ${formatPercent(courseMix(u).lic*100)} · Tecn. ${formatPercent(courseMix(u).tech*100)}">${mixBar(courseMix(u))}</td><td>${occBadge(u.occupancy)}</td></tr>`).join("");
+  const rowsHtml = sorted.map(u => `<tr class="${isUniSelected(c.f, u.id) ? "selected" : ""}"><td><strong>${u.sigla}</strong></td><td title="${u.sigla}: Bach. ${formatPercent(courseMix(u,c.f).bach*100)} · Lic. ${formatPercent(courseMix(u,c.f).lic*100)} · Tecn. ${formatPercent(courseMix(u,c.f).tech*100)}">${mixBar(courseMix(u,c.f))}</td><td>${occBadge(u.occupancy)}</td></tr>`).join("");
   const typeBtns = `<div class="stack-legend" style="margin-bottom:10px"><button class="stack-type-btn${activeType === "bach" ? " active" : ""}" type="button" onclick="setDistributionCourseType('bach')"><i class="cmix-bach-dot"></i>Bacharelado</button><button class="stack-type-btn${activeType === "lic" ? " active" : ""}" type="button" onclick="setDistributionCourseType('lic')"><i class="cmix-lic-dot"></i>Licenciatura</button><button class="stack-type-btn${activeType === "tech" ? " active" : ""}" type="button" onclick="setDistributionCourseType('tech')"><i class="cmix-tech-dot"></i>Tecnólogo</button></div>`;
   const refYearNote = `<p class="cmix-ref-note" style="font-size:12px;color:var(--text-secondary,#666);margin:0 0 8px">Composição por grau acadêmico reflete o ano selecionado no filtro (quando disponível para a IES na Base Cursos; caso contrário, o ano mais recente disponível).</p>`;
   return `${refYearNote}${typeBtns}<table class="cmix-table"><thead><tr><th>IEES</th><th>Composição</th><th>Ocupação</th></tr></thead><tbody>${clusterRow}${rowsHtml}</tbody></table>`;
@@ -660,10 +685,10 @@ function accessScale(c) {
   // continua mostrando vagas totais por tipo de curso, sem o recorte de vaga.
   const hasVagaMetric = c.f.vagaRecorte && c.f.vagaRecorte !== "all";
   const vagaLabel = hasVagaMetric ? (VAGA_RECORTE_FIELDS[c.f.vagaRecorte]?.label || c.f.vagaRecorte) : null;
-  const getVac = mixKey ? u => u.vacancies * courseMix(u)[mixKey]
+  const getVac = mixKey ? u => u.vacancies * courseMix(u, c.f)[mixKey]
                : hasVagaMetric ? u => (u.vagaMetricVacancies ?? 0)
                : u => u.vacancies;
-  const getCrs = mixKey ? u => u.courses  * courseMix(u)[mixKey] : u => u.courses;
+  const getCrs = mixKey ? u => u.courses  * courseMix(u, c.f)[mixKey] : u => u.courses;
   const typeLabel = mixKey ? ` · ${typeFilter}` : "";
   // Round 5: sufixo exclusivo do card "Total de vagas" — NÃO usa typeLabel
   // (que também rotula "Cursos ativos"/"Vagas por curso", onde o recorte de
@@ -858,7 +883,7 @@ function paranaIeesMap(c) {
 }
 
 // ── Tabela de indicadores territoriais ─────────────────────────────────────
-function accessTerritoryTable(rows, activeInd) {
+function accessTerritoryTable(rows, activeInd, f) {
   if (!rows.length) return "";
   const totalVac = Math.max(sum(rows, x => x.vacancies), 1);
   const totalCrs = Math.max(sum(rows, x => x.courses), 1);
@@ -867,8 +892,8 @@ function accessTerritoryTable(rows, activeInd) {
     { h: "IND-32 Ocupação município ↑", pol: 1, fn: u => municipalityOccupancy(u),       fmt: formatPercent },
     { h: "IND-17 Part. vagas ↑",        pol: 1, fn: u => u.vacancies / totalVac * 100,   fmt: formatPercent },
     { h: "IND-20 Part. cursos ↑",       pol: 1, fn: u => u.courses / totalCrs * 100,     fmt: formatPercent },
-    { h: "IND-68 Especialização ↑",     pol: 1, fn: u => offerSpecialization(u),         fmt: formatPercent },
-    { h: "IND-69 Licenciaturas ↑",      pol: 1, fn: u => courseMix(u).lic * 100,        fmt: formatPercent },
+    { h: "IND-68 Especialização ↑",     pol: 1, fn: u => offerSpecialization(u, f),      fmt: formatPercent },
+    { h: "IND-69 Licenciaturas ↑",      pol: 1, fn: u => courseMix(u, f).lic * 100,      fmt: formatPercent },
     { h: "IND-4 Escola pública ↑",      pol: 1, fn: u => publicSchoolShare(u),          fmt: formatPercent }
   ];
   if (activeInd) {
@@ -943,7 +968,7 @@ function accessTerritory(c) {
     ${!act ? `<article class="visual-card" id="accessIeesMapCard"><h3>Mapa das IEES estaduais — Ocupação de vagas</h3><p class="card-subtitle">IND-26 · Tamanho e cor dos círculos representam a taxa de ocupação de vagas por IEES no cluster ativo.</p>${paranaIeesMap(c)}</article>` : ""}
   </div>
   ${!act ? `<article class="visual-card mt-14" id="accessDayNightCard"><h3>IND-30 e IND-31 · Ocupação diurno/noturno</h3><p class="card-subtitle">Barras agrupadas por IEES; linhas de referência calculadas no cluster.</p>${dayNightBars(c)}</article>` : ""}
-  ${accessTerritoryTable(rows, act)}`;
+  ${accessTerritoryTable(rows, act, c.f)}`;
 }
 
 // ── Catálogo de indicadores ─────────────────────────────────────────────────

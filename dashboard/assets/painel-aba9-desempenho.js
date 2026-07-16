@@ -33,7 +33,7 @@ const ABA9_LABEL_TO_IND = {
   "Variação da Dotação Orçamentária (Dotação Inicial vs. Atualizada)": "ind85",
   "Grau de Contingenciamento Orçamentário": "ind84",
   "Taxa de Liquidação": "ind82",
-  "Taxa de Pagamento sobre Liquidado": "ind83",
+  "Pagamento sobre Liquidado (Agregado do Grupo)": "aba9_pagamento_agregado",
   "Percentual de variação da dotação orçamentária em relação à LOA inicial": "ind94",
   "Percentual de execução de liquidação do Orçamento Inicial": "ind95orc",
   "Percentual de execução de liquidação do Orçamento Disponível": "ind96orc",
@@ -365,6 +365,17 @@ function applyEfficiencyDefaults() {
   state.efficiencyDefaultApplied = true;
 }
 
+// Etapa GA-4: a UI de desabilitar o select de Modalidade de Ensino na Aba 9
+// (antes feita aqui por lockModalidadeFilterForAba9(), via
+// setSelectValue()/setScopedControlState() — mesmo padrão de
+// PR_ONLY_FILTERS/updateScopeAvailability() em painel.js) passou a ser
+// coberta por FILTER_APPLICABILITY_BY_TAB/updateFilterApplicability()
+// (painel.js), chamada em todo render() — único ponto de verdade agora.
+// lockRowsToPresencialForAba9() (abaixo) continua necessária: ela força o
+// VALOR calculado para "Presencial" nos indicadores desta aba, independente
+// do que o filtro global de Modalidade esteja setado — decisão de dado, não
+// de UI, que updateFilterApplicability() não cobre (essa só desabilita e
+// reseta o select para "all", não substitui o parâmetro usado no cálculo).
 var previousRenderEfficiencyDefaults = render;
 render = function renderWithEfficiencyDefaults() {
   applyEfficiencyDefaults();
@@ -413,7 +424,7 @@ renderNumberedTab = function renderNumberedTabCanonical(tabId, c, summary = "") 
     ? '<div class="data-source-banner warning visible"><span class="dsb-icon" aria-hidden="true">⚠</span><div class="dsb-body"><strong>Dados parciais — 2026</strong><span>Dados de 2026 parciais — exercício em andamento (~3 meses executados). Valores de execução orçamentária não são comparáveis aos anos anteriores.</span></div></div>'
     : '';
   const perfNote = tabId === "performance"
-    ? '<div class="metodologia-note"><span class="metodologia-icon">ℹ</span> Esta aba apresenta o desempenho relativo das IEES-PR com base em indicadores compostos, cruzamentos acadêmicos e a avaliação de resposta ao Piloto Orçamento para Resultados.</div>'
+    ? '<div class="metodologia-note"><span class="metodologia-icon">ℹ</span> Esta aba apresenta o desempenho relativo das IEES-PR com base em indicadores compostos, cruzamentos acadêmicos e a avaliação de resposta ao Piloto Orçamento para Resultados. Cursos EaD são financiados pelo Governo Federal; nesse sentido, não entram no recorte da Ação de Gestão Universitária, incluindo o cálculo do custo por aluno, que considera apenas alunos da modalidade presencial.</div>'
     : '';
   return `<div class="tab-aba-wrapper" data-tab-id="${tabId}">${summary}${banner2026}${perfNote}${mode}${blocks.map((title, index) => renderBlock(index + 1, title, renderBlockContent(tabId, title, c))).join("")}</div>`;
 };
@@ -553,9 +564,17 @@ function isValidNumber(v) {
   return v != null && isFinite(Number(v));
 }
 
-// Custo por aluno (R$) — denominador: número de matrículas ativas (QT_MAT/INEP), não vagas
+// Custo por aluno (Aba 9): SEMPRE restrito a matrículas presenciais, independente
+// do filtro global de Modalidade de Ensino — EaD é financiado pelo Governo Federal
+// e não entra no recorte da Ação de Gestão Universitária.
+function presencialStudents(u) {
+  if (!u.cursosDetalhado || !u.cursosDetalhado.length) return u.students;
+  return sum(u.cursosDetalhado.filter(g => g.modalidade === "Presencial"), g => g.students);
+}
+
+// Custo por aluno (R$) — denominador: número de matrículas ativas presenciais (QT_MAT/INEP), não vagas
 function costPerStudent(u) {
-  return safeDivide(u.budget * 1e6, u.students);
+  return safeDivide(u.budget * 1e6, presencialStudents(u));
 }
 
 // Custo por concluinte (R$)
@@ -934,6 +953,12 @@ function _buildCDInner(rows, sA, sB) {
   if (!uA || !uB) return '<div class="empty-state">Uma das IES não está disponível no recorte atual.</div>';
 
   // ── Contexto orçamentário ─────────────────────────────────────────────────
+  // uA/uB chegam de efficiencyRows(c) (renderComparadorDireto), já sombreados
+  // para Presencial-only quando a Aba 9 está ativa (lockRowsToPresencialForAba9)
+  // — uA.students/uB.students aqui já refletem isso, sem precisar de outro
+  // cálculo; não usar presencialStudents()/costPerStudent() aqui para não
+  // trocar o numerador de "liquidado" para "budget" (equivalentes hoje, mas
+  // budget usa projeção sintética em anos sem dado real do Relatório 8050).
   var cpA = (uA.liquidado>0&&uA.students>0) ? uA.liquidado*1e6/uA.students : null;
   var cpB = (uB.liquidado>0&&uB.students>0) ? uB.liquidado*1e6/uB.students : null;
 
@@ -953,13 +978,13 @@ function _buildCDInner(rows, sA, sB) {
   }
 
   // taxa liquidado/orçamento atualizado (%)
-  var liqOaA = (uA.budget>0 && uA.liquidado!=null) ? uA.liquidado/uA.budget*100 : null;
-  var liqOaB = (uB.budget>0 && uB.liquidado!=null) ? uB.liquidado/uB.budget*100 : null;
+  var liqOaA = (uA.orcamento_atualizado>0 && uA.liquidado!=null) ? uA.liquidado/uA.orcamento_atualizado*100 : null;
+  var liqOaB = (uB.orcamento_atualizado>0 && uB.liquidado!=null) ? uB.liquidado/uB.orcamento_atualizado*100 : null;
 
   var ctxRows = [
     { label:"Orçamento atualizado (R$ M)",
-      fmtA:uA.budget!=null?_fmtM(uA.budget):"—", fmtB:uB.budget!=null?_fmtM(uB.budget):"—",
-      vA:uA.budget, vB:uB.budget, lower:false },
+      fmtA:uA.orcamento_atualizado!=null?_fmtM(uA.orcamento_atualizado):"—", fmtB:uB.orcamento_atualizado!=null?_fmtM(uB.orcamento_atualizado):"—",
+      vA:uA.orcamento_atualizado, vB:uB.orcamento_atualizado, lower:false },
     { label:"Liquidado (R$ M)",
       fmtA:uA.liquidado!=null?_fmtM(uA.liquidado):"—", fmtB:uB.liquidado!=null?_fmtM(uB.liquidado):"—",
       vA:uA.liquidado, vB:uB.liquidado, lower:false },
@@ -978,7 +1003,7 @@ function _buildCDInner(rows, sA, sB) {
     { label:"% Pessoal e Encargos",
       fmtA:uA.part_pessoal!=null?_fmtP(uA.part_pessoal):"—", fmtB:uB.part_pessoal!=null?_fmtP(uB.part_pessoal):"—",
       vA:uA.part_pessoal, vB:uB.part_pessoal, lower:false },
-    { label:"Suplementação (%)",
+    { label:"Suplementação Histórica (%)",
       fmtA:uA.supplementation!=null?_fmtP(uA.supplementation):"—", fmtB:uB.supplementation!=null?_fmtP(uB.supplementation):"—",
       vA:uA.supplementation, vB:uB.supplementation, lower:true }
   ];
@@ -1264,21 +1289,38 @@ function performanceBlock(title, c) {
   return efficiencyBlock(title, c);
 }
 
+// Aba 9 (Desempenho e Eficiência Relativa): nenhum valor exibido pode variar
+// conforme o filtro global de Modalidade de Ensino — cursos EaD são financiados
+// pelo Governo Federal e não entram no recorte da Ação de Gestão Universitária
+// (mesma justificativa da nota metodológica da aba). Por isso, com a Aba 9
+// ativa, toda IES que passa por efficiencyRows()/efficiencyChartRows() é
+// sombreada para students/entrants/graduates/vacancies/courses/occupancy/
+// completion/dropout SEMPRE calculados só sobre matrículas Presencial,
+// reaproveitando applyCourseFiltersOverride() (painel.js) — a mesma função que
+// já recalcula esses 8 campos para o filtro global, só que com "Presencial"
+// fixo em vez do valor escolhido pelo usuário. Fora da Aba 9 (ex. Aba 8 ·
+// Execução Orçamentária, que também chama efficiencyRows()), o comportamento
+// permanece inalterado — o filtro continua afetando normalmente.
+function lockRowsToPresencialForAba9(rows) {
+  if (state.activeTab !== "performance") return rows;
+  return rows.map(u => applyCourseFiltersOverride(u, "all", "Presencial"));
+}
+
 function efficiencyRows(c) {
   const base = clusterRowsFor(c);
   const rows = base.length ? base : c.all;
-  if (!c.display || !c.display.length) return rows;
+  if (!c.display || !c.display.length) return lockRowsToPresencialForAba9(rows);
   const ids = new Set(c.display.map(u => u.id));
   const filtered = rows.filter(u => ids.has(u.id));
-  return filtered.length ? filtered : rows;
+  return lockRowsToPresencialForAba9(filtered.length ? filtered : rows);
 }
 
 function efficiencyChartRows(c) {
   const rows = c.base.length ? c.base : c.all;
-  if (!c.display || !c.display.length || c.display.length === rows.length) return rows;
+  if (!c.display || !c.display.length || c.display.length === rows.length) return lockRowsToPresencialForAba9(rows);
   const ids = new Set(c.display.map(u => u.id));
   const filtered = rows.filter(u => ids.has(u.id));
-  return filtered.length ? filtered : rows;
+  return lockRowsToPresencialForAba9(filtered.length ? filtered : rows);
 }
 
 function estimatedFaculty(u) {
@@ -1409,26 +1451,6 @@ function efficiencyProfileLabel(rows, c) {
     return acc;
   }, {});
   return Object.entries(counts).sort((a, b) => b[1] - a[1])[0]?.[0] || "Perfil Moderado-Expansivo";
-}
-
-function budgetMovementBlock(c) {
-  let rows = efficiencyRows(c);
-  const localBud = getLocalFilter("budgetMovement");
-  if (localBud !== "all") { const f = rows.filter(u => u.groups[c.f.groupBy] === localBud); if (f.length) rows = f; }
-  const a = budgetAgg(rows);
-  return `<div class="qchip-strip-wrapper">${quartilChipStrip("budgetMovement", "v6", c.base, c)}</div>
-  <div class="score-grid budget-movement-grid">
-    ${budgetScoreCard("Orçamento liquidado total", formatCurrencyMillions(a.liquidated), "soma do cluster")}
-    ${budgetScoreCard(indicatorName(81), formatPercent(a.executionRate), "empenhado / orçamento atualizado")}
-    ${budgetScoreCard(indicatorName(82), formatPercent(a.liquidationRate), "liquidado / orçamento atualizado")}
-    ${budgetScoreCard(indicatorName(83), formatPercent(a.paymentRate), "pago / liquidado")}
-    ${budgetScoreCard(indicatorName(84), formatPercent(a.contingencyRate), "contingenciado / atualizado")}
-    ${budgetScoreCard(indicatorName(85), formatPercent(a.variationRate), "LOA vs. atualizado")}
-    ${budgetScoreCard(legacyBudgetIndicatorName("ind95orc"), formatPercent(a.execInitial), "liquidado / dotação inicial")}
-    ${budgetScoreCard(legacyBudgetIndicatorName("ind96orc"), formatPercent(a.execAvailable), "liquidado / orçamento disponível")}
-    ${budgetScoreCard(legacyBudgetIndicatorName("ind97orc"), formatPercent(a.execUpdated), "liquidado / orçamento atualizado")}
-  </div>
-  <article class="visual-card mt-14"><h3>${indicatorName(81)} por IEES</h3><p class="card-subtitle">V6 é a referência natural. Verde acima de 90%; amarelo entre 80% e 90%; vermelho abaixo de 80%.</p>${budgetExecutionBars(c)}</article>`;
 }
 
 function budgetScoreCard(title, value, subtitle) {
@@ -1750,7 +1772,7 @@ function budgetMovementBlock(c) {
     ${budgetScoreCard("Orçamento liquidado total", formatCurrencyMillions(a.liquidated), "soma do cluster")}
     ${budgetScoreCard(indicatorName(81), formatPercent(a.executionRate), "")}
     ${budgetScoreCard(indicatorName(82), formatPercent(a.liquidationRate), "")}
-    ${budgetScoreCard(indicatorName(83), formatPercent(a.paymentRate), "")}
+    ${budgetScoreCard("Pagamento sobre Liquidado (Agregado do Grupo)", formatPercent(a.paymentRate), "")}
     ${budgetScoreCard(indicatorName(84), formatPercent(a.contingencyRate), "")}
     ${budgetScoreCard(indicatorName(85), formatPercent(a.variationRate), "")}
     ${budgetScoreCard(indicatorName(94), formatPercent(a.variationRate), "")}

@@ -490,7 +490,11 @@ function setRetentionCourseType(type) {
 }
 window.setRetentionCourseType = setRetentionCourseType;
 
-function courseTypeMetrics(u, type) {
+// Etapa GA-3: recebe f (filtros) para restringir aos grupos da Grande Área
+// CINE-BR ativa antes de agregar — mesma regra de applyGrandeAreaOverride
+// (painel.js). Usa u._filteredGroups quando existir, caindo para
+// u.cursosDetalhado só se _filteredGroups não existir nesse ponto.
+function courseTypeMetrics(u, type, f) {
   // Dados REAIS por grau acadêmico, agregados de u.cursosDetalhado (Base
   // Cursos - Brasil.xlsx, pipeline Seção 2b/Fase 6). Substitui o campo
   // "grauMix" (nunca populado em produção — ver diagnóstico das Fases 1-3).
@@ -502,8 +506,12 @@ function courseTypeMetrics(u, type) {
   // Round 3b: cursosDetalhado passou a refletir o ano selecionado no filtro
   // de Ano (mesma mudança já documentada na Aba 3), com fallback para o ano
   // mais recente disponível por IES quando não há dado para o ano selecionado.
-  if (u.cursosDetalhado && u.cursosDetalhado.length) {
-    const groups = u.cursosDetalhado.filter(g => g.grauAcademico === type && g.students > 0);
+  const base = u._filteredGroups || u.cursosDetalhado;
+  const source = (f && f.cineArea && f.cineArea !== "all") && base
+    ? base.filter(g => g.cineArea === f.cineArea)
+    : base;
+  if (source && source.length) {
+    const groups = source.filter(g => g.grauAcademico === type && g.students > 0);
     const totalStudents = sum(groups, g => g.students);
     if (totalStudents > 0) {
       const completion = sum(groups, g => (g.completion || 0) * g.students) / totalStudents;
@@ -520,7 +528,7 @@ function courseTypeMetrics(u, type) {
 function courseTypeRanking(rows, type, c) {
   const getM = u => type === "all"
     ? { completion: u.completion, dropout: u.dropout }
-    : courseTypeMetrics(u, type);
+    : courseTypeMetrics(u, type, c && c.f);
   const ranked = [...rows].sort((a, b) => getM(b).completion - getM(a).completion);
   const groupBy = c && c.f ? c.f.groupBy : "v1";
   const trs = ranked.map((u, index) => {
@@ -572,7 +580,7 @@ function retentionCourseRankingBlock(c) {
     <span><i class="crk-comp"></i>Concluintes sobre matrículas</span>
   </div>`;
   const heading = active === "all" ? "Todos os graus" : active;
-  const hasRealGrau = active !== "all" && rows.some(u => courseTypeMetrics(u, active).real);
+  const hasRealGrau = active !== "all" && rows.some(u => courseTypeMetrics(u, active, c.f).real);
   const subtitle = active === "all"
     ? "Indicadores calculados sobre a totalidade dos cursos · ordenado por concluintes sobre matrículas dentro do cluster ativo."
     : hasRealGrau

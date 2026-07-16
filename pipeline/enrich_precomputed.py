@@ -141,6 +141,7 @@ for (sigla, ano), a in agg.items():
         "cursosOccupancyDay": pct(a["ING_DIU"], a["VG_DIU"], 1),
         "cursosOccupancyNight": pct(a["ING_NOT"], a["VG_NOT"], 1),
         "cursosVacanciesNova": a["VG_NOVA"],
+        "cursosEntrantsVgNova": a["ING_NOVA"],
         "cursosIngressOccupancy": pct(a["ING_NOVA"], a["VG_NOVA"], 1),
         "cursosVacanciesNovaUnfilled": max(a["VG_NOVA"] - a["ING_NOVA"], 0),
         "cursosVacanciesUnfilled": max(a["VG"] - a["ING"], 0),
@@ -240,6 +241,7 @@ for sigla in {s for (s, _) in cursos_fields}:
     src.setdefault("cursosPublicSchool", SRC_CURSOS + " / QT_ING_PROCESCPUBLICA ÷ (PUB+PRIV) × 100")
     src.setdefault("cursosMobility", SRC_CURSOS + " / QT_MAT_MOB_ACADEMICA ÷ QT_MAT × 100")
     src.setdefault("cursosIngressOccupancy", SRC_CURSOS + " / QT_ING_VG_NOVA ÷ QT_VG_NOVA × 100")
+    src.setdefault("cursosEntrantsVgNova", SRC_CURSOS + " / QT_ING_VG_NOVA")
     src.setdefault("grauMix", SRC_CURSOS + " / agregado por tipo_curso (Bacharelado/Licenciatura/Tecnólogo)")
 for sigla in {s for (s, _) in ies_fields}:
     src = sources.setdefault(sigla, {})

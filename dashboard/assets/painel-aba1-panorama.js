@@ -19,7 +19,7 @@ const ABA1_LABEL_TO_IND = {
   "Total de cursos": "ind10",                                // Total de cursos
   "Total de vagas": "ind11",                                 // Total de vagas
   "Taxa de ocupação das vagas": "ind26",                     // Taxa de ocupação das vagas
-  "Taxa de ocupação das vagas de ingresso": "ind24",         // Taxa de ocupação das vagas de ingresso
+  "Taxa de Ocupação das Vagas Novas de Ingresso": "ind24",   // Taxa de Ocupação das Vagas Novas de Ingresso
   "Taxa anual de desvinculação discente": "ind5",            // Taxa anual de desvinculação discente
   "Concluintes sobre matrículas": "ind27",                   // Proporção anual de concluintes sobre matrículas
   "Docentes com doutorado": "ind6",                          // Proporção de docentes com doutorado
@@ -126,7 +126,7 @@ var overviewMetricOptions = Object.fromEntries([
   ["ind21", "IND-21", "Média de estudantes por curso"],
   ["ind22", "IND-22", "Participação da IEES no total de estudantes"],
   ["ind23", "IND-23", "Relação estudantes por vaga"],
-  ["ind24", "IND-24", "Taxa de ocupação das vagas de ingresso"],
+  ["ind24", "IND-24", "Taxa de Ocupação das Vagas Novas de Ingresso"],
   ["ind25", "IND-25", "Vagas de ingresso não ocupadas"],
   ["ind26", "IND-26", "Taxa de ocupação das vagas"],
   ["ind27", "IND-27", "Proporção anual de concluintes sobre matrículas"],
@@ -219,7 +219,7 @@ var overviewKpiDefinitions = [
   { code: "IND-10", title: "Total de cursos",                      source: "INEP",        formula: "Contagem de cursos",                           polarity: "↑", mode: "pct", get: a => a.courses,             fmt: formatNumber },
   { code: "IND-11", title: "Total de vagas",                       source: "INEP",        formula: "Somatório QT_VG_TOTAL",                        polarity: "↑", mode: "pct", get: a => a.hasVagaMetric ? a.vagaMetricVacancies : a.vacancies,           fmt: formatNumber },
   { code: "IND-26", title: "Taxa de ocupação das vagas",           source: "INEP",        formula: "QT_MAT / QT_VG_TOTAL × 100",                  polarity: "↑", mode: "pp",  benchmark: () => formatPercent(brazil.result.occupancy),  get: a => a.hasVagaMetric ? a.vagaMetricOccupancy : a.occupancy,          fmt: formatPercent },
-  { code: "IND-24", title: "Taxa de ocupação das vagas de ingresso", source: "INEP",      formula: "QT_ING / QT_VG_NOVA × 100",                   polarity: "↑", mode: "pp",  get: a => a.ingressOccupancy,    fmt: formatPercent },
+  { code: "IND-24", title: "Taxa de Ocupação das Vagas Novas de Ingresso", source: "INEP", formula: "QT_ING / QT_VG_NOVA × 100",                   polarity: "↑", mode: "pp",  get: a => a.ingressOccupancy,    fmt: formatPercent },
   { code: "IND-5",  title: "Taxa anual de desvinculação discente", source: "INEP",        formula: "QT_DESVINCULADO / QT_MAT × 100",               polarity: "↓", mode: "pp",  benchmark: () => formatPercent(100 - brazil.result.permanence), get: a => a.dropout, fmt: formatPercent },
   { code: "IND-27", title: "Concluintes sobre matrículas",         source: "INEP",        formula: "QT_CONC / QT_MAT × 100",                  polarity: "↑", mode: "pp",  benchmark: () => formatPercent(brazil.result.completion),  get: a => a.completion, fmt: formatPercent },
   { code: "IND-6",  title: "Docentes com doutorado",               source: "INEP",        formula: "QT_DOC_EX_DOUT / QT_DOC_EXE × 100",           polarity: "↑", mode: "pp",  benchmark: () => formatPercent(brazil.result.doctorate),   get: a => a.doctors,            fmt: formatPercent },
@@ -276,7 +276,7 @@ function overviewAgg(d) {
     ...base,
     courses: sum(d, u => u.courses),
     dropout: wavg(d, u => u.dropout, u => u.students),
-    ingressOccupancy: (() => { const vn = d.some(u => u.vacanciesNova != null) ? Math.max(1, sum(d, u => u.vacanciesNova != null ? u.vacanciesNova : 0)) : vacancyBase; return sum(d, u => u.entrants) / vn * 100; })(),
+    ingressOccupancy: (() => { const vn = d.some(u => u.vacanciesNova != null) ? Math.max(1, sum(d, u => u.vacanciesNova != null ? u.vacanciesNova : 0)) : vacancyBase; const ingNova = sum(d, u => u.entrantsVgNova != null ? u.entrantsVgNova : u.entrants); return ingNova / vn * 100; })(),
     salary: wavg(d, u => panelEmploymentSalary(u), u => u.graduates),
     facultyOcc: wavg(d, u => u.facultyOcc, u => u.students)
   };

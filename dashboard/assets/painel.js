@@ -420,9 +420,9 @@ const INDICATOR_CATALOG = {
   },
   "ind24": {
     "codigo": 24,
-    "nome": "Taxa de ocupação das vagas de ingresso",
+    "nome": "Taxa de Ocupação das Vagas Novas de Ingresso",
     "categoria": "Acesso e Inclusão",
-    "formula": "Alunos ingressantes / vagas de ingresso x 100",
+    "formula": "Ingressantes em vagas novas ÷ vagas novas × 100",
     "unidade": "Percentual",
     "periodicidade": "Anual",
     "polaridade": "Quanto maior, melhor",
@@ -1480,6 +1480,10 @@ const INDICATOR_CATALOG = {
     "link": "Dados internos da SETI /  SEFA / https://www.transparencia.pr.gov.br",
     "observacoes": ""
   },
+  "aba9_pagamento_agregado": {
+    "nome": "Pagamento sobre Liquidado (Agregado do Grupo)",
+    "formula": "Pago ÷ Liquidado × 100, somado sobre as linhas do grupo/cluster filtrado (não é o campo oficial pré-calculado ind83 da base-fonte)"
+  },
   "ind84": {
     "codigo": 84,
     "nome": "Grau de Contingenciamento Orçamentário",
@@ -2381,7 +2385,7 @@ const resultIndicators = {
   salary:{label:"Média salarial dos egressos",get:u=>panelEmploymentSalary(u),format:formatCurrency}
 };
 const effortIndicators = {
-  budgetPerStudent:{label:"Custo por estudante",get:u=>u.budget*1000000/u.students,format:formatCurrency,sub:"Orçamento liquidado ÷ total de matrículas ativas (QT_MAT · INEP/Censo da Educação Superior). Não considera vagas ofertadas."},
+  budgetPerStudent:{label:"Custo por estudante",get:u=>u.students>0?u.budget*1000000/u.students:null,format:formatCurrency,sub:"Orçamento liquidado ÷ total de matrículas ativas (QT_MAT · INEP/Censo da Educação Superior). Não considera vagas ofertadas."},
   costGraduate:{label:"Custo por concluinte",get:u=>u.budget*1000000/u.graduates,format:formatCurrency},
   costOccupiedVacancy:{label:"Custo por vaga ocupada",get:u=>u.budget*1000000/(u.vacancies*u.occupancy/100),format:formatCurrency},
   costEmployed:{label:"Custo por egresso inserido no Paraná",get:u=>u.budget*1000000/(u.graduates*u.employment/100),format:formatCurrency},
@@ -2773,6 +2777,8 @@ function populate(){
   ["Educação","Administração","Agronomia","Direito","Enfermagem","Engenharia","Saúde Coletiva","Desenvolvimento Regional"].forEach(v=>el.pgProgramFilter?.append(new Option(v,v)));
   ["Diretores e gerentes","Profissionais das ciências e intelectuais","Técnicos de nível médio","Trabalhadores administrativos","Serviços e comércio","Agropecuária e produção florestal","Produção industrial"].forEach(v=>el.cbo2Filter?.append(new Option(v,v)));
   populateCursoFilters();
+  populateCineAreaOptions();
+  updateFilterApplicability();
   updateGroupOptions(el.groupBy.value);
   renderGroupVariableButtons();
   updateScopeAvailability(state.scope);
@@ -2806,14 +2812,84 @@ function populateCursoFilters(){
   const _todosGrupos = Object.values(window.SETI_CURSOS_DETALHADO_BY_YEAR || {})
     .flatMap(porAno => Object.values(porAno || {}).flat());
   uniq(_todosGrupos.map(g=>g.grauAcademico).filter(Boolean)).forEach(v=>el.grauAcademicoGlobalFilter?.append(new Option(v,v)));
-  // cineAreaGlobalFilter (Round 2a): trocado de cursosDetalhado.cineArea (por
-  // curso, Round 1) para u.areaCineGrande — V9 da Estratificação_IES_Estaduais_BR.xlsx,
-  // um valor fixo por IES (não por curso). Fonte oficial deste filtro agora é
-  // V9; cursosDetalhado deixou de alimentar este select específico. Não é
-  // afetado pelo Round 3b (não passa por cursosDetalhadoByYear).
-  uniq(_cursosUniverse.map(u=>u.areaCineGrande).filter(Boolean)).forEach(v=>el.cineAreaGlobalFilter?.append(new Option(v,v)));
+  // cineAreaGlobalFilter: população movida para populateCineAreaOptions()
+  // (Etapa GA-1) — o select agora troca de taxonomia conforme a aba ativa
+  // (CINE-BR nas demais abas, CAPES na Aba 5), então não pode mais ser
+  // populado uma única vez aqui.
   uniq(_todosGrupos.map(g=>g.modalidade).filter(Boolean)).forEach(v=>el.modalidadeEnsinoGlobalFilter?.append(new Option(v,v)));
 }
+
+// Etapa GA-1 — Filtro "Grande Área" sensível à aba ativa.
+// Fora da Aba 5: taxonomia INEP/CINE-BR (u.areaCineGrande, 10 categorias,
+// V9 da Estratificação_IES_Estaduais_BR.xlsx — comportamento original).
+// Na Aba 5 (state.activeTab === "quality"): taxonomia CAPES/CNPq
+// (u.pgPorGrandeArea, 9 categorias, distribuição por IES — vocabulário
+// diferente do CINE-BR, por isso as opções são TROCADAS, não misturadas).
+// Guard por dataset.mode (não por options.length) porque o select precisa
+// ser repopulado sempre que a aba mudar de/para "quality". Só grava
+// dataset.mode depois de confirmar que opções de verdade foram adicionadas —
+// populate() roda antes do fetch assíncrono do seti_precomputed.json
+// terminar (refreshPanelFromData(), data-hub.js), então a primeira chamada
+// pode acontecer sem areaCineGrande/pgPorGrandeArea ainda disponíveis; se
+// vier vazio, o guard não trava e a próxima chamada de render() (disparada
+// de novo quando os dados chegam) tenta repopular.
+function populateCineAreaOptions(){
+  if (!el.cineAreaGlobalFilter) return;
+  const isPosGrad = state.activeTab === "quality";
+  const mode = isPosGrad ? "capes" : "cine";
+  if (el.cineAreaGlobalFilter.dataset.mode === mode && el.cineAreaGlobalFilter.options.length > 1) return;
+  const _cursosUniverse = [...universities, ...universitiesBrasil].map(u=>byYear(u,"2024"));
+  el.cineAreaGlobalFilter.innerHTML = '<option value="all">Todas as áreas</option>';
+  let added = 0;
+  if (isPosGrad) {
+    const areas = new Set();
+    _cursosUniverse.forEach(u=>{ if (u.pgPorGrandeArea) Object.keys(u.pgPorGrandeArea).forEach(a=>areas.add(a)); });
+    uniq([...areas]).forEach(v=>{el.cineAreaGlobalFilter.append(new Option(v,v)); added++;});
+  } else {
+    uniq(_cursosUniverse.map(u=>u.areaCineGrande).filter(Boolean)).forEach(v=>{el.cineAreaGlobalFilter.append(new Option(v,v)); added++;});
+  }
+  el.cineAreaGlobalFilter.value = "all";
+  if (added > 0) el.cineAreaGlobalFilter.dataset.mode = mode;
+}
+
+// Etapa GA-4 — quais dos 4 filtros com <select> real têm efeito comprovado
+// nos indicadores de cada aba (ver devolutiva "Matriz de filtros aplicáveis
+// por aba"). true = ativo; false = desabilitado (sem efeito nos indicadores
+// exibidos nessa aba, mesmo que altere universo/fallback em casos raros —
+// ver notas da matriz para os casos de risco aceito).
+const FILTER_APPLICABILITY_BY_TAB = {
+  overview:    { grauAcademicoGlobalFilter: true,  cineAreaGlobalFilter: true, modalidadeEnsinoGlobalFilter: true,  vagaRecorteGlobalFilter: true  },
+  comparison:  { grauAcademicoGlobalFilter: true,  cineAreaGlobalFilter: true, modalidadeEnsinoGlobalFilter: true,  vagaRecorteGlobalFilter: false },
+  access:      { grauAcademicoGlobalFilter: true,  cineAreaGlobalFilter: true, modalidadeEnsinoGlobalFilter: true,  vagaRecorteGlobalFilter: true  },
+  retention:   { grauAcademicoGlobalFilter: true,  cineAreaGlobalFilter: true, modalidadeEnsinoGlobalFilter: true,  vagaRecorteGlobalFilter: true  },
+  quality:     { grauAcademicoGlobalFilter: false, cineAreaGlobalFilter: true, modalidadeEnsinoGlobalFilter: false, vagaRecorteGlobalFilter: false },
+  faculty:     { grauAcademicoGlobalFilter: true,  cineAreaGlobalFilter: false, modalidadeEnsinoGlobalFilter: false, vagaRecorteGlobalFilter: false },
+  employment:  { grauAcademicoGlobalFilter: true,  cineAreaGlobalFilter: false, modalidadeEnsinoGlobalFilter: false, vagaRecorteGlobalFilter: false },
+  efficiency:  { grauAcademicoGlobalFilter: true,  cineAreaGlobalFilter: true, modalidadeEnsinoGlobalFilter: true,  vagaRecorteGlobalFilter: true  },
+  performance: { grauAcademicoGlobalFilter: false, cineAreaGlobalFilter: false, modalidadeEnsinoGlobalFilter: false, vagaRecorteGlobalFilter: false },
+};
+
+// Aplica disabled + reset de valor + tooltip nos 4 selects reais, conforme
+// a tabela acima. Reaproveita setScopedControlState()/setSelectValue()
+// (painel.js ~6297-6318) — mesmo mecanismo já usado por PR_ONLY_FILTERS/
+// updateScopeAvailability() e por lockModalidadeFilterForAba9() (Aba 9):
+// aplica .disabled/aria-disabled no control, mas a classe is-disabled e o
+// tooltip vão no card/shell (.filter-mini-card/.filter-inline-group), não
+// no <select> em si — mantém a mesma linguagem visual do resto do painel.
+// Roda no mesmo gatilho de populateCineAreaOptions (toda troca de aba já
+// passa por render()), sem precisar de listener novo.
+function updateFilterApplicability(){
+  const applic = FILTER_APPLICABILITY_BY_TAB[state.activeTab] || {};
+  Object.keys(applic).forEach(id=>{
+    const node = el[id] || document.getElementById(id);
+    if (!node) return;
+    const active = applic[id];
+    if (!active) setSelectValue(node, "all");
+    setScopedControlState(node, !active, active ? "" : "Não aplicável nesta aba — não altera os indicadores exibidos.");
+  });
+}
+window.updateFilterApplicability = updateFilterApplicability;
+
 // Round 2b — reaproveita o placeholder #dataSourceBanner já existente no HTML
 // (v8_painel_seti_html.html, antes da nav de abas — hoje sem nenhum JS
 // escrevendo nele) e as classes .data-source-banner/.visible já usadas para
@@ -2852,7 +2928,7 @@ function updateCourseTypeBanner(c){
   if (strong) strong.textContent = titleParts.join(" · ");
   let texto = label ? `Filtro de ${label} reflete o ano selecionado no filtro de Ano (quando disponível para a IES; caso contrário, o ano mais recente disponível).` : "";
   if (vagaLabel) {
-    texto += `${texto ? " " : ""}Filtro de Vagas (${vagaLabel}) afeta os cards "Total de vagas" e "Taxa de ocupação" da Aba 1 · Panorama Executivo, da Aba 3 · Acesso e Oferta, o funil formativo da Aba 4 · Permanência e Formação, o card "Custo por vaga ocupada" da Aba 8 · Execução Orçamentária e a opção "Taxa de ocupação de vagas" do gráfico Orçamento × Desempenho da Aba 9 · Desempenho — a Taxa de ocupação das vagas de ingresso (IND-24) e o restante da Aba 2 · Comparação continuam mostrando os dados sem esse recorte.`;
+    texto += `${texto ? " " : ""}Filtro de Vagas (${vagaLabel}) afeta os cards "Total de vagas" e "Taxa de ocupação" da Aba 1 · Panorama Executivo, da Aba 3 · Acesso e Oferta, o funil formativo da Aba 4 · Permanência e Formação, o card "Custo por vaga ocupada" da Aba 8 · Execução Orçamentária e a opção "Taxa de ocupação de vagas" do gráfico Orçamento × Desempenho da Aba 9 · Desempenho — a Taxa de Ocupação das Vagas Novas de Ingresso (IND-24) e o restante da Aba 2 · Comparação continuam mostrando os dados sem esse recorte.`;
     // Round 5: ressalva só aparece quando o recorte realmente resulta em %
     // não calculável para pelo menos uma IES exibida (Nova/Diurno/Noturno
     // têm numerador e só ficam sem % se a IES/ano específico não tiver vaga
@@ -3171,6 +3247,46 @@ function applyCourseFiltersOverride(u, courseType, modalidade) {
 }
 window.applyCourseFiltersOverride = applyCourseFiltersOverride;
 
+// Etapa GA-2 — Recondiciona indicadores à Grande Área selecionada no filtro.
+// Fora da Aba 5 (CINE-BR): recalcula students/entrants/graduates/vacancies/
+// courses/occupancy/completion/dropout somando apenas os grupos de
+// u.cursosDetalhado cujo cineArea bate com o filtro — mesmo padrão de
+// applyCourseFiltersOverride, aplicado sobre os grupos já filtrados por
+// Tipo de Curso/Modalidade (ordem do .map() importa).
+// Aba 5 (CAPES): só "pg" é recondicionado, direto de pgPorGrandeArea[área].
+// "capes" (conceito médio) e "pgTop" (conceito ≥5) NÃO são recondicionados
+// nesta etapa — capesPrograms só tem a área estreita do programa (ex.
+// "MEDICINA VETERINÁRIA"), sem mapeamento pra grande área CAPES. Pendência
+// registrada no changelog.
+function applyGrandeAreaOverride(u, f) {
+  if (!f.cineArea || f.cineArea === "all") return u;
+  if (state.activeTab === "quality") {
+    const count = u.pgPorGrandeArea ? (u.pgPorGrandeArea[f.cineArea] || 0) : 0;
+    return { ...u, pg: count, _grandeAreaFiltered: true, _grandeAreaMode: "capes" };
+  }
+  if (!u.cursosDetalhado || !u.cursosDetalhado.length) {
+    return { ...u, students: 0, entrants: 0, graduates: 0, vacancies: 0, courses: 0, occupancy: null, completion: null, dropout: null, _grandeAreaFiltered: true, _grandeAreaMode: "cine", _filteredGroups: [] };
+  }
+  const groups = u.cursosDetalhado.filter(g => g.cineArea === f.cineArea);
+  const students = sum(groups, g => g.students);
+  const entrants = sum(groups, g => g.entrants);
+  const graduates = sum(groups, g => g.graduates);
+  const vacancies = sum(groups, g => g.vacancies);
+  const courses = sum(groups, g => g.courses);
+  const dropoutCount = sum(groups, g => g.dropoutCount);
+  return {
+    ...u,
+    students, entrants, graduates, vacancies, courses,
+    occupancy: vacancies > 0 ? round(entrants / vacancies * 100, 2) : null,
+    completion: students > 0 ? round(graduates / students * 100, 2) : null,
+    dropout: students > 0 ? round(dropoutCount / students * 100, 2) : null,
+    _grandeAreaFiltered: true,
+    _grandeAreaMode: "cine",
+    _filteredGroups: groups,
+  };
+}
+window.applyGrandeAreaOverride = applyGrandeAreaOverride;
+
 // Round 5 — Vagas (recorte único): SELETOR DE MÉTRICA, não filtro de linha.
 // Cada curso tem QT_VG_NOVA E QT_VG_REMANESC E QT_VG_PROC_SELETIVO E
 // QT_VG_PROG_ESPECIAL E QT_VG_TOTAL_DIURNO/NOTURNO/EAD simultaneamente (não é
@@ -3233,6 +3349,17 @@ function applyVagaMetricOverride(u, vagaRecorte) {
   };
 }
 window.applyVagaMetricOverride = applyVagaMetricOverride;
+// Etapa GA-1 — compara a IES ao filtro "Grande Área" conforme a taxonomia
+// ativa: CAPES (inclusiva — IES entra se tiver ≥1 programa na área) na
+// Aba 5; CINE-BR (exclusiva — valor único por IES) nas demais.
+function matchesGrandeArea(u, f) {
+  if (!f.cineArea || f.cineArea === "all") return true;
+  if (state.activeTab === "quality") {
+    return !!(u.pgPorGrandeArea && u.pgPorGrandeArea[f.cineArea] > 0);
+  }
+  return u.areaCineGrande === f.cineArea;
+}
+window.matchesGrandeArea = matchesGrandeArea;
 function applyFilters(f=filters(),source=null){
   const rows=source||(scopeUniverse(f.scope)).map(u=>byYear(u,f.year));
   if(f.university==="none") return [];
@@ -3243,16 +3370,15 @@ function applyFilters(f=filters(),source=null){
     (f.municipality==="all"||u.municipality===f.municipality)&&
     (f.course==="all"||u.coursesFocus.includes(f.course))&&
     (f.groupLevel==="all"||u.groups[f.groupBy]===f.groupLevel)&&
-    (!f.cineArea||f.cineArea==="all"||u.areaCineGrande===f.cineArea)&&
     (f.university==="all"||Array.isArray(f.university)&&f.university.includes(u.id))&&
     u.doctors>=f.minDoctors
-  ).map(u=>applyCourseFiltersOverride(u,f.grauAcademico,f.modalidadeEnsino)).map(u=>applyVagaMetricOverride(u,f.vagaRecorte));
+  ).map(u=>applyCourseFiltersOverride(u,f.grauAcademico,f.modalidadeEnsino)).map(u=>applyVagaMetricOverride(u,f.vagaRecorte)).map(u=>applyGrandeAreaOverride(u,f));
 }
 function context(){
   const f=filters(), all=scopeUniverse(f.scope).map(u=>byYear(u,f.year));
   const selectedRaw=Array.isArray(f.university)?all.find(u=>u.id===f.university[0])||null:null;
-  const selected=selectedRaw?applyVagaMetricOverride(applyCourseFiltersOverride(selectedRaw,f.grauAcademico,f.modalidadeEnsino),f.vagaRecorte):null;
-  const base=all.filter(u=>(f.region==="all"||u.region===f.region)&&(f.profile==="all"||u.profile===f.profile)&&(f.courseType==="all"||u.type===f.courseType)&&(f.municipality==="all"||u.municipality===f.municipality)&&(f.course==="all"||u.coursesFocus.includes(f.course))&&(!f.cineArea||f.cineArea==="all"||u.areaCineGrande===f.cineArea)&&u.doctors>=f.minDoctors).map(u=>applyCourseFiltersOverride(u,f.grauAcademico,f.modalidadeEnsino)).map(u=>applyVagaMetricOverride(u,f.vagaRecorte));
+  const selected=selectedRaw?applyGrandeAreaOverride(applyVagaMetricOverride(applyCourseFiltersOverride(selectedRaw,f.grauAcademico,f.modalidadeEnsino),f.vagaRecorte),f):null;
+  const base=all.filter(u=>(f.region==="all"||u.region===f.region)&&(f.profile==="all"||u.profile===f.profile)&&(f.courseType==="all"||u.type===f.courseType)&&(f.municipality==="all"||u.municipality===f.municipality)&&(f.course==="all"||u.coursesFocus.includes(f.course))&&u.doctors>=f.minDoctors).map(u=>applyCourseFiltersOverride(u,f.grauAcademico,f.modalidadeEnsino)).map(u=>applyVagaMetricOverride(u,f.vagaRecorte)).map(u=>applyGrandeAreaOverride(u,f));
   const group=f.groupLevel!=="all"?f.groupLevel:selected?selected.groups[f.groupBy]:"all";
   let ref=base.filter(u=>group==="all"||u.groups[f.groupBy]===group); if(!ref.length) ref=base;
   let display=f.university==="all"?ref:f.university==="none"?[]:ref.filter(u=>Array.isArray(f.university)&&f.university.includes(u.id));
@@ -3260,7 +3386,7 @@ function context(){
   if(f.attention&&hasOfficialQuadrants()){const ids=matrixRows(ref,f).filter(r=>r.resultRel<100&&r.effortRel>100).map(r=>r.id);ref=ref.filter(u=>ids.includes(u.id));display=display.filter(u=>ids.includes(u.id));}
   return {f,all,base,ref,display,selected,group};
 }
-function byYear(u,year){const [vol,bud,delta]=yearAdj[year]||yearAdj[2024];const c={...u,groups:{...u.groups},coursesFocus:[...u.coursesFocus]};["students","entrants","graduates","vacancies"].forEach(k=>c[k]=Math.round(c[k]*vol));c.budget=round(c.budget*bud,1);const cnpqReal=CNPQ_DATA[u.id]?.[Number(year)];if(cnpqReal){c.cnpq=round(cnpqReal.captacao,2);c.vinculos=cnpqReal.vinculos;}else{c.cnpq=round(c.cnpq*(.9+bud*.1),1);c.vinculos=null;}c.supplementation=round(c.supplementation+(1-bud)*3,1);["occupancy","completion","doctors","employment","facultyOcc","cres","execution","liquidation"].forEach(k=>{if(c[k]==null)return;c[k]=clamp(round(c[k]+delta,1),0,100);});c.dropout=clamp(round(c.dropout-delta*.25,1),0,100);c.salary=Math.round(c.salary*(.88+bud*.12));const _rc=getRealIndicatorsExact(u.sigla,year);if(_rc&&_rc.cursosStudents!=null){if(_rc.cursosStudents!=null)c.students=_rc.cursosStudents;if(_rc.cursosEntrants!=null)c.entrants=_rc.cursosEntrants;if(_rc.cursosGraduates!=null)c.graduates=_rc.cursosGraduates;if(_rc.cursosCourses!=null)c.courses=_rc.cursosCourses;if(_rc.cursosVacancies!=null)c.vacancies=_rc.cursosVacancies;if(_rc.cursosOccupancy!=null)c.occupancy=_rc.cursosOccupancy;if(_rc.cursosDropout!=null)c.dropout=_rc.cursosDropout;if(_rc.cursosCompletion!=null)c.completion=_rc.cursosCompletion;c.vacanciesNova=_rc.cursosVacanciesNova??null;c.vacanciesDay=_rc.cursosVacanciesDay??null;c.vacanciesNight=_rc.cursosVacanciesNight??null;c.matDay=_rc.cursosMatDay??null;c.matNight=_rc.cursosMatNight??null;c.ingressOccupancy=_rc.cursosIngressOccupancy??null;c.vacanciesUnfilled=_rc.cursosVacanciesUnfilled??null;c.vacanciesNovaUnfilled=_rc.cursosVacanciesNovaUnfilled??null;c.mobility=_rc.cursosMobility??null;c.publicSchool=_rc.cursosPublicSchool??null;c.occDay=_rc.cursosOccupancyDay??null;c.occNight=_rc.cursosOccupancyNight??null;}if(_rc){if(_rc.iesDocDout!=null)c.doctors=_rc.iesDocDout;c.docForeign=_rc.iesDocForeign??null;c.capesPortal=_rc.iesCapesPortal??null;if(_rc.docTaxaOcup!=null)c.facultyOcc=_rc.docTaxaOcup;if(_rc.docCresTaxa!=null)c.cres=_rc.docCresTaxa;c.docVagasTotais=_rc.docVagasTotais??null;c.docVagasDisp=_rc.docVagasDisp??null;c.docVagasOcupadas=_rc.docVagasOcupadas??null;c.docTaxaUtil=_rc.docTaxaUtil??null;c.docVagasCond=_rc.docVagasCond??null;c.docPctCond=_rc.docPctCond??null;c.docTideAtrib=_rc.docTideAtrib??null;c.docTidePartic=_rc.docTidePartic??null;c.docTidePctNaoAtrib=_rc.docTidePctNaoAtrib??null;c.docChMedia=_rc.docChMedia??null;c.docCresAut=_rc.docCresAut??null;c.docCresUtil=_rc.docCresUtil??null;c.docCresSaldo=_rc.docCresSaldo??null;c.docCresOciosidade=_rc.docCresOciosidade??null;c.docCresPartic=_rc.docCresPartic??null;if(_rc.capesConceito!=null)c.capes=_rc.capesConceito;if(_rc.pg!=null)c.pg=_rc.pg;if(_rc.pgTop!=null)c.pgTop=_rc.pgTop;c.capesPct567=_rc.capesPct567??null;c.capesDocPermanentes=_rc.capesDocPermanentes??null;c.capesDocEstrangeiros=_rc.capesDocEstrangeiros??null;c.capesDocBolsa=_rc.capesDocBolsa??null;c.docTotal=_rc.docTotal??null;c.docExe=_rc.docExe??null;c.grauMix=_rc.grauMix??null;c.cbo2Profile=_rc.cbo2Profile??null;c.cbo2Diversity=_rc.cbo2Diversity??null;c.cbo2MunDestino=_rc.cbo2MunDestino??null;c.muniOccupancy=_rc.muniOccupancy??null;c.pgMestrado=_rc.pgMestrado??null;c.pgMestradoProf=_rc.pgMestradoProf??null;c.pgDoutorado=_rc.pgDoutorado??null;c.pgPorGrandeArea=_rc.pgPorGrandeArea??null;c.discMestrado=_rc.discMestrado??null;c.discDoutorado=_rc.discDoutorado??null;c.tituladosMestrado=_rc.tituladosMestrado??null;c.tituladosDoutorado=_rc.tituladosDoutorado??null;c.docPermanentes=_rc.docPermanentes??null;c.docColaboradores=_rc.docColaboradores??null;c.docVisitantes=_rc.docVisitantes??null;c.razaoDocenteDiscente=_rc.razaoDocenteDiscente??null;c.pgMunicipiosDistintos=_rc.pgMunicipiosDistintos??null;c.pctExcelencia=_rc.pctExcelencia??null;}if(_rc){c.budget=_rc.budget??_rc.liquidado??c.budget;c.execution=_rc.execution??_rc.tx_execucao_empenho??c.execution;c.liquidation=_rc.liquidation??_rc.tx_liquidacao??c.liquidation;c.supplementation=_rc.supplementation??_rc.var_dotacao_loa??c.supplementation;c.personnel=_rc.personnel??_rc.part_pessoal??c.personnel;if(_rc.cnpqCaptacao!=null){c.cnpq=_rc.cnpqCaptacao;}if(_rc.cnpqVinculos!=null){c.vinculos=_rc.cnpqVinculos;}c.dotacao_inicial=_rc.dotacao_inicial??c.dotacao_inicial??null;c.orcamento_atualizado=_rc.orcamento_atualizado??c.orcamento_atualizado??null;c.empenhado=_rc.empenhado??c.empenhado??null;c.liquidado=_rc.liquidado??c.liquidado??null;c.pago=_rc.pago??c.pago??null;c.tx_execucao_empenho=_rc.tx_execucao_empenho??c.tx_execucao_empenho??null;c.tx_liquidacao=_rc.tx_liquidacao??c.tx_liquidacao??null;c.tx_pagamento_liq=_rc.tx_pagamento_liq??c.tx_pagamento_liq??null;c.grau_contingenciamento=_rc.grau_contingenciamento??c.grau_contingenciamento??null;c.var_dotacao_loa=_rc.var_dotacao_loa??c.var_dotacao_loa??null;c.part_pessoal=_rc.part_pessoal??c.part_pessoal??null;c.part_outras_correntes=_rc.part_outras_correntes??c.part_outras_correntes??null;c.part_capital=_rc.part_capital??c.part_capital??null;c.ind80=_rc.ind80??c.ind80??null;c.ind81=_rc.ind81??c.ind81??null;c.ind82=_rc.ind82??c.ind82??null;c.ind83=_rc.ind83??c.ind83??null;c.ind84=_rc.ind84??c.ind84??null;c.ind85=_rc.ind85??c.ind85??null;c.ind86=_rc.ind86??c.ind86??null;c.ind87=_rc.ind87??c.ind87??null;c.ind88=_rc.ind88??c.ind88??null;c.ind95orc=_rc.ind95orc??c.ind95orc??null;}if(_rc){c.insertionRatePR=_rc.insertionRatePR??null;c.egressosMunicipios=_rc.egressosMunicipios??_rc.raisMunCount??null;c.territoryIncome=_rc.territoryIncome??c.territoryIncome??null;c.idhmRegional=_rc.idhmRegional??c.idhmRegional??null;c.areaCineGrande=_rc.areaCineGrande??null;c.areaCinePct=_rc.areaCinePct??null;c.areaCineHerfindahl=_rc.areaCineHerfindahl??null;}if(window.SETI_CLUSTERS&&window.SETI_CLUSTERS[u.sigla]){const cl=window.SETI_CLUSTERS[u.sigla];groupKeys.forEach(k=>{c.groups[k]=cl[k]!=null?cl[k]:null;});}const _cdByYear=window.SETI_CURSOS_DETALHADO_BY_YEAR?.[u.sigla]?.[String(year)];if(_cdByYear){c.cursosDetalhado=_cdByYear;}else if(window.SETI_CURSOS_DETALHADO&&window.SETI_CURSOS_DETALHADO[u.sigla]){c.cursosDetalhado=window.SETI_CURSOS_DETALHADO[u.sigla];}else{c.cursosDetalhado=null;}return c;}
+function byYear(u,year){const [vol,bud,delta]=yearAdj[year]||yearAdj[2024];const c={...u,groups:{...u.groups},coursesFocus:[...u.coursesFocus]};["students","entrants","graduates","vacancies"].forEach(k=>c[k]=Math.round(c[k]*vol));c.budget=round(c.budget*bud,1);const cnpqReal=CNPQ_DATA[u.id]?.[Number(year)];if(cnpqReal){c.cnpq=round(cnpqReal.captacao,2);c.vinculos=cnpqReal.vinculos;}else{c.cnpq=round(c.cnpq*(.9+bud*.1),1);c.vinculos=null;}c.supplementation=round(c.supplementation+(1-bud)*3,1);["occupancy","completion","doctors","employment","facultyOcc","cres","execution","liquidation"].forEach(k=>{if(c[k]==null)return;c[k]=clamp(round(c[k]+delta,1),0,100);});c.dropout=clamp(round(c.dropout-delta*.25,1),0,100);c.salary=Math.round(c.salary*(.88+bud*.12));const _rc=getRealIndicatorsExact(u.sigla,year);if(_rc&&_rc.cursosStudents!=null){if(_rc.cursosStudents!=null)c.students=_rc.cursosStudents;if(_rc.cursosEntrants!=null)c.entrants=_rc.cursosEntrants;if(_rc.cursosGraduates!=null)c.graduates=_rc.cursosGraduates;if(_rc.cursosCourses!=null)c.courses=_rc.cursosCourses;if(_rc.cursosVacancies!=null)c.vacancies=_rc.cursosVacancies;if(_rc.cursosOccupancy!=null)c.occupancy=_rc.cursosOccupancy;if(_rc.cursosDropout!=null)c.dropout=_rc.cursosDropout;if(_rc.cursosCompletion!=null)c.completion=_rc.cursosCompletion;c.vacanciesNova=_rc.cursosVacanciesNova??null;c.entrantsVgNova=_rc.cursosEntrantsVgNova??null;c.vacanciesDay=_rc.cursosVacanciesDay??null;c.vacanciesNight=_rc.cursosVacanciesNight??null;c.matDay=_rc.cursosMatDay??null;c.matNight=_rc.cursosMatNight??null;c.ingressOccupancy=_rc.cursosIngressOccupancy??null;c.vacanciesUnfilled=_rc.cursosVacanciesUnfilled??null;c.vacanciesNovaUnfilled=_rc.cursosVacanciesNovaUnfilled??null;c.mobility=_rc.cursosMobility??null;c.publicSchool=_rc.cursosPublicSchool??null;c.occDay=_rc.cursosOccupancyDay??null;c.occNight=_rc.cursosOccupancyNight??null;}if(_rc){if(_rc.iesDocDout!=null)c.doctors=_rc.iesDocDout;c.docForeign=_rc.iesDocForeign??null;c.capesPortal=_rc.iesCapesPortal??null;if(_rc.docTaxaOcup!=null)c.facultyOcc=_rc.docTaxaOcup;if(_rc.docCresTaxa!=null)c.cres=_rc.docCresTaxa;c.docVagasTotais=_rc.docVagasTotais??null;c.docVagasDisp=_rc.docVagasDisp??null;c.docVagasOcupadas=_rc.docVagasOcupadas??null;c.docTaxaUtil=_rc.docTaxaUtil??null;c.docVagasCond=_rc.docVagasCond??null;c.docPctCond=_rc.docPctCond??null;c.docTideAtrib=_rc.docTideAtrib??null;c.docTidePartic=_rc.docTidePartic??null;c.docTidePctNaoAtrib=_rc.docTidePctNaoAtrib??null;c.docChMedia=_rc.docChMedia??null;c.docCresAut=_rc.docCresAut??null;c.docCresUtil=_rc.docCresUtil??null;c.docCresSaldo=_rc.docCresSaldo??null;c.docCresOciosidade=_rc.docCresOciosidade??null;c.docCresPartic=_rc.docCresPartic??null;if(_rc.capesConceito!=null)c.capes=_rc.capesConceito;if(_rc.pg!=null)c.pg=_rc.pg;if(_rc.pgTop!=null)c.pgTop=_rc.pgTop;c.capesPct567=_rc.capesPct567??null;c.capesDocPermanentes=_rc.capesDocPermanentes??null;c.capesDocEstrangeiros=_rc.capesDocEstrangeiros??null;c.capesDocBolsa=_rc.capesDocBolsa??null;c.docTotal=_rc.docTotal??null;c.docExe=_rc.docExe??null;c.grauMix=_rc.grauMix??null;c.cbo2Profile=_rc.cbo2Profile??null;c.cbo2Diversity=_rc.cbo2Diversity??null;c.cbo2MunDestino=_rc.cbo2MunDestino??null;c.muniOccupancy=_rc.muniOccupancy??null;c.pgMestrado=_rc.pgMestrado??null;c.pgMestradoProf=_rc.pgMestradoProf??null;c.pgDoutorado=_rc.pgDoutorado??null;c.pgPorGrandeArea=_rc.pgPorGrandeArea??null;c.discMestrado=_rc.discMestrado??null;c.discDoutorado=_rc.discDoutorado??null;c.tituladosMestrado=_rc.tituladosMestrado??null;c.tituladosDoutorado=_rc.tituladosDoutorado??null;c.docPermanentes=_rc.docPermanentes??null;c.docColaboradores=_rc.docColaboradores??null;c.docVisitantes=_rc.docVisitantes??null;c.razaoDocenteDiscente=_rc.razaoDocenteDiscente??null;c.pgMunicipiosDistintos=_rc.pgMunicipiosDistintos??null;c.pctExcelencia=_rc.pctExcelencia??null;}if(_rc){c.budget=_rc.budget??_rc.liquidado??c.budget;c.execution=_rc.execution??_rc.tx_execucao_empenho??c.execution;c.liquidation=_rc.liquidation??_rc.tx_liquidacao??c.liquidation;c.supplementation=_rc.supplementation??_rc.var_dotacao_loa??c.supplementation;c.personnel=_rc.personnel??_rc.part_pessoal??c.personnel;if(_rc.cnpqCaptacao!=null){c.cnpq=_rc.cnpqCaptacao;}if(_rc.cnpqVinculos!=null){c.vinculos=_rc.cnpqVinculos;}c.dotacao_inicial=_rc.dotacao_inicial??c.dotacao_inicial??null;c.orcamento_atualizado=_rc.orcamento_atualizado??c.orcamento_atualizado??null;c.empenhado=_rc.empenhado??c.empenhado??null;c.liquidado=_rc.liquidado??c.liquidado??null;c.pago=_rc.pago??c.pago??null;c.tx_execucao_empenho=_rc.tx_execucao_empenho??c.tx_execucao_empenho??null;c.tx_liquidacao=_rc.tx_liquidacao??c.tx_liquidacao??null;c.tx_pagamento_liq=_rc.tx_pagamento_liq??c.tx_pagamento_liq??null;c.grau_contingenciamento=_rc.grau_contingenciamento??c.grau_contingenciamento??null;c.var_dotacao_loa=_rc.var_dotacao_loa??c.var_dotacao_loa??null;c.part_pessoal=_rc.part_pessoal??c.part_pessoal??null;c.part_outras_correntes=_rc.part_outras_correntes??c.part_outras_correntes??null;c.part_capital=_rc.part_capital??c.part_capital??null;c.ind80=_rc.ind80??c.ind80??null;c.ind81=_rc.ind81??c.ind81??null;c.ind82=_rc.ind82??c.ind82??null;c.ind83=_rc.ind83??c.ind83??null;c.ind84=_rc.ind84??c.ind84??null;c.ind85=_rc.ind85??c.ind85??null;c.ind86=_rc.ind86??c.ind86??null;c.ind87=_rc.ind87??c.ind87??null;c.ind88=_rc.ind88??c.ind88??null;c.ind95orc=_rc.ind95orc??c.ind95orc??null;}if(_rc){c.insertionRatePR=_rc.insertionRatePR??null;c.egressosMunicipios=_rc.egressosMunicipios??_rc.raisMunCount??null;c.territoryIncome=_rc.territoryIncome??c.territoryIncome??null;c.idhmRegional=_rc.idhmRegional??c.idhmRegional??null;c.areaCineGrande=_rc.areaCineGrande??null;c.areaCinePct=_rc.areaCinePct??null;c.areaCineHerfindahl=_rc.areaCineHerfindahl??null;}if(window.SETI_CLUSTERS&&window.SETI_CLUSTERS[u.sigla]){const cl=window.SETI_CLUSTERS[u.sigla];groupKeys.forEach(k=>{c.groups[k]=cl[k]!=null?cl[k]:null;});}const _cdByYear=window.SETI_CURSOS_DETALHADO_BY_YEAR?.[u.sigla]?.[String(year)];if(_cdByYear){c.cursosDetalhado=_cdByYear;}else if(window.SETI_CURSOS_DETALHADO&&window.SETI_CURSOS_DETALHADO[u.sigla]){c.cursosDetalhado=window.SETI_CURSOS_DETALHADO[u.sigla];}else{c.cursosDetalhado=null;}return c;}
 // Selo visual para valores estimados (fallback de fórmula quando a base não
 // cobre a IES/ano). Usar junto ao valor ou no título do gráfico.
 function estBadge(reason){
@@ -3292,7 +3418,7 @@ function applyRealBrazilBenchmarks(){
     applyRealBrazilBenchmarks._done=true;
   }catch(err){console.error("applyRealBrazilBenchmarks:",err);}
 }
-function render(){applySETIClusters();applyRealBrazilBenchmarks();populateCursoFilters();const c=context();updateCourseTypeBanner(c);currentFilteredCount=c.ref.length;syncScopeToggle(c.f.scope);updateScopeAvailability(c.f.scope);updateActiveTabFilters();renderTop(c);renderKpis(c);renderSide(c);renderTab(c);}
+function render(){applySETIClusters();applyRealBrazilBenchmarks();populateCursoFilters();populateCineAreaOptions();updateFilterApplicability();const c=context();updateCourseTypeBanner(c);currentFilteredCount=c.ref.length;syncScopeToggle(c.f.scope);updateScopeAvailability(c.f.scope);updateActiveTabFilters();renderTop(c);renderKpis(c);renderSide(c);renderTab(c);}
 
 // ── Cobertura de anos por aba ────────────────────────────────────────────────
 // Fonte: INEP → até 2024 | SETI docentes → 2022–2026 | RAIS → 2023–2024
@@ -3347,7 +3473,9 @@ function updateYearFilterOptions(tabId) {
   const maxYear = Math.max(...years);
 
   // ── default por aba: ao entrar na efficiency, forçar 2026 ─────────────────
-  const TAB_YEAR_DEFAULTS = { efficiency: "2026" };
+  const TAB_YEAR_DEFAULTS = {}; // ano fixo ao entrar na aba removido —
+  // a aba deve respeitar o ano já selecionado pelo usuário (diagnóstico
+  // 2026-07-13: forçar 2026 causava divergência silenciosa entre aba 8 e 9)
   const isTabSwitch = tabId !== updateYearFilterOptions._prevTab;
   updateYearFilterOptions._prevTab = tabId;
   const tabDefault = TAB_YEAR_DEFAULTS[tabId];
@@ -4021,7 +4149,7 @@ const tabIndicators = {
     { code:"ind10", label:"Total de cursos" },
     { code:"ind11", label:"Total de vagas" },
     { code:"ind15", label:"Média de vagas por curso" },
-    { code:"ind24", label:"Taxa de ocupação das vagas de ingresso" },
+    { code:"ind24", label:"Taxa de Ocupação das Vagas Novas de Ingresso" },
     { code:"ind26", label:"Taxa de ocupação das vagas" },
     { code:"ind29", label:"Taxa de ocupação por grau" },
     { code:"ind67", label:"Taxa de ocupação por tipo de curso" },
@@ -4088,7 +4216,7 @@ const tabIndicators = {
 const IND_FIELD_MAP = {
   ind1:  u=>u.occupancy,
   ind2:  u=>u.students,
-  ind3:  u=>u.ingressOccupancy!=null?u.ingressOccupancy:round(u.entrants/Math.max(u.vacanciesNova!=null?u.vacanciesNova:u.vacancies*.82,1)*100,1),
+  ind3:  u=>round(u.entrants/Math.max(u.vacanciesNova!=null?u.vacanciesNova:u.vacancies*.82,1)*100,1),
   ind4:  u=>publicSchoolShare(u),
   ind5:  u=>u.dropout,
   ind6:  u=>u.doctors,
@@ -4106,7 +4234,7 @@ const IND_FIELD_MAP = {
   ind21: u=>u.students/Math.max(u.courses,1),
   ind22: u=>u.students/overviewMetricUniverseTotal(x=>x.students)*100,
   ind23: u=>u.students/Math.max(u.vacancies,1),
-  ind24: u=>u.occupancy,
+  ind24: u => (u.ingressOccupancy != null ? u.ingressOccupancy : u.occupancy),
   ind25: u=>u.vacanciesNovaUnfilled!=null?u.vacanciesNovaUnfilled:Math.max(0,Math.round((u.vacanciesNova!=null?u.vacanciesNova:u.vacancies*.82)-u.entrants)),
   ind26: u=>u.occupancy,
   ind27: u=>u.completion,
@@ -4152,8 +4280,8 @@ const IND_FIELD_MAP = {
   ind65: u=>u.capesDocBolsa??pgProductivityShare(u),
   ind66: u=>u.capesPct567??(u.pg?u.pgTop/u.pg*100:0),
   ind67: u=>clamp(u.occupancy+(u.type==="Licenciatura"?-3.5:1.8),0,100),
-  ind68: u=>offerSpecialization(u),
-  ind69: u=>courseMix(u).lic*100,
+  ind68: (u,f)=>offerSpecialization(u,f),
+  ind69: (u,f)=>courseMix(u,f).lic*100,
   ind70: u=>u.egressosMunicipios??panelEgressosField(u,"raisMunCount",null),
   ind71: u=>panelEgressosField(u,"raisPartMunMax",null),
   ind72: u=>panelEgressosField(u,"raisCursoCount",null),
@@ -4228,7 +4356,7 @@ window.exportTabData = function exportTabData(tabId) {
     const cells = [u.sigla, u.nome, u.groups[groupBy] || ""];
     indicators.forEach(ind => {
       const getter = IND_FIELD_MAP[ind.code];
-      cells.push(csvVal(getter ? getter(u) : null));
+      cells.push(csvVal(getter ? getter(u, f) : null));
     });
     return cells.join(";");
   });
@@ -5244,7 +5372,7 @@ const indicatorFullNames = {
   "IND-21": "Média de estudantes por curso",
   "IND-22": "Participação da IEES no total de estudantes",
   "IND-23": "Relação estudantes por vaga",
-  "IND-24": "Taxa de ocupação das vagas de ingresso",
+  "IND-24": "Taxa de Ocupação das Vagas Novas de Ingresso",
   "IND-25": "Vagas de ingresso não ocupadas",
   "IND-26": "Taxa de ocupação das vagas",
   "IND-27": "Proporção anual de concluintes sobre matrículas",
@@ -6659,14 +6787,13 @@ context = function contextWithoutBrasilClusters() {
 
   const all = scopeUniverse(f.scope).map(u => byYear(u, f.year));
   const selectedRaw = Array.isArray(f.university) ? all.find(u => u.id === f.university[0]) || null : null;
-  const selected = selectedRaw ? applyVagaMetricOverride(applyCourseFiltersOverride(selectedRaw, f.grauAcademico, f.modalidadeEnsino), f.vagaRecorte) : null;
+  const selected = selectedRaw ? applyGrandeAreaOverride(applyVagaMetricOverride(applyCourseFiltersOverride(selectedRaw, f.grauAcademico, f.modalidadeEnsino), f.vagaRecorte), f) : null;
   const base = all.filter(u =>
     (f.profile === "all" || u.profile === f.profile) &&
     (f.courseType === "all" || u.type === f.courseType) &&
     (f.course === "all" || u.coursesFocus.includes(f.course)) &&
-    (!f.cineArea || f.cineArea === "all" || u.areaCineGrande === f.cineArea) &&
     u.doctors >= f.minDoctors
-  ).map(u => applyCourseFiltersOverride(u, f.grauAcademico, f.modalidadeEnsino)).map(u => applyVagaMetricOverride(u, f.vagaRecorte));
+  ).map(u => applyCourseFiltersOverride(u, f.grauAcademico, f.modalidadeEnsino)).map(u => applyVagaMetricOverride(u, f.vagaRecorte)).map(u => applyGrandeAreaOverride(u, f));
   let ref = base;
   let display = f.university === "all" ? ref : f.university === "none" ? [] : ref.filter(u => Array.isArray(f.university) && f.university.includes(u.id));
   if (!display.length && f.university !== "none") display = ref;
@@ -7162,7 +7289,7 @@ window.exportTabData = function exportTabData(tabIdOrOptions, maybeOptions = {})
     const values = {};
     indicators.forEach(ind => {
       const getter = IND_FIELD_MAP[ind.code];
-      values[ind.label] = getter ? getter(u) : null;
+      values[ind.label] = getter ? getter(u, c.f) : null;
     });
     return {
       aba: tabInfo[tabId]?.[1] || tabId,

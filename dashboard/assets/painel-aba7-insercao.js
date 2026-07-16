@@ -523,3 +523,12 @@ function _injectAba7FormulaTooltips() {
   start();
   _injectAba7FormulaTooltips();
 }());
+
+var previousRenderNumberedTabEmployment = renderNumberedTab;
+renderNumberedTab = function renderNumberedTabEmploymentOverride(tabId, c, summary = "") {
+  if (tabId !== "employment") return previousRenderNumberedTabEmployment(tabId, c, summary);
+  const blocks = tabBlocks[tabId] || [];
+  const employmentNote = '<div class="metodologia-note"><span class="metodologia-icon">ℹ</span> Os indicadores de inserção profissional utilizam a base SETI/RAIS cruzada com egressos das IEES-PR. Existem outras fontes de mensuração de inserção profissional que ainda não estão estruturadas para coleta de dados neste painel — uma limitação metodológica a ser considerada na leitura destes indicadores.</div>';
+  return `<div class="tab-aba-wrapper" data-tab-id="${tabId}">${summary}${employmentNote}${blocks.map((title, index) => renderBlock(index + 1, title, renderBlockContent(tabId, title, c))).join("")}</div>`;
+};
+window.renderNumberedTab = renderNumberedTab;

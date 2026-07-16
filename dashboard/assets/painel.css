@@ -445,6 +445,15 @@ input:focus-visible {
   white-space: normal;
 }
 
+/* Rótulos longos que quebram em 2 linhas (abas 6 e 9) atingem o max-width
+   e sobram como texto left-aligned, deixando um rastro de espaço em branco
+   antes do próximo botão. Centralizar só estes dois equilibra as 2 linhas
+   sem alterar o alinhamento left dos demais 7 botões (1 linha, sem quebra). */
+.tab-button[data-tab="faculty"],
+.tab-button[data-tab="performance"] {
+  text-align: center;
+}
+
 .tab-button:hover {
   color: var(--blue-900);
   background: var(--blue-50);
@@ -667,6 +676,20 @@ input:focus-visible {
   font-weight: 850;
   text-align: left;
   white-space: nowrap;
+}
+
+/* Distribuição por grande área do conhecimento (Aba 5 / CAPES) —
+   nomes de área são mais longos que siglas de IES; usa coluna de
+   rótulo mais larga que o padrão de .bar-row, seguindo o precedente
+   de .waterfall-step (ver painel.css ~5328) em vez de inline style. */
+.capes-area-bars .bar-row {
+  grid-template-columns: 170px minmax(0, 1fr) max-content;
+}
+.capes-area-bars .bar-name {
+  overflow: visible;
+  white-space: normal;
+  line-height: 1.3;
+  font-size: 11.5px;
 }
 
 .rank-list {

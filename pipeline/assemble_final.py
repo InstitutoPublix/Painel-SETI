@@ -468,6 +468,10 @@ for _iees_d, _por_ano in cursos_data_by_year.items():
 #     IND-67 no catálogo é matrículas ÷ vagas (QT_MAT/QT_VG_TOTAL); não existe
 #     em cursos_detalhado nenhum campo com essa fórmula alternativa, e não foi
 #     criado um novo campo para isso nesta rodada.
+#   - NOTA 2026-07-13: tentativa de correção para matrículas÷vagas revertida
+#     — resultado produziu valores >100% (estoque plurianual ÷ fluxo anual
+#     de vagas). Fórmula correta pendente de validação com SETI. Ver
+#     README.md para detalhes.
 #   - Áreas "Não informado" (CINE ausente/nulo) entram como mais uma área se
 #     aparecerem nos dados, igual ao comportamento já existente em
 #     cineAreaOptions() no frontend (painel-aba3-acesso.js) — não filtradas.
