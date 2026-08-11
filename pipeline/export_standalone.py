@@ -55,7 +55,7 @@ INLINE_SCRIPTS = [
 
 IMAGES = [
     "img/logo_opr_transparent.png",
-    "brasao_parana.svg",
+    "img/brasao_parana.svg",
 ]
 
 
